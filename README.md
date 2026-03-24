@@ -52,6 +52,9 @@ install.packages("rextendr")
 devtools::install_github("https://github.com/GregorLueg/bixverse.gpu")
 ```
 
+If you are using Windows, I am sorry, the tool chain is too much of a pain. The
+package will not work there.
+
 ### How to use the package.
 
 The package website can be found 
