@@ -31,14 +31,14 @@ jobs:
       #   run: Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "$env:LOCALAPPDATA\R\cache\R\pak"
       #   shell: pwsh
     
-      - name: Set short temp and CMake config (Windows)
+      - name: Configure Windows build environment
         if: runner.os == 'Windows'
         run: |
           New-Item -ItemType Directory -Force -Path "C:\tmp" | Out-Null
           echo "TMP=C:\tmp" >> $env:GITHUB_ENV
           echo "TEMP=C:\tmp" >> $env:GITHUB_ENV
-          echo "CMAKE_GENERATOR=MinGW Makefiles" >> $env:GITHUB_ENV
-          echo "CMAKE_MAKE_PROGRAM=C:/rtools45/x86_64-w64-mingw32.static.posix/bin/mingw32-make.exe" >> $env:GITHUB_ENV
+          C:\rtools45\usr\bin\pacman.exe -Sy --noconfirm mingw-w64-x86_64-hdf5
+          echo "HDF5_DIR=C:\rtools45\x86_64-w64-mingw32.static.posix" >> $env:GITHUB_ENV
         shell: pwsh
     
       - uses: r-lib/actions/setup-pandoc@v2
