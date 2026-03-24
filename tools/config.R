@@ -34,7 +34,7 @@ if (!is_not_cran) {
 )
 
 # when DEBUG env var is present we use `--debug` build
-.profile <- ifelse(is_debug, "", "--release")
+.profile <- "--release"
 .clean_targets <- ifelse(is_debug, "", "$(TARGET_DIR)")
 
 # We specify this target when building for webR
@@ -53,7 +53,9 @@ if (is_wasm) {
 # LIBDIR = $(TARGET_DIR)/{wasm32-unknown-emscripten}/debug
 # this will be used to fill out the LIBDIR env var for Makevars.in
 target_libpath <- if (is_wasm) "wasm32-unknown-emscripten" else NULL
-cfg <- if (is_debug) "debug" else "release"
+
+### FORCED RELEASE BUILD
+cfg <- "release"
 
 # used to replace @LIBDIR@
 .libdir <- paste(c(target_libpath, cfg), collapse = "/")

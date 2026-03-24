@@ -1,11 +1,12 @@
 Package: bixverse.gpu
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: GPU-accelerated methods for the bixverse
+Version: 0.0.1.0
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("Gregor", "Lueg", , "gregorlueg@me.com", role = c("aut", "cre"))
+Description: 
+    Provides GPU-accelerated methods for the bixverse. These leverage cubecl and 
+    wgpu under the hood to work on very different hardwares.
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
