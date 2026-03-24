@@ -1,6 +1,6 @@
 Package: bixverse.gpu
 Title: GPU-accelerated methods for the bixverse
-Version: 0.0.1.0
+Version: 0.1.0
 Authors@R: 
     person("Gregor", "Lueg", , "gregorlueg@me.com", role = c("aut", "cre"))
 Description: 
@@ -21,7 +21,9 @@ Suggests:
 Imports: 
     bixverse,
     checkmate,
-    rextendr
+    purrr,
+    rextendr,
+    S7
 Remotes:
     GregorLueg/bixverse@docs-design
 VignetteBuilder: quarto
