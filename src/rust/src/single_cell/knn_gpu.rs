@@ -3,9 +3,40 @@ use extendr_api::List;
 use ann_search_rs::prelude::*;
 use ann_search_rs::*;
 use cubecl::wgpu::WgpuDevice;
+use cubecl::wgpu::WgpuRuntime;
 use cubecl::Runtime;
 use faer::MatRef;
 use std::time::Instant;
+
+/////////////
+// Helpers //
+/////////////
+
+/// Helper to remove self
+///
+/// ### Params
+///
+/// * `indices` - Mutable version of the kNN indices
+/// * `distances` - Option of the distances if returned
+///
+/// ### Returns
+///
+/// Tuple of (indices, Option<distances>) with self returned
+fn remove_self(
+    mut indices: Vec<Vec<usize>>,
+    distances: Option<Vec<Vec<f32>>>,
+) -> (Vec<Vec<usize>>, Option<Vec<Vec<f32>>>) {
+    for idx_vec in indices.iter_mut() {
+        idx_vec.remove(0);
+    }
+    let distances = distances.map(|mut dists| {
+        for dist_vec in dists.iter_mut() {
+            dist_vec.remove(0);
+        }
+        dists
+    });
+    (indices, distances)
+}
 
 ///////////
 // CAGRA //
@@ -173,23 +204,6 @@ pub fn cagra_knn_with_dist(
     seed: usize,
     verbose: bool,
 ) -> (Vec<Vec<usize>>, Option<Vec<Vec<f32>>>) {
-    // helper
-    fn remove_self(
-        mut indices: Vec<Vec<usize>>,
-        distances: Option<Vec<Vec<f32>>>,
-    ) -> (Vec<Vec<usize>>, Option<Vec<Vec<f32>>>) {
-        for idx_vec in indices.iter_mut() {
-            idx_vec.remove(0);
-        }
-        let distances = distances.map(|mut dists| {
-            for dist_vec in dists.iter_mut() {
-                dist_vec.remove(0);
-            }
-            dists
-        });
-        (indices, distances)
-    }
-
     let start = Instant::now();
     let device: WgpuDevice = Default::default();
 
@@ -197,7 +211,7 @@ pub fn cagra_knn_with_dist(
         println!("Starting to generate the CAGRA index.")
     }
 
-    let mut cagra_idx = build_nndescent_index_gpu::<f32, cubecl::wgpu::WgpuRuntime>(
+    let mut cagra_idx = build_nndescent_index_gpu::<f32, WgpuRuntime>(
         embd.as_ref(),
         &cagra_params.ann_dist,
         cagra_params.k,
@@ -252,7 +266,7 @@ pub fn cagra_knn_with_dist(
     drop(cagra_idx);
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = cubecl::wgpu::WgpuRuntime::client(&device);
+    let client = WgpuRuntime::client(&device);
     client.memory_cleanup();
 
     remove_self(indices, distances)
@@ -352,34 +366,19 @@ impl IvfGpuParams {
 /// * `embd` - Embedding matrix to build the index from. Cells x features.
 /// * `ivf_params` - Parameters for the IVF-GPU index and query.
 /// * `return_dist` - Whether to return distances alongside indices.
+/// * `seed` - Random seed for reproducibility
 /// * `verbose` - Controls verbosity of the function.
 ///
 /// ### Returns
 ///
 /// Tuple of `(indices of nearest neighbours, distances to these neighbours)`
-pub fn ivf_knn_with_dist(
+pub fn gpu_ivf_knn_with_dist(
     embd: MatRef<f32>,
     ivf_params: &IvfGpuParams,
     return_dist: bool,
     seed: usize,
     verbose: bool,
 ) -> (Vec<Vec<usize>>, Option<Vec<Vec<f32>>>) {
-    fn remove_self(
-        mut indices: Vec<Vec<usize>>,
-        distances: Option<Vec<Vec<f32>>>,
-    ) -> (Vec<Vec<usize>>, Option<Vec<Vec<f32>>>) {
-        for idx_vec in indices.iter_mut() {
-            idx_vec.remove(0);
-        }
-        let distances = distances.map(|mut dists| {
-            for dist_vec in dists.iter_mut() {
-                dist_vec.remove(0);
-            }
-            dists
-        });
-        (indices, distances)
-    }
-
     let start = Instant::now();
     let device: WgpuDevice = Default::default();
 
@@ -387,7 +386,7 @@ pub fn ivf_knn_with_dist(
         println!("Building IVF-GPU index.");
     }
 
-    let ivf_idx = build_ivf_index_gpu::<f32, cubecl::wgpu::WgpuRuntime>(
+    let ivf_idx = build_ivf_index_gpu::<f32, WgpuRuntime>(
         embd,
         ivf_params.nlist,
         ivf_params.max_iters,
@@ -416,7 +415,58 @@ pub fn ivf_knn_with_dist(
 
     drop(ivf_idx);
 
-    let client = cubecl::wgpu::WgpuRuntime::client(&device);
+    let client = WgpuRuntime::client(&device);
+    client.memory_cleanup();
+
+    remove_self(indices, distances)
+}
+
+////////////////////////
+// Exhaustive GPU kNN //
+////////////////////////
+
+/// Exhaustive GPU kNN search
+///
+/// The algorithm runs on the wgpu backend.
+///
+/// ### Params
+///
+/// * `embd` - Embedding matrix to build the index from. Cells x features.
+/// * `return_dist` - Whether to return distances alongside indices.
+/// * `verbose` - Controls verbosity of the function.
+///
+/// ### Returns
+///
+/// Tuple of `(indices of nearest neighbours, distances to these neighbours)`
+pub fn gpu_exhaustive_knn_with_dist(
+    embd: MatRef<f32>,
+    k: usize,
+    dist_metric: &str,
+    return_dist: bool,
+    verbose: bool,
+) -> (Vec<Vec<usize>>, Option<Vec<Vec<f32>>>) {
+    let start = Instant::now();
+    let device: WgpuDevice = Default::default();
+
+    if verbose {
+        println!("Building Exhaustive-GPU index.");
+    }
+
+    let idx = build_exhaustive_index_gpu::<f32, WgpuRuntime>(embd, dist_metric, device.clone());
+
+    if verbose {
+        println!("Built IVF-GPU index in {:.2?}.", start.elapsed());
+    }
+
+    let (indices, distances) = query_exhaustive_index_gpu_self(&idx, k + 1, return_dist, verbose);
+
+    if verbose {
+        println!("Self-query done in {:.2?}.", start.elapsed());
+    }
+
+    drop(idx);
+
+    let client = WgpuRuntime::client(&device);
     client.memory_cleanup();
 
     remove_self(indices, distances)

@@ -1,0 +1,59 @@
+url: https://gregorlueg.github.io/bixverse.gpu/
+
+template:
+  bootstrap: 5
+  bootswatch: darkly
+  bslib:
+    bg: "#0d1b2e"
+    fg: "#e0e0e0"
+    primary: "#e07a5a"
+    secondary: "#7ba7bc"
+    navbar-bg: "#08111e"
+    code-bg: "#0a1628"
+    border-radius: 0.4rem
+    btn-border-radius: 0.4rem
+  css: pkgdown/extra.css
+
+home:
+  title: bixverse.gpu
+  description: 
+    GPU-accelerated methods for the bixverse
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, github]
+  components:
+    articles:
+      text: Articles
+      menu:
+        - text: GPU-accelerated kNN searches
+          href: articles/gpu_single_cell.html
+    github:
+      icon: fab fa-github
+      href: https://github.com/GregorLueg/bixverse.gpu
+      aria-label: GitHub
+
+articles:
+  - title: Articles
+    navbar: Articles
+    contents:
+      - gpu_single_cell
+
+reference:
+  - title: Single cell GPU kNN
+    desc: 
+      You need kNN graphs on large single cell data sets and you have some VRAM
+      to spare? Look no further.
+    contents:
+      - find_neighbours_gpu_sc
+      - params_sc_ivf
+      - find_neighbours_cagra_sc
+      - params_sc_cagra
+  - title: Rust wrappers
+    desc: 
+      Everything rusty - only use this if you know what you are doing... Maybe 
+      useful for your own package? Use with care and read the documentation!
+    contents:
+      - rs_exhaustive_gpu_knn
+      - rs_ivf_gpu_knn
+      - rs_cagra_gpu_knn

@@ -4,3 +4,11 @@
 ^src/Makevars$
 ^src/Makevars\.win$
 ^LICENSE\.md$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^[.]?air[.]toml$
+^\.vscode$
+^vignettes/\.quarto$
+^vignettes/*_files$
+^\.github$

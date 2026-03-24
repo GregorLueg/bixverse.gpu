@@ -9,7 +9,7 @@ params_sc_cagra(
   ann_dist = "cosine",
   k = NULL,
   k_build = NULL,
-  refine_sweeps = 2L,
+  refine_sweeps = 0L,
   max_iters = NULL,
   n_trees = NULL,
   delta = 0.001,
@@ -29,7 +29,7 @@ params_sc_cagra(
 graph. If \code{NULL}, defaults to \code{30} on the Rust side.}
 
 \item{k_build}{Optional integer. Number of k-neighbours during the
-NNDescent build phase before CAGRA pruning. If \code{NULL}, defaults to \code{2 * k}
+NNDescent build phase before CAGRA pruning. If \code{NULL}, defaults to \code{1.5 * k}
 on the Rust side.}
 
 \item{refine_sweeps}{Integer. Number of refinement sweeps during graph

@@ -14,3 +14,15 @@ Config/rextendr/version: 0.4.2
 SystemRequirements: Cargo (Rust's package manager), rustc >= 1.65.0, xz
 Depends: 
     R (>= 4.2)
+Suggests: 
+    knitr,
+    quarto,
+    tinytest
+Imports: 
+    bixverse,
+    checkmate,
+    rextendr
+Remotes:
+    GregorLueg/bixverse@feat/docs-design
+VignetteBuilder: quarto
+URL: https://gregorlueg.github.io/bixverse.gpu/

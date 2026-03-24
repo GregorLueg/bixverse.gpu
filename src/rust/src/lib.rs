@@ -1,6 +1,6 @@
+use bixverse_rs::prelude::*;
 use extendr_api::prelude::*;
-use faer::{Mat, MatRef};
-use faer_entity::SimpleEntity;
+use faer::Mat;
 
 pub mod single_cell;
 
@@ -12,94 +12,43 @@ use crate::single_cell::knn_gpu::*;
 
 extendr_module! {
     mod bixverse_gpu;
-    fn rs_cagra_knn;
+    fn rs_cagra_gpu_knn;
     fn rs_ivf_gpu_knn;
-}
-
-/////////////
-// Helpers //
-/////////////
-
-/// Transform an R matrix into a f32 one
-///
-/// ### Params
-///
-/// * `x` - R matrix with f64.
-///
-/// ### Returns
-///
-/// A faer Mat with f32
-pub fn r_matrix_to_faer_fp32(x: &RMatrix<f64>) -> Mat<f32> {
-    let ncol = x.ncols();
-    let nrow = x.nrows();
-    let data = x.data();
-    let data_fp32 = data.iter().map(|x| *x as f32).collect::<Vec<f32>>();
-    Mat::from_fn(nrow, ncol, |i, j| data_fp32[i + j * nrow])
-}
-
-/// Transform a faer into an R matrix
-///
-/// ### Params
-///
-/// * `x` - faer `MatRef` matrix to transform into an R matrix
-///
-/// ###
-///
-/// The R matrix based on the faer matrix.
-pub fn faer_to_r_matrix<T>(x: MatRef<T>) -> extendr_api::RArray<T::RType, [usize; 2]>
-where
-    T: FaerRType,
-{
-    T::to_r_matrix(x)
-}
-
-/// Bridge between faer matrix types and R matrix types.
-///
-/// Defines how to convert faer matrices to R-compatible arrays.
-pub trait FaerRType: SimpleEntity + Copy + Clone + 'static {
-    /// Type definition to allow R conversion
-    type RType: Copy + Clone;
-
-    /// Transform an faer matrix (f32/f64) into an R matrix (f64)
-    fn to_r_matrix(x: faer::MatRef<Self>) -> extendr_api::RArray<Self::RType, [usize; 2]>;
-}
-
-impl FaerRType for f64 {
-    type RType = f64;
-    fn to_r_matrix(x: faer::MatRef<Self>) -> extendr_api::RArray<Self, [usize; 2]> {
-        let nrow = x.nrows();
-        let ncol = x.ncols();
-        RArray::new_matrix(nrow, ncol, |row, column| x[(row, column)])
-    }
-}
-
-impl FaerRType for i32 {
-    type RType = i32;
-    fn to_r_matrix(x: faer::MatRef<Self>) -> extendr_api::RArray<Self, [usize; 2]> {
-        let nrow = x.nrows();
-        let ncol = x.ncols();
-        RArray::new_matrix(nrow, ncol, |row, column| x[(row, column)])
-    }
-}
-
-impl FaerRType for f32 {
-    type RType = f64;
-    fn to_r_matrix(x: faer::MatRef<Self>) -> extendr_api::RArray<f64, [usize; 2]> {
-        let nrow = x.nrows();
-        let ncol = x.ncols();
-        RArray::new_matrix(nrow, ncol, |row, column| x[(row, column)] as f64)
-    }
+    fn rs_exhaustive_gpu_knn;
 }
 
 /////////
 // kNN //
 /////////
 
-/// Generate a CAGRA kNN-based graph
+/// Generate a CAGRA-style GPU-accelerated kNN graph
+///
+/// Builds a kNN graph from an embedding matrix using the CAGRA algorithm on
+/// the wgpu backend. Supports two retrieval modes: direct extraction from the
+/// NNDescent graph, or beam search over the pruned CAGRA graph.
+///
+/// @param embd Numeric matrix of embeddings, cells x features.
+/// @param cagra_params A named list with the parameters, see
+/// [bixverse.gpu::params_sc_cagra()]
+/// @param extract_knn Logical. If \code{TRUE}, extracts the kNN graph directly
+/// from the NNDescent result (faster, slightly lower precision). If
+/// \code{FALSE}, runs beam search over the pruned CAGRA graph (slower, higher
+/// precision).
+/// @param seed Integer. Random seed for reproducibility.
+/// @param verbose Logical. Whether to print progress messages.
+///
+/// @return A named list with:
+/// \itemize{
+///  \item `indices` - Integer matrix of shape cells x k_query with
+///  0-based neighbour indices.
+///  \item `dist` - Numeric matrix of shape cells x k_query with distances to
+///  the neighbours.
+///  \item `dist_metric` - Character. The distance metric used.
+/// }
 ///
 /// @export
 #[extendr]
-fn rs_cagra_knn(
+fn rs_cagra_gpu_knn(
     embd: RMatrix<f64>,
     cagra_params: List,
     extract_knn: bool,
@@ -124,7 +73,25 @@ fn rs_cagra_knn(
     )
 }
 
-/// Generate a CAGRA kNN-based graph
+/// Generate an IVF-GPU-accelerated kNN graph
+///
+/// Builds an IVF index over the provided embedding matrix and queries each
+/// vector against it to produce a kNN graph. Runs on the wgpu backend.
+///
+/// @param embd Numeric matrix of embeddings, cells x features.
+/// @param ivf_params A named list with the parameters, see
+/// [bixverse.gpu::params_sc_ivf()]
+/// @param seed Integer. Random seed for reproducibility.
+/// @param verbose Logical. Whether to print progress messages.
+///
+/// @return A named list with:
+/// \itemize{
+///  \item `indices` - Integer matrix of shape cells x k with 0-based neighbour
+///  indices.
+///  \item `dist` - Numeric matrix of shape cells x k with distances to the
+///  neighbours.
+///  \item `dist_metric` - Character. The distance metric used.
+/// }
 ///
 /// @export
 #[extendr]
@@ -132,7 +99,7 @@ fn rs_ivf_gpu_knn(embd: RMatrix<f64>, ivf_params: List, seed: usize, verbose: bo
     let data = r_matrix_to_faer_fp32(&embd);
     let params = IvfGpuParams::from_r_list(ivf_params);
 
-    let (indices, dist) = ivf_knn_with_dist(data.as_ref(), &params, true, seed, verbose);
+    let (indices, dist) = gpu_ivf_knn_with_dist(data.as_ref(), &params, true, seed, verbose);
 
     let knn_dist = dist.unwrap();
 
@@ -143,5 +110,44 @@ fn rs_ivf_gpu_knn(embd: RMatrix<f64>, ivf_params: List, seed: usize, verbose: bo
         indices = faer_to_r_matrix(index_mat.as_ref()),
         dist = faer_to_r_matrix(dist_mat.as_ref()),
         dist_metric = params.ann_dist
+    )
+}
+
+/// Generate an GPU-accelerated kNN graph from an exhaustive search
+///
+/// Runs an exhaustive kNN search on the GPU.
+///
+/// @param embd Numeric matrix of embeddings, cells x features.
+/// @param k Integer. Number of neighbours to return.
+/// @param dist_metric String. Distance metric; one of
+/// `c("euclidean", "cosine")`.
+/// @param verbose Logical. Whether to print progress messages.
+///
+/// @return A named list with:
+/// \itemize{
+///  \item `indices` - Integer matrix of shape cells x k with 0-based neighbour
+///  indices.
+///  \item `dist` - Numeric matrix of shape cells x k with distances to the
+///  neighbours.
+///  \item `dist_metric` - Character. The distance metric used.
+/// }
+///
+/// @export
+#[extendr]
+fn rs_exhaustive_gpu_knn(embd: RMatrix<f64>, k: usize, dist_metric: String, verbose: bool) -> List {
+    let data = r_matrix_to_faer_fp32(&embd);
+
+    let (indices, dist) =
+        gpu_exhaustive_knn_with_dist(data.as_ref(), k, &dist_metric, true, verbose);
+
+    let knn_dist = dist.unwrap();
+
+    let index_mat = Mat::from_fn(embd.nrows(), k, |i, j| indices[i][j] as i32);
+    let dist_mat = Mat::from_fn(embd.nrows(), k, |i, j| knn_dist[i][j] as f64);
+
+    list!(
+        indices = faer_to_r_matrix(index_mat.as_ref()),
+        dist = faer_to_r_matrix(dist_mat.as_ref()),
+        dist_metric = dist_metric
     )
 }

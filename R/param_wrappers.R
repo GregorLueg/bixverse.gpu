@@ -10,7 +10,7 @@
 #' @param k Optional integer. Final node degree of the CAGRA navigational
 #' graph. If `NULL`, defaults to `30` on the Rust side.
 #' @param k_build Optional integer. Number of k-neighbours during the
-#' NNDescent build phase before CAGRA pruning. If `NULL`, defaults to `2 * k`
+#' NNDescent build phase before CAGRA pruning. If `NULL`, defaults to `1.5 * k`
 #' on the Rust side.
 #' @param refine_sweeps Integer. Number of refinement sweeps during graph
 #' generation.
@@ -36,7 +36,7 @@ params_sc_cagra <- function(
   ann_dist = "cosine",
   k = NULL,
   k_build = NULL,
-  refine_sweeps = 2L,
+  refine_sweeps = 0L,
   max_iters = NULL,
   n_trees = NULL,
   delta = 0.001,
@@ -84,9 +84,9 @@ params_sc_cagra <- function(
 #' @param ann_dist Character. Distance metric to use. One of `"euclidean"` or
 #' `"cosine"`.
 #' @param nlist Optional integer. Number of clusters to partition the index
-#' into. If `NULL`, defaults to √n.
+#' into. If `NULL`, defaults to `sqrt(n)`.
 #' @param nprobe Optional integer. Number of clusters to probe at query time.
-#' If `NULL`, defaults to √nlist.
+#' If `NULL`, defaults to `sqrt(nlist)`.
 #' @param nquery Optional integer. Number of query vectors processed per GPU
 #' batch. If `NULL`, defaults to 100,000.
 #' @param max_iters Optional integer. Maximum k-means iterations during index

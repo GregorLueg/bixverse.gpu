@@ -21,10 +21,10 @@ params_sc_ivf(
 \code{"cosine"}.}
 
 \item{nlist}{Optional integer. Number of clusters to partition the index
-into. If \code{NULL}, defaults to √n.}
+into. If \code{NULL}, defaults to \code{sqrt(n)}.}
 
 \item{nprobe}{Optional integer. Number of clusters to probe at query time.
-If \code{NULL}, defaults to √nlist.}
+If \code{NULL}, defaults to \code{sqrt(nlist)}.}
 
 \item{nquery}{Optional integer. Number of query vectors processed per GPU
 batch. If \code{NULL}, defaults to 100,000.}
