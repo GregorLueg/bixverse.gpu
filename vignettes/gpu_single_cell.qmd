@@ -245,8 +245,9 @@ sc_cagra_beam <- find_neighbours_cagra_sc(
 ```
 
 From this point on, the `SingleCells` object carries the kNN and sNN graph
-exactly as it would after a call to `find_neighbours_sc()` - all downstream
-methods (clustering, UMAP, marker detection, etc.) work without modification.
+exactly as it would after a call to `find_neighbours_sc` (see bixverse 
+function) - all downstream methods (clustering, UMAP, marker detection, 
+etc.) work without modification.
 
 ## Conclusions
 
