@@ -23,6 +23,6 @@ Imports:
     checkmate,
     rextendr
 Remotes:
-    GregorLueg/bixverse@feat/docs-design
+    GregorLueg/bixverse@docs-design
 VignetteBuilder: quarto
 URL: https://gregorlueg.github.io/bixverse.gpu/
