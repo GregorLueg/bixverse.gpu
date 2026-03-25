@@ -1,0 +1,23 @@
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/404.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/LICENSE-text.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/LICENSE.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/articles/gpu_single_cell.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/articles/index.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/authors.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/index.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/news/index.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertScCagraParams.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertScIvfParams.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkScCagraParams.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkScIvfParams.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_cagra_sc.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_gpu_sc.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/index.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_cagra_gpu_knn.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_exhaustive_gpu_knn.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_ivf_gpu_knn.html</loc></url>
+</urlset>
+
