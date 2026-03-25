@@ -1,0 +1,18 @@
+# R
+.Rproj.user
+.Rhistory
+
+# Apple
+.DS_Store
+inst/doc
+**/.quarto/
+/doc/
+/Meta/
+src/rust/vendor
+src/Makevars
+src/Makevars.win
+sc_demo.R
+docs
+
+# files
+scratch.R
