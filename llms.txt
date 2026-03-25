@@ -29,7 +29,11 @@ further help written
 [here](https://extendr.github.io/rextendr/index.html) by the rextendr
 guys in terms of Rust set up. (bixverse.gpu as bixverse both use
 rextendr to interface with Rust.) Additionally, in this special case,
-you will also need the GPU
+you will also need the GPU drivers set up properly on your system.
+Please refer to the [CubeCL book](https://burn.dev/books/cubecl/) in
+terms of how to ensure WGPU runs on your respective system.
+
+#### Setting up Rust
 
 Steps for installation:
 
@@ -53,8 +57,14 @@ Steps for installation:
 
     devtools::install_github("https://github.com/GregorLueg/bixverse.gpu")
 
-If you are using Windows, I am sorry, the tool chain is too much of a
-pain. The package will not work there.
+#### Windows support
+
+If you are using Windows, I am sorry, the tool chain is just very, very
+painful… I really tried to make this work and maybe there are some hacks
+in terms of compiling everything to make this work, but I cannot
+guarantee proper behaviour here due to the dependency with h5 (for
+reading in h5ad files). If you know how to make this work without
+several hacks in an easy way, please contact me!
 
 ### How to use the package.
 
@@ -62,7 +72,17 @@ The package website can be found
 [here](https://gregorlueg.github.io/bixverse.gpu/). This package is
 **not** a stand-alone package, but designed to support the `bixverse`
 with GPU-accelerated methods (at the moment with focus on single cell
-support).
+support). If you are however interesting in just using the
+GPU-accelerated kNN searches, feel free to use the respective `rs_`
+functions for that.
+
+### Roadmap:
+
+Currently, the main focus was on acceleration of kNN graph generation,
+which is quite ubiquitous in single cell. Other areas of (personal)
+interest could be GPU-accelerated k-means (Harmony could benefit here)
+or specific sparse matrix multiplications on the GPU for large data
+sets.
 
 # Package index
 

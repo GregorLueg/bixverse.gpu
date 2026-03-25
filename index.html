@@ -72,7 +72,10 @@
 <div class="section level3">
 <h3 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h3>
-<p>You will need Rust on your system to have the package working. An installation guide is provided <a href="https://www.rust-lang.org/tools/install" class="external-link">here</a>. There is a bunch of further help written <a href="https://extendr.github.io/rextendr/index.html" class="external-link">here</a> by the rextendr guys in terms of Rust set up. (bixverse.gpu as bixverse both use rextendr to interface with Rust.) Additionally, in this special case, you will also need the GPU</p>
+<p>You will need Rust on your system to have the package working. An installation guide is provided <a href="https://www.rust-lang.org/tools/install" class="external-link">here</a>. There is a bunch of further help written <a href="https://extendr.github.io/rextendr/index.html" class="external-link">here</a> by the rextendr guys in terms of Rust set up. (bixverse.gpu as bixverse both use rextendr to interface with Rust.) Additionally, in this special case, you will also need the GPU drivers set up properly on your system. Please refer to the <a href="https://burn.dev/books/cubecl/" class="external-link">CubeCL book</a> in terms of how to ensure WGPU runs on your respective system.</p>
+<div class="section level4">
+<h4 id="setting-up-rust">Setting up Rust<a class="anchor" aria-label="anchor" href="#setting-up-rust"></a>
+</h4>
 <p>Steps for installation:</p>
 <ol style="list-style-type: decimal">
 <li>In the terminal, install <a href="https://www.rust-lang.org/tools/install" class="external-link">Rust</a>
@@ -87,12 +90,22 @@
 <li>Finally install bixverse:</li>
 </ol>
 <pre><code><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"https://github.com/GregorLueg/bixverse.gpu"</span><span class="op">)</span></span></code></pre>
-<p>If you are using Windows, I am sorry, the tool chain is too much of a pain. The package will not work there.</p>
+</div>
+<div class="section level4">
+<h4 id="windows-support">Windows support<a class="anchor" aria-label="anchor" href="#windows-support"></a>
+</h4>
+<p>If you are using Windows, I am sorry, the tool chain is just very, very painful… I really tried to make this work and maybe there are some hacks in terms of compiling everything to make this work, but I cannot guarantee proper behaviour here due to the dependency with h5 (for reading in h5ad files). If you know how to make this work without several hacks in an easy way, please contact me!</p>
+</div>
 </div>
 <div class="section level3">
 <h3 id="how-to-use-the-package">How to use the package.<a class="anchor" aria-label="anchor" href="#how-to-use-the-package"></a>
 </h3>
-<p>The package website can be found <a href="https://gregorlueg.github.io/bixverse.gpu/">here</a>. This package is <strong>not</strong> a stand-alone package, but designed to support the <code>bixverse</code> with GPU-accelerated methods (at the moment with focus on single cell support).</p>
+<p>The package website can be found <a href="https://gregorlueg.github.io/bixverse.gpu/">here</a>. This package is <strong>not</strong> a stand-alone package, but designed to support the <code>bixverse</code> with GPU-accelerated methods (at the moment with focus on single cell support). If you are however interesting in just using the GPU-accelerated kNN searches, feel free to use the respective <code>rs_</code> functions for that.</p>
+</div>
+<div class="section level3">
+<h3 id="roadmap">Roadmap:<a class="anchor" aria-label="anchor" href="#roadmap"></a>
+</h3>
+<p>Currently, the main focus was on acceleration of kNN graph generation, which is quite ubiquitous in single cell. Other areas of (personal) interest could be GPU-accelerated k-means (Harmony could benefit here) or specific sparse matrix multiplications on the GPU for large data sets.</p>
 </div>
 </div>
 </div>
