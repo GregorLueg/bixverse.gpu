@@ -13,6 +13,7 @@ src/Makevars
 src/Makevars.win
 sc_demo.R
 docs
+target/
 
 # files
 scratch.R
