@@ -28,6 +28,8 @@ navbar:
       menu:
         - text: GPU-accelerated kNN searches
           href: articles/gpu_single_cell.html
+        - text: Parametric UMAP
+          href: articles/parametric_umap.html
     github:
       icon: fab fa-github
       href: https://github.com/GregorLueg/bixverse.gpu
@@ -38,6 +40,7 @@ articles:
     navbar: Articles
     contents:
       - gpu_single_cell
+      - parametric_umap
 
 reference:
   - title: Single cell GPU kNN
@@ -49,11 +52,21 @@ reference:
       - params_sc_ivf
       - find_neighbours_cagra_sc
       - params_sc_cagra
+  - title: Parametric UMAP
+    desc:
+      Want to train a neural net to do your UMAP embeddings? Want to train
+      flexibly on CPU or GPU? Here's what you need.
+    contents:
+      - parametric_umap
+      - params_parametric_umap
+      - predict.ParametricUmapModel
   - title: Rust wrappers
     desc: 
       Everything rusty - only use this if you know what you are doing... Maybe 
       useful for your own package? Use with care and read the documentation!
     contents:
+      - rs_cagra_gpu_knn
       - rs_exhaustive_gpu_knn
       - rs_ivf_gpu_knn
-      - rs_cagra_gpu_knn
+      - rs_parametric_umap_predict
+      - rs_parametric_umap

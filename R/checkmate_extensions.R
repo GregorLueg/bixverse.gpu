@@ -264,3 +264,92 @@ checkScIvfParams <- function(x) {
 #'
 #' @keywords internal
 assertScIvfParams <- checkmate::makeAssertionFunction(checkScIvfParams)
+
+## parametric umap -------------------------------------------------------------
+
+#' Check parametric UMAP parameters
+#'
+#' @description Checkmate extension for checking the parametric UMAP
+#' parameters.
+#'
+#' @param x The list to check.
+#'
+#' @return `TRUE` if the check was successful, otherwise an error message.
+#'
+#' @keywords internal
+checkParametricUmapParams <- function(x) {
+  res <- checkmate::checkList(x)
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- checkmate::checkNames(
+    names(x),
+    must.include = c(
+      "local_connectivity",
+      "bandwidth",
+      "mix_weight",
+      "hidden_layers",
+      "lr",
+      "corr_weight",
+      "n_epochs",
+      "batch_size",
+      "neg_sample_rate"
+    )
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  checks <- list(
+    "local_connectivity" = checkmate::qtest(x$local_connectivity, "N1"),
+    "bandwidth" = checkmate::qtest(x$bandwidth, "N1"),
+    "mix_weight" = checkmate::qtest(x$mix_weight, "N1"),
+    "hidden_layers" = checkmate::testIntegerish(
+      x$hidden_layers,
+      lower = 1L,
+      min.len = 1L,
+      any.missing = FALSE
+    ),
+    "lr" = checkmate::qtest(x$lr, "N1(0,)"),
+    "corr_weight" = checkmate::qtest(x$corr_weight, "N1"),
+    "n_epochs" = checkmate::qtest(x$n_epochs, "I1[1,)"),
+    "batch_size" = checkmate::qtest(x$batch_size, "I1[1,)"),
+    "neg_sample_rate" = checkmate::qtest(x$neg_sample_rate, "I1[1,)")
+  )
+
+  failed <- names(checks)[!unlist(checks)]
+  if (length(failed) > 0L) {
+    return(sprintf(
+      paste(
+        "Element `%s` in parametric UMAP params does not conform.",
+        "local_connectivity/bandwidth/mix_weight/corr_weight must be numeric,",
+        "lr must be a positive numeric,",
+        "hidden_layers must be a positive integer vector,",
+        "and n_epochs/batch_size/neg_sample_rate must be positive integers."
+      ),
+      failed[1]
+    ))
+  }
+
+  return(TRUE)
+}
+
+#' Assert parametric UMAP parameters
+#'
+#' @description Checkmate extension for asserting the parametric UMAP
+#' parameters.
+#'
+#' @inheritParams checkParametricUmapParams
+#'
+#' @param .var.name Name of the checked object to print in assertions. Defaults
+#' to the heuristic implemented in checkmate.
+#' @param add Collection to store assertion messages. See
+#' [checkmate::makeAssertCollection()].
+#'
+#' @return Invisibly returns the checked object if the assertion is successful.
+#'
+#' @keywords internal
+assertParametricUmapParams <- checkmate::makeAssertionFunction(
+  checkParametricUmapParams
+)

@@ -1,11 +1,11 @@
 Package: bixverse.gpu
 Title: GPU-accelerated methods for the bixverse
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: 
     person("Gregor", "Lueg", , "gregorlueg@me.com", role = c("aut", "cre"))
 Description: 
-    Provides GPU-accelerated methods for the bixverse. These leverage cubecl and 
-    wgpu under the hood to work on very different hardwares.
+    Provides GPU-accelerated methods for the bixverse. These leverage Burn, 
+    CubeCl and WGPU under the hood to work on very different hardwares.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -21,10 +21,12 @@ Suggests:
 Imports: 
     bixverse,
     checkmate,
+    manifoldsR,
     purrr,
     rextendr,
     S7
 Remotes:
-    GregorLueg/bixverse@docs-design
+    GregorLueg/bixverse,
+    GregorLueg/manifoldsR
 VignetteBuilder: quarto
 URL: https://gregorlueg.github.io/bixverse.gpu/

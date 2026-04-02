@@ -83,5 +83,48 @@ rs_ivf_gpu_knn <- function(embd, ivf_params, seed, verbose) .Call(wrap__rs_ivf_g
 #' @export
 rs_exhaustive_gpu_knn <- function(embd, k, dist_metric, verbose) .Call(wrap__rs_exhaustive_gpu_knn, embd, k, dist_metric, verbose)
 
+#' Parametric UMAP implementation
+#'
+#' Trains a neural network encoder to learn a mapping from the input space to a
+#' low-dimensional embedding that preserves the UMAP graph structure. Supports
+#' both GPU (wgpu) and CPU (NdArray) backends. For small to medium data sets
+#' (fewer than ~10k samples or narrow hidden layers), the CPU backend is
+#' typically faster owing to GPU kernel dispatch overhead.
+#'
+#' @param data Numerical matrix. Data of dimensions samples x features.
+#' @param n_dim Integer. Number of embedding dimensions.
+#' @param k Integer. Number of nearest neighbours for graph construction.
+#' @param min_dist Numeric. Minimum distance between embedded points.
+#' @param spread Numeric. Effective scale of embedded points.
+#' @param parametric_params Named list. Merged parametric UMAP parameters
+#' containing nearest neighbour, graph, and training configuration.
+#' @param seed Integer. Seed for reproducibility.
+#' @param verbose Boolean. Controls verbosity.
+#' @param use_gpu Logical. If \code{TRUE}, trains on the wgpu backend. If
+#' \code{FALSE}, trains on the CPU via NdArray. Defaults to \code{TRUE}.
+#'
+#' @return A named list with two elements: `embedding` (numerical matrix of
+#' dimensions samples x n_dim) and `model` (external pointer to the trained
+#' encoder for use with `rs_parametric_umap_predict`).
+#'
+#' @export
+rs_parametric_umap <- function(data, n_dim, k, min_dist, spread, parametric_params, seed, verbose, use_gpu) .Call(wrap__rs_parametric_umap, data, n_dim, k, min_dist, spread, parametric_params, seed, verbose, use_gpu)
+
+#' Predict new data using a trained parametric UMAP model
+#'
+#' Runs forward inference through the trained encoder network. The prediction
+#' automatically uses whichever backend (GPU or CPU) the model was trained on.
+#'
+#' @param model External pointer to the trained parametric UMAP model, as
+#' returned by `rs_parametric_umap`.
+#' @param data Numerical matrix. New data of dimensions samples x features.
+#' The number of features must match the training data.
+#'
+#' @return Numerical matrix of dimensions samples x n_dim with the predicted
+#' embeddings.
+#'
+#' @export
+rs_parametric_umap_predict <- function(model, data) .Call(wrap__rs_parametric_umap_predict, model, data)
+
 
 # nolint end
