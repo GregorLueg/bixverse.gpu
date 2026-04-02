@@ -1,9 +1,17 @@
 use bixverse_rs::prelude::*;
+use burn::backend::{
+    ndarray::{NdArray, NdArrayDevice},
+    wgpu::{Wgpu, WgpuDevice},
+    Autodiff,
+};
 use extendr_api::prelude::*;
-use faer::Mat;
+use faer::{Mat, MatRef};
+use manifolds_rs::parametric::model::TrainedUmapModel;
 
+pub mod embeddings;
 pub mod single_cell;
 
+use crate::embeddings::parametric_umap::*;
 use crate::single_cell::knn_gpu::*;
 
 /////////////
@@ -12,9 +20,51 @@ use crate::single_cell::knn_gpu::*;
 
 extendr_module! {
     mod bixverse_gpu;
+    // knn
     fn rs_cagra_gpu_knn;
     fn rs_ivf_gpu_knn;
     fn rs_exhaustive_gpu_knn;
+    // umap
+    fn rs_parametric_umap;
+    fn rs_parametric_umap_predict;
+}
+
+///////////
+// Types //
+///////////
+
+type GpuBackend = Autodiff<Wgpu>;
+type CpuBackend = Autodiff<NdArray<f32>>;
+
+/// Backend-agnostic wrapper around `TrainedUmapModel`.
+///
+/// Allows the R-facing API to store a single `ExternalPtr<PUmapModel>` without
+/// exposing the backend type parameter to the caller.
+enum PUmapModel {
+    /// Model trained on the WGPU backend
+    Gpu(TrainedUmapModel<GpuBackend, f32>),
+    /// Model trained on the NdArray CPU backend
+    Cpu(TrainedUmapModel<CpuBackend, f32>),
+}
+
+impl PUmapModel {
+    /// Run inference on new data, dispatching to the backend the model was
+    /// trained on.
+    ///
+    /// ### Params
+    ///
+    /// * `data` - Reference to the input data matrix (samples x features)
+    ///
+    /// ### Returns
+    ///
+    /// Embeddings as `Vec<Vec<f32>>` in column-major layout
+    /// `[n_components][n_samples]`
+    fn predict(&self, data: MatRef<f32>) -> Vec<Vec<f32>> {
+        match self {
+            PUmapModel::Gpu(m) => m.predict(data),
+            PUmapModel::Cpu(m) => m.predict(data),
+        }
+    }
 }
 
 /////////
@@ -150,4 +200,115 @@ fn rs_exhaustive_gpu_knn(embd: RMatrix<f64>, k: usize, dist_metric: String, verb
         dist = faer_to_r_matrix(dist_mat.as_ref()),
         dist_metric = dist_metric
     )
+}
+
+/////////////////////
+// parametric UMAP //
+/////////////////////
+
+/// Parametric UMAP implementation
+///
+/// Trains a neural network encoder to learn a mapping from the input space to a
+/// low-dimensional embedding that preserves the UMAP graph structure. Supports
+/// both GPU (wgpu) and CPU (NdArray) backends. For small to medium data sets
+/// (fewer than ~10k samples or narrow hidden layers), the CPU backend is
+/// typically faster owing to GPU kernel dispatch overhead.
+///
+/// @param data Numerical matrix. Data of dimensions samples x features.
+/// @param n_dim Integer. Number of embedding dimensions.
+/// @param k Integer. Number of nearest neighbours for graph construction.
+/// @param min_dist Numeric. Minimum distance between embedded points.
+/// @param spread Numeric. Effective scale of embedded points.
+/// @param parametric_params Named list. Merged parametric UMAP parameters
+/// containing nearest neighbour, graph, and training configuration.
+/// @param seed Integer. Seed for reproducibility.
+/// @param verbose Boolean. Controls verbosity.
+/// @param use_gpu Logical. If \code{TRUE}, trains on the wgpu backend. If
+/// \code{FALSE}, trains on the CPU via NdArray. Defaults to \code{TRUE}.
+///
+/// @return A named list with two elements: `embedding` (numerical matrix of
+/// dimensions samples x n_dim) and `model` (external pointer to the trained
+/// encoder for use with `rs_parametric_umap_predict`).
+///
+/// @export
+#[extendr]
+#[allow(clippy::too_many_arguments)]
+fn rs_parametric_umap(
+    data: RMatrix<f64>,
+    n_dim: usize,
+    k: usize,
+    min_dist: f64,
+    spread: f64,
+    parametric_params: List,
+    seed: usize,
+    verbose: bool,
+    use_gpu: bool,
+) -> List {
+    let data = r_matrix_to_faer_fp32(&data);
+
+    if use_gpu {
+        let device = WgpuDevice::default();
+        let (res, model) = parametric_umap_manifold::<GpuBackend>(
+            data.as_ref(),
+            n_dim,
+            k,
+            min_dist as f32,
+            spread as f32,
+            parametric_params,
+            &device,
+            seed,
+            verbose,
+        );
+
+        list!(
+            embedding = faer_to_r_matrix(res.as_ref()),
+            model = ExternalPtr::new(PUmapModel::Gpu(model))
+        )
+    } else {
+        let device = NdArrayDevice::Cpu;
+        let (res, model) = parametric_umap_manifold::<CpuBackend>(
+            data.as_ref(),
+            n_dim,
+            k,
+            min_dist as f32,
+            spread as f32,
+            parametric_params,
+            &device,
+            seed,
+            verbose,
+        );
+
+        list!(
+            embedding = faer_to_r_matrix(res.as_ref()),
+            model = ExternalPtr::new(PUmapModel::Cpu(model))
+        )
+    }
+}
+
+/// Predict new data using a trained parametric UMAP model
+///
+/// Runs forward inference through the trained encoder network. The prediction
+/// automatically uses whichever backend (GPU or CPU) the model was trained on.
+///
+/// @param model External pointer to the trained parametric UMAP model, as
+/// returned by `rs_parametric_umap`.
+/// @param data Numerical matrix. New data of dimensions samples x features.
+/// The number of features must match the training data.
+///
+/// @return Numerical matrix of dimensions samples x n_dim with the predicted
+/// embeddings.
+///
+/// @export
+#[extendr]
+fn rs_parametric_umap_predict(model: Robj, data: RMatrix<f64>) -> RMatrix<f64> {
+    let model: ExternalPtr<PUmapModel> = model
+        .try_into()
+        .expect("failed to convert to ExternalPtr<PUmapModel>");
+    let data = r_matrix_to_faer_fp32(&data);
+    let res = model.predict(data.as_ref());
+
+    let ncol = res.len();
+    let nrow = res[0].len();
+    let mat = Mat::from_fn(nrow, ncol, |i, j| res[j][i]);
+    faer_to_r_matrix(mat.as_ref())
 }
