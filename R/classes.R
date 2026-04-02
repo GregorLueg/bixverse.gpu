@@ -12,6 +12,8 @@
 #' @return Invisibly returns `x`.
 #'
 #' @export
+#'
+#' @keywords internal
 print.ParametricUmapModel <- function(x, ...) {
   p <- x$params
   cat("Parametric UMAP Model\n")

@@ -1,6 +1,6 @@
 # *bixverse.gpu package*
 
-![r_package](https://img.shields.io/badge/R_package-0.1.0-orange) 
+![r_package](https://img.shields.io/badge/R_package-0.1.1-orange) 
 [![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![pkgdown](https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github)](https://gregorlueg.github.io/bixverse.gpu/)
@@ -19,7 +19,9 @@ please check the [CubeCL book](https://burn.dev/books/cubecl/getting-started/ins
 I do not have access to an Nvidia GPU, but I will aim also to allow for 
 conditional compiling to that backend if Cuda is detected (future problem).
 The package is designed to support the 
-[bixverse package](https://github.com/GregorLueg/bixverse). 
+[bixverse package](https://github.com/GregorLueg/bixverse). Additionally, also 
+provides some neural net-based versions of embedding methods for 
+[manifoldsR](https://github.com/GregorLueg/manifoldsR).
 
 ## Usage
 
@@ -32,7 +34,9 @@ by the rextendr guys in terms of Rust set up. (bixverse.gpu as bixverse both
 use rextendr to interface with Rust.) Additionally, in this special case, you
 will also need the GPU drivers set up properly on your system. Please refer
 to the [CubeCL book](https://burn.dev/books/cubecl/) in terms of how to ensure
-WGPU runs on your respective system.
+WGPU runs on your respective system. On a Unix system you also need OpenBLAS
+set up for the Ndarray backend; on MacOS it will just use the Accelerate 
+framework.
 
 #### Setting up Rust
 
@@ -50,7 +54,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 install.packages("rextendr")
 ```
 
-3. Finally install bixverse:
+3. Finally install bixverse.gpu:
 
 ```
 devtools::install_github("https://github.com/GregorLueg/bixverse.gpu")
@@ -72,7 +76,8 @@ The package website can be found
 stand-alone package, but designed to support the `bixverse` with GPU-accelerated
 methods (at the moment with focus on single cell support). If you are however
 interesting in just using the GPU-accelerated kNN searches, feel free to use
-the respective `rs_` functions for that. 
+the respective `rs_` functions for that. Or if you want to train a neural 
+network for UMAP, the package also provides what you need.
 
 ### Roadmap:
 

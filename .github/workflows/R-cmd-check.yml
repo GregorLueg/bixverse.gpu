@@ -54,7 +54,9 @@ jobs:
             libfribidi-dev \
             libvulkan1 \
             mesa-vulkan-drivers \
-            libgl1-mesa-dri
+            libgl1-mesa-dri \
+            libopenblas-dev \
+            gfortran
     
       - name: Set wgpu backend (Linux)
         if: runner.os == 'Linux'

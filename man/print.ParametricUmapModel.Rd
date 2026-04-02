@@ -17,3 +17,4 @@ Invisibly returns \code{x}.
 \description{
 Print a parametric UMAP model
 }
+\keyword{internal}

@@ -62,7 +62,7 @@ set.seed(42L)
 cluster_data <- manifold_synthetic_data(
   type = "cluster",
   n_samples = 1500L,
-  n_clusters = 10L
+  parameters = params_clusters(n_clusters = 10L)
 )
 
 n <- nrow(cluster_data$data)
@@ -79,7 +79,7 @@ test_labels <- cluster_data$membership[-train_idx]
 
 `parametric_umap()` returns a `ParametricUmapModel` object that holds both
 the training embedding and the trained encoder. As this is small data, we will
-just use the CPU version for 100 epochs, more than enough here.
+just use the CPU version for 100 epochs, more than enough here. 
 
 ```{r}
 #| label: fit
