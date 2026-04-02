@@ -1,4 +1,4 @@
-# Leveraging GPU-acceleration in bixverse single cell
+# Leveraging GPU-accelerated kNN searches in bixverse single cell
 
 ## Intro
 

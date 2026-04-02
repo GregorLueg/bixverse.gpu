@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/gpu_single_cell.html">GPU-accelerated kNN searches</a></li>
+    <li><a class="dropdown-item" href="articles/parametric_umap.html">Parametric UMAP</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -57,14 +58,14 @@
 <div class="page-header"><h1 id="bixversegpu-package">
 <em>bixverse.gpu package</em><a class="anchor" aria-label="anchor" href="#bixversegpu-package"></a>
 </h1></div>
-<p><img src="https://img.shields.io/badge/R_package-0.1.0-orange" alt="r_package"><a href="https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml" class="external-link"><img src="https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg" alt="CI"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a> <a href="https://gregorlueg.github.io/bixverse.gpu/"><img src="https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github" alt="pkgdown"></a></p>
+<p><img src="https://img.shields.io/badge/R_package-0.1.1-orange" alt="r_package"><a href="https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml" class="external-link"><img src="https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg" alt="CI"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a> <a href="https://gregorlueg.github.io/bixverse.gpu/"><img src="https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github" alt="pkgdown"></a></p>
 <p></p>
 <p><img src="reference/figures/bixverse_gpu_logo.png" width="128" height="128" alt="bixverse.plots logo"></p>
 <p></p>
 <div class="section level2">
 <h2 id="intro">Intro<a class="anchor" aria-label="anchor" href="#intro"></a>
 </h2>
-<p>GPU-accelerated algorithms (via the WGPU backend on cubecl which allows you to run the code here on any GPU). You will need to set up your wgpu however, please check the <a href="https://burn.dev/books/cubecl/getting-started/installation.html" class="external-link">CubeCL book</a>. I do not have access to an Nvidia GPU, but I will aim also to allow for conditional compiling to that backend if Cuda is detected (future problem). The package is designed to support the <a href="https://github.com/GregorLueg/bixverse" class="external-link">bixverse package</a>.</p>
+<p>GPU-accelerated algorithms (via the WGPU backend on cubecl which allows you to run the code here on any GPU). You will need to set up your wgpu however, please check the <a href="https://burn.dev/books/cubecl/getting-started/installation.html" class="external-link">CubeCL book</a>. I do not have access to an Nvidia GPU, but I will aim also to allow for conditional compiling to that backend if Cuda is detected (future problem). The package is designed to support the <a href="https://github.com/GregorLueg/bixverse" class="external-link">bixverse package</a>. Additionally, also provides some neural net-based versions of embedding methods for <a href="https://github.com/GregorLueg/manifoldsR" class="external-link">manifoldsR</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
@@ -72,7 +73,7 @@
 <div class="section level3">
 <h3 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h3>
-<p>You will need Rust on your system to have the package working. An installation guide is provided <a href="https://www.rust-lang.org/tools/install" class="external-link">here</a>. There is a bunch of further help written <a href="https://extendr.github.io/rextendr/index.html" class="external-link">here</a> by the rextendr guys in terms of Rust set up. (bixverse.gpu as bixverse both use rextendr to interface with Rust.) Additionally, in this special case, you will also need the GPU drivers set up properly on your system. Please refer to the <a href="https://burn.dev/books/cubecl/" class="external-link">CubeCL book</a> in terms of how to ensure WGPU runs on your respective system.</p>
+<p>You will need Rust on your system to have the package working. An installation guide is provided <a href="https://www.rust-lang.org/tools/install" class="external-link">here</a>. There is a bunch of further help written <a href="https://extendr.github.io/rextendr/index.html" class="external-link">here</a> by the rextendr guys in terms of Rust set up. (bixverse.gpu as bixverse both use rextendr to interface with Rust.) Additionally, in this special case, you will also need the GPU drivers set up properly on your system. Please refer to the <a href="https://burn.dev/books/cubecl/" class="external-link">CubeCL book</a> in terms of how to ensure WGPU runs on your respective system. On a Unix system you also need OpenBLAS set up for the Ndarray backend; on MacOS it will just use the Accelerate framework.</p>
 <div class="section level4">
 <h4 id="setting-up-rust">Setting up Rust<a class="anchor" aria-label="anchor" href="#setting-up-rust"></a>
 </h4>
@@ -87,7 +88,7 @@
 </ol>
 <pre><code><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"rextendr"</span><span class="op">)</span></span></code></pre>
 <ol start="3" style="list-style-type: decimal">
-<li>Finally install bixverse:</li>
+<li>Finally install bixverse.gpu:</li>
 </ol>
 <pre><code><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"https://github.com/GregorLueg/bixverse.gpu"</span><span class="op">)</span></span></code></pre>
 </div>
@@ -100,7 +101,7 @@
 <div class="section level3">
 <h3 id="how-to-use-the-package">How to use the package.<a class="anchor" aria-label="anchor" href="#how-to-use-the-package"></a>
 </h3>
-<p>The package website can be found <a href="https://gregorlueg.github.io/bixverse.gpu/">here</a>. This package is <strong>not</strong> a stand-alone package, but designed to support the <code>bixverse</code> with GPU-accelerated methods (at the moment with focus on single cell support). If you are however interesting in just using the GPU-accelerated kNN searches, feel free to use the respective <code>rs_</code> functions for that.</p>
+<p>The package website can be found <a href="https://gregorlueg.github.io/bixverse.gpu/">here</a>. This package is <strong>not</strong> a stand-alone package, but designed to support the <code>bixverse</code> with GPU-accelerated methods (at the moment with focus on single cell support). If you are however interesting in just using the GPU-accelerated kNN searches, feel free to use the respective <code>rs_</code> functions for that. Or if you want to train a neural network for UMAP, the package also provides what you need.</p>
 </div>
 <div class="section level3">
 <h3 id="roadmap">Roadmap:<a class="anchor" aria-label="anchor" href="#roadmap"></a>
