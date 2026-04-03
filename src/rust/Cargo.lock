@@ -4357,8 +4357,9 @@ dependencies = [
 
 [[package]]
 name = "manifolds-rs"
-version = "0.1.12"
-source = "git+https://github.com/GregorLueg/manifolds-rs.git?branch=feat-v0.1.13#67613297b2888c266dbbb0fd4ca5e717558365be"
+version = "0.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c1e4bf894ea8732998123b33d4fd44f2c14208ffc6fca383571770747d78b89"
 dependencies = [
  "ann-search-rs",
  "approx",
