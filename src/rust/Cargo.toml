@@ -1,7 +1,7 @@
 [package]
 name = 'bixverse_gpu'
 publish = false
-version = '0.1.1'
+version = '0.1.2'
 edition = '2021'
 rust-version = '1.65'
 
@@ -10,12 +10,12 @@ crate-type = [ 'staticlib' ]
 name = 'bixverse_gpu'
 
 [dependencies]
-ann-search-rs = { version = "0.2.8", features = ["gpu"] }
-bixverse-rs = "0.1.6"
+ann-search-rs = { version = "0.2.9", features = ["gpu"] }
+bixverse-rs = "0.1.7"
 cubecl = "0.9.0"
 extendr-api = '0.8.1'
 faer = { version = '0.23.2' }
-manifolds-rs = { version = "0.1.3", features = ["parametric"] }
+manifolds-rs = { version = "0.1.14", features = ["parametric"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 burn = { version = "0.19.1", features = ["wgpu", "ndarray", "accelerate"] }
