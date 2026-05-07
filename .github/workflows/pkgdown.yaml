@@ -32,18 +32,18 @@ jobs:
         with:
           toolchain: stable
       
-      - name: Install system dependencies
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            libcurl4-openssl-dev \
-            libharfbuzz-dev \
-            libfribidi-dev \
-            libvulkan1 \
-            mesa-vulkan-drivers \
-            libgl1-mesa-dri \
-            libopenblas-dev \
-            gfortran
+            libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev \
+            libvulkan1 mesa-vulkan-drivers libgl1-mesa-dri \
+            libopenblas-dev libopenblas0-pthread gfortran
+          sudo update-alternatives --set libblas.so.3-x86_64-linux-gnu \
+            /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
+          sudo update-alternatives --set liblapack.so.3-x86_64-linux-gnu \
+            /usr/lib/x86_64-linux-gnu/openblas-pthread/liblapack.so.3
       
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
