@@ -2,7 +2,11 @@ Package: bixverse.gpu
 Title: GPU-accelerated methods for the bixverse
 Version: 0.1.3
 Authors@R: 
-    person("Gregor", "Lueg", , "gregorlueg@me.com", role = c("aut", "cre"))
+    person(
+        given = "Gregor", 
+        family = "Lueg", 
+        email = "gregorlueg@me.com", 
+        role = c("aut", "cre"))
 Description: 
     Provides GPU-accelerated methods for the bixverse. These leverage Burn, 
     CubeCl and WGPU under the hood to work on very different hardwares.
