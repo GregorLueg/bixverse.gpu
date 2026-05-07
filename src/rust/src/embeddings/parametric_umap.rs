@@ -6,6 +6,7 @@ use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
 use manifolds_rs::prelude::*;
 use manifolds_rs::*;
+use std::collections::HashMap;
 
 use crate::embeddings::utils::*;
 
@@ -40,12 +41,12 @@ impl InternalParametricUmapParams {
     /// ### Returns
     ///
     /// Parsed `InternalParametricUmapParams`.
-    pub fn from_r_list(r_list: List, min_dist: f32, spread: f32) -> Self {
-        let nn_params = get_params_nn(r_list.clone());
-        let umap_graph_params = get_params_umap_graph(r_list.clone());
-        let train_param = get_params_parametric_train(r_list.clone(), min_dist, spread);
+    pub fn from_r_list(r_list: List, min_dist: f32, spread: f32) -> Result<Self> {
+        let nn_params = get_params_nn(r_list.clone())?;
+        let umap_graph_params = get_params_umap_graph(r_list.clone())?;
+        let train_param = get_params_parametric_train(r_list.clone(), min_dist, spread)?;
 
-        let params = r_list.into_hashmap();
+        let params: HashMap<&str, Robj> = r_list.try_into()?;
 
         let ann_type = std::string::String::from(
             params
@@ -60,13 +61,13 @@ impl InternalParametricUmapParams {
             .map(|v| v.into_iter().map(|x| x as usize).collect())
             .unwrap_or(vec![128, 128, 128]);
 
-        Self {
+        Ok(Self {
             ann_type,
             hidden_layers,
             param_knn: nn_params,
             umap_graph: umap_graph_params,
             train_param,
-        }
+        })
     }
 }
 
@@ -107,13 +108,13 @@ pub fn parametric_umap_manifold<B>(
     device: &B::Device,
     seed: usize,
     verbose: bool,
-) -> (Mat<f32>, TrainedUmapModel<B, f32>)
+) -> Result<(Mat<f32>, TrainedUmapModel<B, f32>)>
 where
     B: AutodiffBackend,
     HnswIndex<f32>: HnswState<f32>,
     NNDescent<f32>: ApplySortedUpdates<f32> + NNDescentQuery<f32>,
 {
-    let internal = InternalParametricUmapParams::from_r_list(parametric_params, min_dist, spread);
+    let internal = InternalParametricUmapParams::from_r_list(parametric_params, min_dist, spread)?;
 
     let umap_params = ParametricUmapParams::new(
         Some(n_dim),
@@ -132,5 +133,5 @@ where
     let nrow = embd_res[0].len();
     let res = Mat::from_fn(nrow, ncol, |i, j| embd_res[j][i]);
 
-    (res, model)
+    Ok((res, model))
 }
