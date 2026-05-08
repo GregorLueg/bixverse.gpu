@@ -6,7 +6,7 @@ This vignette walks through a standard single cell analysis on the
 PBMC3k data set, demonstrating how `bixverse.gpu` can be used as a
 drop-in replacement for the CPU-based neighbour search in `bixverse`.
 Everything up to and including PCA is identical to the [PBMC
-vignette](https://gregorlueg.github.io/bixverse/docs/articles/pbmc.html)
+vignette](https://gregorlueg.github.io/bixverse/articles/pbmc_single_cell.html)
 in the main package - the GPU-specific bits only come into play at the
 neighbour search step. The core idea is to have GPU methods that are
 more hardware agnostic, hence, the usage of [CubeCL with WGPU
@@ -15,7 +15,7 @@ very different GPUs. Also, most of the time, it is quite overkill and
 outside of massive data sets usually not worth it (or you always want
 exhaustive, exact kNNs). If you have no idea what bixverse is and why
 some of the code below looks quite unusual for single cell, please read
-[this](https://gregorlueg.github.io/bixverse/docs/articles/thinking_single_cell.html).
+[this](https://gregorlueg.github.io/bixverse/articles/thinking_single_cell.html).
 
 `bixverse.gpu` provides three GPU-accelerated kNN algorithms via a wgpu
 backend:
@@ -26,11 +26,10 @@ backend:
 - **IVF**: Inverted file index. Partitions the embedding space into
   Voronoi cells and probes only a subset at query time. Good throughput
   on larger data sets with a very minor precision trade-off.
-- **CAGRA**: Builds a pruned navigational graph via NNDescent. Excellent
-  recall on high-dimensional embeddings and very large data sets.
-  Supports two retrieval modes: direct extraction from the NNDescent
-  graph (faster, slightly less precise) or beam search over the pruned
-  graph (slower, higher recall).
+- **CAGRA**: Builds a pruned navigational graph via NNDescent. Very
+  fast, even on large data sets. Supports two retrieval modes: direct
+  extraction from the NNDescent graph (faster, slightly less precise) or
+  beam search over the pruned graph (slower, higher recall).
 
 The exhaustive and IVF methods are exposed through
 [`find_neighbours_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_gpu_sc.md),
@@ -39,10 +38,16 @@ whilst CAGRA has its own generic,
 owing to its distinct parameter set.
 
 ``` r
+
 library(bixverse)
 library(bixverse.gpu)
 library(ggplot2)
 library(data.table)
+#> 
+#> Attaching package: 'data.table'
+#> The following object is masked from 'package:base':
+#> 
+#>     %notin%
 ```
 
 ## Loading the data
@@ -50,6 +55,7 @@ library(data.table)
 Let’s load the same data we know from `bixverse`.
 
 ``` r
+
 pbmc3k_path <- bixverse:::download_pbmc3k()
 
 tempdir_pbmc <- tempdir()
@@ -87,6 +93,7 @@ symbol_to_ensembl <- setNames(var$gene_id, var$gene_symbol)
 Same QC as per usual…
 
 ``` r
+
 gs_of_interest <- list(
   MT = var[grepl("^MT-", gene_symbol), gene_id],
   Ribo = var[grepl("^RPS|^RPL", gene_symbol), gene_id]
@@ -103,6 +110,7 @@ sc_object <- gene_set_proportions_sc(
 Outlier detection:
 
 ``` r
+
 qc_df <- sc_object[[c("cell_id", "lib_size", "nnz", "MT")]]
 
 metrics <- list(
@@ -123,6 +131,7 @@ qc <- run_cell_qc(metrics, directions, threshold = 3)
 Set the labels to use.
 
 ``` r
+
 sc_object[["outlier"]] <- qc$combined
 
 cells_to_keep <- qc_df[!qc$combined, cell_id]
@@ -137,6 +146,7 @@ CPU pipeline. However, something important to see… The way the GPU code
 is written, the number of dimensions in the
 
 ``` r
+
 sc_object <- find_hvg_sc(
   object = sc_object,
   hvg_no = 2000L,
@@ -163,6 +173,7 @@ For a data set as small as PBMC3k, exhaustive search on the GPU is the
 most straightforward option.
 
 ``` r
+
 sc_exhaustive <- find_neighbours_gpu_sc(
   object = sc_object,
   gpu_method = "exhaustive",
@@ -187,6 +198,7 @@ IVF becomes worthwhile on larger data sets. The key tuning knobs are
 to search at query time). On PBMC3k the defaults are perfectly fine.
 
 ``` r
+
 sc_ivf <- find_neighbours_gpu_sc(
   object = sc_object,
   gpu_method = "ivf",
@@ -206,6 +218,7 @@ search and pulls the kNN directly from the NNDescent graph, which is
 faster but slightly less precise.
 
 ``` r
+
 sc_cagra_extract <- find_neighbours_cagra_sc(
   object = sc_object,
   cagra_params = params_sc_cagra(k_query = 15L, ann_dist = "cosine"),
@@ -222,6 +235,7 @@ pruned CAGRA graph. This is slower but yields higher recall, which can
 matter on larger, higher-dimensional data.
 
 ``` r
+
 sc_cagra_beam <- find_neighbours_cagra_sc(
   object = sc_object,
   cagra_params = params_sc_cagra(k_query = 15L, ann_dist = "cosine"),
@@ -249,5 +263,6 @@ to add here to train a model once and re-use repeatedly? TBD.
 ## Clean up
 
 ``` r
+
 unlink(tempdir_pbmc, recursive = TRUE, force = TRUE)
 ```

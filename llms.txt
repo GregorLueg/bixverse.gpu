@@ -1,9 +1,10 @@
 # *bixverse.gpu package*
 
-![r_package](https://img.shields.io/badge/R_package-0.1.2-orange)[![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
+![r_package](https://img.shields.io/badge/R_package-0.1.3-orange)[![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![pkgdown](https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github)](https://gregorlueg.github.io/bixverse.gpu/)
+[![extendr](https://img.shields.io/badge/extendr-%5E0.9.0-276DC2)](https://extendr.github.io/extendr/extendr_api/)
 
 ![bixverse.plots logo](reference/figures/bixverse_gpu_logo.png)
 
@@ -36,6 +37,12 @@ Please refer to the [CubeCL book](https://burn.dev/books/cubecl/) in
 terms of how to ensure WGPU runs on your respective system. On a Unix
 system you also need OpenBLAS set up for the Ndarray backend; on MacOS
 it will just use the Accelerate framework.
+
+#### Linux users
+
+The CPU-accelerated form of the neural net powering parametric UMAP is
+dependent on OpenBLAS. You will need to have OpenBLAS set up on your
+system!
 
 #### Setting up Rust
 

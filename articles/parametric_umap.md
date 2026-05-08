@@ -30,10 +30,16 @@ acceleration), so a compatible GPU is beneficial but not strictly
 required.
 
 ``` r
+
 library(bixverse.gpu)
 library(manifoldsR)
 library(ggplot2)
 library(data.table)
+#> 
+#> Attaching package: 'data.table'
+#> The following object is masked from 'package:base':
+#> 
+#>     %notin%
 ```
 
 ### Generating data
@@ -46,6 +52,7 @@ the synthetic you might know from the `manifoldsR` package. To make this
 run faster, we will use a small data set here.
 
 ``` r
+
 set.seed(42L)
 
 cluster_data <- manifold_synthetic_data(
@@ -72,6 +79,7 @@ embedding and the trained encoder. As this is small data, we will just
 use the CPU version for 100 epochs, more than enough here.
 
 ``` r
+
 pumap <- parametric_umap(
   data = train_data,
   n_dim = 2L,
@@ -97,6 +105,7 @@ The training embedding is stored in `pumap$embedding` and can be
 visualised directly.
 
 ``` r
+
 train_df <- as.data.table(pumap$embedding) |>
   setnames(c("pUMAP1", "pUMAP2"))
 train_df[, cluster := as.factor(train_labels)]
@@ -115,6 +124,7 @@ Because the model has learnt an explicit mapping, we can embed the
 held-out data without re-running the full algorithm.
 
 ``` r
+
 test_embedding <- predict(pumap, newdata = test_data)
 
 test_df <- as.data.table(test_embedding) |>
@@ -136,6 +146,7 @@ places held-out points in consistent positions relative to the training
 embedding.
 
 ``` r
+
 train_df[, split := "train"]
 test_df[, split := "test"]
 combined_df <- rbindlist(list(train_df, test_df))
