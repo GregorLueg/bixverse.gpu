@@ -1,27 +1,27 @@
 [package]
 name = 'bixverse_gpu'
 publish = false
-version = '0.1.2'
+version = '0.1.3'
 edition = '2021'
 rust-version = '1.65'
 
 [lib]
-crate-type = [ 'staticlib' ]
+crate-type = ['staticlib', 'rlib']
 name = 'bixverse_gpu'
 
 [dependencies]
-ann-search-rs = { version = "0.2.9", features = ["gpu"] }
-bixverse-rs = "0.1.7"
+ann-search-rs = { version = "0.2.15", features = ["gpu"] }
+bixverse-rs = "0.2.0"
 cubecl = "0.9.0"
-extendr-api = '0.8.1'
+extendr-api = "0.9.0"
 faer = { version = '0.23.2' }
-manifolds-rs = { version = "0.1.14", features = ["parametric"] }
+manifolds-rs = { version = "0.2.4", features = ["parametric"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-burn = { version = "0.19.1", features = ["wgpu", "ndarray", "accelerate"] }
+burn = { version = "0.20.1", features = ["wgpu", "ndarray", "accelerate"] }
 
 [target.'cfg(not(target_os = "macos"))'.dependencies]
-burn = { version = "0.19.1", features = ["wgpu", "ndarray", "openblas"] }
+burn = { version = "0.20.1", features = ["wgpu", "ndarray", "openblas-system"] }
 
 [profile.dev.package.faer]
 opt-level = 3
@@ -35,3 +35,7 @@ opt-level = 3
 lto = "thin"
 codegen-units = 16
 strip = true
+
+[[bin]]
+name = "document"
+path = "document.rs"

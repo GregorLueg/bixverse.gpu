@@ -1,5 +1,7 @@
 ---
 title: "Leveraging GPU-accelerated kNN searches in bixverse single cell"
+date: last-modified
+date-format: YYYY-MM-DD
 vignette: >
   %\VignetteIndexEntry{Leveraging GPU-accelerated kNN searches in bixverse single cell}
   %\VignetteEngine{quarto::html}
@@ -17,7 +19,7 @@ This vignette walks through a standard single cell analysis on the PBMC3k data
 set, demonstrating how `bixverse.gpu` can be used as a drop-in replacement for
 the CPU-based neighbour search in `bixverse`. Everything up to and including PCA
 is identical to the
-[PBMC vignette](https://gregorlueg.github.io/bixverse/docs/articles/pbmc.html)
+[PBMC vignette](https://gregorlueg.github.io/bixverse/articles/pbmc_single_cell.html)
 in the main package - the GPU-specific bits only come into play at the
 neighbour search step. The core idea is to have GPU methods that are more
 hardware agnostic, hence, the usage of 
@@ -26,7 +28,7 @@ code run on very different GPUs. Also, most of the time, it is quite overkill
 and outside of massive data sets usually not worth it (or you always want
 exhaustive, exact kNNs). If you have no idea what bixverse is and why some
 of the code below looks quite unusual for single cell, please read 
-[this](https://gregorlueg.github.io/bixverse/docs/articles/thinking_single_cell.html).
+[this](https://gregorlueg.github.io/bixverse/articles/thinking_single_cell.html).
 
 `bixverse.gpu` provides three GPU-accelerated kNN algorithms via a wgpu
 backend:
@@ -36,10 +38,10 @@ backend:
 - **IVF**: Inverted file index. Partitions the embedding space into Voronoi
   cells and probes only a subset at query time. Good throughput on larger data
   sets with a very minor precision trade-off.
-- **CAGRA**: Builds a pruned navigational graph via NNDescent. Excellent
-  recall on high-dimensional embeddings and very large data sets. Supports two
-  retrieval modes: direct extraction from the NNDescent graph (faster, slightly
-  less precise) or beam search over the pruned graph (slower, higher recall).
+- **CAGRA**: Builds a pruned navigational graph via NNDescent. Very fast, even
+  on large data sets. Supports two retrieval modes: direct extraction from the 
+  NNDescent graph (faster, slightly less precise) or beam search over the pruned 
+  graph (slower, higher recall).
 
 The exhaustive and IVF methods are exposed through `find_neighbours_gpu_sc()`,
 whilst CAGRA has its own generic, `find_neighbours_cagra_sc()`, owing to its
@@ -59,7 +61,6 @@ Let's load the same data we know from `bixverse`.
 
 ```{r}
 #| label: load pbmc3k
-
 pbmc3k_path <- bixverse:::download_pbmc3k()
 
 tempdir_pbmc <- tempdir()
@@ -96,7 +97,6 @@ Same QC as per usual...
 
 ```{r}
 #| label: gene set proportions
-
 gs_of_interest <- list(
   MT = var[grepl("^MT-", gene_symbol), gene_id],
   Ribo = var[grepl("^RPS|^RPL", gene_symbol), gene_id]
@@ -114,7 +114,6 @@ Outlier detection:
 
 ```{r}
 #| label: qc outlier detection
-
 qc_df <- sc_object[[c("cell_id", "lib_size", "nnz", "MT")]]
 
 metrics <- list(
@@ -136,7 +135,6 @@ Set the labels to use.
 
 ```{r}
 #| label: set cells to keep
-
 sc_object[["outlier"]] <- qc$combined
 
 cells_to_keep <- qc_df[!qc$combined, cell_id]
@@ -152,7 +150,6 @@ written, the number of dimensions in the
 
 ```{r}
 #| label: hvg pca
-
 sc_object <- find_hvg_sc(
   object = sc_object,
   hvg_no = 2000L,
@@ -179,7 +176,6 @@ straightforward option.
 
 ```{r}
 #| label: gpu exhaustive
-
 sc_exhaustive <- find_neighbours_gpu_sc(
   object = sc_object,
   gpu_method = "exhaustive",
@@ -202,7 +198,6 @@ query time). On PBMC3k the defaults are perfectly fine.
 
 ```{r}
 #| label: gpu ivf
-
 sc_ivf <- find_neighbours_gpu_sc(
   object = sc_object,
   gpu_method = "ivf",
@@ -220,7 +215,6 @@ less precise.
 
 ```{r}
 #| label: gpu cagra extract
-
 sc_cagra_extract <- find_neighbours_cagra_sc(
   object = sc_object,
   cagra_params = params_sc_cagra(k_query = 15L, ann_dist = "cosine"),
@@ -235,7 +229,6 @@ higher-dimensional data.
 
 ```{r}
 #| label: gpu cagra beam
-
 sc_cagra_beam <- find_neighbours_cagra_sc(
   object = sc_object,
   cagra_params = params_sc_cagra(k_query = 15L, ann_dist = "cosine"),
@@ -261,6 +254,5 @@ something to add here to train a model once and re-use repeatedly? TBD.
 
 ```{r}
 #| label: clean up
-
 unlink(tempdir_pbmc, recursive = TRUE, force = TRUE)
 ```

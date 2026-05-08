@@ -2,6 +2,7 @@
 
 use extendr_api::*;
 use manifolds_rs::prelude::*;
+use std::collections::HashMap;
 
 /////////////
 // Helpers //
@@ -20,8 +21,8 @@ use manifolds_rs::prelude::*;
 ///
 /// The `NearestNeighbourParams` with sensible defaults if not found in the
 /// list.
-pub fn get_params_nn(r_list: List) -> NearestNeighbourParams<f32> {
-    let nn_params = r_list.into_hashmap();
+pub fn get_params_nn(r_list: List) -> Result<NearestNeighbourParams<f32>> {
+    let nn_params: HashMap<&str, Robj> = r_list.try_into()?;
 
     // distance
     let dist_metric = std::string::String::from(
@@ -91,7 +92,7 @@ pub fn get_params_nn(r_list: List) -> NearestNeighbourParams<f32> {
         .and_then(|v| v.as_integer())
         .map(|v| v as usize);
 
-    NearestNeighbourParams {
+    Ok(NearestNeighbourParams {
         dist_metric,
         n_tree,
         search_budget,
@@ -104,7 +105,7 @@ pub fn get_params_nn(r_list: List) -> NearestNeighbourParams<f32> {
         bt_budget,
         n_list,
         n_probes,
-    }
+    })
 }
 
 /// Parse the parametric UMAP training parameters from an R list.
@@ -124,8 +125,8 @@ pub fn get_params_parametric_train(
     r_list: List,
     min_dist: f32,
     spread: f32,
-) -> TrainParametricParams<f32> {
-    let params = r_list.into_hashmap();
+) -> Result<TrainParametricParams<f32>> {
+    let params: HashMap<&str, Robj> = r_list.try_into()?;
 
     let corr_weight = params
         .get("corr_weight")
@@ -149,7 +150,7 @@ pub fn get_params_parametric_train(
         .and_then(|v| v.as_integer())
         .map(|v| v as usize);
 
-    TrainParametricParams::from_min_dist_spread(
+    Ok(TrainParametricParams::from_min_dist_spread(
         min_dist,
         spread,
         corr_weight,
@@ -157,7 +158,7 @@ pub fn get_params_parametric_train(
         n_epochs,
         batch_size,
         neg_sample_rate,
-    )
+    ))
 }
 
 /// Helper function to generate the UMAP graph construction parameters
@@ -171,8 +172,8 @@ pub fn get_params_parametric_train(
 /// ### Returns
 ///
 /// The `UmapGraphParams` with sensible defaults if not found in the list.
-pub fn get_params_umap_graph(r_list: List) -> UmapGraphParams<f32> {
-    let graph_params = r_list.into_hashmap();
+pub fn get_params_umap_graph(r_list: List) -> Result<UmapGraphParams<f32>> {
+    let graph_params: HashMap<&str, Robj> = r_list.try_into()?;
 
     let mix_weight = graph_params
         .get("mix_weight")
@@ -189,9 +190,9 @@ pub fn get_params_umap_graph(r_list: List) -> UmapGraphParams<f32> {
         .and_then(|v| v.as_real())
         .unwrap_or(1e-5) as f32;
 
-    UmapGraphParams {
+    Ok(UmapGraphParams {
         bandwidth,
         local_connectivity,
         mix_weight,
-    }
+    })
 }

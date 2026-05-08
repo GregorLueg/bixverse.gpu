@@ -33,7 +33,10 @@ extendr_module! {
 // Types //
 ///////////
 
+/// GPU backend via WGPU
 type GpuBackend = Autodiff<Wgpu>;
+
+/// CPU backend via Ndarray
 type CpuBackend = Autodiff<NdArray<f32>>;
 
 /// Backend-agnostic wrapper around `TrainedUmapModel`.
@@ -75,7 +78,8 @@ impl PUmapModel {
 ///
 /// Builds a kNN graph from an embedding matrix using the CAGRA algorithm on
 /// the wgpu backend. Supports two retrieval modes: direct extraction from the
-/// NNDescent graph, or beam search over the pruned CAGRA graph.
+/// NNDescent graph, or beam search over the pruned CAGRA graph. The former
+/// tends to have worse Recall.
 ///
 /// @param embd Numeric matrix of embeddings, cells x features.
 /// @param cagra_params A named list with the parameters, see
@@ -104,9 +108,9 @@ fn rs_cagra_gpu_knn(
     extract_knn: bool,
     seed: usize,
     verbose: bool,
-) -> List {
+) -> Result<List, extendr_api::Error> {
     let data = r_matrix_to_faer_fp32(&embd);
-    let params = CagraParams::from_r_list(cagra_params);
+    let params = CagraParams::from_r_list(cagra_params)?;
 
     let (indices, dist) =
         cagra_knn_with_dist(data.as_ref(), &params, true, extract_knn, seed, verbose);
@@ -116,11 +120,11 @@ fn rs_cagra_gpu_knn(
     let index_mat = Mat::from_fn(embd.nrows(), params.k_query, |i, j| indices[i][j] as i32);
     let dist_mat = Mat::from_fn(embd.nrows(), params.k_query, |i, j| knn_dist[i][j] as f64);
 
-    list!(
+    Ok(list!(
         indices = faer_to_r_matrix(index_mat.as_ref()),
         dist = faer_to_r_matrix(dist_mat.as_ref()),
         dist_metric = params.ann_dist
-    )
+    ))
 }
 
 /// Generate an IVF-GPU-accelerated kNN graph
@@ -145,9 +149,14 @@ fn rs_cagra_gpu_knn(
 ///
 /// @export
 #[extendr]
-fn rs_ivf_gpu_knn(embd: RMatrix<f64>, ivf_params: List, seed: usize, verbose: bool) -> List {
+fn rs_ivf_gpu_knn(
+    embd: RMatrix<f64>,
+    ivf_params: List,
+    seed: usize,
+    verbose: bool,
+) -> Result<List, extendr_api::Error> {
     let data = r_matrix_to_faer_fp32(&embd);
-    let params = IvfGpuParams::from_r_list(ivf_params);
+    let params = IvfGpuParams::from_r_list(ivf_params)?;
 
     let (indices, dist) = gpu_ivf_knn_with_dist(data.as_ref(), &params, true, seed, verbose);
 
@@ -156,11 +165,11 @@ fn rs_ivf_gpu_knn(embd: RMatrix<f64>, ivf_params: List, seed: usize, verbose: bo
     let index_mat = Mat::from_fn(embd.nrows(), params.k, |i, j| indices[i][j] as i32);
     let dist_mat = Mat::from_fn(embd.nrows(), params.k, |i, j| knn_dist[i][j] as f64);
 
-    list!(
+    Ok(list!(
         indices = faer_to_r_matrix(index_mat.as_ref()),
         dist = faer_to_r_matrix(dist_mat.as_ref()),
         dist_metric = params.ann_dist
-    )
+    ))
 }
 
 /// Generate an GPU-accelerated kNN graph from an exhaustive search
@@ -243,7 +252,7 @@ fn rs_parametric_umap(
     seed: usize,
     verbose: bool,
     use_gpu: bool,
-) -> List {
+) -> Result<List, extendr_api::Error> {
     let data = r_matrix_to_faer_fp32(&data);
 
     if use_gpu {
@@ -258,12 +267,12 @@ fn rs_parametric_umap(
             &device,
             seed,
             verbose,
-        );
+        )?;
 
-        list!(
+        Ok(list!(
             embedding = faer_to_r_matrix(res.as_ref()),
             model = ExternalPtr::new(PUmapModel::Gpu(model))
-        )
+        ))
     } else {
         let device = NdArrayDevice::Cpu;
         let (res, model) = parametric_umap_manifold::<CpuBackend>(
@@ -276,12 +285,12 @@ fn rs_parametric_umap(
             &device,
             seed,
             verbose,
-        );
+        )?;
 
-        list!(
+        Ok(list!(
             embedding = faer_to_r_matrix(res.as_ref()),
             model = ExternalPtr::new(PUmapModel::Cpu(model))
-        )
+        ))
     }
 }
 

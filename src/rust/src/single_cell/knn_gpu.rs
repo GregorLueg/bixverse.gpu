@@ -1,4 +1,4 @@
-use extendr_api::List;
+use extendr_api::{List, Robj};
 
 use ann_search_rs::prelude::*;
 use ann_search_rs::*;
@@ -6,6 +6,7 @@ use cubecl::wgpu::WgpuDevice;
 use cubecl::wgpu::WgpuRuntime;
 use cubecl::Runtime;
 use faer::MatRef;
+use std::collections::HashMap;
 use std::time::Instant;
 
 /////////////
@@ -87,8 +88,8 @@ impl CagraParams {
     /// ### Returns
     ///
     /// Self with the specified parameters.
-    pub fn from_r_list(r_list: List) -> Self {
-        let cagra = r_list.into_hashmap();
+    pub fn from_r_list(r_list: List) -> Result<Self, extendr_api::Error> {
+        let cagra: HashMap<&str, Robj> = r_list.try_into()?;
 
         let k_query = cagra
             .get("k_query")
@@ -149,7 +150,7 @@ impl CagraParams {
             .and_then(|v| v.as_integer())
             .map(|v| v as usize);
 
-        Self {
+        Ok(Self {
             k_query,
             ann_dist,
             k,
@@ -162,7 +163,7 @@ impl CagraParams {
             beam_width,
             max_beam_iters,
             n_entry_points,
-        }
+        })
     }
 }
 
@@ -248,6 +249,7 @@ pub fn cagra_knn_with_dist(
             cagra_params.beam_width,
             cagra_params.max_beam_iters,
             cagra_params.n_entry_points,
+            None,
         );
 
         let (n, d) = query_nndescent_index_gpu_self(
@@ -307,8 +309,8 @@ impl IvfGpuParams {
     /// ### Returns
     ///
     /// `Self` with the specified parameters.
-    pub fn from_r_list(r_list: List) -> Self {
-        let ivf = r_list.into_hashmap();
+    pub fn from_r_list(r_list: List) -> Result<Self, extendr_api::Error> {
+        let ivf: HashMap<&str, Robj> = r_list.try_into()?;
 
         let k = ivf.get("k").and_then(|v| v.as_integer()).unwrap_or(15) as usize;
 
@@ -338,14 +340,14 @@ impl IvfGpuParams {
             .and_then(|v| v.as_integer())
             .map(|v| v as usize);
 
-        Self {
+        Ok(Self {
             k,
             ann_dist,
             nlist,
             nprobe,
             nquery,
             max_iters,
-        }
+        })
     }
 }
 

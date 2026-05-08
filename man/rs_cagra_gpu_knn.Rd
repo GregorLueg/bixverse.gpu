@@ -34,5 +34,6 @@ the neighbours.
 \description{
 Builds a kNN graph from an embedding matrix using the CAGRA algorithm on
 the wgpu backend. Supports two retrieval modes: direct extraction from the
-NNDescent graph, or beam search over the pruned CAGRA graph.
+NNDescent graph, or beam search over the pruned CAGRA graph. The former
+tends to have worse Recall.
 }
