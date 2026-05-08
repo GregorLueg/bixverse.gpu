@@ -1,3 +1,9 @@
+# bixverse.gpu 0.1.3
+
+## Features
+
+* Port to rextendr `0.5.0` and various version updates.
+
 # bixverse.gpu 0.1.2
 
 ## Features
