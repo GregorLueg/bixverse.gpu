@@ -51,7 +51,7 @@ jobs:
           sudo apt-get install -y \
             libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev \
             libvulkan1 mesa-vulkan-drivers libgl1-mesa-dri \
-            libopenblas-dev libopenblas0-pthread gfortran
+            libopenblas-dev
           sudo update-alternatives --set libblas.so.3-x86_64-linux-gnu \
             /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
           sudo update-alternatives --set liblapack.so.3-x86_64-linux-gnu \

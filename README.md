@@ -39,6 +39,11 @@ WGPU runs on your respective system. On a Unix system you also need OpenBLAS
 set up for the Ndarray backend; on MacOS it will just use the Accelerate 
 framework.
 
+#### Linux users
+
+The CPU-accelerated form of the neural net powering parametric UMAP is
+dependent on OpenBLAS. You will need to have OpenBLAS set up on your system!
+
 #### Setting up Rust
 
 Steps for installation:

@@ -33,7 +33,10 @@ extendr_module! {
 // Types //
 ///////////
 
+/// GPU backend via WGPU
 type GpuBackend = Autodiff<Wgpu>;
+
+/// CPU backend via Ndarray
 type CpuBackend = Autodiff<NdArray<f32>>;
 
 /// Backend-agnostic wrapper around `TrainedUmapModel`.
