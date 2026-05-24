@@ -1,3 +1,11 @@
+# bixverse.gpu 0.1.4
+
+## Features
+
+* CPU-backend of parametric UMAP changed to `flex` from burn for better speed.
+  Reduces also dependencies and packages.
+* GPU-accelerated k-means clustering.
+
 # bixverse.gpu 0.1.3
 
 ## Features

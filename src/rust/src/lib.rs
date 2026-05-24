@@ -1,6 +1,7 @@
+use bixverse_rs::gpu::k_means_gpu::KMeansGpuParams;
 use bixverse_rs::prelude::*;
 use burn::backend::{
-    ndarray::{NdArray, NdArrayDevice},
+    flex::{Flex, FlexDevice},
     wgpu::{Wgpu, WgpuDevice},
     Autodiff,
 };
@@ -9,9 +10,11 @@ use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
 
 pub mod embeddings;
+pub mod ml;
 pub mod single_cell;
 
 use crate::embeddings::parametric_umap::*;
+use crate::ml::clustering::*;
 use crate::single_cell::knn_gpu::*;
 
 /////////////
@@ -27,6 +30,8 @@ extendr_module! {
     // umap
     fn rs_parametric_umap;
     fn rs_parametric_umap_predict;
+    // clustering
+    fn rs_kmeans_gpu;
 }
 
 ///////////
@@ -37,7 +42,7 @@ extendr_module! {
 type GpuBackend = Autodiff<Wgpu>;
 
 /// CPU backend via Ndarray
-type CpuBackend = Autodiff<NdArray<f32>>;
+type CpuBackend = Autodiff<Flex<f32>>;
 
 /// Backend-agnostic wrapper around `TrainedUmapModel`.
 ///
@@ -113,7 +118,8 @@ fn rs_cagra_gpu_knn(
     let params = CagraParams::from_r_list(cagra_params)?;
 
     let (indices, dist) =
-        cagra_knn_with_dist(data.as_ref(), &params, true, extract_knn, seed, verbose);
+        cagra_knn_with_dist(data.as_ref(), &params, true, extract_knn, seed, verbose)
+            .to_extendr()?;
 
     let knn_dist = dist.unwrap();
 
@@ -158,7 +164,8 @@ fn rs_ivf_gpu_knn(
     let data = r_matrix_to_faer_fp32(&embd);
     let params = IvfGpuParams::from_r_list(ivf_params)?;
 
-    let (indices, dist) = gpu_ivf_knn_with_dist(data.as_ref(), &params, true, seed, verbose);
+    let (indices, dist) =
+        gpu_ivf_knn_with_dist(data.as_ref(), &params, true, seed, verbose).to_extendr()?;
 
     let knn_dist = dist.unwrap();
 
@@ -193,34 +200,39 @@ fn rs_ivf_gpu_knn(
 ///
 /// @export
 #[extendr]
-fn rs_exhaustive_gpu_knn(embd: RMatrix<f64>, k: usize, dist_metric: String, verbose: bool) -> List {
+fn rs_exhaustive_gpu_knn(
+    embd: RMatrix<f64>,
+    k: usize,
+    dist_metric: String,
+    verbose: bool,
+) -> Result<List, extendr_api::Error> {
     let data = r_matrix_to_faer_fp32(&embd);
 
     let (indices, dist) =
-        gpu_exhaustive_knn_with_dist(data.as_ref(), k, &dist_metric, true, verbose);
+        gpu_exhaustive_knn_with_dist(data.as_ref(), k, &dist_metric, true, verbose).to_extendr()?;
 
     let knn_dist = dist.unwrap();
 
     let index_mat = Mat::from_fn(embd.nrows(), k, |i, j| indices[i][j] as i32);
     let dist_mat = Mat::from_fn(embd.nrows(), k, |i, j| knn_dist[i][j] as f64);
 
-    list!(
+    Ok(list!(
         indices = faer_to_r_matrix(index_mat.as_ref()),
         dist = faer_to_r_matrix(dist_mat.as_ref()),
         dist_metric = dist_metric
-    )
+    ))
 }
 
 /////////////////////
-// parametric UMAP //
+// Parametric UMAP //
 /////////////////////
 
 /// Parametric UMAP implementation
 ///
 /// Trains a neural network encoder to learn a mapping from the input space to a
 /// low-dimensional embedding that preserves the UMAP graph structure. Supports
-/// both GPU (wgpu) and CPU (NdArray) backends. For small to medium data sets
-/// (fewer than ~10k samples or narrow hidden layers), the CPU backend is
+/// both GPU (wgpu) and CPU (burn flex CPU) backends. For small to medium data
+/// sets (fewer than ~10k samples or narrow hidden layers), the CPU backend is
 /// typically faster owing to GPU kernel dispatch overhead.
 ///
 /// @param data Numerical matrix. Data of dimensions samples x features.
@@ -274,7 +286,7 @@ fn rs_parametric_umap(
             model = ExternalPtr::new(PUmapModel::Gpu(model))
         ))
     } else {
-        let device = NdArrayDevice::Cpu;
+        let device = FlexDevice;
         let (res, model) = parametric_umap_manifold::<CpuBackend>(
             data.as_ref(),
             n_dim,
@@ -320,4 +332,39 @@ fn rs_parametric_umap_predict(model: Robj, data: RMatrix<f64>) -> RMatrix<f64> {
     let nrow = res[0].len();
     let mat = Mat::from_fn(nrow, ncol, |i, j| res[j][i]);
     faer_to_r_matrix(mat.as_ref())
+}
+
+///////////////////
+// K-means (GPU) //
+///////////////////
+
+/// GPU-accelerated k-means
+///
+/// @export
+#[extendr]
+fn rs_kmeans_gpu(
+    data: RMatrix<f64>,
+    dist: &str,
+    n_centroids: usize,
+    kmeans_params: List,
+    seed: usize,
+    verbose: bool,
+) -> Result<List, extendr_api::Error> {
+    let data = r_matrix_to_faer_fp32(&data);
+
+    let kmeans_params = KMeansGpuParams::from_r_list(kmeans_params)?;
+
+    let (centroids, assignments) = kmeans_gpu_internal(
+        data.as_ref(),
+        dist,
+        n_centroids,
+        Some(kmeans_params),
+        seed,
+        verbose,
+    )?;
+
+    Ok(list!(
+        centroids = faer_to_r_matrix(centroids.as_ref()),
+        assignments = assignments.r_int_convert()
+    ))
 }

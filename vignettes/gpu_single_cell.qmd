@@ -244,11 +244,18 @@ etc.) work without modification.
 
 ## Conclusions
 
-_"Will you add more GPU-accelerated methods?"_
-Maybe... kNN searches were an obvious one as there are lots and lots of distance
-calculations where GPUs have actually sufficient data to crunch. I will see
-if other parts might make sense to push on the GPU: parametric UMAP could be
-something to add here to train a model once and re-use repeatedly? TBD.
+Here we show three different GPU-accelerated kNN searches for application in
+single cell. The longer term vision/roadmap will be to start wiring these into
+some specific methods to enable fast(er) versions here, think for example:
+
+- **BBKNN**: a natural target as it leverages kNN graphs under the hood. The
+  original paper is [here](https://academic.oup.com/bioinformatics/article/36/3/964/5545955) 
+  and `bixverse` provides [an implementation](https://gregorlueg.github.io/bixverse/reference/bbknn_sc.html).
+- **fastMNN**: another obvious target due to the constant generation of kNN
+  graphs under the hood, see [paper](https://www.nature.com/articles/nbt.4091) and 
+  `bixverse` [implementation](https://gregorlueg.github.io/bixverse/reference/fast_mnn_sc.html).
+
+The doublet detection methods could be another avenue... ?
 
 ## Clean up
 

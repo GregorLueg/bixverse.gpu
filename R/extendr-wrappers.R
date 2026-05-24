@@ -83,8 +83,8 @@ rs_exhaustive_gpu_knn <- function(embd, k, dist_metric, verbose) .Call(wrap__rs_
 #'
 #' Trains a neural network encoder to learn a mapping from the input space to a
 #' low-dimensional embedding that preserves the UMAP graph structure. Supports
-#' both GPU (wgpu) and CPU (NdArray) backends. For small to medium data sets
-#' (fewer than ~10k samples or narrow hidden layers), the CPU backend is
+#' both GPU (wgpu) and CPU (burn flex CPU) backends. For small to medium data
+#' sets (fewer than ~10k samples or narrow hidden layers), the CPU backend is
 #' typically faster owing to GPU kernel dispatch overhead.
 #'
 #' @param data Numerical matrix. Data of dimensions samples x features.
@@ -121,5 +121,10 @@ rs_parametric_umap <- function(data, n_dim, k, min_dist, spread, parametric_para
 #'
 #' @export
 rs_parametric_umap_predict <- function(model, data) .Call(wrap__rs_parametric_umap_predict, model, data)
+
+#' GPU-accelerated k-means
+#'
+#' @export
+rs_kmeans_gpu <- function(data, dist, n_centroids, kmeans_params, seed, verbose) .Call(wrap__rs_kmeans_gpu, data, dist, n_centroids, kmeans_params, seed, verbose)
 
 # nolint end

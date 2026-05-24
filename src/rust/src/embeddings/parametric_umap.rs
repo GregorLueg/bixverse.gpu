@@ -1,5 +1,6 @@
 use ann_search_rs::cpu::hnsw::{HnswIndex, HnswState};
 use ann_search_rs::cpu::nndescent::{ApplySortedUpdates, NNDescent, NNDescentQuery};
+use bixverse_rs::prelude::IntoExtendrErr;
 use burn::tensor::backend::AutodiffBackend;
 use extendr_api::*;
 use faer::{Mat, MatRef};
@@ -127,7 +128,8 @@ where
     );
 
     let (embd_res, model) =
-        train_parametric_umap_model::<f32, B>(data, &umap_params, device, seed, verbose);
+        train_parametric_umap_model::<f32, B>(data, &umap_params, device, seed, verbose)
+            .to_extendr()?;
 
     let ncol = embd_res.len();
     let nrow = embd_res[0].len();
