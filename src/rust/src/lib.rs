@@ -1,4 +1,4 @@
-use bixverse_rs::gpu::k_means_gpu::KMeansGpuParams;
+use bixverse_rs::gpu::ml::k_means_gpu::KMeansGpuParams;
 use bixverse_rs::prelude::*;
 use burn::backend::{
     flex::{Flex, FlexDevice},
@@ -243,7 +243,8 @@ fn rs_exhaustive_gpu_knn(
 /// @param parametric_params Named list. Merged parametric UMAP parameters
 /// containing nearest neighbour, graph, and training configuration.
 /// @param seed Integer. Seed for reproducibility.
-/// @param verbose Boolean. Controls verbosity.
+/// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+/// detailed verbosity.
 /// @param use_gpu Logical. If \code{TRUE}, trains on the wgpu backend. If
 /// \code{FALSE}, trains on the CPU via NdArray. Defaults to \code{TRUE}.
 ///
@@ -262,7 +263,7 @@ fn rs_parametric_umap(
     spread: f64,
     parametric_params: List,
     seed: usize,
-    verbose: bool,
+    verbose: usize,
     use_gpu: bool,
 ) -> Result<List, extendr_api::Error> {
     let data = r_matrix_to_faer_fp32(&data);

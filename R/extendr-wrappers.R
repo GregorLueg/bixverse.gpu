@@ -95,7 +95,8 @@ rs_exhaustive_gpu_knn <- function(embd, k, dist_metric, verbose) .Call(wrap__rs_
 #' @param parametric_params Named list. Merged parametric UMAP parameters
 #' containing nearest neighbour, graph, and training configuration.
 #' @param seed Integer. Seed for reproducibility.
-#' @param verbose Boolean. Controls verbosity.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
 #' @param use_gpu Logical. If \code{TRUE}, trains on the wgpu backend. If
 #' \code{FALSE}, trains on the CPU via NdArray. Defaults to \code{TRUE}.
 #'

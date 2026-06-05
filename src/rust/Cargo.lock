@@ -92,8 +92,9 @@ checksum = "4b46cbb362ab8752921c97e041f5e366ee6297bd428a31275b9fcf1e380f7299"
 
 [[package]]
 name = "ann-search-rs"
-version = "0.3.2"
-source = "git+https://github.com/GregorLueg/ann-search-rs?branch=feat-turboquant-attempt2#bf17d56de72957a7892fbef1efede3c6cc313032"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e56ec304e8e675921e8a8c2fcb4a4d4546970664644c2a74a42b423d9739a9c"
 dependencies = [
  "approx",
  "clap",
@@ -497,8 +498,9 @@ dependencies = [
 
 [[package]]
 name = "bixverse-rs"
-version = "0.2.1"
-source = "git+https://github.com/GregorLueg/bixverse-rs.git?branch=release-0.2.1#f536eefe12ec889671e3fb195dbb18baadc2baf6"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3907cf26ee47f1c4fdffdfb9c88fe4017eb050c06a3b82009ab9983182be2d8"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -509,6 +511,7 @@ dependencies = [
  "faer",
  "faer-entity",
  "fmt",
+ "half",
  "num-traits",
  "once_cell",
  "petgraph",
@@ -4400,8 +4403,9 @@ checksum = "670fdfda89751bc4a84ac13eaa63e205cf0fd22b4c9a5fbfa085b63c1f1d3a30"
 
 [[package]]
 name = "manifolds-rs"
-version = "0.2.6"
-source = "git+https://github.com/GregorLueg/manifolds-rs.git?branch=v0.2.6#4e34af144f832945bef5bad402003dec38b7e21f"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "658334040887ba9a01c34e142826c1abde6a97155becd97c6c81d0ab00d5dcdb"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -5093,15 +5097,6 @@ name = "ordered-float"
 version = "4.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7bb71e1b3fa6ca1c61f383464aaf2bb0e2f8e772a1f01d486832464de363b951"
-dependencies = [
- "num-traits",
-]
-
-[[package]]
-name = "ordered-float"
-version = "5.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2c1f9f56e534ac6a9b8a4600bdf0f530fb393b5f393e7b4d03489c3cf0c3f01"
 dependencies = [
  "num-traits",
 ]
@@ -6912,7 +6907,7 @@ dependencies = [
  "nix",
  "num-derive",
  "num-traits",
- "ordered-float 4.6.0",
+ "ordered-float",
  "pest",
  "pest_derive",
  "phf",
@@ -7977,7 +7972,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f2ab60e120fd6eaa68d9567f3226e876684639d22a4219b313ff69ec0ccd5ac"
 dependencies = [
  "log",
- "ordered-float 4.6.0",
+ "ordered-float",
  "strsim",
  "thiserror 1.0.69",
  "wezterm-dynamic-derive",
@@ -8130,7 +8125,7 @@ dependencies = [
  "objc2-metal",
  "objc2-quartz-core",
  "once_cell",
- "ordered-float 5.0.0",
+ "ordered-float",
  "parking_lot",
  "portable-atomic",
  "portable-atomic-util",

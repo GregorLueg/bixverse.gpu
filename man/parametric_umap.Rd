@@ -37,7 +37,7 @@ to \code{0.1}.}
 Defaults to \code{"hnsw"}.}
 
 \item{nn_params}{Named list. Nearest neighbour parameters, see
-\code{\link[manifoldsR:params_nn]{manifoldsR::params_nn()}}.}
+\code{\link[manifoldsR:params_nn]{params_nn()}}.}
 
 \item{parametric_umap_params}{Named list. Parametric UMAP parameters, see
 \code{\link[=params_parametric_umap]{params_parametric_umap()}}.}

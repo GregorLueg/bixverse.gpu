@@ -89,7 +89,7 @@ pumap <- parametric_umap(
   k = 15L,
   min_dist = 0.5,
   spread = 1.0,
-  knn_method = "hnsw",
+  knn_method = "kmknn",
   parametric_umap_params = params_parametric_umap(
     batch_size = 128L,
     n_epochs = 100L

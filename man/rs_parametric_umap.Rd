@@ -32,7 +32,8 @@ containing nearest neighbour, graph, and training configuration.}
 
 \item{seed}{Integer. Seed for reproducibility.}
 
-\item{verbose}{Boolean. Controls verbosity.}
+\item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
+detailed verbosity.}
 
 \item{use_gpu}{Logical. If \code{TRUE}, trains on the wgpu backend. If
 \code{FALSE}, trains on the CPU via NdArray. Defaults to \code{TRUE}.}
