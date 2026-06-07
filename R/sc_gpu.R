@@ -654,3 +654,110 @@ S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
 }
 
 # gpu harmony ------------------------------------------------------------------
+
+#' Run Harmony v2 (GPU)
+#'
+#' @description
+#' A GPU-accelerated version of Harmony v2 by Patikas et al., 2026,
+#' implemented in Rust. Performs batch correction on PCA embeddings and stores
+#' the result as a `"harmony_gpu"` embedding in the object. Only a single
+#' batch covariate is supported on the GPU path.
+#'
+#' @param object `SingleCells` class.
+#' @param batch_column String. Column name in the object containing the batch
+#' labels.
+#' @param modality String. One of `c("rna", "adt")`. You can only use `"adt"`
+#' on `SingleCellsMultiModal` class.
+#' @param harmony_params List. Output of [params_sc_harmony_v2_gpu()].
+#' @param seed Integer. For reproducibility.
+#' @param .verbose Boolean or integer. Controls verbosity and returns run times.
+#' `FALSE` -> quiet, `TRUE` or `1L` -> normal verbosity, `2L` -> detailed
+#' verbosity.
+#'
+#' @return The object with a `"harmony_gpu"` embedding added. If no PCA
+#' embeddings are found, returns the object unchanged with a warning.
+#'
+#' @export
+harmony_v2_gpu_sc <- S7::new_generic(
+  name = "harmony_v2_gpu_sc",
+  dispatch_args = "object",
+  fun = function(
+    object,
+    batch_column,
+    modality = c("rna", "adt"),
+    harmony_params = params_sc_harmony_v2_gpu(),
+    seed = 42L,
+    .verbose = TRUE
+  ) {
+    S7::S7_dispatch()
+  }
+)
+
+#' @method harmony_v2_gpu_sc SingleCells
+#'
+#' @export
+S7::method(harmony_v2_gpu_sc, SingleCells) <- function(
+  object,
+  batch_column,
+  modality = c("rna", "adt"),
+  harmony_params = params_sc_harmony_v2_gpu(),
+  seed = 42L,
+  .verbose = TRUE
+) {
+  modality <- match.arg(modality)
+
+  checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
+  checkmate::qassert(batch_column, "S1")
+  assertScHarmonyParamsV2Gpu(harmony_params)
+  checkmate::qassert(seed, "I1")
+  checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
+
+  if (modality != "rna" && !S7::S7_inherits(object, SingleCellsMultiModal)) {
+    stop(sprintf(
+      "modality = '%s' is only supported for SingleCellsMultiModal.",
+      modality
+    ))
+  }
+
+  if (is.null(get_pca_factors(object, modality = modality))) {
+    warning("No PCA embeddings found in the object. Returning class as is")
+    return(object)
+  } else {
+    pca_data <- get_pca_factors(object, modality = modality)
+  }
+
+  batch_indices <- unlist(object[[batch_column]])
+  batch_factor <- factor(batch_indices)
+  batch_indices <- as.integer(batch_factor) - 1L
+
+  checkmate::assertTRUE(length(batch_indices) == nrow(pca_data))
+
+  if (is.null(harmony_params$k)) {
+    harmony_params$k <- as.integer(min(round(nrow(pca_data) / 30), 100L))
+    if (.verbose) {
+      message(sprintf(
+        " Auto-determined number of Harmony clusters: %d",
+        harmony_params$k
+      ))
+    }
+  }
+
+  harmony_embd <- rs_harmony_v2_gpu(
+    pca = pca_data,
+    harmony_params = harmony_params,
+    batch_labels = list(batch_indices),
+    seed = seed,
+    verbose = bixverse:::parse_verbosity(.verbose)
+  )
+
+  colnames(harmony_embd) <- sprintf("harmony_gpu_%s", 1:ncol(harmony_embd))
+
+  object <- set_embedding(
+    x = object,
+    embd = harmony_embd,
+    name = "harmony_gpu",
+    modality = modality
+  )
+
+  return(object)
+}

@@ -515,7 +515,7 @@ dependencies = [
 [[package]]
 name = "bixverse-rs"
 version = "0.3.1"
-source = "git+https://github.com/GregorLueg/bixverse-rs.git?branch=v0.3.1#36ce35162c5dffe48f05be7b977b7000e26e85fe"
+source = "git+https://github.com/GregorLueg/bixverse-rs.git?branch=v0.3.1#8c841a0326d0d7271cc2dbd513984dcea44219dd"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -550,7 +550,7 @@ dependencies = [
 
 [[package]]
 name = "bixverse_gpu"
-version = "0.1.4"
+version = "0.2.0"
 dependencies = [
  "ann-search-rs",
  "bixverse-rs",

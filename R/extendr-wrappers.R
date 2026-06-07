@@ -183,4 +183,23 @@ rs_kmeans_gpu <- function(data, dist, n_centroids, kmeans_params, seed, verbose)
 #' @export
 rs_sc_pca_sparse_gpu <- function(f_path_gene, no_pcs, cell_indices, gene_indices, seed, verbose) .Call(wrap__rs_sc_pca_sparse_gpu, f_path_gene, no_pcs, cell_indices, gene_indices, seed, verbose)
 
+#' Harmony batch correction in Rust (version 2, GPU-accelerated)
+#'
+#' @description
+#' This function implements the GPU-accelerated version 2 Harmony algorithm
+#' from Patikas, et al., 2026. Only a single batch covariate is supported.
+#'
+#' @param pca Numerical matrix, i.e., the PCA matrix you want to correct.
+#' @param harmony_params List. The parameters for the Harmony (v2) GPU algorithm.
+#' @param batch_labels List. Must contain exactly one element: a 0-indexed
+#' integer vector representing the batch effects you wish to regress out.
+#' @param seed Integer. Seed for reproducibility purposes.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @return The batch-corrected Harmony (v2) embedding space.
+#'
+#' @export
+rs_harmony_v2_gpu <- function(pca, harmony_params, batch_labels, seed, verbose) .Call(wrap__rs_harmony_v2_gpu, pca, harmony_params, batch_labels, seed, verbose)
+
 # nolint end

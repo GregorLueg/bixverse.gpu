@@ -40,6 +40,7 @@ fn rs_harmony_v2_gpu(
     seed: usize,
     verbose: usize,
 ) -> extendr_api::Result<RArray<f64, 2>> {
+    // prepare everything
     let device: WgpuDevice = Default::default();
     let mut batch_indices: Vec<Vec<usize>> = Vec::new();
     for i in 0..batch_labels.len() {
@@ -49,6 +50,8 @@ fn rs_harmony_v2_gpu(
     }
     let harmony_params = HarmonyParamsV2Gpu::from_r_list(harmony_params)?;
     let embd = r_matrix_to_faer_fp32(&pca);
+
+    // run harmony v2
     let res = harmony_v2_gpu::<WgpuRuntime>(
         embd.as_ref(),
         &batch_indices,
@@ -58,7 +61,10 @@ fn rs_harmony_v2_gpu(
         verbose,
     )
     .to_extendr()?;
+
+    // clean up vram
     let client = WgpuRuntime::client(&device);
     client.memory_cleanup();
+
     Ok(faer_to_r_matrix(res.as_ref()))
 }

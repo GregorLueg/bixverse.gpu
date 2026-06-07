@@ -36,8 +36,8 @@ forward pass through the network... No neighbour lookup, no re-optimisation,
 and the same input always produces the same output.
 
 The training is GPU-accelerated via [wgpu](https://wgpu.rs/) (or can be also
-run on CPU via ndarray with OpenBLAS or Accelerate BLAS acceleration), so a
-compatible GPU is beneficial but not strictly required.
+run on CPU via the flex framework by the Burn development team), so a compatible 
+GPU is beneficial but not strictly required.
 
 ```{r}
 #| label: setup
@@ -78,8 +78,9 @@ test_labels <- cluster_data$membership[-train_idx]
 ## Fitting the model
 
 `parametric_umap()` returns a `ParametricUmapModel` object that holds both
-the training embedding and the trained encoder. As this is small data, we will
-just use the CPU version for 100 epochs, more than enough here. 
+the training embedding and the trained encoder (to note: the data is stored 
+in the Rust kernel and handed around via a pointer). As this is small data, we 
+will just use the CPU version for 100 epochs, more than enough here. 
 
 ```{r}
 #| label: fit
@@ -134,6 +135,12 @@ ggplot(test_df, aes(x = pUMAP1, y = pUMAP2)) +
   theme_bw() +
   ggtitle("Parametric UMAP -- held-out set (predicted)")
 ```
+
+## To-do's 
+
+I realised that for now saving the model is actually not really possible due to
+the way R will drop pointers (and thus clean up the memory) during serialisation
+to RDS (or qs2). I will need to figure out how to do this.
 
 ## Comparing training and held-out embeddings
 
