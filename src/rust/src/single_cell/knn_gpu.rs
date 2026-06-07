@@ -3,8 +3,7 @@ use extendr_api::{List, Robj};
 use ann_search_rs::prelude::*;
 use ann_search_rs::*;
 use bixverse_rs::prelude::*;
-use cubecl::wgpu::WgpuDevice;
-use cubecl::wgpu::WgpuRuntime;
+use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
 use cubecl::Runtime;
 use faer::MatRef;
 use std::collections::HashMap;
@@ -473,7 +472,7 @@ pub fn gpu_exhaustive_knn_with_dist(
         .to_extendr()?;
 
     if verbose {
-        println!("Built IVF-GPU index in {:.2?}.", start.elapsed());
+        println!("Built exhaustive index in {:.2?}.", start.elapsed());
     }
 
     let (indices, distances) =

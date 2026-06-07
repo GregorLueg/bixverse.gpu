@@ -3,7 +3,10 @@
 ## Features
 
 * CPU-backend of parametric UMAP changed to `flex` from burn for better speed.
-  Reduces also dependencies and packages.
+  Reduces also dependencies and packages and easier installation on Linux.
+* GPU-accelerated methods for single cell:
+  - kNN graphs are now multi-modal (see bixverse version `"0.4.0"`)
+  - sparse, randomised SVD on GPU available
 * New GPU-accelerated methods:
   - k-means clustering
 

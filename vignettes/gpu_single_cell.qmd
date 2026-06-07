@@ -72,7 +72,7 @@ mtx_io_params <- get_cell_ranger_params(pbmc3k_path)
 sc_object <- load_mtx(
   object = sc_object,
   sc_mtx_io_param = mtx_io_params,
-  streaming = FALSE,
+  streaming = 1L,
   .verbose = TRUE
 )
 
@@ -128,7 +128,12 @@ directions <- c(
   MT = "above"
 )
 
-qc <- run_cell_qc(metrics, directions, threshold = 3)
+qc <- run_cell_qc(
+  metrics = metrics,
+  cells_to_keep = get_cells_to_keep(sc_object),
+  directions = directions,
+  threshold = 3
+)
 ```
 
 Set the labels to use.
@@ -156,11 +161,28 @@ sc_object <- find_hvg_sc(
   .verbose = TRUE
 )
 
+sc_object <- calculate_pca_gpu_sc(
+  object = sc_object,
+  no_pcs = 32L
+)
+
+gpu_res <- get_pca_factors(sc_object)
+gpu_s <- get_pca_singular_val(sc_object)
+
 sc_object <- calculate_pca_sc(
   object = sc_object,
   no_pcs = 32L,
   sparse_svd = TRUE
 )
+
+cpu_res <- get_pca_factors(sc_object)
+cpu_s <- get_pca_singular_val(sc_object)
+
+plot(gpu_res[, 5], cpu_res[, 5])
+
+plot(gpu_s, cpu_s)
+
+max(abs(cpu_s - gpu_s) / cpu_s)
 ```
 
 ## GPU-accelerated neighbour search
@@ -211,7 +233,8 @@ sc_ivf <- find_neighbours_gpu_sc(
 CAGRA builds a navigational graph via NNDescent and then prunes it for
 efficient beam search. Setting `extract_knn = TRUE` skips the beam search and
 pulls the kNN directly from the NNDescent graph, which is faster but slightly
-less precise.
+less precise. You might want to use this option for rapid iterations over 
+different kNN parameters, but otherwise use the beam search.
 
 ```{r}
 #| label: gpu cagra extract

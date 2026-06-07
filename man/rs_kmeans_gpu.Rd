@@ -6,6 +6,28 @@
 \usage{
 rs_kmeans_gpu(data, dist, n_centroids, kmeans_params, seed, verbose)
 }
+\arguments{
+\item{data}{Numeric matrix. Samples x features.}
+
+\item{dist}{String. Distance metric to use. One of
+\code{c("euclidean", "cosine")}.}
+
+\item{n_centroids}{Integer. Number of clusters, centroids to identify.}
+
+\item{kmeans_params}{Named list. Contains specific parameters for the GPU-
+accelerated k-means.}
+
+\item{seed}{Integer. Seed for reproducibility.}
+
+\item{verbose}{Boolean. Controls verbosity of the function.}
+}
+\value{
+A list with
+\itemize{
+\item centoids - The centroids matrix (centroids x features)
+\item assignments - The cluster assignments of the data. (1-indexed.)
+}
+}
 \description{
-GPU-accelerated k-means
+A GPU-accelerated k-means version leveraging the wgpu backend via cubecl.
 }

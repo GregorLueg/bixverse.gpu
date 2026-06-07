@@ -14,7 +14,8 @@ rs_ivf_gpu_knn(embd, ivf_params, seed, verbose)
 
 \item{seed}{Integer. Random seed for reproducibility.}
 
-\item{verbose}{Logical. Whether to print progress messages.}
+\item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
+detailed verbosity.}
 }
 \value{
 A named list with:

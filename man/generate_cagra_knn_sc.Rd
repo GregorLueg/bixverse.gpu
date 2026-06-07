@@ -9,6 +9,7 @@ generate_cagra_knn_sc(
   embd_to_use = "pca",
   cells_to_use = NULL,
   no_embd_to_use = NULL,
+  modality = c("rna", "adt"),
   cagra_params = params_sc_cagra(),
   extract_knn = TRUE,
   seed = 42L,
@@ -16,10 +17,10 @@ generate_cagra_knn_sc(
 )
 }
 \arguments{
-\item{object}{\code{SingleCells} class.}
+\item{object}{\code{SingleCells} (or \code{SingleCellsMultiModal}) class.}
 
 \item{embd_to_use}{String. The embedding to use. Whichever you choose, it
-needs to be part of the object.}
+needs to be part of the object for the selected modality.}
 
 \item{cells_to_use}{Optional string vector. Cell names to include. If \code{NULL}
 all cells in the object will be used.}
@@ -27,40 +28,10 @@ all cells in the object will be used.}
 \item{no_embd_to_use}{Optional integer. Number of embedding dimensions to
 use. If \code{NULL} all will be used.}
 
-\item{cagra_params}{List. Output of \code{\link[=params_sc_cagra]{params_sc_cagra()}}. A
-list with the following items:
-\itemize{
-\item k_query - Integer. Number of nearest neighbours to return in the
-final result.
-\item ann_dist - String. Distance metric; one of
-\code{c("euclidean", "cosine")}.
-\item k - Optional integer. Final node degree of the pruned CAGRA
-navigational graph. Controls the sparsity of the search graph; higher
-values improve recall but increase memory usage. If \code{NULL}, defaults to
-\code{30}.
-\item k_build - Optional integer. Number of neighbours during the
-NNDescent build phase before CAGRA pruning. If \code{NULL}, defaults to
-\code{1.5 * k}.
-\item refine_sweeps - Integer. Number of refinement sweeps during graph
-construction. More sweeps improve graph quality at the cost of build time.
-\item max_iters - Optional integer. Maximum iterations for the NNDescent
-rounds. If \code{NULL}, determined automatically.
-\item n_trees - Optional integer. Number of trees in the initial
-GPU-accelerated random projection forest used to seed NNDescent. If
-\code{NULL}, determined automatically.
-\item delta - Numeric. Early-stopping criterion for NNDescent; iterations
-terminate when fewer than \code{delta} fraction of neighbours change.
-\item rho - Optional numeric. Sampling rate during NNDescent iterations.
-Lower values speed up construction at the cost of graph quality. If
-\code{NULL}, determined automatically.
-\item beam_width - Optional integer. Beam width during graph search.
-Larger beams improve recall but slow down querying. If \code{NULL}, determined
-automatically.
-\item max_beam_iters - Optional integer. Maximum beam search iterations.
-If \code{NULL}, determined automatically.
-\item n_entry_points - Optional integer. Number of entry points into the
-CAGRA graph. If \code{NULL}, determined automatically.
-}}
+\item{modality}{String. One of \code{c("rna", "adt")}. You can only use \code{"adt"}
+on \code{SingleCellsMultiModal} class.}
+
+\item{cagra_params}{List. Output of \code{\link[=params_sc_cagra]{params_sc_cagra()}}.}
 
 \item{extract_knn}{Logical. If \code{TRUE}, extracts the kNN graph directly from
 the NNDescent result (faster, slightly lower precision). If \code{FALSE}, runs
@@ -68,9 +39,7 @@ beam search over the pruned CAGRA graph (slower, higher precision).}
 
 \item{seed}{Integer. For reproducibility.}
 
-\item{.verbose}{Boolean or integer. Controls verbosity and returns run times.
-\code{FALSE} -> quiet, \code{TRUE} or \code{1L} -> normal verbosity, \code{2L} -> detailed
-verbosity.}
+\item{.verbose}{Boolean or integer. Controls verbosity.}
 }
 \value{
 Initialised \code{sc_knn} with the kNN data.

@@ -6,7 +6,7 @@
 \usage{
 params_sc_cagra(
   k_query = 15L,
-  ann_dist = "cosine",
+  ann_dist = "euclidean",
   k = NULL,
   k_build = NULL,
   refine_sweeps = 0L,

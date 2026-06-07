@@ -9,19 +9,20 @@ generate_gpu_knn_sc(
   embd_to_use = "pca",
   cells_to_use = NULL,
   no_embd_to_use = NULL,
-  gpu_method = c("exhaustive", "ivf"),
+  modality = c("rna", "adt"),
+  gpu_method = c("ivf", "exhaustive"),
   ivf_params = params_sc_ivf(),
   k = 15L,
-  dist_metric = "cosine",
+  dist_metric = "euclidean",
   seed = 42L,
   .verbose = TRUE
 )
 }
 \arguments{
-\item{object}{\code{SingleCells} class.}
+\item{object}{\code{SingleCells} (or \code{SingleCellsMultiModal}) class.}
 
 \item{embd_to_use}{String. The embedding to use. Whichever you choose, it
-needs to be part of the object.}
+needs to be part of the object for the selected modality.}
 
 \item{cells_to_use}{Optional string vector. Cell names to include. If \code{NULL}
 all cells in the object will be used.}
@@ -29,28 +30,13 @@ all cells in the object will be used.}
 \item{no_embd_to_use}{Optional integer. Number of embedding dimensions to
 use. If \code{NULL} all will be used.}
 
-\item{gpu_method}{String. One of \code{c("exhaustive", "ivf")}. \code{"exhaustive"}
-computes exact nearest neighbours via brute-force on the GPU. \code{"ivf"} builds
-an inverted file index for approximate search.}
+\item{modality}{String. One of \code{c("rna", "adt")}. You can only use \code{"adt"}
+on \code{SingleCellsMultiModal} class.}
+
+\item{gpu_method}{String. One of \code{c("exhaustive", "ivf")}.}
 
 \item{ivf_params}{List. Output of \code{\link[=params_sc_ivf]{params_sc_ivf()}}. Only
-used when \code{gpu_method = "ivf"}. A list with the following items:
-\itemize{
-\item k - Integer. Number of nearest neighbours to identify.
-\item ann_dist - String. Distance metric; one of
-\code{c("euclidean", "cosine")}.
-\item nlist - Optional integer. Number of clusters to partition the index
-into. Controls the granularity of the Voronoi partitioning. If \code{NULL},
-defaults to \code{sqrt(n)} on the Rust side.
-\item nprobe - Optional integer. Number of clusters to probe at query
-time. Higher values improve recall at the cost of speed. If \code{NULL},
-defaults to \code{sqrt(nlist)}.
-\item nquery - Optional integer. Number of query vectors processed per
-GPU batch. If \code{NULL}, defaults to 100,000.
-\item max_iters - Optional integer. Maximum k-means iterations during
-index construction. If \code{NULL}, defaults to 30.
-\item seed - Integer. Seed for k-means initialisation.
-}}
+used when \code{gpu_method = "ivf"}.}
 
 \item{k}{Integer. Number of neighbours. Only used when
 \code{gpu_method = "exhaustive"}.}
@@ -60,9 +46,7 @@ when \code{gpu_method = "exhaustive"}.}
 
 \item{seed}{Integer. For reproducibility.}
 
-\item{.verbose}{Boolean or integer. Controls verbosity and returns run times.
-\code{FALSE} -> quiet, \code{TRUE} or \code{1L} -> normal verbosity, \code{2L} -> detailed
-verbosity.}
+\item{.verbose}{Boolean or integer. Controls verbosity.}
 }
 \value{
 Initialised \code{sc_knn} with the kNN data.
