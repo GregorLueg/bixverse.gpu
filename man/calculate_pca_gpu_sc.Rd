@@ -4,12 +4,22 @@
 \alias{calculate_pca_gpu_sc}
 \title{GPU-accelerated PCA for single cell}
 \usage{
-calculate_pca_gpu_sc(object, no_pcs, hvg = NULL, seed = 42L, .verbose = TRUE)
+calculate_pca_gpu_sc(
+  object,
+  no_pcs,
+  pca_params = bixverse::params_sc_pca(),
+  hvg = NULL,
+  seed = 42L,
+  .verbose = TRUE
+)
 }
 \arguments{
 \item{object}{\code{SingleCells} class}
 
 \item{no_pcs}{Integer. Number of PCs to calculate.}
+
+\item{pca_params}{Named list. Controls the parameters to be used for the
+PCA calculation which is single cell-specific, see \code{\link[bixverse:params_sc_pca]{params_sc_pca()}}.}
 
 \item{hvg}{Optional integer. If you want to provide your own HVG genes.
 Otherwise, the function will default to what is found in

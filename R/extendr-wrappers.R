@@ -149,6 +149,30 @@ rs_parametric_umap_predict <- function(model, data) .Call(wrap__rs_parametric_um
 #' @export
 rs_kmeans_gpu <- function(data, dist, n_centroids, kmeans_params, seed, verbose) .Call(wrap__rs_kmeans_gpu, data, dist, n_centroids, kmeans_params, seed, verbose)
 
+#' GPU-accelerated correlation calculations
+#'
+#' @param x Numerical matrix. The matrix for which to calculate the column
+#' pairwise correlation matrix.
+#' @param spearman Boolean. Shall the Spearman correlation be calculated
+#' instead of Pearson.
+#' @param verbose Boolean. Controls verbosity of the function.
+#'
+#' @returns The correlation matrix
+#'
+#' @export
+rs_cor_gpu <- function(x, spearman, verbose) .Call(wrap__rs_cor_gpu, x, spearman, verbose)
+
+#' GPU-accelerated covariance calculations
+#'
+#' @param x Numerical matrix. The matrix for which to calculate the column
+#' pairwise covariance matrix.
+#' @param verbose Boolean. Controls verbosity of the function.
+#'
+#' @returns The covariance matrix
+#'
+#' @export
+rs_cov_gpu <- function(x, verbose) .Call(wrap__rs_cov_gpu, x, verbose)
+
 #' Calculates sparse PCA for single cell
 #'
 #' @description
@@ -162,8 +186,11 @@ rs_kmeans_gpu <- function(data, dist, n_centroids, kmeans_params, seed, verbose)
 #' holding a large dense matrix in memory.
 #'
 #' @param f_path_gene String. Path to the `counts_genes.bin` file.
+#' @param f_path_cell String. Path to the `counts_cells.bin` file. Used if
+#' you wish to use the PFlogPF transformation.
 #' @param no_pcs Integer. Number of PCs to calculate.
-#' @param random_svd Boolean. Shall randomised SVD be used.
+#' @param pca_params Named list. Contains the parameters to use for this PCA
+#' run. (Randomised will ignore, as gpu only supports randomised.)
 #' @param cell_indices Integer. The cell indices to use. (0-indexed!)
 #' @param gene_indices Integer. The gene indices to use. (0-indexed!)
 #' @param seed Integer. Random seed for the randomised SVD.
@@ -181,7 +208,7 @@ rs_kmeans_gpu <- function(data, dist, n_centroids, kmeans_params, seed, verbose)
 #' }
 #'
 #' @export
-rs_sc_pca_sparse_gpu <- function(f_path_gene, no_pcs, cell_indices, gene_indices, seed, verbose) .Call(wrap__rs_sc_pca_sparse_gpu, f_path_gene, no_pcs, cell_indices, gene_indices, seed, verbose)
+rs_sc_pca_sparse_gpu <- function(f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, verbose) .Call(wrap__rs_sc_pca_sparse_gpu, f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, verbose)
 
 #' Harmony batch correction in Rust (version 2, GPU-accelerated)
 #'

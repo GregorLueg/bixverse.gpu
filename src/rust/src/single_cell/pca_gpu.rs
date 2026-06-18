@@ -1,5 +1,6 @@
 use bixverse_rs::gpu::sc_gpu::pca_gpu::pca_on_sc_sparse_gpu;
 use bixverse_rs::prelude::*;
+use bixverse_rs::single_cell::sc_processing::pca::SingleCellPcaParams;
 use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
 use cubecl::Runtime;
 use extendr_api::*;
@@ -32,8 +33,11 @@ extendr_module! {
 /// holding a large dense matrix in memory.
 ///
 /// @param f_path_gene String. Path to the `counts_genes.bin` file.
+/// @param f_path_cell String. Path to the `counts_cells.bin` file. Used if
+/// you wish to use the PFlogPF transformation.
 /// @param no_pcs Integer. Number of PCs to calculate.
-/// @param random_svd Boolean. Shall randomised SVD be used.
+/// @param pca_params Named list. Contains the parameters to use for this PCA
+/// run. (Randomised will ignore, as gpu only supports randomised.)
 /// @param cell_indices Integer. The cell indices to use. (0-indexed!)
 /// @param gene_indices Integer. The gene indices to use. (0-indexed!)
 /// @param seed Integer. Random seed for the randomised SVD.
@@ -52,24 +56,46 @@ extendr_module! {
 ///
 /// @export
 #[extendr]
+#[allow(clippy::too_many_arguments)]
 fn rs_sc_pca_sparse_gpu(
     f_path_gene: &str,
+    f_path_cell: &str,
     no_pcs: usize,
+    pca_params: List,
     cell_indices: Vec<i32>,
     gene_indices: Vec<i32>,
     seed: usize,
     verbose: usize,
 ) -> Result<List> {
-    let device: WgpuDevice = Default::default();
-
+    let verbosity = parse_verbosity_level(verbose);
+    let pca_params = SingleCellPcaParams::from_r_list(pca_params)?;
     let cell_set = cell_indices.r_int_convert();
     let gene_indices = gene_indices.r_int_convert();
+
+    let offsets = if pca_params.clr {
+        if verbosity.normal_verbosity() {
+            println!("PFlogPF-transformation requested. Loading offsets from disk.")
+        }
+
+        let reader = ParallelSparseReader::new(f_path_cell).to_extendr()?;
+
+        let offsets = reader.get_clr_offsets(&cell_set, None).to_extendr()?;
+        let offsets: Vec<f32> = offsets.iter().map(|&x| x as f32).collect();
+
+        Some(offsets)
+    } else {
+        None
+    };
+
+    let device: WgpuDevice = Default::default();
 
     let res = pca_on_sc_sparse_gpu::<WgpuRuntime>(
         f_path_gene,
         &cell_set,
         &gene_indices,
         no_pcs,
+        offsets.as_deref(),
+        &pca_params,
         seed,
         device.clone(),
         verbose,

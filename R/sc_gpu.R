@@ -293,9 +293,8 @@ S7::method(generate_cagra_knn_sc, SingleCells) <- function(
 #' used when `gpu_method = "ivf"`.
 #' @param k Integer. Number of neighbours. Only used when
 #' `gpu_method = "exhaustive"`.
-#' @param dist_metric String. One of `c("euclidean", "cosine")`. Only used
-#' when `gpu_method = "exhaustive"`.
-#' @param snn_params List. Output of [bixverse::params_sc_neighbours()].
+#' @param snn_params List. Output of [bixverse::params_sc_neighbours()]. The
+#' kNN graph-related parameters will be ignored.
 #' @param seed Integer. For reproducibility.
 #' @param .verbose Boolean. Controls verbosity.
 #'
@@ -311,7 +310,7 @@ find_neighbours_gpu_sc <- S7::new_generic(
     embd_to_use = "pca",
     no_embd_to_use = NULL,
     modality = c("rna", "adt"),
-    gpu_method = c("exhaustive", "ivf"),
+    gpu_method = c("ivf", "exhaustive"),
     ivf_params = params_sc_ivf(),
     k = 15L,
     dist_metric = "cosine",
@@ -333,7 +332,7 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
   embd_to_use = "pca",
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
-  gpu_method = c("exhaustive", "ivf"),
+  gpu_method = c("ivf", "exhaustive"),
   ivf_params = params_sc_ivf(),
   k = 15L,
   dist_metric = "cosine",
@@ -434,8 +433,9 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
 #' @param cagra_params List. Output of [bixverse.gpu::params_sc_cagra()].
 #' @param extract_knn Logical. If `TRUE`, extracts the kNN graph directly from
 #' the NNDescent result. If `FALSE`, runs beam search over the pruned CAGRA
-#' graph.
-#' @param snn_params List. Output of [bixverse::params_sc_neighbours()].
+#' graph. The extraction is faster, but creates a lower quality kNN graph.
+#' @param snn_params List. Output of [bixverse::params_sc_neighbours()]. The
+#' kNN graph-related parameters will be ignored.
 #' @param seed Integer. For reproducibility.
 #' @param .verbose Boolean. Controls verbosity.
 #'
@@ -452,7 +452,7 @@ find_neighbours_cagra_sc <- S7::new_generic(
     no_embd_to_use = NULL,
     modality = c("rna", "adt"),
     cagra_params = params_sc_cagra(),
-    extract_knn = TRUE,
+    extract_knn = FALSE,
     snn_params = params_sc_neighbours(),
     seed = 42L,
     .verbose = TRUE
@@ -472,7 +472,7 @@ S7::method(find_neighbours_cagra_sc, SingleCells) <- function(
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
   cagra_params = params_sc_cagra(),
-  extract_knn = TRUE,
+  extract_knn = FALSE,
   snn_params = params_sc_neighbours(),
   seed = 42L,
   .verbose = TRUE
@@ -556,6 +556,8 @@ S7::method(find_neighbours_cagra_sc, SingleCells) <- function(
 #'
 #' @param object `SingleCells` class
 #' @param no_pcs Integer. Number of PCs to calculate.
+#' @param pca_params Named list. Controls the parameters to be used for the
+#' PCA calculation which is single cell-specific, see [params_sc_pca()].
 #' @param hvg Optional integer. If you want to provide your own HVG genes.
 #' Otherwise, the function will default to what is found in
 #' [bixverse::get_hvg()]. Please provide 1-indexed genes here! If you provide
@@ -576,6 +578,7 @@ calculate_pca_gpu_sc <- S7::new_generic(
   fun = function(
     object,
     no_pcs,
+    pca_params = bixverse::params_sc_pca(),
     hvg = NULL,
     seed = 42L,
     .verbose = TRUE
@@ -591,6 +594,7 @@ calculate_pca_gpu_sc <- S7::new_generic(
 S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
   object,
   no_pcs,
+  pca_params = bixverse::params_sc_pca(),
   hvg = NULL,
   seed = 42L,
   .verbose = TRUE
@@ -638,7 +642,9 @@ S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
     c(pca_factors, pca_loadings, singular_values),
     rs_sc_pca_sparse_gpu(
       f_path_gene = bixverse:::get_rust_count_gene_f_path(object),
+      f_path_cell = bixverse:::get_rust_count_cell_f_path(object),
       no_pcs = no_pcs,
+      pca_params = pca_params,
       cell_indices = get_cells_to_keep(object),
       gene_indices = selected_hvg,
       seed = seed,

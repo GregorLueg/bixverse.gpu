@@ -1,10 +1,12 @@
+use bixverse_rs::gpu::linalg::corr::{column_pairwise_cor_gpu, GpuCorCov};
 use bixverse_rs::gpu::ml::k_means_gpu::KMeansGpuParams;
 use bixverse_rs::prelude::*;
 use burn::backend::{
     flex::{Flex, FlexDevice},
-    wgpu::{Wgpu, WgpuDevice},
+    wgpu::{Wgpu, WgpuDevice, WgpuRuntime},
     Autodiff,
 };
+use cubecl::Runtime;
 use extendr_api::prelude::*;
 use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
@@ -38,6 +40,9 @@ extendr_module! {
     fn rs_parametric_umap_predict;
     // clustering
     fn rs_kmeans_gpu;
+    // correlations
+    fn rs_cor_gpu;
+    fn rs_cov_gpu;
 }
 
 ///////////
@@ -419,4 +424,94 @@ fn rs_kmeans_gpu(
         centroids = faer_to_r_matrix(centroids.as_ref()),
         assignments = assignments.r_int_convert_shift()
     ))
+}
+
+/////////////
+// Cor/Cov //
+/////////////
+
+/// GPU-accelerated correlation calculations
+///
+/// @param x Numerical matrix. The matrix for which to calculate the column
+/// pairwise correlation matrix.
+/// @param spearman Boolean. Shall the Spearman correlation be calculated
+/// instead of Pearson.
+/// @param verbose Boolean. Controls verbosity of the function.
+///
+/// @returns The correlation matrix
+///
+/// @export
+#[extendr]
+fn rs_cor_gpu(
+    x: RMatrix<f64>,
+    spearman: bool,
+    verbose: bool,
+) -> Result<RMatrix<f64>, extendr_api::Error> {
+    let data = r_matrix_to_faer_fp32(&x);
+    let device: WgpuDevice = Default::default();
+
+    let cor_type = if spearman {
+        GpuCorCov::Spearman
+    } else {
+        GpuCorCov::Pearson
+    };
+
+    let mut res = column_pairwise_cor_gpu::<f32, WgpuRuntime, f32>(
+        data.as_ref(),
+        cor_type,
+        device.clone(),
+        verbose,
+    )
+    .to_extendr()?;
+
+    let client = WgpuRuntime::client(&device);
+    client.memory_cleanup();
+
+    // set the diagonals to 1
+    for i in 0..res.nrows() {
+        for j in 0..res.ncols() {
+            if i == j {
+                res[(i, j)] = 1.0;
+            }
+        }
+    }
+
+    Ok(faer_to_r_matrix(res.as_ref()))
+}
+
+/// GPU-accelerated covariance calculations
+///
+/// @param x Numerical matrix. The matrix for which to calculate the column
+/// pairwise covariance matrix.
+/// @param verbose Boolean. Controls verbosity of the function.
+///
+/// @returns The covariance matrix
+///
+/// @export
+#[extendr]
+fn rs_cov_gpu(x: RMatrix<f64>, verbose: bool) -> Result<RMatrix<f64>, extendr_api::Error> {
+    let data = r_matrix_to_faer_fp32(&x);
+    let device: WgpuDevice = Default::default();
+
+    let mut res = column_pairwise_cor_gpu::<f32, WgpuRuntime, f32>(
+        data.as_ref(),
+        GpuCorCov::Covariance,
+        device.clone(),
+        verbose,
+    )
+    .to_extendr()?;
+
+    let client = WgpuRuntime::client(&device);
+    client.memory_cleanup();
+
+    // set the diagonals to 1
+    for i in 0..res.nrows() {
+        for j in 0..res.ncols() {
+            if i == j {
+                res[(i, j)] = 1.0;
+            }
+        }
+    }
+
+    Ok(faer_to_r_matrix(res.as_ref()))
 }

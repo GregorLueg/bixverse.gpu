@@ -6,7 +6,9 @@
 \usage{
 rs_sc_pca_sparse_gpu(
   f_path_gene,
+  f_path_cell,
   no_pcs,
+  pca_params,
   cell_indices,
   gene_indices,
   seed,
@@ -16,7 +18,13 @@ rs_sc_pca_sparse_gpu(
 \arguments{
 \item{f_path_gene}{String. Path to the \code{counts_genes.bin} file.}
 
+\item{f_path_cell}{String. Path to the \code{counts_cells.bin} file. Used if
+you wish to use the PFlogPF transformation.}
+
 \item{no_pcs}{Integer. Number of PCs to calculate.}
+
+\item{pca_params}{Named list. Contains the parameters to use for this PCA
+run. (Randomised will ignore, as gpu only supports randomised.)}
 
 \item{cell_indices}{Integer. The cell indices to use. (0-indexed!)}
 
@@ -26,8 +34,6 @@ rs_sc_pca_sparse_gpu(
 
 \item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
 detailed verbosity.}
-
-\item{random_svd}{Boolean. Shall randomised SVD be used.}
 }
 \value{
 A list with with the following items
