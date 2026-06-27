@@ -22,7 +22,7 @@ Suggests:
     quarto,
     tinytest
 Imports: 
-    bixverse,
+    bixverse (>= 0.4.0),
     checkmate,
     manifoldsR,
     purrr,
