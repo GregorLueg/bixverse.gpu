@@ -1,6 +1,6 @@
 # Generate an GPU-accelerated kNN graph from an exhaustive search
 
-Runs an exhaustive kNN search on the GPU.
+**\[experimental\]** Runs an exhaustive kNN search on the GPU.
 
 ## Usage
 
@@ -24,7 +24,8 @@ rs_exhaustive_gpu_knn(embd, k, dist_metric, verbose)
 
 - verbose:
 
-  Logical. Whether to print progress messages.
+  Integer. `0L` - quiet; `1L` - normal verbosity; `2L` - detailed
+  verbosity.
 
 ## Value
 

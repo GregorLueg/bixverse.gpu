@@ -12,7 +12,7 @@ parametric_umap(
   k = 15L,
   min_dist = 0.1,
   spread = 1,
-  knn_method = c("hnsw", "annoy", "nndescent", "balltree", "exhaustive"),
+  knn_method = c("kmknn", "hnsw", "annoy", "nndescent", "balltree", "exhaustive"),
   nn_params = manifoldsR::params_nn(),
   parametric_umap_params = params_parametric_umap(),
   use_gpu = TRUE,
@@ -46,14 +46,14 @@ parametric_umap(
 
 - knn_method:
 
-  Character. Approximate nearest neighbour algorithm. One of `"hnsw"`,
-  `"annoy"`, `"nndescent"`, `"balltree"`, or `"exhaustive"`. Defaults to
-  `"hnsw"`.
+  Character. Approximate nearest neighbour algorithm. One of `"kmknn"`,
+  `"hnsw"`, `"annoy"`, `"nndescent"`, `"balltree"`, or `"exhaustive"`.
+  Defaults to `"kmknn"`.
 
 - nn_params:
 
   Named list. Nearest neighbour parameters, see
-  [`manifoldsR::params_nn()`](https://gregorlueg.github.io/manifoldsR/reference/params_nn.html).
+  [`params_nn()`](https://gregorlueg.github.io/manifoldsR/reference/params_nn.html).
 
 - parametric_umap_params:
 
@@ -73,7 +73,9 @@ parametric_umap(
 
 - .verbose:
 
-  Logical. Controls verbosity. Defaults to `TRUE`.
+  Boolean or integer. Controls verbosity and returns run times. `FALSE`
+  -\> quiet, `TRUE` or `1L` -\> normal verbosity, `2L` -\> detailed
+  verbosity.
 
 ## Value
 

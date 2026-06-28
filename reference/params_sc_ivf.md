@@ -7,7 +7,7 @@ Default parameters for IVF-GPU kNN search
 ``` r
 params_sc_ivf(
   k = 15L,
-  ann_dist = "cosine",
+  ann_dist = "euclidean",
   nlist = NULL,
   nprobe = NULL,
   nquery = NULL,

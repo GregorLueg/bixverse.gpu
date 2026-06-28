@@ -1,8 +1,8 @@
 # Predict new data using a trained parametric UMAP model
 
-Runs forward inference through the trained encoder network. The
-prediction automatically uses whichever backend (GPU or CPU) the model
-was trained on.
+**\[experimental\]** Runs forward inference through the trained encoder
+network. The prediction automatically uses whichever backend (GPU or
+CPU) the model was trained on.
 
 ## Usage
 

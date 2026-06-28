@@ -1,10 +1,11 @@
 # Parametric UMAP implementation
 
-Trains a neural network encoder to learn a mapping from the input space
-to a low-dimensional embedding that preserves the UMAP graph structure.
-Supports both GPU (wgpu) and CPU (NdArray) backends. For small to medium
-data sets (fewer than ~10k samples or narrow hidden layers), the CPU
-backend is typically faster owing to GPU kernel dispatch overhead.
+**\[experimental\]** Trains a neural network encoder to learn a mapping
+from the input space to a low-dimensional embedding that preserves the
+UMAP graph structure. Supports both GPU (wgpu) and CPU (burn flex CPU)
+backends. For small to medium data sets (fewer than ~10k samples or
+narrow hidden layers), the CPU backend is typically faster owing to GPU
+kernel dispatch overhead.
 
 ## Usage
 
@@ -55,7 +56,8 @@ rs_parametric_umap(
 
 - verbose:
 
-  Boolean. Controls verbosity.
+  Integer. `0L` - quiet; `1L` - normal verbosity; `2L` - detailed
+  verbosity.
 
 - use_gpu:
 

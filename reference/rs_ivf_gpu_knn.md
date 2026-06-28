@@ -1,7 +1,8 @@
 # Generate an IVF-GPU-accelerated kNN graph
 
-Builds an IVF index over the provided embedding matrix and queries each
-vector against it to produce a kNN graph. Runs on the wgpu backend.
+**\[experimental\]** Builds an IVF index over the provided embedding
+matrix and queries each vector against it to produce a kNN graph. Runs
+on the wgpu backend.
 
 ## Usage
 
@@ -26,7 +27,8 @@ rs_ivf_gpu_knn(embd, ivf_params, seed, verbose)
 
 - verbose:
 
-  Logical. Whether to print progress messages.
+  Integer. `0L` - quiet; `1L` - normal verbosity; `2L` - detailed
+  verbosity.
 
 ## Value
 

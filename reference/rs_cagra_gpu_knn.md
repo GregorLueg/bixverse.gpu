@@ -1,9 +1,9 @@
 # Generate a CAGRA-style GPU-accelerated kNN graph
 
-Builds a kNN graph from an embedding matrix using the CAGRA algorithm on
-the wgpu backend. Supports two retrieval modes: direct extraction from
-the NNDescent graph, or beam search over the pruned CAGRA graph. The
-former tends to have worse Recall.
+**\[experimental\]** Builds a kNN graph from an embedding matrix using
+the CAGRA algorithm on the wgpu backend. Supports two retrieval modes:
+direct extraction from the NNDescent graph, or beam search over the
+pruned CAGRA graph. The former tends to have worse Recall.
 
 ## Usage
 
@@ -34,7 +34,8 @@ rs_cagra_gpu_knn(embd, cagra_params, extract_knn, seed, verbose)
 
 - verbose:
 
-  Logical. Whether to print progress messages.
+  Integer. `0L` - quiet; `1L` - normal verbosity; `2L` - detailed
+  verbosity.
 
 ## Value
 

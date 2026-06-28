@@ -1,5 +1,23 @@
 # Changelog
 
+## bixverse.gpu 0.2.0
+
+Major release.
+
+### Features
+
+- CPU-backend of parametric UMAP changed to `flex` from burn for better
+  speed. Reduces also dependencies and packages and easier installation
+  on Linux.
+- GPU-accelerated methods for single cell:
+  - kNN graphs are now multi-modal (see bixverse version `"0.4.0"`)
+  - sparse, randomised SVD on GPU available
+  - GPU-accelerated Harmony (version 2).
+- New GPU-accelerated methods:
+  - k-means clustering
+  - Correlations and co-variances supported on GPU.
+- Option addded to save parametric UMAP models
+
 ## bixverse.gpu 0.1.3
 
 ### Features

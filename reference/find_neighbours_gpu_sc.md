@@ -9,7 +9,7 @@ subset at query time, trading a small amount of precision for
 considerably faster search on larger data sets. Subsequently, the kNN
 data is used to generate an sNN igraph for downstream clustering. This
 function lives in a separate package from the CPU-based
-[`bixverse::find_neighbours_sc()`](https://rdrr.io/pkg/bixverse/man/find_neighbours_sc.html)
+[`find_neighbours_sc()`](https://rdrr.io/pkg/bixverse/man/find_neighbours_sc.html)
 so that users without GPU hardware do not need to install the GPU
 dependencies.
 
@@ -20,10 +20,11 @@ find_neighbours_gpu_sc(
   object,
   embd_to_use = "pca",
   no_embd_to_use = NULL,
-  gpu_method = c("exhaustive", "ivf"),
+  modality = c("rna", "adt"),
+  gpu_method = c("ivf", "exhaustive"),
   ivf_params = params_sc_ivf(),
   k = 15L,
-  dist_metric = "cosine",
+  dist_metric = "euclidean",
   snn_params = params_sc_neighbours(),
   seed = 42L,
   .verbose = TRUE
@@ -34,50 +35,31 @@ find_neighbours_gpu_sc(
 
 - object:
 
-  `SingleCells` class.
+  `SingleCells` (or `SingleCellsMultiModal`) class.
 
 - embd_to_use:
 
-  String. The embedding to use. Whichever you choose, it needs to be
-  part of the object.
+  String. The embedding to use.
 
 - no_embd_to_use:
 
   Optional integer. Number of embedding dimensions to use. If `NULL` all
   will be used.
 
+- modality:
+
+  String. One of `c("rna", "adt")`. You can only use `"adt"` on
+  `SingleCellsMultiModal` class.
+
 - gpu_method:
 
-  String. One of `c("exhaustive", "ivf")`. `"exhaustive"` computes exact
-  nearest neighbours via brute-force on the GPU. `"ivf"` builds an
-  inverted file index for approximate search.
+  String. One of `c("exhaustive", "ivf")`.
 
 - ivf_params:
 
   List. Output of
   [`params_sc_ivf()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.md).
-  Only used when `gpu_method = "ivf"`. A list with the following items:
-
-  - k - Integer. Number of nearest neighbours to identify.
-
-  - ann_dist - String. Distance metric; one of
-    `c("euclidean", "cosine")`.
-
-  - nlist - Optional integer. Number of clusters to partition the index
-    into. Controls the granularity of the Voronoi partitioning. If
-    `NULL`, defaults to `sqrt(n)` on the Rust side.
-
-  - nprobe - Optional integer. Number of clusters to probe at query
-    time. Higher values improve recall at the cost of speed. If `NULL`,
-    defaults to `sqrt(nlist)`.
-
-  - nquery - Optional integer. Number of query vectors processed per GPU
-    batch. If `NULL`, defaults to 100,000.
-
-  - max_iters - Optional integer. Maximum k-means iterations during
-    index construction. If `NULL`, defaults to 30.
-
-  - seed - Integer. Seed for k-means initialisation.
+  Only used when `gpu_method = "ivf"`.
 
 - k:
 
@@ -86,23 +68,14 @@ find_neighbours_gpu_sc(
 
 - dist_metric:
 
-  String. One of `c("euclidean", "cosine")`. Only used when
-  `gpu_method = "exhaustive"`.
+  String. One of `c("euclidean", "cosine")` for the distance metric to
+  use. This is used specifically only for `gpu_method = "exhaustive"`.
 
 - snn_params:
 
   List. Output of
   [`bixverse::params_sc_neighbours()`](https://rdrr.io/pkg/bixverse/man/params_sc_neighbours.html).
-  Controls sNN graph construction. The relevant items are:
-
-  - full_snn - Boolean. Whether to generate edges between all cells
-    rather than only between neighbours.
-
-  - pruning - Numeric. Weights below this threshold are set to 0 in the
-    sNN graph.
-
-  - snn_similarity - String. One of `c("rank", "jaccard")`. Defines how
-    the sNN edge weights are calculated.
+  The kNN graph-related parameters will be ignored.
 
 - seed:
 
@@ -114,4 +87,9 @@ find_neighbours_gpu_sc(
 
 ## Value
 
-The object with added kNN matrix and sNN graph.
+The object with added kNN matrix and sNN graph in the selected modality
+slot.
+
+## Note
+
+Euclidean distance calculates the squared Euclidean distance for speed.

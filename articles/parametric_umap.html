@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Using Parametric UMAP • bixverse.gpu</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="parametric_umap_files/libs/quarto-html/popper.min.js"></script><script src="parametric_umap_files/libs/quarto-html/tippy.umd.min.js"></script><link href="parametric_umap_files/libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="parametric_umap_files/libs/quarto-html/light-border.css" rel="stylesheet">
@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,7 +36,7 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-accelerated kNN searches</a></li>
+<li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
   </ul>
 </li>
@@ -59,7 +59,7 @@
       <h1>Using Parametric UMAP</h1>
 
       <p class="author">Gregor Lueg</p>
-      <p class="date">2026-05-08</p>
+      <p class="date">2026-06-28</p>
 
 
       <div class="d-none name"><code></code></div>
@@ -78,11 +78,16 @@
 </section><section class="level2"><h3 id="intro">Intro<a class="anchor" aria-label="anchor" href="#intro"></a>
 </h3>
 <p>Standard UMAP can project new data onto an existing embedding, but doing so requires retaining the kNN index and the training embedding, then running a constrained optimisation that is both iterative and non-deterministic. Parametric UMAP takes a different approach: it trains a neural network encoder (an MLP) that learns an explicit function from the input space to the embedding space. Once trained, projecting new data is a single deterministic forward pass through the network… No neighbour lookup, no re-optimisation, and the same input always produces the same output.</p>
-<p>The training is GPU-accelerated via <a href="https://wgpu.rs/" class="external-link">wgpu</a> (or can be also run on CPU via ndarray with OpenBLAS or Accelerate BLAS acceleration), so a compatible GPU is beneficial but not strictly required.</p>
+<p>The training is GPU-accelerated via <a href="https://wgpu.rs/" class="external-link">wgpu</a> (or can be also run on CPU via the flex framework by the Burn development team), so a compatible GPU is beneficial but not strictly required.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse.gpu/">bixverse.gpu</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/manifoldsR/" class="external-link">manifoldsR</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'manifoldsR'</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:bixverse.gpu':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     get_centroids, membership</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -115,7 +120,7 @@
 </div>
 </section><section class="level2"><h3 id="fitting-the-model">Fitting the model<a class="anchor" aria-label="anchor" href="#fitting-the-model"></a>
 </h3>
-<p><code><a href="../reference/parametric_umap.html">parametric_umap()</a></code> returns a <code>ParametricUmapModel</code> object that holds both the training embedding and the trained encoder. As this is small data, we will just use the CPU version for 100 epochs, more than enough here.</p>
+<p><code><a href="../reference/parametric_umap.html">parametric_umap()</a></code> returns a <code>ParametricUmapModel</code> object that holds both the training embedding and the trained encoder (to note: the data is stored in the Rust kernel and handed around via a pointer). As this is small data, we will just use the CPU version for 100 epochs, more than enough here.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pumap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/parametric_umap.html">parametric_umap</a></span><span class="op">(</span></span>
@@ -124,7 +129,7 @@
 <span>  k <span class="op">=</span> <span class="fl">15L</span>,</span>
 <span>  min_dist <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  spread <span class="op">=</span> <span class="fl">1.0</span>,</span>
-<span>  knn_method <span class="op">=</span> <span class="st">"hnsw"</span>,</span>
+<span>  knn_method <span class="op">=</span> <span class="st">"kmknn"</span>,</span>
 <span>  parametric_umap_params <span class="op">=</span> <span class="fu"><a href="../reference/params_parametric_umap.html">params_parametric_umap</a></span><span class="op">(</span></span>
 <span>    batch_size <span class="op">=</span> <span class="fl">128L</span>,</span>
 <span>    n_epochs <span class="op">=</span> <span class="fl">100L</span></span>
@@ -136,7 +141,7 @@
 <span><span class="va">pumap</span></span>
 <span><span class="co">#&gt; Parametric UMAP Model</span></span>
 <span><span class="co">#&gt;   Samples: 1050 | Features: 32 | Embedding dims: 2</span></span>
-<span><span class="co">#&gt;   k: 15 | min_dist: 0.500 | spread: 1.0 | knn: hnsw</span></span></code></pre></div>
+<span><span class="co">#&gt;   k: 15 | min_dist: 0.500 | spread: 1.0 | knn: kmknn</span></span></code></pre></div>
 </div>
 <p>The training embedding is stored in <code>pumap$embedding</code> and can be visualised directly.</p>
 <div class="cell">
@@ -178,6 +183,9 @@
 </div>
 </div>
 </div>
+</section><section class="level2"><h3 id="to-dos">To-do’s<a class="anchor" aria-label="anchor" href="#to-dos"></a>
+</h3>
+<p>I realised that for now saving the model is actually not really possible due to the way R will drop pointers (and thus clean up the memory) during serialisation to RDS (or qs2). I will need to figure out how to do this.</p>
 </section><section class="level2"><h3 id="comparing-training-and-held-out-embeddings">Comparing training and held-out embeddings<a class="anchor" aria-label="anchor" href="#comparing-training-and-held-out-embeddings"></a>
 </h3>
 <p>We can overlay both sets to confirm that the encoder generalises and places held-out points in consistent positions relative to the training embedding.</p>
@@ -203,6 +211,30 @@
 </div>
 </div>
 </div>
+</section><section class="level2"><h3 id="saving-and-loading-the-model">Saving and loading the model<a class="anchor" aria-label="anchor" href="#saving-and-loading-the-model"></a>
+</h3>
+<p>As we are using Rust under the hood with external memory pointers, we need to be able to also save and load the model. To that aim, the package provides two helpers which deal with all of the memory stuff for you and use the blazingly fast <a href="https://github.com/qsbase/qs2" class="external-link">qs2</a> under the hood. Let’s save the model first.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">f_path_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"trained_model.qs2"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/save_parametric_umap.html">save_parametric_umap</a></span><span class="op">(</span><span class="va">pumap</span>, <span class="va">f_path_model</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">pumap</span><span class="op">)</span></span></code></pre></div>
+</div>
+<p>And now let’s load it again and predict again the test data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pumap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_parametric_umap.html">load_parametric_umap</a></span><span class="op">(</span><span class="va">f_path_model</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">test_embedding_2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">pumap</span>, newdata <span class="op">=</span> <span class="va">test_data</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># let's test that the predictions are still behaving...</span></span>
+<span><span class="fu">tinytest</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/tinytest/man/expect_equal.html" class="external-link">expect_equivalent</a></span><span class="op">(</span>current <span class="op">=</span> <span class="va">test_embedding</span>, target <span class="op">=</span> <span class="va">test_embedding_2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; ----- PASSED      : &lt;--&gt;</span></span>
+<span><span class="co">#&gt;  call| tinytest::expect_equivalent(current = test_embedding, target = test_embedding_2)</span></span></code></pre></div>
+</div>
+<p>That’s it.</p>
 </section><section class="level2"><h3 id="notes">Notes<a class="anchor" aria-label="anchor" href="#notes"></a>
 </h3>
 <p>Parametric UMAP inherits the same strengths and weaknesses as standard UMAP with respect to the loss function: it excels at preserving cluster structure but can distort continuous manifolds. The key advantage is the reusable encoder: once trained (even if a bit slower), embedding new data is a single forward pass through the network rather than a full re-optimisation. Just be wary of out-of-distribution predictions… If you have a massive batch effect things won’t look pretty.</p>

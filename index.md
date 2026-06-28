@@ -1,10 +1,12 @@
 # *bixverse.gpu package*
 
-![r_package](https://img.shields.io/badge/R_package-0.1.3-orange)[![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
+![r_package](https://img.shields.io/badge/R_package-0.2.0-orange)[![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![pkgdown](https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github)](https://gregorlueg.github.io/bixverse.gpu/)
 [![extendr](https://img.shields.io/badge/extendr-%5E0.9.0-276DC2)](https://extendr.github.io/extendr/extendr_api/)
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 
 ![bixverse.plots logo](reference/figures/bixverse_gpu_logo.png)
 
@@ -12,10 +14,10 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 
 GPU-accelerated algorithms (via the WGPU backend on cubecl which allows
 you to run the code here on any GPU). You will need to set up your wgpu
-however, please check the [CubeCL
+however, please check the [cubecl
 book](https://burn.dev/books/cubecl/getting-started/installation.html).
 I do not have access to an Nvidia GPU, but I will aim also to allow for
-conditional compiling to that backend if Cuda is detected (future
+conditional compiling to that backend if cuda is detected (future
 problem). The package is designed to support the [bixverse
 package](https://github.com/GregorLueg/bixverse). Additionally, also
 provides some neural net-based versions of embedding methods for
@@ -33,16 +35,12 @@ further help written
 guys in terms of Rust set up. (bixverse.gpu as bixverse both use
 rextendr to interface with Rust.) Additionally, in this special case,
 you will also need the GPU drivers set up properly on your system.
-Please refer to the [CubeCL book](https://burn.dev/books/cubecl/) in
-terms of how to ensure WGPU runs on your respective system. On a Unix
-system you also need OpenBLAS set up for the Ndarray backend; on MacOS
-it will just use the Accelerate framework.
-
-#### Linux users
-
-The CPU-accelerated form of the neural net powering parametric UMAP is
-dependent on OpenBLAS. You will need to have OpenBLAS set up on your
-system!
+Please refer to the [cubecl book](https://burn.dev/books/cubecl/) in
+terms of how to ensure wgpu runs on your respective system. Previously,
+the CPU-based versions of neural net acceleration where running through
+ndarray and accelerated via OpenBLAS (Linux) or Accelerate (Mac). This
+has been now replaced with the
+[flex](https://github.com/tracel-ai/burn/pull/4761) framework.
 
 #### Setting up Rust
 
@@ -82,16 +80,35 @@ several hacks in an easy way, please contact me!
 The package website can be found
 [here](https://gregorlueg.github.io/bixverse.gpu/). This package is
 **not** a stand-alone package, but designed to support the `bixverse`
-with GPU-accelerated methods (at the moment with focus on single cell
-support). If you are however interesting in just using the
-GPU-accelerated kNN searches, feel free to use the respective `rs_`
-functions for that. Or if you want to train a neural network for UMAP,
-the package also provides what you need.
+with GPU-accelerated methods. If you are however interesting in just
+using the GPU-accelerated kNN searches, feel free to use the respective
+`rs_` functions for that. Or if you want to train a neural network for
+UMAP, the package also provides what you need.
 
 ### Roadmap:
 
-Currently, the main focus was on acceleration of kNN graph generation,
-which is quite ubiquitous in single cell. Other areas of (personal)
-interest could be GPU-accelerated k-means (Harmony could benefit here)
-or specific sparse matrix multiplications on the GPU for large data
-sets.
+Current roadmap (subject to change and interest):
+
+**GPU-related things:**
+
+GPU-based kNN graph generation (for single cells)
+
+k-means clustering on GPU
+
+Sparse, randomised SVD for single cells
+
+GPU-accelerated Harmony batch correction (single cells)
+
+GPU-accelerated correlations (Spearman and Pearson)
+
+GPU-accelerated NMF.
+
+GPU-accelerated BBKNN batch correction (single cells)
+
+GPU-accelerate UMAP embedding generation.
+
+**General:**
+
+More vignettes on some of the implemented functions.
+
+If you have some other ideas, please feel free to make an issue.
