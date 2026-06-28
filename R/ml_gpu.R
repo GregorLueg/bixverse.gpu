@@ -22,7 +22,9 @@
 #' @param seed Integer. Random seed for reproducibility. Defaults to 42L.
 #' @param .verbose Logical. Controls verbosity. Defaults to `TRUE`.
 #'
-#' @returns
+#' @returns A `KMeansClusterGPU` class with assignments and centroids.
+#'
+#' @export
 k_means_cluster_gpu <- function(
   data,
   k,
@@ -48,5 +50,12 @@ k_means_cluster_gpu <- function(
     kmeans_params = kmeans_params,
     seed = seed,
     verbose = .verbose
+  )
+
+  new_kmeans_cluster_gpu(
+    centroids = res$centroids,
+    assignments = res$assignments,
+    k = k,
+    metric = kmeans_params$metric
   )
 }

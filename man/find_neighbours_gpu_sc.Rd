@@ -9,7 +9,7 @@ find_neighbours_gpu_sc(
   embd_to_use = "pca",
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
-  gpu_method = c("exhaustive", "ivf"),
+  gpu_method = c("ivf", "exhaustive"),
   ivf_params = params_sc_ivf(),
   k = 15L,
   dist_metric = "cosine",
@@ -37,10 +37,8 @@ used when \code{gpu_method = "ivf"}.}
 \item{k}{Integer. Number of neighbours. Only used when
 \code{gpu_method = "exhaustive"}.}
 
-\item{dist_metric}{String. One of \code{c("euclidean", "cosine")}. Only used
-when \code{gpu_method = "exhaustive"}.}
-
-\item{snn_params}{List. Output of \code{\link[bixverse:params_sc_neighbours]{bixverse::params_sc_neighbours()}}.}
+\item{snn_params}{List. Output of \code{\link[bixverse:params_sc_neighbours]{bixverse::params_sc_neighbours()}}. The
+kNN graph-related parameters will be ignored.}
 
 \item{seed}{Integer. For reproducibility.}
 

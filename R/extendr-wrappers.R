@@ -7,6 +7,8 @@ NULL
 
 #' Generate a CAGRA-style GPU-accelerated kNN graph
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Builds a kNN graph from an embedding matrix using the CAGRA algorithm on
 #' the wgpu backend. Supports two retrieval modes: direct extraction from the
 #' NNDescent graph, or beam search over the pruned CAGRA graph. The former
@@ -37,6 +39,8 @@ rs_cagra_gpu_knn <- function(embd, cagra_params, extract_knn, seed, verbose) .Ca
 
 #' Generate an IVF-GPU-accelerated kNN graph
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Builds an IVF index over the provided embedding matrix and queries each
 #' vector against it to produce a kNN graph. Runs on the wgpu backend.
 #'
@@ -61,6 +65,8 @@ rs_ivf_gpu_knn <- function(embd, ivf_params, seed, verbose) .Call(wrap__rs_ivf_g
 
 #' Generate an GPU-accelerated kNN graph from an exhaustive search
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Runs an exhaustive kNN search on the GPU.
 #'
 #' @param embd Numeric matrix of embeddings, cells x features.
@@ -84,6 +90,8 @@ rs_exhaustive_gpu_knn <- function(embd, k, dist_metric, verbose) .Call(wrap__rs_
 
 #' Parametric UMAP implementation
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Trains a neural network encoder to learn a mapping from the input space to a
 #' low-dimensional embedding that preserves the UMAP graph structure. Supports
 #' both GPU (wgpu) and CPU (burn flex CPU) backends. For small to medium data
@@ -112,6 +120,8 @@ rs_parametric_umap <- function(data, n_dim, k, min_dist, spread, parametric_para
 
 #' Predict new data using a trained parametric UMAP model
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Runs forward inference through the trained encoder network. The prediction
 #' automatically uses whichever backend (GPU or CPU) the model was trained on.
 #'
@@ -126,9 +136,37 @@ rs_parametric_umap <- function(data, n_dim, k, min_dist, spread, parametric_para
 #' @export
 rs_parametric_umap_predict <- function(model, data) .Call(wrap__rs_parametric_umap_predict, model, data)
 
+#' Takes in a parametric UMAP and serialises it to raw bytes
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' Serialises a trained parametric UMAP model to bytes for saving the data.
+#'
+#' @param model Robject. The trained parametric UMAP model to serialise.
+#'
+#' @returns The raw bytes of the model
+#'
+#' @keywords internal
+rs_serialise_parametric_umap <- function(model) .Call(wrap__rs_serialise_parametric_umap, model)
+
+#' Deserialises raw bytes to a trained UMAP model.
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' Deserialises a trained parametric UMAP model from points and returns an R
+#' object.
+#'
+#' @param bytes The raw byte sequence
+#'
+#' @returns Returns
+#'
+#' @keywords internal
+rs_deserialise_parametric_umap <- function(bytes) .Call(wrap__rs_deserialise_parametric_umap, bytes)
+
 #' GPU-accelerated k-means
 #'
 #' @description
+#' `r lifecycle::badge("experimental")`
 #' A GPU-accelerated k-means version leveraging the wgpu backend via cubecl.
 #'
 #' @param data Numeric matrix. Samples x features.
@@ -151,6 +189,11 @@ rs_kmeans_gpu <- function(data, dist, n_centroids, kmeans_params, seed, verbose)
 
 #' GPU-accelerated correlation calculations
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU-accelerated pairwise column correlations. Has the options of Pearson and
+#' Spearman correlation coefficient calculations.
+#'
 #' @param x Numerical matrix. The matrix for which to calculate the column
 #' pairwise correlation matrix.
 #' @param spearman Boolean. Shall the Spearman correlation be calculated
@@ -164,6 +207,10 @@ rs_cor_gpu <- function(x, spearman, verbose) .Call(wrap__rs_cor_gpu, x, spearman
 
 #' GPU-accelerated covariance calculations
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU-accelerated pairwise column co-variance calculation.
+#'
 #' @param x Numerical matrix. The matrix for which to calculate the column
 #' pairwise covariance matrix.
 #' @param verbose Boolean. Controls verbosity of the function.
@@ -176,6 +223,7 @@ rs_cov_gpu <- function(x, verbose) .Call(wrap__rs_cov_gpu, x, verbose)
 #' Calculates sparse PCA for single cell
 #'
 #' @description
+#' `r lifecycle::badge("experimental")`
 #' Helper function that will calculate sparse PCA without scaling the data.
 #' This has the advantage that you avoid creating a large dense matrix due
 #' to scaling; however, it has the disadvantage that the first PC will be
@@ -208,11 +256,14 @@ rs_cov_gpu <- function(x, verbose) .Call(wrap__rs_cov_gpu, x, verbose)
 #' }
 #'
 #' @export
+#'
+#' @keyword internal
 rs_sc_pca_sparse_gpu <- function(f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, verbose) .Call(wrap__rs_sc_pca_sparse_gpu, f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, verbose)
 
 #' Harmony batch correction in Rust (version 2, GPU-accelerated)
 #'
 #' @description
+#' `r lifecycle::badge("experimental")`
 #' This function implements the GPU-accelerated version 2 Harmony algorithm
 #' from Patikas, et al., 2026. Only a single batch covariate is supported.
 #'

@@ -9,7 +9,7 @@ Authors@R:
         role = c("aut", "cre"))
 Description: 
     Provides GPU-accelerated methods for the bixverse. These leverage Burn, 
-    CubeCl and WGPU under the hood to work on very different hardwares.
+    cubecl and wgpu under the hood to work on very different hardwares.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -18,18 +18,22 @@ SystemRequirements: Cargo (Rust's package manager), rustc >= 1.65.0, xz
 Depends: 
     R (>= 4.2)
 Suggests: 
+    bixverse.plots,
     knitr,
     quarto,
     tinytest
 Imports: 
     bixverse (>= 0.4.0),
     checkmate,
+    lifecycle,
     manifoldsR,
     purrr,
+    qs2,
     rextendr,
-    S7
+    S7    
 Remotes:
     GregorLueg/bixverse,
+    GregorLueg/bixverse.plots,
     GregorLueg/manifoldsR
 VignetteBuilder: quarto
 URL: https://gregorlueg.github.io/bixverse.gpu/

@@ -38,6 +38,8 @@ extendr_module! {
     // umap
     fn rs_parametric_umap;
     fn rs_parametric_umap_predict;
+    fn rs_serialise_parametric_umap;
+    fn rs_deserialise_parametric_umap;
     // clustering
     fn rs_kmeans_gpu;
     // correlations
@@ -92,6 +94,8 @@ impl PUmapModel {
 
 /// Generate a CAGRA-style GPU-accelerated kNN graph
 ///
+/// @description
+/// `r lifecycle::badge("experimental")`
 /// Builds a kNN graph from an embedding matrix using the CAGRA algorithm on
 /// the wgpu backend. Supports two retrieval modes: direct extraction from the
 /// NNDescent graph, or beam search over the pruned CAGRA graph. The former
@@ -155,6 +159,8 @@ fn rs_cagra_gpu_knn(
 
 /// Generate an IVF-GPU-accelerated kNN graph
 ///
+/// @description
+/// `r lifecycle::badge("experimental")`
 /// Builds an IVF index over the provided embedding matrix and queries each
 /// vector against it to produce a kNN graph. Runs on the wgpu backend.
 ///
@@ -210,6 +216,8 @@ fn rs_ivf_gpu_knn(
 
 /// Generate an GPU-accelerated kNN graph from an exhaustive search
 ///
+/// @description
+/// `r lifecycle::badge("experimental")`
 /// Runs an exhaustive kNN search on the GPU.
 ///
 /// @param embd Numeric matrix of embeddings, cells x features.
@@ -267,6 +275,8 @@ fn rs_exhaustive_gpu_knn(
 
 /// Parametric UMAP implementation
 ///
+/// @description
+/// `r lifecycle::badge("experimental")`
 /// Trains a neural network encoder to learn a mapping from the input space to a
 /// low-dimensional embedding that preserves the UMAP graph structure. Supports
 /// both GPU (wgpu) and CPU (burn flex CPU) backends. For small to medium data
@@ -347,6 +357,8 @@ fn rs_parametric_umap(
 
 /// Predict new data using a trained parametric UMAP model
 ///
+/// @description
+/// `r lifecycle::badge("experimental")`
 /// Runs forward inference through the trained encoder network. The prediction
 /// automatically uses whichever backend (GPU or CPU) the model was trained on.
 ///
@@ -373,6 +385,75 @@ fn rs_parametric_umap_predict(model: Robj, data: RMatrix<f64>) -> RMatrix<f64> {
     faer_to_r_matrix(mat.as_ref())
 }
 
+/// Takes in a parametric UMAP and serialises it to raw bytes
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// Serialises a trained parametric UMAP model to bytes for saving the data.
+///
+/// @param model Robject. The trained parametric UMAP model to serialise.
+///
+/// @returns The raw bytes of the model
+///
+/// @keywords internal
+#[extendr]
+fn rs_serialise_parametric_umap(model: Robj) -> Result<Vec<u8>, extendr_api::Error> {
+    let model: ExternalPtr<PUmapModel> = model.try_into()?;
+    let (tag, mut bytes) = match &*model {
+        PUmapModel::Gpu(m) => (
+            0u8,
+            m.to_bytes()
+                .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
+        ),
+        PUmapModel::Cpu(m) => (
+            1u8,
+            m.to_bytes()
+                .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
+        ),
+    };
+    let mut out = Vec::with_capacity(bytes.len() + 1);
+    out.push(tag);
+    out.append(&mut bytes);
+    Ok(out)
+}
+
+/// Deserialises raw bytes to a trained UMAP model.
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// Deserialises a trained parametric UMAP model from points and returns an R
+/// object.
+///
+/// @param bytes The raw byte sequence
+///
+/// @returns Returns
+///
+/// @keywords internal
+#[extendr]
+fn rs_deserialise_parametric_umap(bytes: Vec<u8>) -> Result<Robj, extendr_api::Error> {
+    if bytes.is_empty() {
+        return Err(extendr_api::Error::Other("empty payload".into()));
+    }
+    let (tag, payload) = (bytes[0], &bytes[1..]);
+    let model = match tag {
+        0 => PUmapModel::Gpu(
+            TrainedUmapModel::from_bytes(payload, WgpuDevice::default())
+                .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
+        ),
+        1 => PUmapModel::Cpu(
+            TrainedUmapModel::from_bytes(payload, FlexDevice)
+                .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
+        ),
+        t => {
+            return Err(extendr_api::Error::Other(format!(
+                "unknown backend tag: {}",
+                t
+            )))
+        }
+    };
+    Ok(ExternalPtr::new(model).into())
+}
+
 ///////////////////
 // K-means (GPU) //
 ///////////////////
@@ -380,6 +461,7 @@ fn rs_parametric_umap_predict(model: Robj, data: RMatrix<f64>) -> RMatrix<f64> {
 /// GPU-accelerated k-means
 ///
 /// @description
+/// `r lifecycle::badge("experimental")`
 /// A GPU-accelerated k-means version leveraging the wgpu backend via cubecl.
 ///
 /// @param data Numeric matrix. Samples x features.
@@ -432,6 +514,11 @@ fn rs_kmeans_gpu(
 
 /// GPU-accelerated correlation calculations
 ///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// GPU-accelerated pairwise column correlations. Has the options of Pearson and
+/// Spearman correlation coefficient calculations.
+///
 /// @param x Numerical matrix. The matrix for which to calculate the column
 /// pairwise correlation matrix.
 /// @param spearman Boolean. Shall the Spearman correlation be calculated
@@ -481,6 +568,10 @@ fn rs_cor_gpu(
 
 /// GPU-accelerated covariance calculations
 ///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// GPU-accelerated pairwise column co-variance calculation.
+///
 /// @param x Numerical matrix. The matrix for which to calculate the column
 /// pairwise covariance matrix.
 /// @param verbose Boolean. Controls verbosity of the function.
@@ -493,7 +584,7 @@ fn rs_cov_gpu(x: RMatrix<f64>, verbose: bool) -> Result<RMatrix<f64>, extendr_ap
     let data = r_matrix_to_faer_fp32(&x);
     let device: WgpuDevice = Default::default();
 
-    let mut res = column_pairwise_cor_gpu::<f32, WgpuRuntime, f32>(
+    let res = column_pairwise_cor_gpu::<f32, WgpuRuntime, f32>(
         data.as_ref(),
         GpuCorCov::Covariance,
         device.clone(),
@@ -503,15 +594,6 @@ fn rs_cov_gpu(x: RMatrix<f64>, verbose: bool) -> Result<RMatrix<f64>, extendr_ap
 
     let client = WgpuRuntime::client(&device);
     client.memory_cleanup();
-
-    // set the diagonals to 1
-    for i in 0..res.nrows() {
-        for j in 0..res.ncols() {
-            if i == j {
-                res[(i, j)] = 1.0;
-            }
-        }
-    }
 
     Ok(faer_to_r_matrix(res.as_ref()))
 }

@@ -18,6 +18,7 @@ Numerical matrix of dimensions samples x n_dim with the predicted
 embeddings.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Runs forward inference through the trained encoder network. The prediction
 automatically uses whichever backend (GPU or CPU) the model was trained on.
 }

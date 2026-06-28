@@ -18,6 +18,7 @@ extendr_module! {
 /// Harmony batch correction in Rust (version 2, GPU-accelerated)
 ///
 /// @description
+/// `r lifecycle::badge("experimental")`
 /// This function implements the GPU-accelerated version 2 Harmony algorithm
 /// from Patikas, et al., 2026. Only a single batch covariate is supported.
 ///

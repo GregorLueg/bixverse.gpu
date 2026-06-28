@@ -25,7 +25,7 @@
   checkmate::qassert(spread, "N1(0,)")
   checkmate::assertChoice(
     knn_method,
-    c("hnsw", "annoy", "nndescent", "balltree", "exhaustive")
+    c("kmknn", "hnsw", "annoy", "nndescent", "balltree", "exhaustive")
   )
   manifoldsR:::assertNnParams(nn_params)
   assertParametricUmapParams(parametric_umap_params)
@@ -54,8 +54,8 @@
 #' @param spread Numeric. Effective scale of embedded points. Defaults to
 #' `1.0`.
 #' @param knn_method Character. Approximate nearest neighbour algorithm. One of
-#' `"hnsw"`, `"annoy"`, `"nndescent"`, `"balltree"`, or `"exhaustive"`.
-#' Defaults to `"hnsw"`.
+#' `"kmknn"`, `"hnsw"`, `"annoy"`, `"nndescent"`, `"balltree"`, or
+#' `"exhaustive"`. Defaults to `"kmknn"`.
 #' @param nn_params Named list. Nearest neighbour parameters, see
 #' [params_nn()].
 #' @param parametric_umap_params Named list. Parametric UMAP parameters, see
@@ -65,7 +65,9 @@
 #' `ndarray`) backend due to kernel launch overhead.
 #' data sets, the CPU will be faster via the Ndarray.
 #' @param seed Integer. Random seed for reproducibility. Defaults to `42L`.
-#' @param .verbose Logical. Controls verbosity. Defaults to `TRUE`.
+#' @param .verbose Boolean or integer. Controls verbosity and returns run times.
+#' `FALSE` -> quiet, `TRUE` or `1L` -> normal verbosity, `2L` -> detailed
+#' verbosity.
 #'
 #' @return A `ParametricUmapModel` object containing the embedding matrix
 #' and the trained encoder model.
@@ -77,7 +79,14 @@ parametric_umap <- function(
   k = 15L,
   min_dist = 0.1,
   spread = 1.0,
-  knn_method = c("hnsw", "annoy", "nndescent", "balltree", "exhaustive"),
+  knn_method = c(
+    "kmknn",
+    "hnsw",
+    "annoy",
+    "nndescent",
+    "balltree",
+    "exhaustive"
+  ),
   nn_params = manifoldsR::params_nn(),
   parametric_umap_params = params_parametric_umap(),
   use_gpu = TRUE,
@@ -123,7 +132,7 @@ parametric_umap <- function(
         parametric_params = final_params,
         seed = seed,
         use_gpu = use_gpu,
-        verbose = .verbose
+        verbose = parse_verbosity(.verbose)
       )
     },
     error = function(e) {
@@ -149,6 +158,60 @@ parametric_umap <- function(
         n_features = ncol(data)
       )
     ),
+    class = "ParametricUmapModel"
+  )
+}
+
+## save and load ---------------------------------------------------------------
+
+#' Save a parametric UMAP as a qs2 file
+#'
+#' @param model `ParametricUmapModel` you want to save.
+#' @param path String. The path to the file. Needs to end with `".qs"` file
+#' extension.
+#'
+#' @returns Saves the file to the provided path.
+#'
+#' @export
+save_parametric_umap <- function(model, path) {
+  checkmate::assertClass(model, "ParametricUmapModel")
+  checkmate::assertString(path)
+  bytes <- rs_serialise_parametric_umap(model$model$ptr)
+  qs2::qs_save(
+    object = list(
+      version = 1L,
+      bytes = bytes,
+      embedding = model$embedding,
+      params = model$params
+    ),
+    file = path
+  )
+  invisible(path)
+}
+
+#' Load a parametric UMAP as a qs2 file
+#'
+#' @param path String. The path to the serialised trained parametric UMAP model
+#' on disk.
+#'
+#' @returns The `ParametricUmapModel`.
+#'
+#' @export
+load_parametric_umap <- function(path) {
+  checkmate::assertFileExists(path)
+  obj <- qs2::qs_read(path)
+  if (!identical(obj$version, 1L)) {
+    stop(
+      "Unsupported parametric UMAP file version: ",
+      obj$version,
+      call. = FALSE
+    )
+  }
+  ptr <- rs_deserialise_parametric_umap(obj$bytes)
+  model_env <- new.env(parent = emptyenv())
+  model_env$ptr <- ptr
+  structure(
+    list(embedding = obj$embedding, model = model_env, params = obj$params),
     class = "ParametricUmapModel"
   )
 }

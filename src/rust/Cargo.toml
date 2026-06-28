@@ -12,11 +12,11 @@ name = 'bixverse_gpu'
 [dependencies]
 ann-search-rs = { version = "0.4.3", features = [ "gpu" ] }
 burn = { version = "0.21.0", features = [ "wgpu", "flex" ] }
-bixverse-rs = { git = "https://github.com/GregorLueg/bixverse-rs.git", branch = "v0.3.1", features = [ "gpu", "single-cell" ] }
+bixverse-rs = { version = "0.3.2", features = [ "gpu", "single-cell" ] }
 cubecl = "0.10.0"
 extendr-api = "0.9.0"
 faer = { version = '0.23.2' }
-manifolds-rs = { version = "0.3.2", features = [ "parametric" ] }
+manifolds-rs = { version = "0.3.4", features = [ "parametric" ] }
 
 [profile.dev.package.faer]
 opt-level = 3

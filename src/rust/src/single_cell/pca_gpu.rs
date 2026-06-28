@@ -23,6 +23,7 @@ extendr_module! {
 /// Calculates sparse PCA for single cell
 ///
 /// @description
+/// `r lifecycle::badge("experimental")`
 /// Helper function that will calculate sparse PCA without scaling the data.
 /// This has the advantage that you avoid creating a large dense matrix due
 /// to scaling; however, it has the disadvantage that the first PC will be
@@ -55,6 +56,8 @@ extendr_module! {
 /// }
 ///
 /// @export
+///
+/// @keyword internal
 #[extendr]
 #[allow(clippy::too_many_arguments)]
 fn rs_sc_pca_sparse_gpu(

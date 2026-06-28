@@ -161,12 +161,6 @@ sc_object <- find_hvg_sc(
 
 ## GPU-accelerated PCA
 
-The highly variable gene selection is executed on the CPU. 
-```{r}
-#| label: hvg
-sc_object <- find_hvg_sc(object = sc_object, hvg_no = 2000L, .verbose = TRUE)
-``` 
-
 However, with PCA things start changing. Let's run first the CPU version which
 you know
 
@@ -177,6 +171,7 @@ sc_object <- calculate_pca_sc(
   no_pcs = 32L,
   sparse_svd = TRUE
 )
+# extract the factors and singular values
 cpu_res <- get_pca_factors(sc_object)
 cpu_s <- get_pca_singular_val(sc_object)
 ```
@@ -192,6 +187,7 @@ gpu_s <- get_pca_singular_val(sc_object)
 
 Let's compare against the CPU version: 
 ```{r}
+#| label: cpu vs gpu - pc1
 ggplot(
   data = data.table(PC1_cpu = cpu_res[, 1], PC1_gpu = gpu_res[, 1]),
   mapping = aes(x = PC1_cpu, y = PC1_gpu)
@@ -202,6 +198,19 @@ ggplot(
   ylab("PC1 (GPU)") +
   ggtitle("CPU vs GPU")
 ``` 
+
+```{r}
+#| label: cpu vs gpu - singular values
+ggplot(
+  data = data.table(sv_cpu = cpu_s, sv_gpu = gpu_s),
+  mapping = aes(x = sv_cpu, y = sv_gpu)
+) +
+  geom_point() +
+  theme_bw() +
+  xlab("Singular values (CPU)") +
+  ylab("Singular values (GPU)") +
+  ggtitle("CPU vs GPU")
+```
 
 You might see some slight differences here driven by floating operation 
 differences between CPU and GPU. The overall data structure is however clearly
@@ -274,25 +283,27 @@ sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
   gpu_method = "ivf",
-  ivf_params = params_sc_ivf(k = 15L, ann_dist = "euclidean"),
+  ivf_params = params_sc_ivf(),
   .verbose = TRUE
 )
 ```
 
 ### CAGRA
 
-Builds a pruned NNDescent graph. With `extract_knn = TRUE` you pull the kNN
-straight out of the NNDescent graph: faster, slightly less precise, useful
-for rapid iteration over parameters. With `extract_knn = FALSE` (the default)
-the function runs beam search over the pruned graph for higher recall, which
-matters more on larger, higher-dimensional data.
+Builds a pruned NNDescent graph, based on the fantastic work by [Nvidia](https://arxiv.org/pdf/2308.15136). (Unfortunately, some of the cuda primitives are not available
+in wgpu, but it is still a blazingly fast approximate kNN search even on wgpu).
+With `extract_knn = TRUE` you pull the kNN straight out of the NNDescent graph: 
+faster, slightly less precise, useful for rapid iteration over parameters. 
+With `extract_knn = FALSE` (the default) the function runs beam search over the 
+pruned graph for higher recall, which matters more on larger, higher-dimensional 
+data.
 
 ```{r}
 #| label: gpu cagra
 sc_object <- find_neighbours_cagra_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
-  cagra_params = params_sc_cagra(k_query = 15L, ann_dist = "euclidean"),
+  cagra_params = params_sc_cagra(),
   extract_knn = FALSE,
   .verbose = TRUE
 )
@@ -328,7 +339,7 @@ Same kNN setup on the CPU Harmony embedding:
 sc_object <- find_neighbours_cagra_sc(
   object = sc_object,
   embd_to_use = "harmony_v2",
-  cagra_params = params_sc_cagra(k_query = 15L, ann_dist = "cosine"),
+  cagra_params = params_sc_cagra(),
   extract_knn = FALSE,
   .verbose = TRUE
 )
@@ -360,7 +371,7 @@ should not over-interpret them ([Chari et al., 2023](https://journals.plos.org/p
 sc_object <- find_neighbours_cagra_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
-  cagra_params = params_sc_cagra(k_query = 15L, ann_dist = "cosine"),
+  cagra_params = params_sc_cagra(),
   extract_knn = FALSE,
   .verbose = TRUE
 )
@@ -402,7 +413,8 @@ GPU-accelerated versions of methods that lean heavily on kNN graphs:
 - **fastMNN** ([paper](https://www.nature.com/articles/nbt.4091),
   CPU [implementation](https://gregorlueg.github.io/bixverse/reference/fast_mnn_sc.html))
 
-Doublet detection is another candidate.
+Doublet detection is another candidate. Another potentially interesting area
+would be GPU-accelerated NMF ... ? Basically, watch the space.
 
 ## Clean up
 

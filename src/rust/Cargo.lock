@@ -514,8 +514,9 @@ dependencies = [
 
 [[package]]
 name = "bixverse-rs"
-version = "0.3.1"
-source = "git+https://github.com/GregorLueg/bixverse-rs.git?branch=v0.3.1#4fcc170c254c4ee42bedd188b5503d851a27d714"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7cab20d66b9373fbb5ae03ae7a56548360bfb4dc74f3c9210e024d368b49773"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -534,6 +535,7 @@ dependencies = [
  "indexmap",
  "lz4_flex",
  "memmap2",
+ "ndarray 0.16.1",
  "num-traits",
  "once_cell",
  "petgraph",
@@ -4570,12 +4572,13 @@ checksum = "670fdfda89751bc4a84ac13eaa63e205cf0fd22b4c9a5fbfa085b63c1f1d3a30"
 
 [[package]]
 name = "manifolds-rs"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19f25c1b065ab1a25b96aa2826bc5030381af5f90f4fbde789552618fba81142"
+checksum = "6ed1355e64c68adc5df2db19ca6300f5a88e67942f57749a5a7f5ec306b48109"
 dependencies = [
  "ann-search-rs",
  "approx",
+ "bincode",
  "burn",
  "faer",
  "faer-traits",
@@ -4584,6 +4587,7 @@ dependencies = [
  "rand_distr 0.5.1",
  "rayon",
  "rustc-hash 2.1.2",
+ "serde",
  "thiserror 2.0.18",
  "thousands",
 ]

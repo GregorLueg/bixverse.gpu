@@ -25,6 +25,9 @@ samples x features. Will be coerced to a matrix.}
 
 \item{.verbose}{Logical. Controls verbosity. Defaults to \code{TRUE}.}
 }
+\value{
+A \code{KMeansClusterGPU} class with assignments and centroids.
+}
 \description{
 Performs k-means clustering as a GPU-accelerated form. In its current form
 uses the cubecl with wgpu backend.

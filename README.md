@@ -90,8 +90,9 @@ Current roadmap (subject to change and interest):
 - [x] k-means clustering on GPU
 - [x] Sparse, randomised SVD for single cells 
 - [x] GPU-accelerated Harmony batch correction (single cells)
-- [ ] GPU-accelerated correlations (Spearman and Pearson)
-- [ ] GPU-accelerated NMF
+- [x] GPU-accelerated correlations (Spearman and Pearson)
+- [ ] GPU-accelerated NMF.
 - [ ] GPU-accelerated BBKNN batch correction (single cells)
+- [ ] GPU-accelerate UMAP embedding generation.
 
 If you have some other ideas, please feel free to make an issue.

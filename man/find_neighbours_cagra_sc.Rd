@@ -10,7 +10,7 @@ find_neighbours_cagra_sc(
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
   cagra_params = params_sc_cagra(),
-  extract_knn = TRUE,
+  extract_knn = FALSE,
   snn_params = params_sc_neighbours(),
   seed = 42L,
   .verbose = TRUE
@@ -31,9 +31,10 @@ on \code{SingleCellsMultiModal} class.}
 
 \item{extract_knn}{Logical. If \code{TRUE}, extracts the kNN graph directly from
 the NNDescent result. If \code{FALSE}, runs beam search over the pruned CAGRA
-graph.}
+graph. The extraction is faster, but creates a lower quality kNN graph.}
 
-\item{snn_params}{List. Output of \code{\link[bixverse:params_sc_neighbours]{bixverse::params_sc_neighbours()}}.}
+\item{snn_params}{List. Output of \code{\link[bixverse:params_sc_neighbours]{bixverse::params_sc_neighbours()}}. The
+kNN graph-related parameters will be ignored.}
 
 \item{seed}{Integer. For reproducibility.}
 

@@ -1,4 +1,6 @@
-# bixverse.gpu 0.1.4
+# bixverse.gpu 0.2.0
+
+Major release.
 
 ## Features
 
@@ -7,8 +9,10 @@
 * GPU-accelerated methods for single cell:
   - kNN graphs are now multi-modal (see bixverse version `"0.4.0"`)
   - sparse, randomised SVD on GPU available
+  - GPU-accelerated Harmony (version 2).
 * New GPU-accelerated methods:
   - k-means clustering
+  - Correlations and co-variances supported on GPU.
 
 # bixverse.gpu 0.1.3
 

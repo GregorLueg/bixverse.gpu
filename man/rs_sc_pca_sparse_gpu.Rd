@@ -47,6 +47,7 @@ SVD).
 }
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Helper function that will calculate sparse PCA without scaling the data.
 This has the advantage that you avoid creating a large dense matrix due
 to scaling; however, it has the disadvantage that the first PC will be

@@ -19,5 +19,7 @@ instead of Pearson.}
 The correlation matrix
 }
 \description{
-GPU-accelerated correlation calculations
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+GPU-accelerated pairwise column correlations. Has the options of Pearson and
+Spearman correlation coefficient calculations.
 }

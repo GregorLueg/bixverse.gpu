@@ -29,5 +29,6 @@ A list with
 }
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 A GPU-accelerated k-means version leveraging the wgpu backend via cubecl.
 }
