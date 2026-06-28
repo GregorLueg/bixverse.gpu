@@ -2,12 +2,19 @@ use extendr_api::{List, Robj};
 
 use ann_search_rs::prelude::*;
 use ann_search_rs::*;
-use cubecl::wgpu::WgpuDevice;
-use cubecl::wgpu::WgpuRuntime;
+use bixverse_rs::prelude::*;
+use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
 use cubecl::Runtime;
 use faer::MatRef;
 use std::collections::HashMap;
 use std::time::Instant;
+
+///////////
+// Types //
+///////////
+
+/// Nicer type to wrap around the kNN results
+type KnnResults = Result<(Vec<Vec<usize>>, Option<Vec<Vec<f32>>>), extendr_api::Error>;
 
 /////////////
 // Helpers //
@@ -204,7 +211,7 @@ pub fn cagra_knn_with_dist(
     extract_knn: bool,
     seed: usize,
     verbose: bool,
-) -> (Vec<Vec<usize>>, Option<Vec<Vec<f32>>>) {
+) -> KnnResults {
     let start = Instant::now();
     let device: WgpuDevice = Default::default();
 
@@ -226,7 +233,8 @@ pub fn cagra_knn_with_dist(
         verbose,
         true,
         device.clone(),
-    );
+    )
+    .to_extendr()?;
 
     if verbose {
         println!("Generated the CAGRA index in {:.2?}.", start.elapsed());
@@ -257,7 +265,8 @@ pub fn cagra_knn_with_dist(
             cagra_params.k_query + 1, // because of self
             Some(search_params),
             return_dist,
-        );
+        )
+        .to_extendr()?;
         if verbose {
             println!(" Beam search done in {:.2?}.", start.elapsed())
         }
@@ -271,7 +280,7 @@ pub fn cagra_knn_with_dist(
     let client = WgpuRuntime::client(&device);
     client.memory_cleanup();
 
-    remove_self(indices, distances)
+    Ok(remove_self(indices, distances))
 }
 
 /////////////
@@ -380,7 +389,7 @@ pub fn gpu_ivf_knn_with_dist(
     return_dist: bool,
     seed: usize,
     verbose: bool,
-) -> (Vec<Vec<usize>>, Option<Vec<Vec<f32>>>) {
+) -> KnnResults {
     let start = Instant::now();
     let device: WgpuDevice = Default::default();
 
@@ -388,15 +397,19 @@ pub fn gpu_ivf_knn_with_dist(
         println!("Building IVF-GPU index.");
     }
 
+    let kmeans_iters = ivf_params.max_iters.unwrap_or(30);
+    let kmeans_params = KMeansTrainingParams::new(kmeans_iters, None, None);
+
     let ivf_idx = build_ivf_index_gpu::<f32, WgpuRuntime>(
         embd,
         ivf_params.nlist,
-        ivf_params.max_iters,
+        Some(kmeans_params),
         &ivf_params.ann_dist,
         seed,
         verbose,
         device.clone(),
-    );
+    )
+    .to_extendr()?;
 
     if verbose {
         println!("Built IVF-GPU index in {:.2?}.", start.elapsed());
@@ -409,7 +422,8 @@ pub fn gpu_ivf_knn_with_dist(
         ivf_params.nquery,
         return_dist,
         verbose,
-    );
+    )
+    .to_extendr()?;
 
     if verbose {
         println!("Self-query done in {:.2?}.", start.elapsed());
@@ -420,7 +434,7 @@ pub fn gpu_ivf_knn_with_dist(
     let client = WgpuRuntime::client(&device);
     client.memory_cleanup();
 
-    remove_self(indices, distances)
+    Ok(remove_self(indices, distances))
 }
 
 ////////////////////////
@@ -446,7 +460,7 @@ pub fn gpu_exhaustive_knn_with_dist(
     dist_metric: &str,
     return_dist: bool,
     verbose: bool,
-) -> (Vec<Vec<usize>>, Option<Vec<Vec<f32>>>) {
+) -> KnnResults {
     let start = Instant::now();
     let device: WgpuDevice = Default::default();
 
@@ -454,13 +468,15 @@ pub fn gpu_exhaustive_knn_with_dist(
         println!("Building Exhaustive-GPU index.");
     }
 
-    let idx = build_exhaustive_index_gpu::<f32, WgpuRuntime>(embd, dist_metric, device.clone());
+    let idx = build_exhaustive_index_gpu::<f32, WgpuRuntime>(embd, dist_metric, device.clone())
+        .to_extendr()?;
 
     if verbose {
-        println!("Built IVF-GPU index in {:.2?}.", start.elapsed());
+        println!("Built exhaustive index in {:.2?}.", start.elapsed());
     }
 
-    let (indices, distances) = query_exhaustive_index_gpu_self(&idx, k + 1, return_dist, verbose);
+    let (indices, distances) =
+        query_exhaustive_index_gpu_self(&idx, k + 1, return_dist, verbose).to_extendr()?;
 
     if verbose {
         println!("Self-query done in {:.2?}.", start.elapsed());
@@ -471,5 +487,5 @@ pub fn gpu_exhaustive_knn_with_dist(
     let client = WgpuRuntime::client(&device);
     client.memory_cleanup();
 
-    remove_self(indices, distances)
+    Ok(remove_self(indices, distances))
 }

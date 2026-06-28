@@ -1,17 +1,25 @@
+use bixverse_rs::gpu::linalg::corr::{column_pairwise_cor_gpu, GpuCorCov};
+use bixverse_rs::gpu::ml::k_means_gpu::KMeansGpuParams;
 use bixverse_rs::prelude::*;
 use burn::backend::{
-    ndarray::{NdArray, NdArrayDevice},
-    wgpu::{Wgpu, WgpuDevice},
+    flex::{Flex, FlexDevice},
+    wgpu::{Wgpu, WgpuDevice, WgpuRuntime},
     Autodiff,
 };
+use cubecl::Runtime;
 use extendr_api::prelude::*;
 use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
 
 pub mod embeddings;
+pub mod ml;
 pub mod single_cell;
 
+pub use single_cell::harmony_gpu;
+pub use single_cell::pca_gpu;
+
 use crate::embeddings::parametric_umap::*;
+use crate::ml::clustering::*;
 use crate::single_cell::knn_gpu::*;
 
 /////////////
@@ -20,6 +28,9 @@ use crate::single_cell::knn_gpu::*;
 
 extendr_module! {
     mod bixverse_gpu;
+    // modules
+    use pca_gpu;
+    use harmony_gpu;
     // knn
     fn rs_cagra_gpu_knn;
     fn rs_ivf_gpu_knn;
@@ -27,6 +38,13 @@ extendr_module! {
     // umap
     fn rs_parametric_umap;
     fn rs_parametric_umap_predict;
+    fn rs_serialise_parametric_umap;
+    fn rs_deserialise_parametric_umap;
+    // clustering
+    fn rs_kmeans_gpu;
+    // correlations
+    fn rs_cor_gpu;
+    fn rs_cov_gpu;
 }
 
 ///////////
@@ -37,7 +55,7 @@ extendr_module! {
 type GpuBackend = Autodiff<Wgpu>;
 
 /// CPU backend via Ndarray
-type CpuBackend = Autodiff<NdArray<f32>>;
+type CpuBackend = Autodiff<Flex<f32>>;
 
 /// Backend-agnostic wrapper around `TrainedUmapModel`.
 ///
@@ -76,6 +94,8 @@ impl PUmapModel {
 
 /// Generate a CAGRA-style GPU-accelerated kNN graph
 ///
+/// @description
+/// `r lifecycle::badge("experimental")`
 /// Builds a kNN graph from an embedding matrix using the CAGRA algorithm on
 /// the wgpu backend. Supports two retrieval modes: direct extraction from the
 /// NNDescent graph, or beam search over the pruned CAGRA graph. The former
@@ -89,7 +109,8 @@ impl PUmapModel {
 /// \code{FALSE}, runs beam search over the pruned CAGRA graph (slower, higher
 /// precision).
 /// @param seed Integer. Random seed for reproducibility.
-/// @param verbose Logical. Whether to print progress messages.
+/// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+/// detailed verbosity.
 ///
 /// @return A named list with:
 /// \itemize{
@@ -107,13 +128,22 @@ fn rs_cagra_gpu_knn(
     cagra_params: List,
     extract_knn: bool,
     seed: usize,
-    verbose: bool,
+    verbose: usize,
 ) -> Result<List, extendr_api::Error> {
+    let verbosity = parse_verbosity_level(verbose);
+
     let data = r_matrix_to_faer_fp32(&embd);
     let params = CagraParams::from_r_list(cagra_params)?;
 
-    let (indices, dist) =
-        cagra_knn_with_dist(data.as_ref(), &params, true, extract_knn, seed, verbose);
+    let (indices, dist) = cagra_knn_with_dist(
+        data.as_ref(),
+        &params,
+        true,
+        extract_knn,
+        seed,
+        verbosity.normal_verbosity(),
+    )
+    .to_extendr()?;
 
     let knn_dist = dist.unwrap();
 
@@ -129,6 +159,8 @@ fn rs_cagra_gpu_knn(
 
 /// Generate an IVF-GPU-accelerated kNN graph
 ///
+/// @description
+/// `r lifecycle::badge("experimental")`
 /// Builds an IVF index over the provided embedding matrix and queries each
 /// vector against it to produce a kNN graph. Runs on the wgpu backend.
 ///
@@ -136,7 +168,8 @@ fn rs_cagra_gpu_knn(
 /// @param ivf_params A named list with the parameters, see
 /// [bixverse.gpu::params_sc_ivf()]
 /// @param seed Integer. Random seed for reproducibility.
-/// @param verbose Logical. Whether to print progress messages.
+/// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+/// detailed verbosity.
 ///
 /// @return A named list with:
 /// \itemize{
@@ -153,12 +186,21 @@ fn rs_ivf_gpu_knn(
     embd: RMatrix<f64>,
     ivf_params: List,
     seed: usize,
-    verbose: bool,
+    verbose: usize,
 ) -> Result<List, extendr_api::Error> {
+    let verbosity = parse_verbosity_level(verbose);
+
     let data = r_matrix_to_faer_fp32(&embd);
     let params = IvfGpuParams::from_r_list(ivf_params)?;
 
-    let (indices, dist) = gpu_ivf_knn_with_dist(data.as_ref(), &params, true, seed, verbose);
+    let (indices, dist) = gpu_ivf_knn_with_dist(
+        data.as_ref(),
+        &params,
+        true,
+        seed,
+        verbosity.normal_verbosity(),
+    )
+    .to_extendr()?;
 
     let knn_dist = dist.unwrap();
 
@@ -174,13 +216,16 @@ fn rs_ivf_gpu_knn(
 
 /// Generate an GPU-accelerated kNN graph from an exhaustive search
 ///
+/// @description
+/// `r lifecycle::badge("experimental")`
 /// Runs an exhaustive kNN search on the GPU.
 ///
 /// @param embd Numeric matrix of embeddings, cells x features.
 /// @param k Integer. Number of neighbours to return.
 /// @param dist_metric String. Distance metric; one of
 /// `c("euclidean", "cosine")`.
-/// @param verbose Logical. Whether to print progress messages.
+/// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+/// detailed verbosity.
 ///
 /// @return A named list with:
 /// \itemize{
@@ -193,34 +238,49 @@ fn rs_ivf_gpu_knn(
 ///
 /// @export
 #[extendr]
-fn rs_exhaustive_gpu_knn(embd: RMatrix<f64>, k: usize, dist_metric: String, verbose: bool) -> List {
+fn rs_exhaustive_gpu_knn(
+    embd: RMatrix<f64>,
+    k: usize,
+    dist_metric: String,
+    verbose: usize,
+) -> Result<List, extendr_api::Error> {
+    let verbosity = parse_verbosity_level(verbose);
+
     let data = r_matrix_to_faer_fp32(&embd);
 
-    let (indices, dist) =
-        gpu_exhaustive_knn_with_dist(data.as_ref(), k, &dist_metric, true, verbose);
+    let (indices, dist) = gpu_exhaustive_knn_with_dist(
+        data.as_ref(),
+        k,
+        &dist_metric,
+        true,
+        verbosity.normal_verbosity(),
+    )
+    .to_extendr()?;
 
     let knn_dist = dist.unwrap();
 
     let index_mat = Mat::from_fn(embd.nrows(), k, |i, j| indices[i][j] as i32);
     let dist_mat = Mat::from_fn(embd.nrows(), k, |i, j| knn_dist[i][j] as f64);
 
-    list!(
+    Ok(list!(
         indices = faer_to_r_matrix(index_mat.as_ref()),
         dist = faer_to_r_matrix(dist_mat.as_ref()),
         dist_metric = dist_metric
-    )
+    ))
 }
 
 /////////////////////
-// parametric UMAP //
+// Parametric UMAP //
 /////////////////////
 
 /// Parametric UMAP implementation
 ///
+/// @description
+/// `r lifecycle::badge("experimental")`
 /// Trains a neural network encoder to learn a mapping from the input space to a
 /// low-dimensional embedding that preserves the UMAP graph structure. Supports
-/// both GPU (wgpu) and CPU (NdArray) backends. For small to medium data sets
-/// (fewer than ~10k samples or narrow hidden layers), the CPU backend is
+/// both GPU (wgpu) and CPU (burn flex CPU) backends. For small to medium data
+/// sets (fewer than ~10k samples or narrow hidden layers), the CPU backend is
 /// typically faster owing to GPU kernel dispatch overhead.
 ///
 /// @param data Numerical matrix. Data of dimensions samples x features.
@@ -231,7 +291,8 @@ fn rs_exhaustive_gpu_knn(embd: RMatrix<f64>, k: usize, dist_metric: String, verb
 /// @param parametric_params Named list. Merged parametric UMAP parameters
 /// containing nearest neighbour, graph, and training configuration.
 /// @param seed Integer. Seed for reproducibility.
-/// @param verbose Boolean. Controls verbosity.
+/// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+/// detailed verbosity.
 /// @param use_gpu Logical. If \code{TRUE}, trains on the wgpu backend. If
 /// \code{FALSE}, trains on the CPU via NdArray. Defaults to \code{TRUE}.
 ///
@@ -250,7 +311,7 @@ fn rs_parametric_umap(
     spread: f64,
     parametric_params: List,
     seed: usize,
-    verbose: bool,
+    verbose: usize,
     use_gpu: bool,
 ) -> Result<List, extendr_api::Error> {
     let data = r_matrix_to_faer_fp32(&data);
@@ -274,7 +335,7 @@ fn rs_parametric_umap(
             model = ExternalPtr::new(PUmapModel::Gpu(model))
         ))
     } else {
-        let device = NdArrayDevice::Cpu;
+        let device = FlexDevice;
         let (res, model) = parametric_umap_manifold::<CpuBackend>(
             data.as_ref(),
             n_dim,
@@ -296,6 +357,8 @@ fn rs_parametric_umap(
 
 /// Predict new data using a trained parametric UMAP model
 ///
+/// @description
+/// `r lifecycle::badge("experimental")`
 /// Runs forward inference through the trained encoder network. The prediction
 /// automatically uses whichever backend (GPU or CPU) the model was trained on.
 ///
@@ -320,4 +383,217 @@ fn rs_parametric_umap_predict(model: Robj, data: RMatrix<f64>) -> RMatrix<f64> {
     let nrow = res[0].len();
     let mat = Mat::from_fn(nrow, ncol, |i, j| res[j][i]);
     faer_to_r_matrix(mat.as_ref())
+}
+
+/// Takes in a parametric UMAP and serialises it to raw bytes
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// Serialises a trained parametric UMAP model to bytes for saving the data.
+///
+/// @param model Robject. The trained parametric UMAP model to serialise.
+///
+/// @returns The raw bytes of the model
+///
+/// @keywords internal
+#[extendr]
+fn rs_serialise_parametric_umap(model: Robj) -> Result<Vec<u8>, extendr_api::Error> {
+    let model: ExternalPtr<PUmapModel> = model.try_into()?;
+    let (tag, mut bytes) = match &*model {
+        PUmapModel::Gpu(m) => (
+            0u8,
+            m.to_bytes()
+                .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
+        ),
+        PUmapModel::Cpu(m) => (
+            1u8,
+            m.to_bytes()
+                .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
+        ),
+    };
+    let mut out = Vec::with_capacity(bytes.len() + 1);
+    out.push(tag);
+    out.append(&mut bytes);
+    Ok(out)
+}
+
+/// Deserialises raw bytes to a trained UMAP model.
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// Deserialises a trained parametric UMAP model from points and returns an R
+/// object.
+///
+/// @param bytes The raw byte sequence
+///
+/// @returns Returns
+///
+/// @keywords internal
+#[extendr]
+fn rs_deserialise_parametric_umap(bytes: Vec<u8>) -> Result<Robj, extendr_api::Error> {
+    if bytes.is_empty() {
+        return Err(extendr_api::Error::Other("empty payload".into()));
+    }
+    let (tag, payload) = (bytes[0], &bytes[1..]);
+    let model = match tag {
+        0 => PUmapModel::Gpu(
+            TrainedUmapModel::from_bytes(payload, WgpuDevice::default())
+                .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
+        ),
+        1 => PUmapModel::Cpu(
+            TrainedUmapModel::from_bytes(payload, FlexDevice)
+                .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
+        ),
+        t => {
+            return Err(extendr_api::Error::Other(format!(
+                "unknown backend tag: {}",
+                t
+            )))
+        }
+    };
+    Ok(ExternalPtr::new(model).into())
+}
+
+///////////////////
+// K-means (GPU) //
+///////////////////
+
+/// GPU-accelerated k-means
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// A GPU-accelerated k-means version leveraging the wgpu backend via cubecl.
+///
+/// @param data Numeric matrix. Samples x features.
+/// @param dist String. Distance metric to use. One of
+/// `c("euclidean", "cosine")`.
+/// @param n_centroids Integer. Number of clusters, centroids to identify.
+/// @param kmeans_params Named list. Contains specific parameters for the GPU-
+/// accelerated k-means.
+/// @param seed Integer. Seed for reproducibility.
+/// @param verbose Boolean. Controls verbosity of the function.
+///
+/// @returns A list with
+/// \itemize{
+///   \item centoids - The centroids matrix (centroids x features)
+///   \item assignments - The cluster assignments of the data. (1-indexed.)
+/// }
+///
+/// @export
+#[extendr]
+fn rs_kmeans_gpu(
+    data: RMatrix<f64>,
+    dist: &str,
+    n_centroids: usize,
+    kmeans_params: List,
+    seed: usize,
+    verbose: bool,
+) -> Result<List, extendr_api::Error> {
+    let data = r_matrix_to_faer_fp32(&data);
+
+    let kmeans_params = KMeansGpuParams::from_r_list(kmeans_params)?;
+
+    let (centroids, assignments) = kmeans_gpu_internal(
+        data.as_ref(),
+        dist,
+        n_centroids,
+        Some(kmeans_params),
+        seed,
+        verbose,
+    )?;
+
+    Ok(list!(
+        centroids = faer_to_r_matrix(centroids.as_ref()),
+        assignments = assignments.r_int_convert_shift()
+    ))
+}
+
+/////////////
+// Cor/Cov //
+/////////////
+
+/// GPU-accelerated correlation calculations
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// GPU-accelerated pairwise column correlations. Has the options of Pearson and
+/// Spearman correlation coefficient calculations.
+///
+/// @param x Numerical matrix. The matrix for which to calculate the column
+/// pairwise correlation matrix.
+/// @param spearman Boolean. Shall the Spearman correlation be calculated
+/// instead of Pearson.
+/// @param verbose Boolean. Controls verbosity of the function.
+///
+/// @returns The correlation matrix
+///
+/// @export
+#[extendr]
+fn rs_cor_gpu(
+    x: RMatrix<f64>,
+    spearman: bool,
+    verbose: bool,
+) -> Result<RMatrix<f64>, extendr_api::Error> {
+    let data = r_matrix_to_faer_fp32(&x);
+    let device: WgpuDevice = Default::default();
+
+    let cor_type = if spearman {
+        GpuCorCov::Spearman
+    } else {
+        GpuCorCov::Pearson
+    };
+
+    let mut res = column_pairwise_cor_gpu::<f32, WgpuRuntime, f32>(
+        data.as_ref(),
+        cor_type,
+        device.clone(),
+        verbose,
+    )
+    .to_extendr()?;
+
+    let client = WgpuRuntime::client(&device);
+    client.memory_cleanup();
+
+    // set the diagonals to 1
+    for i in 0..res.nrows() {
+        for j in 0..res.ncols() {
+            if i == j {
+                res[(i, j)] = 1.0;
+            }
+        }
+    }
+
+    Ok(faer_to_r_matrix(res.as_ref()))
+}
+
+/// GPU-accelerated covariance calculations
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// GPU-accelerated pairwise column co-variance calculation.
+///
+/// @param x Numerical matrix. The matrix for which to calculate the column
+/// pairwise covariance matrix.
+/// @param verbose Boolean. Controls verbosity of the function.
+///
+/// @returns The covariance matrix
+///
+/// @export
+#[extendr]
+fn rs_cov_gpu(x: RMatrix<f64>, verbose: bool) -> Result<RMatrix<f64>, extendr_api::Error> {
+    let data = r_matrix_to_faer_fp32(&x);
+    let device: WgpuDevice = Default::default();
+
+    let res = column_pairwise_cor_gpu::<f32, WgpuRuntime, f32>(
+        data.as_ref(),
+        GpuCorCov::Covariance,
+        device.clone(),
+        verbose,
+    )
+    .to_extendr()?;
+
+    let client = WgpuRuntime::client(&device);
+    client.memory_cleanup();
+
+    Ok(faer_to_r_matrix(res.as_ref()))
 }

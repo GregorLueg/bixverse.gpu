@@ -35,7 +35,7 @@
 #' @export
 params_sc_cagra <- function(
   k_query = 15L,
-  ann_dist = "cosine",
+  ann_dist = "euclidean",
   k = NULL,
   k_build = NULL,
   refine_sweeps = 0L,
@@ -100,7 +100,7 @@ params_sc_cagra <- function(
 #' @export
 params_sc_ivf <- function(
   k = 15L,
-  ann_dist = "cosine",
+  ann_dist = "euclidean",
   nlist = NULL,
   nprobe = NULL,
   nquery = NULL,
@@ -189,5 +189,152 @@ params_parametric_umap <- function(
     n_epochs = as.integer(n_epochs),
     batch_size = as.integer(batch_size),
     neg_sample_rate = as.integer(neg_sample_rate)
+  )
+}
+
+## gpu-accelerated k means -----------------------------------------------------
+
+#' Default parameters for GPU k-means
+#'
+#' @param k_means_iter Integer. Number of k-means iterations.
+#' @param k_means_init Optional character. Initialisation method. One of
+#' `"random"`, `"parallel"`, or `"plusplus"`. If `NULL`, determined on the
+#' Rust side.
+#' @param metric String. One of `c("euclidean", "cosine")`.
+#' @param fixed Logical. Whether cluster centres are fixed after initialisation.
+#' @param quantise Logical. Whether to quantise data to f16 before clustering.
+#'
+#' @return A list with the parameters.
+#'
+#' @export
+params_kmeans_gpu <- function(
+  k_means_iter = 50L,
+  k_means_init = NULL,
+  metric = c("euclidean", "cosine"),
+  fixed = TRUE,
+  quantise = FALSE
+) {
+  metric <- match.arg(metric)
+
+  checkmate::qassert(k_means_iter, "I1[1,)")
+  if (!is.null(k_means_init)) {
+    checkmate::qassert(k_means_init, "S1")
+    checkmate::assert_choice(k_means_init, c("random", "parallel", "plusplus"))
+  }
+  checkmate::qassert(fixed, "B1")
+  checkmate::qassert(quantise, "B1")
+  checkmate::assertChoice(metric, c("euclidean", "cosine"))
+
+  list(
+    k_means_iter = k_means_iter,
+    k_means_init = k_means_init,
+    metric = metric,
+    fixed = fixed,
+    quantise = quantise
+  )
+}
+
+## single cells ----------------------------------------------------------------
+
+### harmony v2 GPU -------------------------------------------------------------
+
+#' Default parameters for Harmony v2 GPU batch correction
+#'
+#' @param k Optional integer. Number of clusters for k-means clustering. If
+#' not provided, it will be automatically determined as
+#' `min(round(N / 30), 100)`.
+#' @param sigma Numeric vector. Per-cluster diversity weights. Either a single
+#' value (broadcast to all clusters) or a vector of length k.
+#' @param theta Numeric vector. Per-variable diversity penalty. Must be a single
+#' value; only one batch covariate is supported on the GPU path.
+#' @param lambda Numeric vector. Ridge regression penalty for the linear model.
+#' Typically a single value. Ignored when `use_dynamic_lambda = TRUE`.
+#' @param max_iter_kmeans Integer. Maximum number of k-means Jacobi sweeps per
+#' Harmony round.
+#' @param max_iter_harmony Integer. Maximum number of Harmony outer iterations.
+#' @param epsilon_kmeans Numeric. Convergence threshold for k-means clustering.
+#' @param epsilon_harmony Numeric. Convergence threshold for Harmony.
+#' @param window_size Integer. Number of previous iterations to consider when
+#' checking convergence.
+#' @param alpha Numeric. Scaling factor for dynamic lambda estimation. Must be
+#' in (0, 1). Only relevant when `use_dynamic_lambda = TRUE`.
+#' @param tau Numeric. Scaling factor for theta based on batch size. A value of
+#' 0 disables batch-size scaling of theta.
+#' @param batch_proportion_cutoff Numeric. Cutoff for pruning batches with small
+#' proportions during ridge regression.
+#' @param use_dynamic_lambda Boolean. If `TRUE`, lambda is estimated dynamically
+#' per cluster instead of using the fixed `lambda` value.
+#' @param csr_cube_count Integer. Number of parallel thread groups used when
+#' building the level-CSR index on the GPU. Adjust for your hardware if needed.
+#' @param k_means_iter Integer. Maximum number of k-means iterations for the
+#' initial centroid computation.
+#' @param k_means_init Optional string. Initialisation strategy for k-means.
+#' @param fixed Boolean. If `TRUE`, centroids are fixed after initialisation.
+#' @param quantise Boolean. If `TRUE`, quantises intermediate values to f16
+#' during k-means.
+#'
+#' @return A list with the parameters.
+#'
+#' @export
+params_sc_harmony_v2_gpu <- function(
+  k = NULL,
+  sigma = 0.1,
+  theta = 2.0,
+  lambda = 1.0,
+  max_iter_kmeans = 4L,
+  max_iter_harmony = 10L,
+  epsilon_kmeans = 1e-3,
+  epsilon_harmony = 1e-2,
+  window_size = 3L,
+  alpha = 0.2,
+  tau = 0.0,
+  batch_proportion_cutoff = 1e-5,
+  use_dynamic_lambda = FALSE,
+  csr_cube_count = 256L,
+  k_means_iter = 30L,
+  k_means_init = NULL,
+  fixed = FALSE,
+  quantise = FALSE
+) {
+  checkmate::qassert(k, c("I1[1,)", "0"))
+  checkmate::qassert(sigma, "N+[0,)")
+  checkmate::qassert(theta, "N+[0,)")
+  checkmate::qassert(lambda, "N+[0,)")
+  checkmate::qassert(max_iter_kmeans, "I1[1,)")
+  checkmate::qassert(max_iter_harmony, "I1[1,)")
+  checkmate::qassert(epsilon_kmeans, "N1(0,)")
+  checkmate::qassert(epsilon_harmony, "N1(0,)")
+  checkmate::qassert(window_size, "I1[1,)")
+  checkmate::qassert(alpha, "N1(0,1)")
+  checkmate::qassert(tau, "N1[0,)")
+  checkmate::qassert(batch_proportion_cutoff, "N1(0,)")
+  checkmate::qassert(use_dynamic_lambda, "B1")
+  checkmate::qassert(csr_cube_count, "I1[1,)")
+  checkmate::qassert(k_means_iter, "I1[1,)")
+  if (!is.null(k_means_init)) {
+    checkmate::qassert(k_means_init, "S1")
+  }
+  checkmate::qassert(fixed, "B1")
+  checkmate::qassert(quantise, "B1")
+
+  list(
+    k = k,
+    sigma = sigma,
+    theta = theta,
+    lambda = lambda,
+    max_iter_kmeans = max_iter_kmeans,
+    max_iter_harmony = max_iter_harmony,
+    epsilon_kmeans = epsilon_kmeans,
+    epsilon_harmony = epsilon_harmony,
+    window_size = window_size,
+    alpha = alpha,
+    tau = tau,
+    batch_proportion_cutoff = batch_proportion_cutoff,
+    use_dynamic_lambda = use_dynamic_lambda,
+    csr_cube_count = csr_cube_count,
+    k_means_iter = k_means_iter,
+    k_means_init = k_means_init,
+    fixed = fixed,
+    quantise = quantise
   )
 }

@@ -36,8 +36,8 @@ forward pass through the network... No neighbour lookup, no re-optimisation,
 and the same input always produces the same output.
 
 The training is GPU-accelerated via [wgpu](https://wgpu.rs/) (or can be also
-run on CPU via ndarray with OpenBLAS or Accelerate BLAS acceleration), so a
-compatible GPU is beneficial but not strictly required.
+run on CPU via the flex framework by the Burn development team), so a compatible 
+GPU is beneficial but not strictly required.
 
 ```{r}
 #| label: setup
@@ -78,8 +78,9 @@ test_labels <- cluster_data$membership[-train_idx]
 ## Fitting the model
 
 `parametric_umap()` returns a `ParametricUmapModel` object that holds both
-the training embedding and the trained encoder. As this is small data, we will
-just use the CPU version for 100 epochs, more than enough here. 
+the training embedding and the trained encoder (to note: the data is stored 
+in the Rust kernel and handed around via a pointer). As this is small data, we 
+will just use the CPU version for 100 epochs, more than enough here. 
 
 ```{r}
 #| label: fit
@@ -89,7 +90,7 @@ pumap <- parametric_umap(
   k = 15L,
   min_dist = 0.5,
   spread = 1.0,
-  knn_method = "hnsw",
+  knn_method = "kmknn",
   parametric_umap_params = params_parametric_umap(
     batch_size = 128L,
     n_epochs = 100L
@@ -135,6 +136,12 @@ ggplot(test_df, aes(x = pUMAP1, y = pUMAP2)) +
   ggtitle("Parametric UMAP -- held-out set (predicted)")
 ```
 
+## To-do's 
+
+I realised that for now saving the model is actually not really possible due to
+the way R will drop pointers (and thus clean up the memory) during serialisation
+to RDS (or qs2). I will need to figure out how to do this.
+
 ## Comparing training and held-out embeddings
 
 We can overlay both sets to confirm that the encoder generalises and places
@@ -156,6 +163,36 @@ ggplot(combined_df, aes(x = pUMAP1, y = pUMAP2)) +
   theme_bw() +
   ggtitle("Parametric UMAP -- training vs held-out")
 ```
+
+## Saving and loading the model
+
+As we are using Rust under the hood with external memory pointers, we need to
+be able to also save and load the model. To that aim, the package provides two
+helpers which deal with all of the memory stuff for you and use the blazingly
+fast [qs2](https://github.com/qsbase/qs2) under the hood. Let's save the model
+first.
+
+```{r}
+#| label: save the model
+f_path_model <- file.path(tempdir(), "trained_model.qs2")
+
+save_parametric_umap(pumap, f_path_model)
+
+rm(pumap)
+```
+
+And now let's load it again and predict again the test data.
+
+```{r}
+pumap <- load_parametric_umap(f_path_model)
+
+test_embedding_2 <- predict(pumap, newdata = test_data)
+
+# let's test that the predictions are still behaving...
+tinytest::expect_equivalent(current = test_embedding, target = test_embedding_2)
+```
+
+That's it. 
 
 ## Notes
 

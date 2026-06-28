@@ -14,7 +14,8 @@ rs_ivf_gpu_knn(embd, ivf_params, seed, verbose)
 
 \item{seed}{Integer. Random seed for reproducibility.}
 
-\item{verbose}{Logical. Whether to print progress messages.}
+\item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
+detailed verbosity.}
 }
 \value{
 A named list with:
@@ -27,6 +28,7 @@ neighbours.
 }
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Builds an IVF index over the provided embedding matrix and queries each
 vector against it to produce a kNN graph. Runs on the wgpu backend.
 }

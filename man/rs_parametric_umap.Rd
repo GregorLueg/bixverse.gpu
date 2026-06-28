@@ -32,7 +32,8 @@ containing nearest neighbour, graph, and training configuration.}
 
 \item{seed}{Integer. Seed for reproducibility.}
 
-\item{verbose}{Boolean. Controls verbosity.}
+\item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
+detailed verbosity.}
 
 \item{use_gpu}{Logical. If \code{TRUE}, trains on the wgpu backend. If
 \code{FALSE}, trains on the CPU via NdArray. Defaults to \code{TRUE}.}
@@ -43,9 +44,10 @@ dimensions samples x n_dim) and \code{model} (external pointer to the trained
 encoder for use with \code{rs_parametric_umap_predict}).
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Trains a neural network encoder to learn a mapping from the input space to a
 low-dimensional embedding that preserves the UMAP graph structure. Supports
-both GPU (wgpu) and CPU (NdArray) backends. For small to medium data sets
-(fewer than ~10k samples or narrow hidden layers), the CPU backend is
+both GPU (wgpu) and CPU (burn flex CPU) backends. For small to medium data
+sets (fewer than ~10k samples or narrow hidden layers), the CPU backend is
 typically faster owing to GPU kernel dispatch overhead.
 }

@@ -62,3 +62,99 @@ predict.ParametricUmapModel <- function(object, newdata, ...) {
     data = newdata
   )
 }
+
+# KMeansClusterGPU -------------------------------------------------------------
+
+#' Construct a KMeansClusterGPU object
+#'
+#' @param centroids Numeric matrix of shape k x features.
+#' @param assignments Integer vector of length samples (1-indexed).
+#' @param k Integer. Number of clusters.
+#' @param metric Character. Distance metric used.
+#'
+#' @returns A `KMeansClusterGPU` S3 object.
+#'
+#' @keywords internal
+new_kmeans_cluster_gpu <- function(centroids, assignments, k, metric) {
+  structure(
+    list(
+      centroids = centroids,
+      assignments = assignments,
+      k = k,
+      metric = metric
+    ),
+    class = "KMeansClusterGPU"
+  )
+}
+
+## getters ---------------------------------------------------------------------
+
+#' Get cluster assignments
+#'
+#' @param x A `KMeansClusterGPU` object.
+#'
+#' @returns Integer vector of length samples with cluster assignments
+#'   (1-indexed).
+#'
+#' @export
+membership <- function(x) {
+  UseMethod("membership")
+}
+
+#' @rdname membership
+#' @export
+membership.KMeansClusterGPU <- function(x) {
+  x$assignments
+}
+
+#' Get cluster centroids
+#'
+#' @param x A `KMeansClusterGPU` object.
+#'
+#' @returns Numeric matrix of shape k x features.
+#'
+#' @export
+get_centroids <- function(x) {
+  UseMethod("get_centroids")
+}
+
+#' @rdname get_centroids
+#'
+#' @export
+get_centroids.KMeansClusterGPU <- function(x) {
+  # checks
+  checkmate::assertClass(x, "KMeansCluster")
+
+  x$centroids
+}
+
+## primitives ------------------------------------------------------------------
+
+#' Print a KMeansClusterGPU object
+#'
+#' @param x A `KMeansClusterGPU` object.
+#' @param ... Further arguments (ignored).
+#'
+#' @returns Invisibly returns `x`.
+#'
+#' @export
+#'
+#' @keywords internal
+print.KMeansClusterGPU <- function(x, ...) {
+  n <- length(x$assignments)
+  sizes <- tabulate(x$assignments, nbins = x$k)
+  cat("KMeansClusterGPU\n")
+  cat("  metric:    ", x$metric, "\n")
+  cat("  k:         ", x$k, "\n")
+  cat("  n:         ", n, "\n")
+  cat(
+    "  sizes:      min=",
+    min(sizes),
+    " median=",
+    median(sizes),
+    " max=",
+    max(sizes),
+    "\n"
+  )
+  invisible(x)
+}

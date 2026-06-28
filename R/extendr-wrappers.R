@@ -7,6 +7,8 @@ NULL
 
 #' Generate a CAGRA-style GPU-accelerated kNN graph
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Builds a kNN graph from an embedding matrix using the CAGRA algorithm on
 #' the wgpu backend. Supports two retrieval modes: direct extraction from the
 #' NNDescent graph, or beam search over the pruned CAGRA graph. The former
@@ -20,7 +22,8 @@ NULL
 #' \code{FALSE}, runs beam search over the pruned CAGRA graph (slower, higher
 #' precision).
 #' @param seed Integer. Random seed for reproducibility.
-#' @param verbose Logical. Whether to print progress messages.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
 #'
 #' @return A named list with:
 #' \itemize{
@@ -36,6 +39,8 @@ rs_cagra_gpu_knn <- function(embd, cagra_params, extract_knn, seed, verbose) .Ca
 
 #' Generate an IVF-GPU-accelerated kNN graph
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Builds an IVF index over the provided embedding matrix and queries each
 #' vector against it to produce a kNN graph. Runs on the wgpu backend.
 #'
@@ -43,7 +48,8 @@ rs_cagra_gpu_knn <- function(embd, cagra_params, extract_knn, seed, verbose) .Ca
 #' @param ivf_params A named list with the parameters, see
 #' [bixverse.gpu::params_sc_ivf()]
 #' @param seed Integer. Random seed for reproducibility.
-#' @param verbose Logical. Whether to print progress messages.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
 #'
 #' @return A named list with:
 #' \itemize{
@@ -59,13 +65,16 @@ rs_ivf_gpu_knn <- function(embd, ivf_params, seed, verbose) .Call(wrap__rs_ivf_g
 
 #' Generate an GPU-accelerated kNN graph from an exhaustive search
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Runs an exhaustive kNN search on the GPU.
 #'
 #' @param embd Numeric matrix of embeddings, cells x features.
 #' @param k Integer. Number of neighbours to return.
 #' @param dist_metric String. Distance metric; one of
 #' `c("euclidean", "cosine")`.
-#' @param verbose Logical. Whether to print progress messages.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
 #'
 #' @return A named list with:
 #' \itemize{
@@ -81,10 +90,12 @@ rs_exhaustive_gpu_knn <- function(embd, k, dist_metric, verbose) .Call(wrap__rs_
 
 #' Parametric UMAP implementation
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Trains a neural network encoder to learn a mapping from the input space to a
 #' low-dimensional embedding that preserves the UMAP graph structure. Supports
-#' both GPU (wgpu) and CPU (NdArray) backends. For small to medium data sets
-#' (fewer than ~10k samples or narrow hidden layers), the CPU backend is
+#' both GPU (wgpu) and CPU (burn flex CPU) backends. For small to medium data
+#' sets (fewer than ~10k samples or narrow hidden layers), the CPU backend is
 #' typically faster owing to GPU kernel dispatch overhead.
 #'
 #' @param data Numerical matrix. Data of dimensions samples x features.
@@ -95,7 +106,8 @@ rs_exhaustive_gpu_knn <- function(embd, k, dist_metric, verbose) .Call(wrap__rs_
 #' @param parametric_params Named list. Merged parametric UMAP parameters
 #' containing nearest neighbour, graph, and training configuration.
 #' @param seed Integer. Seed for reproducibility.
-#' @param verbose Boolean. Controls verbosity.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
 #' @param use_gpu Logical. If \code{TRUE}, trains on the wgpu backend. If
 #' \code{FALSE}, trains on the CPU via NdArray. Defaults to \code{TRUE}.
 #'
@@ -108,6 +120,8 @@ rs_parametric_umap <- function(data, n_dim, k, min_dist, spread, parametric_para
 
 #' Predict new data using a trained parametric UMAP model
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
 #' Runs forward inference through the trained encoder network. The prediction
 #' automatically uses whichever backend (GPU or CPU) the model was trained on.
 #'
@@ -121,5 +135,149 @@ rs_parametric_umap <- function(data, n_dim, k, min_dist, spread, parametric_para
 #'
 #' @export
 rs_parametric_umap_predict <- function(model, data) .Call(wrap__rs_parametric_umap_predict, model, data)
+
+#' Takes in a parametric UMAP and serialises it to raw bytes
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' Serialises a trained parametric UMAP model to bytes for saving the data.
+#'
+#' @param model Robject. The trained parametric UMAP model to serialise.
+#'
+#' @returns The raw bytes of the model
+#'
+#' @keywords internal
+rs_serialise_parametric_umap <- function(model) .Call(wrap__rs_serialise_parametric_umap, model)
+
+#' Deserialises raw bytes to a trained UMAP model.
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' Deserialises a trained parametric UMAP model from points and returns an R
+#' object.
+#'
+#' @param bytes The raw byte sequence
+#'
+#' @returns Returns
+#'
+#' @keywords internal
+rs_deserialise_parametric_umap <- function(bytes) .Call(wrap__rs_deserialise_parametric_umap, bytes)
+
+#' GPU-accelerated k-means
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' A GPU-accelerated k-means version leveraging the wgpu backend via cubecl.
+#'
+#' @param data Numeric matrix. Samples x features.
+#' @param dist String. Distance metric to use. One of
+#' `c("euclidean", "cosine")`.
+#' @param n_centroids Integer. Number of clusters, centroids to identify.
+#' @param kmeans_params Named list. Contains specific parameters for the GPU-
+#' accelerated k-means.
+#' @param seed Integer. Seed for reproducibility.
+#' @param verbose Boolean. Controls verbosity of the function.
+#'
+#' @returns A list with
+#' \itemize{
+#'   \item centoids - The centroids matrix (centroids x features)
+#'   \item assignments - The cluster assignments of the data. (1-indexed.)
+#' }
+#'
+#' @export
+rs_kmeans_gpu <- function(data, dist, n_centroids, kmeans_params, seed, verbose) .Call(wrap__rs_kmeans_gpu, data, dist, n_centroids, kmeans_params, seed, verbose)
+
+#' GPU-accelerated correlation calculations
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU-accelerated pairwise column correlations. Has the options of Pearson and
+#' Spearman correlation coefficient calculations.
+#'
+#' @param x Numerical matrix. The matrix for which to calculate the column
+#' pairwise correlation matrix.
+#' @param spearman Boolean. Shall the Spearman correlation be calculated
+#' instead of Pearson.
+#' @param verbose Boolean. Controls verbosity of the function.
+#'
+#' @returns The correlation matrix
+#'
+#' @export
+rs_cor_gpu <- function(x, spearman, verbose) .Call(wrap__rs_cor_gpu, x, spearman, verbose)
+
+#' GPU-accelerated covariance calculations
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU-accelerated pairwise column co-variance calculation.
+#'
+#' @param x Numerical matrix. The matrix for which to calculate the column
+#' pairwise covariance matrix.
+#' @param verbose Boolean. Controls verbosity of the function.
+#'
+#' @returns The covariance matrix
+#'
+#' @export
+rs_cov_gpu <- function(x, verbose) .Call(wrap__rs_cov_gpu, x, verbose)
+
+#' Calculates sparse PCA for single cell
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' Helper function that will calculate sparse PCA without scaling the data.
+#' This has the advantage that you avoid creating a large dense matrix due
+#' to scaling; however, it has the disadvantage that the first PC will be
+#' heavily influenced by average expression. If random_svd is set to `FALSE`,
+#' Lanczos iterations will be used to solve the SVD; if random_svd is set
+#' to `TRUE`, the randomised version will be used with multiplication of the
+#' initial sparse matrix with a much smaller random dense matrix, avoiding
+#' holding a large dense matrix in memory.
+#'
+#' @param f_path_gene String. Path to the `counts_genes.bin` file.
+#' @param f_path_cell String. Path to the `counts_cells.bin` file. Used if
+#' you wish to use the PFlogPF transformation.
+#' @param no_pcs Integer. Number of PCs to calculate.
+#' @param pca_params Named list. Contains the parameters to use for this PCA
+#' run. (Randomised will ignore, as gpu only supports randomised.)
+#' @param cell_indices Integer. The cell indices to use. (0-indexed!)
+#' @param gene_indices Integer. The gene indices to use. (0-indexed!)
+#' @param seed Integer. Random seed for the randomised SVD.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list with with the following items
+#' \itemize{
+#'   \item scores - The samples projected on the PCA space (solved via sparse
+#'   SVD).
+#'   \item loadings - The loadings of the features for the PCA (solved via
+#'   sparse SVD).
+#'   \item singular_values - The singular values for the PCA (solved via sparse
+#'   SVD).
+#' }
+#'
+#' @export
+#'
+#' @keywords internal
+rs_sc_pca_sparse_gpu <- function(f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, verbose) .Call(wrap__rs_sc_pca_sparse_gpu, f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, verbose)
+
+#' Harmony batch correction in Rust (version 2, GPU-accelerated)
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' This function implements the GPU-accelerated version 2 Harmony algorithm
+#' from Patikas, et al., 2026. Only a single batch covariate is supported.
+#'
+#' @param pca Numerical matrix, i.e., the PCA matrix you want to correct.
+#' @param harmony_params List. The parameters for the Harmony (v2) GPU algorithm.
+#' @param batch_labels List. Must contain exactly one element: a 0-indexed
+#' integer vector representing the batch effects you wish to regress out.
+#' @param seed Integer. Seed for reproducibility purposes.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @return The batch-corrected Harmony (v2) embedding space.
+#'
+#' @export
+rs_harmony_v2_gpu <- function(pca, harmony_params, batch_labels, seed, verbose) .Call(wrap__rs_harmony_v2_gpu, pca, harmony_params, batch_labels, seed, verbose)
 
 # nolint end

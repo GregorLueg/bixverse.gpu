@@ -1,5 +1,6 @@
 use ann_search_rs::cpu::hnsw::{HnswIndex, HnswState};
 use ann_search_rs::cpu::nndescent::{ApplySortedUpdates, NNDescent, NNDescentQuery};
+use bixverse_rs::prelude::IntoExtendrErr;
 use burn::tensor::backend::AutodiffBackend;
 use extendr_api::*;
 use faer::{Mat, MatRef};
@@ -91,7 +92,8 @@ impl InternalParametricUmapParams {
 /// * `parametric_params` - R list containing network and training configuration
 /// * `device` - Burn backend device to run the model on
 /// * `seed` - Random seed for reproducibility
-/// * `verbose` - Whether to print progress during training
+/// * `verbose` - `0L` - quiet; `1L` - normal verbosity; `2L` - detailed
+///   verbosity.
 ///
 /// ### Returns
 ///
@@ -107,7 +109,7 @@ pub fn parametric_umap_manifold<B>(
     parametric_params: List,
     device: &B::Device,
     seed: usize,
-    verbose: bool,
+    verbose: usize,
 ) -> Result<(Mat<f32>, TrainedUmapModel<B, f32>)>
 where
     B: AutodiffBackend,
@@ -117,17 +119,18 @@ where
     let internal = InternalParametricUmapParams::from_r_list(parametric_params, min_dist, spread)?;
 
     let umap_params = ParametricUmapParams::new(
-        Some(n_dim),
-        Some(k),
-        Some(internal.ann_type),
-        Some(internal.hidden_layers),
-        Some(internal.param_knn),
-        Some(internal.umap_graph),
-        Some(internal.train_param),
+        n_dim,
+        k,
+        internal.ann_type,
+        internal.hidden_layers,
+        internal.param_knn,
+        internal.umap_graph,
+        internal.train_param,
     );
 
     let (embd_res, model) =
-        train_parametric_umap_model::<f32, B>(data, &umap_params, device, seed, verbose);
+        train_parametric_umap_model::<f32, B>(data, &umap_params, device, seed, verbose)
+            .to_extendr()?;
 
     let ncol = embd_res.len();
     let nrow = embd_res[0].len();

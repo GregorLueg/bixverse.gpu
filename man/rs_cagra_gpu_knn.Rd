@@ -19,7 +19,8 @@ precision).}
 
 \item{seed}{Integer. Random seed for reproducibility.}
 
-\item{verbose}{Logical. Whether to print progress messages.}
+\item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
+detailed verbosity.}
 }
 \value{
 A named list with:
@@ -32,6 +33,7 @@ the neighbours.
 }
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Builds a kNN graph from an embedding matrix using the CAGRA algorithm on
 the wgpu backend. Supports two retrieval modes: direct extraction from the
 NNDescent graph, or beam search over the pruned CAGRA graph. The former

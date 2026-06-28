@@ -14,7 +14,8 @@ rs_exhaustive_gpu_knn(embd, k, dist_metric, verbose)
 \item{dist_metric}{String. Distance metric; one of
 \code{c("euclidean", "cosine")}.}
 
-\item{verbose}{Logical. Whether to print progress messages.}
+\item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
+detailed verbosity.}
 }
 \value{
 A named list with:
@@ -27,5 +28,6 @@ neighbours.
 }
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Runs an exhaustive kNN search on the GPU.
 }
