@@ -55,3 +55,6 @@ search over the pruned CAGRA graph (\code{extract_knn = FALSE}), which is slower
 but yields higher recall. Subsequently, the kNN data is used to generate an
 sNN igraph for downstream clustering.
 }
+\note{
+Euclidean distance calculates the squared Euclidean distance for speed.
+}

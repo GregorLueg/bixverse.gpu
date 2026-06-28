@@ -14,7 +14,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Config/rextendr/version: 0.5.0
-SystemRequirements: Cargo (Rust's package manager), rustc >= 1.65.0, xz
+SystemRequirements: Cargo (Rust's package manager), rustc >= 1.9.0, xz
 Depends: 
     R (>= 4.2)
 Suggests: 
@@ -26,11 +26,13 @@ Imports:
     bixverse (>= 0.4.0),
     checkmate,
     lifecycle,
+    magrittr,
     manifoldsR,
     purrr,
     qs2,
     rextendr,
-    S7    
+    S7,
+    zeallot    
 Remotes:
     GregorLueg/bixverse,
     GregorLueg/bixverse.plots,

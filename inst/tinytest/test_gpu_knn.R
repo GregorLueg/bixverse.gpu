@@ -42,7 +42,7 @@ gpu_exhaustive_res <- rs_exhaustive_gpu_knn(
   embd = data,
   k = k,
   dist_metric = "euclidean",
-  verbose = FALSE
+  verbose = 0L
 )
 
 recall_exhaustive_gpu <- calc_recall_bioc(
@@ -77,7 +77,7 @@ gpu_ivf_res <- rs_ivf_gpu_knn(
     nprobe = 3L
   ),
   seed = 42L,
-  verbose = FALSE
+  verbose = 0L
 )
 
 recall_ivf_gpu <- calc_recall_bioc(
@@ -107,7 +107,7 @@ gpu_cagra <- rs_cagra_gpu_knn(
   cagra_params = params_sc_cagra(k_query = k, ann_dist = "euclidean"),
   extract_knn = FALSE,
   seed = 42L,
-  verbose = FALSE
+  verbose = 0L
 )
 
 recall_cagra_gpu <- calc_recall_bioc(

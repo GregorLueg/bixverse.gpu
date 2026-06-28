@@ -13,6 +13,7 @@ Major release.
 * New GPU-accelerated methods:
   - k-means clustering
   - Correlations and co-variances supported on GPU.
+* Option addded to save parametric UMAP models
 
 # bixverse.gpu 0.1.3
 

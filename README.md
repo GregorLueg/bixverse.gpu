@@ -86,6 +86,8 @@ need.
 
 Current roadmap (subject to change and interest):
 
+**GPU-related things:**
+
 - [x] GPU-based kNN graph generation (for single cells)
 - [x] k-means clustering on GPU
 - [x] Sparse, randomised SVD for single cells 
@@ -94,5 +96,9 @@ Current roadmap (subject to change and interest):
 - [ ] GPU-accelerated NMF.
 - [ ] GPU-accelerated BBKNN batch correction (single cells)
 - [ ] GPU-accelerate UMAP embedding generation.
+
+**General:**
+
+- [ ] More vignettes on some of the implemented functions.
 
 If you have some other ideas, please feel free to make an issue.

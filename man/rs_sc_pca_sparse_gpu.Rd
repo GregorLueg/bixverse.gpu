@@ -57,3 +57,4 @@ to \code{TRUE}, the randomised version will be used with multiplication of the
 initial sparse matrix with a much smaller random dense matrix, avoiding
 holding a large dense matrix in memory.
 }
+\keyword{internal}

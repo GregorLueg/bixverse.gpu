@@ -57,7 +57,7 @@ extendr_module! {
 ///
 /// @export
 ///
-/// @keyword internal
+/// @keywords internal
 #[extendr]
 #[allow(clippy::too_many_arguments)]
 fn rs_sc_pca_sparse_gpu(

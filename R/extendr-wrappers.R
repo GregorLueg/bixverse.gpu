@@ -257,7 +257,7 @@ rs_cov_gpu <- function(x, verbose) .Call(wrap__rs_cov_gpu, x, verbose)
 #'
 #' @export
 #'
-#' @keyword internal
+#' @keywords internal
 rs_sc_pca_sparse_gpu <- function(f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, verbose) .Call(wrap__rs_sc_pca_sparse_gpu, f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, verbose)
 
 #' Harmony batch correction in Rust (version 2, GPU-accelerated)

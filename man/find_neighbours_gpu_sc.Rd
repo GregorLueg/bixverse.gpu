@@ -12,7 +12,7 @@ find_neighbours_gpu_sc(
   gpu_method = c("ivf", "exhaustive"),
   ivf_params = params_sc_ivf(),
   k = 15L,
-  dist_metric = "cosine",
+  dist_metric = "euclidean",
   snn_params = params_sc_neighbours(),
   seed = 42L,
   .verbose = TRUE
@@ -37,6 +37,10 @@ used when \code{gpu_method = "ivf"}.}
 \item{k}{Integer. Number of neighbours. Only used when
 \code{gpu_method = "exhaustive"}.}
 
+\item{dist_metric}{String. One of \code{c("euclidean", "cosine")} for the distance
+metric to use. This is used specifically only for
+\code{gpu_method = "exhaustive"}.}
+
 \item{snn_params}{List. Output of \code{\link[bixverse:params_sc_neighbours]{bixverse::params_sc_neighbours()}}. The
 kNN graph-related parameters will be ignored.}
 
@@ -59,4 +63,7 @@ data sets. Subsequently, the kNN data is used to generate an sNN igraph for
 downstream clustering. This function lives in a separate package from the
 CPU-based \code{\link[bixverse:find_neighbours_sc]{find_neighbours_sc()}} so that users without GPU hardware do not
 need to install the GPU dependencies.
+}
+\note{
+Euclidean distance calculates the squared Euclidean distance for speed.
 }

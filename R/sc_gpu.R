@@ -293,10 +293,16 @@ S7::method(generate_cagra_knn_sc, SingleCells) <- function(
 #' used when `gpu_method = "ivf"`.
 #' @param k Integer. Number of neighbours. Only used when
 #' `gpu_method = "exhaustive"`.
+#' @param dist_metric String. One of `c("euclidean", "cosine")` for the distance
+#' metric to use. This is used specifically only for
+#' `gpu_method = "exhaustive"`.
 #' @param snn_params List. Output of [bixverse::params_sc_neighbours()]. The
 #' kNN graph-related parameters will be ignored.
 #' @param seed Integer. For reproducibility.
 #' @param .verbose Boolean. Controls verbosity.
+#'
+#' @note
+#' Euclidean distance calculates the squared Euclidean distance for speed.
 #'
 #' @return The object with added kNN matrix and sNN graph in the selected
 #' modality slot.
@@ -313,7 +319,7 @@ find_neighbours_gpu_sc <- S7::new_generic(
     gpu_method = c("ivf", "exhaustive"),
     ivf_params = params_sc_ivf(),
     k = 15L,
-    dist_metric = "cosine",
+    dist_metric = "euclidean",
     snn_params = params_sc_neighbours(),
     seed = 42L,
     .verbose = TRUE
@@ -335,7 +341,7 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
   gpu_method = c("ivf", "exhaustive"),
   ivf_params = params_sc_ivf(),
   k = 15L,
-  dist_metric = "cosine",
+  dist_metric = "euclidean",
   snn_params = params_sc_neighbours(),
   seed = 42L,
   .verbose = TRUE
@@ -438,6 +444,9 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
 #' kNN graph-related parameters will be ignored.
 #' @param seed Integer. For reproducibility.
 #' @param .verbose Boolean. Controls verbosity.
+#'
+#' @note
+#' Euclidean distance calculates the squared Euclidean distance for speed.
 #'
 #' @return The object with added kNN matrix and sNN graph in the selected
 #' modality slot.
@@ -623,7 +632,8 @@ S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
         )
       )
     }
-    object <- set_hvg(object, hvg) # this one deals with zero/one indexing internally
+    # this one deals with zero/one indexing internally
+    object <- set_hvg(object, hvg)
     hvg - 1L
   } else {
     get_hvg(object)
