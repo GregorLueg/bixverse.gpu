@@ -234,6 +234,151 @@ params_kmeans_gpu <- function(
   )
 }
 
+## umap gpu --------------------------------------------------------------------
+
+### nearest neighbours ---------------------------------------------------------
+
+#' Wrapper function to generate GPU nearest neighbour parameters
+#'
+#' @param dist_metric Character. The distance metric to use. Defaults to
+#' `"euclidean"`.
+#' @param n_list Optional integer. Number of clusters to use for IVF. If `NULL`,
+#' will default to `sqrt(n)`.
+#' @param n_probes Optional integer. Number of clusters to probe for IVF. If
+#' `NULL`, will default to `sqrt(n_list)`.
+#' @param k Optional integer. Number of nearest neighbours to search for.
+#' @param k_build Optional integer. Number of nearest neighbours to use
+#' during graph build.
+#' @param n_tree Optional integer. Number of trees for graph build.
+#' @param delta Float. Precision parameter for NN descent. Defaults to `0.001`.
+#' @param rho Optional float. Sample rate parameter for NN descent.
+#' @param beam_width Optional integer. Beam width for beam search.
+#' @param max_beam_iters Optional integer. Maximum number of beam search
+#' iterations.
+#' @param n_entry_points Optional integer. Number of entry points for beam
+#' search.
+#'
+#' @returns A list with the GPU nearest neighbour parameters.
+#'
+#' @export
+#'
+#'
+params_nn_gpu <- function(
+  dist_metric = c("euclidean", "cosine"),
+  n_list = NULL,
+  n_probes = NULL,
+  k = NULL,
+  k_build = NULL,
+  n_tree = NULL,
+  delta = 0.001,
+  rho = NULL,
+  beam_width = NULL,
+  max_beam_iters = NULL,
+  n_entry_points = NULL
+) {
+  dist_metric <- match.arg(dist_metric)
+
+  # checks
+  checkmate::assertChoice(dist_metric, c("euclidean", "cosine"))
+  checkmate::qassert(n_list, c("I1", "0"))
+  checkmate::qassert(n_probes, c("I1", "0"))
+  checkmate::qassert(k, c("I1", "0"))
+  checkmate::qassert(k_build, c("I1", "0"))
+  checkmate::qassert(n_tree, c("I1", "0"))
+  checkmate::qassert(delta, "N1")
+  checkmate::qassert(rho, c("N1", "0"))
+  checkmate::qassert(beam_width, c("I1", "0"))
+  checkmate::qassert(max_beam_iters, c("I1", "0"))
+  checkmate::qassert(n_entry_points, c("I1", "0"))
+
+  # results
+  list(
+    dist_metric = dist_metric,
+    n_list = n_list,
+    n_probes = n_probes,
+    k = k,
+    k_build = k_build,
+    n_tree = n_tree,
+    delta = delta,
+    rho = rho,
+    beam_width = beam_width,
+    max_beam_iters = max_beam_iters,
+    n_entry_points = n_entry_points
+  )
+}
+
+### umap specific --------------------------------------------------------------
+
+#' Wrapper function to generate UMAP parameters (GPU version)
+#'
+#' @param local_connectivity Numeric. Number of nearest neighbours assumed to
+#' be at distance zero. Defaults to `1.0`.
+#' @param bandwidth Numeric. Convergence tolerance for smooth kNN distance
+#' binary search. Defaults to `1e-5`.
+#' @param mix_weight Numeric. Balance between fuzzy union and directed graph
+#' during symmetrisation. Defaults to `1.0`.
+#' @param lr Numeric. Learning rate. Defaults to `1.0`.
+#' @param n_epochs Integer or `NULL`. Number of optimisation epochs. Defaults
+#' to `NULL`, resolved downstream based on data size.
+#' @param neg_sample_rate Integer. Number of negative samples per positive
+#' sample. Defaults to `5L`.
+#' @param gamma Numeric. Repulsion strength. Defaults to `1.0`.
+#' @param optimiser Character. One of `"adam_gpu"`, `"sgd"`, `"adam"`, or
+#' `"adam_parallel"`. Defaults to `"adam_gpu"`.
+#' @param init Character. Embedding initialisation method. One of `"spectral"`,
+#' `"pca"`, or `"random"`. Defaults to `"spectral"`.
+#' @param randomised Logical. Use randomised SVD for PCA initialisation.
+#' Defaults to `FALSE`.
+#'
+#' @returns A list with the UMAP parameters.
+#'
+#' @export
+params_umap_gpu <- function(
+  local_connectivity = 1.0,
+  bandwidth = 1e-5,
+  mix_weight = 1.0,
+  lr = 1.0,
+  n_epochs = NULL,
+  neg_sample_rate = 5L,
+  gamma = 1.0,
+  optimiser = c("adam_gpu", "adam_parallel", "sgd", "adam"),
+  init = c("spectral", "pca", "random"),
+  randomised = FALSE
+) {
+  optimiser <- match.arg(optimiser)
+  init <- match.arg(init)
+
+  checkmate::qassert(local_connectivity, "N1")
+  checkmate::qassert(bandwidth, "N1")
+  checkmate::qassert(mix_weight, "N1")
+  checkmate::qassert(lr, "N1")
+  checkmate::assert(
+    checkmate::checkNull(n_epochs),
+    checkmate::checkInt(n_epochs, lower = 1L)
+  )
+  checkmate::qassert(neg_sample_rate, "I1")
+  checkmate::qassert(gamma, "N1")
+  checkmate::assertChoice(
+    optimiser,
+    c("adam_gpu", "sgd", "adam", "adam_parallel")
+  )
+  checkmate::assertChoice(init, c("spectral", "pca", "random"))
+  checkmate::qassert(randomised, "B1")
+
+  list(
+    local_connectivity = local_connectivity,
+    bandwidth = bandwidth,
+    mix_weight = mix_weight,
+    lr = lr,
+    n_epochs = n_epochs,
+    neg_sample_rate = neg_sample_rate,
+    gamma = gamma,
+    optimiser = optimiser,
+    init = init,
+    randomised = randomised
+  )
+}
+
 ## single cells ----------------------------------------------------------------
 
 ### harmony v2 GPU -------------------------------------------------------------

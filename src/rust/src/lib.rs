@@ -14,13 +14,16 @@ use manifolds_rs::parametric::model::TrainedUmapModel;
 pub mod embeddings;
 pub mod ml;
 pub mod single_cell;
+pub mod utils;
 
 pub use single_cell::harmony_gpu;
 pub use single_cell::pca_gpu;
 
 use crate::embeddings::parametric_umap::*;
+use crate::embeddings::umap_gpu::umap_manifold_gpu;
 use crate::ml::clustering::*;
 use crate::single_cell::knn_gpu::*;
+use crate::utils::nearest_neighbours_to_rust;
 
 /////////////
 // extendR //
@@ -35,7 +38,7 @@ extendr_module! {
     fn rs_cagra_gpu_knn;
     fn rs_ivf_gpu_knn;
     fn rs_exhaustive_gpu_knn;
-    // umap
+    // umap parametric
     fn rs_parametric_umap;
     fn rs_parametric_umap_predict;
     fn rs_serialise_parametric_umap;
@@ -45,7 +48,18 @@ extendr_module! {
     // correlations
     fn rs_cor_gpu;
     fn rs_cov_gpu;
+    // umap gpu
+    fn rs_umap_gpu;
+    fn rs_umap_from_knn_gpu;
 }
+
+////////////
+// Consts //
+////////////
+
+/// Threshold at which the switch from fp32 to fp64 happens. Some algorithms
+/// (tSNE, cough) are very sensitive to precision differences.
+const SAMPLE_THRESHOLD_HIGH_PRECISION: usize = 100_000;
 
 ///////////
 // Types //
@@ -85,6 +99,70 @@ impl PUmapModel {
             PUmapModel::Gpu(m) => m.predict(data),
             PUmapModel::Cpu(m) => m.predict(data),
         }
+    }
+}
+
+///////////////
+// Precision //
+///////////////
+
+///////////
+// Enums //
+///////////
+
+/// Enum defining the floating point operation precision. Some algorithms suffer
+/// from catastrophic cancellation and accumulation of precision errors
+#[derive(Debug, Clone, Copy, Default)]
+enum FloatingPointPrecision {
+    /// FP32
+    #[default]
+    FP32,
+    /// FP64
+    FP64,
+}
+
+/// Auto detection of the precision based on sensible thresholds
+///
+/// ### Params
+///
+/// * `n` - Number of samples
+///
+/// ### Returns
+///
+/// The [FloatingPointPrecision]
+fn auto_precision(n: usize) -> FloatingPointPrecision {
+    if n > SAMPLE_THRESHOLD_HIGH_PRECISION {
+        FloatingPointPrecision::FP64
+    } else {
+        FloatingPointPrecision::FP32
+    }
+}
+
+/// Function to parse the precision to use
+///
+/// ### Params
+///
+/// * `use_high_precision` - Nullable Rbool. If provided, will use that to
+///   determine precision to use
+/// * `n` - Number of samples in the data. Used to determine in an auto
+///   threshold which precision to use.
+///
+/// ### Returns
+///
+/// The determined [FloatingPointPrecision].
+fn parse_precision(use_high_precision: Nullable<Rbool>, n: usize) -> FloatingPointPrecision {
+    if use_high_precision != Nullable::Null {
+        let val = use_high_precision.into_option().map(|x| x.to_bool()).unwrap_or_else(|| {
+            println!("[WARNING] - The provided 'use_high_precision' could not be decoded into a boolean. Function will assume 'true'");
+            true
+        });
+        if val {
+            FloatingPointPrecision::FP64
+        } else {
+            FloatingPointPrecision::FP32
+        }
+    } else {
+        auto_precision(n)
     }
 }
 
@@ -596,4 +674,191 @@ fn rs_cov_gpu(x: RMatrix<f64>, verbose: bool) -> Result<RMatrix<f64>, extendr_ap
     client.memory_cleanup();
 
     Ok(faer_to_r_matrix(res.as_ref()))
+}
+
+//////////////////////////
+// GPU-accelerated UMAP //
+//////////////////////////
+
+/// UMAP implementation
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// This is the wrapper function into the Rust interface for GPU-accelerated
+/// UMAP. Leverages GPU acceleration in the kNN search and also in the
+/// optimisation.
+///
+/// @param embd Numerical matrix. The data to use to generate the embeddings.
+/// Should be of dimensions samples x features.
+/// @param n_dim Integer. Number of UMAP dimensions to return.
+/// @param min_dist Numeric. Minimum distance to use.
+/// @param spread Numeric. Spread parameter to use.
+/// @param k Integer. Number of nearest neighbours to consider
+/// @param umap_params Named list. List that contains all of the key parameters
+/// for the UMAP generation.
+/// @param seed Integer. Seed for reproducibility.
+/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
+/// If `NULL` will use sensible default thresholding.
+/// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
+/// for detailed verbosity.
+///
+/// @return The UMAP embeddings.
+///
+/// @export
+#[extendr]
+#[allow(clippy::too_many_arguments)]
+fn rs_umap_gpu(
+    embd: RMatrix<f64>,
+    n_dim: usize,
+    min_dist: f64,
+    spread: f64,
+    k: usize,
+    umap_params: List,
+    seed: usize,
+    use_high_precision: Nullable<Rbool>,
+    verbose: usize,
+) -> extendr_api::Result<RMatrix<f64>> {
+    let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
+    let precision = parse_precision(use_high_precision, embd.nrows());
+
+    match precision {
+        FloatingPointPrecision::FP32 => {
+            if verbosity.detailed_verbosity() {
+                println!("Lower precision (fp32) path chosen.")
+            }
+
+            let embd = r_matrix_to_faer_fp32(&embd);
+
+            let res = umap_manifold_gpu::<f32, WgpuRuntime>(
+                embd.as_ref(),
+                None,
+                n_dim,
+                k,
+                min_dist,
+                spread,
+                umap_params,
+                seed,
+                verbose,
+            )
+            .to_extendr()?;
+
+            Ok(faer_to_r_matrix(res.as_ref()))
+        }
+        FloatingPointPrecision::FP64 => {
+            if verbosity.detailed_verbosity() {
+                println!("Higher precision (fp64) path chosen.")
+            }
+
+            let embd = r_matrix_to_faer(&embd);
+
+            let res = umap_manifold_gpu::<f64, WgpuRuntime>(
+                embd.as_ref(),
+                None,
+                n_dim,
+                k,
+                min_dist,
+                spread,
+                umap_params,
+                seed,
+                verbose,
+            )
+            .to_extendr()?;
+
+            Ok(faer_to_r_matrix(res.as_ref()))
+        }
+    }
+}
+
+/// UMAP implementation
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// This is the wrapper function into the Rust interface for UMAP and can use a
+/// pre-computed kNN. Leverages GPU acceleration for the optimisation.
+///
+/// @param embd Numerical matrix. The data to use to generate the embeddings.
+/// Should be of dimensions samples x features.
+/// @param knn_data `NearestNeighbours` class from R.
+/// @param n_dim Integer. Number of UMAP dimensions to return.
+/// @param min_dist Numeric. Minimum distance to use.
+/// @param spread Numeric. Spread parameter to use.
+/// @param k Integer. Number of nearest neighbours to consider
+/// @param umap_params Named list. List that contains all of the key parameters
+/// for the UMAP generation.
+/// @param seed Integer. Seed for reproducibility.
+/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
+/// If `NULL` will use sensible default thresholding.
+/// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
+/// for detailed verbosity.
+///
+/// @return The UMAP embeddings.
+///
+/// @export
+#[extendr]
+#[allow(clippy::too_many_arguments)]
+fn rs_umap_from_knn_gpu(
+    embd: RMatrix<f64>,
+    knn_data: List,
+    n_dim: usize,
+    min_dist: f64,
+    spread: f64,
+    k: usize,
+    umap_params: List,
+    seed: usize,
+    use_high_precision: Nullable<Rbool>,
+    verbose: usize,
+) -> extendr_api::Result<RMatrix<f64>> {
+    let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
+    let precision = parse_precision(use_high_precision, embd.nrows());
+
+    match precision {
+        FloatingPointPrecision::FP32 => {
+            if verbosity.detailed_verbosity() {
+                println!("Lower precision (fp32) path chosen.")
+            }
+
+            let embd = r_matrix_to_faer_fp32(&embd);
+
+            let knn = nearest_neighbours_to_rust(knn_data);
+
+            let res = umap_manifold_gpu::<f32, WgpuRuntime>(
+                embd.as_ref(),
+                knn,
+                n_dim,
+                k,
+                min_dist,
+                spread,
+                umap_params,
+                seed,
+                verbose,
+            )
+            .to_extendr()?;
+
+            Ok(faer_to_r_matrix(res.as_ref()))
+        }
+        FloatingPointPrecision::FP64 => {
+            if verbosity.detailed_verbosity() {
+                println!("Higher precision (fp64) path chosen.")
+            }
+
+            let embd = r_matrix_to_faer(&embd);
+
+            let knn = nearest_neighbours_to_rust(knn_data);
+
+            let res = umap_manifold_gpu::<f64, WgpuRuntime>(
+                embd.as_ref(),
+                knn,
+                n_dim,
+                k,
+                min_dist,
+                spread,
+                umap_params,
+                seed,
+                verbose,
+            )
+            .to_extendr()?;
+
+            Ok(faer_to_r_matrix(res.as_ref()))
+        }
+    }
 }

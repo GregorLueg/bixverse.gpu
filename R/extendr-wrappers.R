@@ -220,6 +220,60 @@ rs_cor_gpu <- function(x, spearman, verbose) .Call(wrap__rs_cor_gpu, x, spearman
 #' @export
 rs_cov_gpu <- function(x, verbose) .Call(wrap__rs_cov_gpu, x, verbose)
 
+#' UMAP implementation
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' This is the wrapper function into the Rust interface for GPU-accelerated
+#' UMAP. Leverages GPU acceleration in the kNN search and also in the
+#' optimisation.
+#'
+#' @param embd Numerical matrix. The data to use to generate the embeddings.
+#' Should be of dimensions samples x features.
+#' @param n_dim Integer. Number of UMAP dimensions to return.
+#' @param min_dist Numeric. Minimum distance to use.
+#' @param spread Numeric. Spread parameter to use.
+#' @param k Integer. Number of nearest neighbours to consider
+#' @param umap_params Named list. List that contains all of the key parameters
+#' for the UMAP generation.
+#' @param seed Integer. Seed for reproducibility.
+#' @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
+#' If `NULL` will use sensible default thresholding.
+#' @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
+#' for detailed verbosity.
+#'
+#' @return The UMAP embeddings.
+#'
+#' @export
+rs_umap_gpu <- function(embd, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, verbose) .Call(wrap__rs_umap_gpu, embd, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, verbose)
+
+#' UMAP implementation
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' This is the wrapper function into the Rust interface for UMAP and can use a
+#' pre-computed kNN. Leverages GPU acceleration for the optimisation.
+#'
+#' @param embd Numerical matrix. The data to use to generate the embeddings.
+#' Should be of dimensions samples x features.
+#' @param knn_data `NearestNeighbours` class from R.
+#' @param n_dim Integer. Number of UMAP dimensions to return.
+#' @param min_dist Numeric. Minimum distance to use.
+#' @param spread Numeric. Spread parameter to use.
+#' @param k Integer. Number of nearest neighbours to consider
+#' @param umap_params Named list. List that contains all of the key parameters
+#' for the UMAP generation.
+#' @param seed Integer. Seed for reproducibility.
+#' @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
+#' If `NULL` will use sensible default thresholding.
+#' @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
+#' for detailed verbosity.
+#'
+#' @return The UMAP embeddings.
+#'
+#' @export
+rs_umap_from_knn_gpu <- function(embd, knn_data, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, verbose) .Call(wrap__rs_umap_from_knn_gpu, embd, knn_data, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, verbose)
+
 #' Calculates sparse PCA for single cell
 #'
 #' @description
