@@ -225,8 +225,8 @@ fn rs_cagra_gpu_knn(
 
     let knn_dist = dist.unwrap();
 
-    let index_mat = Mat::from_fn(embd.nrows(), params.k_query, |i, j| indices[i][j] as i32);
-    let dist_mat = Mat::from_fn(embd.nrows(), params.k_query, |i, j| knn_dist[i][j] as f64);
+    let index_mat = Mat::from_fn(embd.nrows(), params.k, |i, j| indices[i][j] as i32);
+    let dist_mat = Mat::from_fn(embd.nrows(), params.k, |i, j| knn_dist[i][j] as f64);
 
     Ok(list!(
         indices = faer_to_r_matrix(index_mat.as_ref()),

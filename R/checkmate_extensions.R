@@ -19,9 +19,9 @@ checkScCagraParams <- function(x) {
   res <- checkmate::checkNames(
     names(x),
     must.include = c(
-      "k_query",
-      "ann_dist",
       "k",
+      "ann_dist",
+      "node_degree_final",
       "k_build",
       "refine_sweeps",
       "max_iters",
@@ -42,7 +42,7 @@ checkScCagraParams <- function(x) {
   }
   # Required integer fields (must not be NULL)
   required_int_rules <- list(
-    "k_query" = "I1[1,)",
+    "k" = "I1[1,)",
     "refine_sweeps" = "I1[1,)"
   )
   res <- purrr::imap_lgl(x, \(x, name) {
@@ -66,7 +66,7 @@ checkScCagraParams <- function(x) {
   }
   # Optional integer fields (NULL or integer >= 1)
   optional_int_rules <- list(
-    "k" = c("I1[1,)", "0"),
+    "node_degree_final" = c("I1[1,)", "0"),
     "k_build" = c("I1[1,)", "0"),
     "max_iters" = c("I1[1,)", "0"),
     "n_trees" = c("I1[1,)", "0"),
@@ -87,8 +87,8 @@ checkScCagraParams <- function(x) {
       sprintf(
         paste(
           "The following element `%s` in CAGRA parameters is incorrect:",
-          "k, k_build, max_iters, n_trees, beam_width, max_beam_iters,",
-          "and n_entry_points must be NULL or integers >= 1."
+          "node_degree_final, k_build, max_iters, n_trees, beam_width,",
+          "max_beam_iters and n_entry_points must be NULL or integers >= 1."
         ),
         broken_elem
       )
@@ -161,9 +161,9 @@ assertScCagraParams <- checkmate::makeAssertionFunction(checkScCagraParams)
 
 ## ivf -------------------------------------------------------------------------
 
-#' Check IVF parameters
+#' Check IVF GPU parameters
 #'
-#' @description Checkmate extension for checking IVF parameters.
+#' @description Checkmate extension for checking IVF GPU parameters.
 #'
 #' @param x The list to check/assert.
 #'
@@ -379,11 +379,12 @@ checkNnParamsGpu <- function(x) {
       "dist_metric",
       "n_list",
       "n_probes",
-      "k",
+      "node_degree_final",
       "k_build",
       "n_tree",
       "delta",
       "rho",
+      "refine_sweeps",
       "beam_width",
       "max_beam_iters",
       "n_entry_points"
@@ -396,11 +397,12 @@ checkNnParamsGpu <- function(x) {
     "dist_metric" = list(type = "choice", choices = c("cosine", "euclidean")),
     "n_list" = list(type = "nullable_int"),
     "n_probes" = list(type = "nullable_int"),
-    "k" = list(type = "nullable_int"),
+    "node_degree_final" = list(type = "nullable_int"),
     "k_build" = list(type = "nullable_int"),
     "n_tree" = list(type = "nullable_int"),
     "delta" = list(type = "fixed", rule = "N1"),
     "rho" = list(type = "nullable_numeric"),
+    "refine_sweeps" = list(type = "fixed", rule = "I1[0,)"),
     "beam_width" = list(type = "nullable_int"),
     "max_beam_iters" = list(type = "nullable_int"),
     "n_entry_points" = list(type = "nullable_int")
@@ -427,6 +429,7 @@ checkNnParamsGpu <- function(x) {
           "dist_metric must be one of 'cosine' or 'euclidean',",
           "n_list/n_probes/k/k_build/n_tree/beam_width/max_beam_iters/",
           "n_entry_points must be integers or NULL,",
+          "refine_sweeps must be an integer ≥ 0",
           "delta must be a numeric,",
           "and rho must be a numeric or NULL."
         ),

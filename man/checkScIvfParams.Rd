@@ -2,7 +2,7 @@
 % Please edit documentation in R/checkmate_extensions.R
 \name{checkScIvfParams}
 \alias{checkScIvfParams}
-\title{Check IVF parameters}
+\title{Check IVF GPU parameters}
 \usage{
 checkScIvfParams(x)
 }
@@ -13,6 +13,6 @@ checkScIvfParams(x)
 \code{TRUE} if the check was successful, otherwise an error message.
 }
 \description{
-Checkmate extension for checking IVF parameters.
+Checkmate extension for checking IVF GPU parameters.
 }
 \keyword{internal}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/umap_gpu.R
 \name{.prepare_umap_params_gpu}
 \alias{.prepare_umap_params_gpu}
-\title{Internal helper to prepare the UMAP parameters}
+\title{Internal helper to prepare the UMAP parameters (GPU version)}
 \usage{
 .prepare_umap_params_gpu(
   n,
@@ -33,6 +33,6 @@
 Returns the list of final parameters.
 }
 \description{
-Internal helper to prepare the UMAP parameters
+Internal helper to prepare the UMAP parameters (GPU version)
 }
 \keyword{internal}

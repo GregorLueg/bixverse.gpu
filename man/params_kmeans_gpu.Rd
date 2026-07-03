@@ -8,7 +8,7 @@ params_kmeans_gpu(
   k_means_iter = 50L,
   k_means_init = NULL,
   metric = c("euclidean", "cosine"),
-  fixed = TRUE,
+  fixed = FALSE,
   quantise = FALSE
 )
 }
@@ -21,9 +21,12 @@ Rust side.}
 
 \item{metric}{String. One of \code{c("euclidean", "cosine")}.}
 
-\item{fixed}{Logical. Whether cluster centres are fixed after initialisation.}
+\item{fixed}{Logical. Shall the algorithm be run for a fixed number of
+iterations, without checking for convergence.}
 
-\item{quantise}{Logical. Whether to quantise data to f16 before clustering.}
+\item{quantise}{Logical. Whether to quantise data to \code{fp16} before
+clustering. This can improve performance in circumstances where it is
+memory bound.}
 }
 \value{
 A list with the parameters.

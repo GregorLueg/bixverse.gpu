@@ -91,6 +91,9 @@ S7::method(generate_gpu_knn_sc, SingleCells) <- function(
   checkmate::qassert(embd_to_use, "S1")
   checkmate::qassert(cells_to_use, c("S+", "0"))
   checkmate::qassert(no_embd_to_use, c("I1", "0"))
+  checkmate::assertChoice(modality, c("rna", "adt"))
+  checkmate::assertChoice(gpu_method, c("ivf", "exhaustive"))
+  assertScIvfParams(ivf_params)
   checkmate::qassert(k, "I1[1,)")
   checkmate::qassert(dist_metric, "S1")
   checkmate::qassert(seed, "I1")
@@ -219,6 +222,8 @@ S7::method(generate_cagra_knn_sc, SingleCells) <- function(
   checkmate::qassert(embd_to_use, "S1")
   checkmate::qassert(cells_to_use, c("S+", "0"))
   checkmate::qassert(no_embd_to_use, c("I1", "0"))
+  checkmate::assertChoice(modality, c("rna", "adt"))
+  checkScCagraParams(cagra_params)
   checkmate::qassert(extract_knn, "B1")
   checkmate::qassert(seed, "I1")
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
@@ -352,8 +357,11 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
   checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
   checkmate::qassert(embd_to_use, "S1")
   checkmate::qassert(no_embd_to_use, c("I1", "0"))
+  checkmate::assertChoice(modality, c("rna", "adt"))
+  checkmate::assertChoice(gpu_method, c("ivf", "exhaustive"))
+  checkScIvfParams(ivf_params)
   checkmate::qassert(k, "I1[1,)")
-  checkmate::qassert(dist_metric, "S1")
+  checkmate::assertChoice(dist_metric, c("euclidean", "cosine"))
   checkmate::qassert(seed, "I1")
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
@@ -415,9 +423,9 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
   return(object)
 }
 
-# find_neighbours_cagra_sc -----------------------------------------------------
+### cagra ----------------------------------------------------------------------
 
-#' Find CAGRA GPU-accelerated neighbours for single cells
+#' Find neighbours via CAGRA GPU-acceleration for single cells
 #'
 #' @description
 #' This function generates kNN data using the CAGRA (CUDA-Accelerated Graph
@@ -441,7 +449,7 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
 #' the NNDescent result. If `FALSE`, runs beam search over the pruned CAGRA
 #' graph. The extraction is faster, but creates a lower quality kNN graph.
 #' @param snn_params List. Output of [bixverse::params_sc_neighbours()]. The
-#' kNN graph-related parameters will be ignored.
+#' kNN graph-related parameters will be ignored in favour of `cagra_params`.
 #' @param seed Integer. For reproducibility.
 #' @param .verbose Boolean. Controls verbosity.
 #'

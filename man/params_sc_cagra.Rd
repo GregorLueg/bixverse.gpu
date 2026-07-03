@@ -5,9 +5,9 @@
 \title{Default parameters for CAGRA-style kNN search}
 \usage{
 params_sc_cagra(
-  k_query = 15L,
+  k = 15L,
   ann_dist = "euclidean",
-  k = NULL,
+  node_degree_final = NULL,
   k_build = NULL,
   refine_sweeps = 0L,
   max_iters = NULL,
@@ -20,17 +20,17 @@ params_sc_cagra(
 )
 }
 \arguments{
-\item{k_query}{Integer. Number of neighbours to identify.}
+\item{k}{Integer. Number of neighbours to identify.}
 
 \item{ann_dist}{Character. Distance metric to use. One of \code{"euclidean"} or
 \code{"cosine"}.}
 
-\item{k}{Optional integer. Final node degree of the CAGRA navigational
-graph. If \code{NULL}, defaults to \code{30} on the Rust side.}
+\item{node_degree_final}{Optional integer. Final node degree of the CAGRA
+navigational graph. If \code{NULL}, defaults to \code{30} on the Rust side.}
 
 \item{k_build}{Optional integer. Number of k-neighbours during the
-NNDescent build phase before CAGRA pruning. If \code{NULL}, defaults to \code{1.5 * k}
-on the Rust side.}
+NNDescent build phase before CAGRA pruning. If \code{NULL}, defaults to
+\code{1.5 * node_degree_final} on the Rust side.}
 
 \item{refine_sweeps}{Integer. Number of refinement sweeps during graph
 generation.}

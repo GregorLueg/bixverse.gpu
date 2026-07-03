@@ -31,10 +31,7 @@
   checkmate::assertChoice(
     knn_method,
     c(
-      "kmknn",
-      "balltree",
-      "hnsw",
-      "annoy",
+      "ivf",
       "nndescent",
       "exhaustive"
     )

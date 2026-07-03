@@ -49,8 +49,9 @@ where
         .get("n_probes")
         .and_then(|v| v.as_integer())
         .map(|v| v as usize);
+    // this is the final node degree of the CAGRA graph
     let k = nn_params
-        .get("k")
+        .get("node_degree_final")
         .and_then(|v| v.as_integer())
         .map(|v| v as usize);
     let k_build = nn_params

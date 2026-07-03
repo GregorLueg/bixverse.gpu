@@ -2,7 +2,7 @@
 % Please edit documentation in R/sc_gpu.R
 \name{find_neighbours_cagra_sc}
 \alias{find_neighbours_cagra_sc}
-\title{Find CAGRA GPU-accelerated neighbours for single cells}
+\title{Find neighbours via CAGRA GPU-acceleration for single cells}
 \usage{
 find_neighbours_cagra_sc(
   object,
@@ -34,7 +34,7 @@ the NNDescent result. If \code{FALSE}, runs beam search over the pruned CAGRA
 graph. The extraction is faster, but creates a lower quality kNN graph.}
 
 \item{snn_params}{List. Output of \code{\link[bixverse:params_sc_neighbours]{bixverse::params_sc_neighbours()}}. The
-kNN graph-related parameters will be ignored.}
+kNN graph-related parameters will be ignored in favour of \code{cagra_params}.}
 
 \item{seed}{Integer. For reproducibility.}
 

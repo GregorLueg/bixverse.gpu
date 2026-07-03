@@ -43,7 +43,8 @@ consider reducing this!}
 scale at which embedded points will be spread out. Defaults to \code{1.0}.}
 
 \item{knn_method}{Character. (Approximate) Nearest neighbour method to use.
-One of \code{"exhaustive"}, \code{"ivf"} or \code{"nndescent_gpu"}.}
+One of \code{"exhaustive"}, \code{"ivf"} or \code{"nndescent_gpu"}. These are
+GPU-accelerated methods.}
 
 \item{umap_params}{Named list. UMAP (GPU) algorithm parameters, see
 \code{\link[=params_umap_gpu]{params_umap_gpu()}}.}
@@ -51,7 +52,7 @@ One of \code{"exhaustive"}, \code{"ivf"} or \code{"nndescent_gpu"}.}
 \item{seed}{Integer. Random seed for reproducibility. Defaults to \code{42L}.}
 
 \item{use_high_precision}{Optional boolean. Gives fine-grained control over
-\code{fp32} vs \code{fp64} usage.}
+\code{fp32} vs \code{fp64} usage. The GPU calculations will be forced into \code{fp32}.}
 
 \item{.verbose}{Logical. Controls verbosity. Defaults to \code{TRUE}.}
 

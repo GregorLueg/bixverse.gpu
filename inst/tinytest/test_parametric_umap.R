@@ -8,7 +8,7 @@ n_per_cluster <- 100L
 n_dim <- 16L
 n_clusters <- 3L
 
-# Generate 3 well-separated clusters
+# generate 3 well-separated clusters
 centres <- matrix(
   c(rep(5, n_dim), rep(-5, n_dim), rep(0, n_dim)),
   nrow = n_clusters,

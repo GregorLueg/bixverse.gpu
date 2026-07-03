@@ -8,9 +8,10 @@ params_nn_gpu(
   dist_metric = c("euclidean", "cosine"),
   n_list = NULL,
   n_probes = NULL,
-  k = NULL,
+  node_degree_final = NULL,
   k_build = NULL,
   n_tree = NULL,
+  refine_sweeps = 0L,
   delta = 0.001,
   rho = NULL,
   beam_width = NULL,
@@ -22,30 +23,39 @@ params_nn_gpu(
 \item{dist_metric}{Character. The distance metric to use. Defaults to
 \code{"euclidean"}.}
 
-\item{n_list}{Optional integer. Number of clusters to use for IVF. If \code{NULL},
-will default to \code{sqrt(n)}.}
+\item{n_list}{Optional integer. IVF GPU: Number of clusters to use. If
+\code{NULL}, will default to \code{sqrt(n)}.}
 
-\item{n_probes}{Optional integer. Number of clusters to probe for IVF. If
+\item{n_probes}{Optional integer. IVF GPU: Number of clusters to probe. If
 \code{NULL}, will default to \code{sqrt(n_list)}.}
 
-\item{k}{Optional integer. Number of nearest neighbours to search for.}
+\item{node_degree_final}{Optional integer. Final node degree of the CAGRA
+navigational graph. If \code{NULL}, defaults to \code{30} on the Rust side.}
 
-\item{k_build}{Optional integer. Number of nearest neighbours to use
-during graph build.}
+\item{k_build}{Optional integer. Number of k-neighbours during the
+NNDescent build phase before CAGRA pruning. If \code{NULL}, defaults to
+\code{1.5 * node_degree_final} on the Rust side.}
 
-\item{n_tree}{Optional integer. Number of trees for graph build.}
+\item{n_tree}{Optional integer. CAGRA GPU: Number of trees for graph build.
+Automatically if \code{NULL}.}
 
-\item{delta}{Float. Precision parameter for NN descent. Defaults to \code{0.001}.}
+\item{refine_sweeps}{Integer. Number of refinement sweeps during graph
+generation.}
 
-\item{rho}{Optional float. Sample rate parameter for NN descent.}
+\item{delta}{Float. CAGRA GPU: Early termination parameter for NN descent.
+Defaults to \code{0.001}.}
 
-\item{beam_width}{Optional integer. Beam width for beam search.}
+\item{rho}{Optional float. CAGRA GPU: Sample rate parameter for NN descent.
+Defaults to \code{0.5} if not provided.}
 
-\item{max_beam_iters}{Optional integer. Maximum number of beam search
-iterations.}
+\item{beam_width}{Optional integer. CAGRA GPU: Beam width for beam search. If
+not provided will be set to \code{max(c(k, node_degree_final, 16L)) * 2}.}
 
-\item{n_entry_points}{Optional integer. Number of entry points for beam
-search.}
+\item{max_beam_iters}{Optional integer. CAGRA GPU: Maximum number of beam
+search iterations. If not provided, defaults to \code{3 * beam_width}.}
+
+\item{n_entry_points}{Optional integer. CAGRA GPU: Number of entry points for
+beam search. If not provided, defaults to \code{8L}.}
 }
 \value{
 A list with the GPU nearest neighbour parameters.

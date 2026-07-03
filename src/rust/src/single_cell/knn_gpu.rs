@@ -57,12 +57,12 @@ fn remove_self(
 /// The parameters for the CAGRA-style kNN search
 pub struct CagraParams {
     /// Number of neighbours to identify
-    pub k_query: usize,
+    pub k: usize,
     /// Distance metric to use. One of `"euclidean"` or `"cosine"`.
     pub ann_dist: String,
     /// Final node degree of the CAGRA graph during index generation. If None,
     /// defaults to `30`.
-    pub k: Option<usize>,
+    pub node_degree_final: Option<usize>,
     /// Optional build k for the NNDescent iterations prior to CAGRA pruning.
     /// Defaults to `2 * k` if not provided.
     pub k_build: Option<usize>,
@@ -98,13 +98,10 @@ impl CagraParams {
     pub fn from_r_list(r_list: List) -> Result<Self, extendr_api::Error> {
         let cagra: HashMap<&str, Robj> = r_list.try_into()?;
 
-        let k_query = cagra
-            .get("k_query")
-            .and_then(|v| v.as_integer())
-            .unwrap_or(15) as usize;
+        let k = cagra.get("k").and_then(|v| v.as_integer()).unwrap_or(15) as usize;
 
-        let k = cagra
-            .get("k")
+        let node_degree_final = cagra
+            .get("node_degree_final")
             .and_then(|v| v.as_integer())
             .map(|v| v as usize);
 
@@ -158,9 +155,9 @@ impl CagraParams {
             .map(|v| v as usize);
 
         Ok(Self {
-            k_query,
-            ann_dist,
             k,
+            ann_dist,
+            node_degree_final,
             k_build,
             refine_sweeps,
             max_iters,
@@ -222,7 +219,7 @@ pub fn cagra_knn_with_dist(
     let mut cagra_idx = build_nndescent_index_gpu::<f32, WgpuRuntime>(
         embd.as_ref(),
         &cagra_params.ann_dist,
-        cagra_params.k,
+        cagra_params.node_degree_final,
         cagra_params.k_build,
         cagra_params.max_iters,
         cagra_params.n_trees,
@@ -262,7 +259,7 @@ pub fn cagra_knn_with_dist(
 
         let (n, d) = query_nndescent_index_gpu_self(
             &mut cagra_idx,
-            cagra_params.k_query + 1, // because of self
+            cagra_params.k + 1, // because of self
             Some(search_params),
             return_dist,
         )
