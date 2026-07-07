@@ -34,7 +34,8 @@ navigational graph. If \code{NULL}, defaults to \code{30} on the Rust side.}
 
 \item{k_build}{Optional integer. Number of k-neighbours during the
 NNDescent build phase before CAGRA pruning. If \code{NULL}, defaults to
-\code{1.5 * node_degree_final} on the Rust side.}
+\code{1.5 * node_degree_final} on the Rust side. (Cannot be smaller than
+\code{node_degree_final})}
 
 \item{n_tree}{Optional integer. CAGRA GPU: Number of trees for graph build.
 Automatically if \code{NULL}.}

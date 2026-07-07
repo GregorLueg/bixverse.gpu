@@ -20,6 +20,7 @@ pub use single_cell::harmony_gpu;
 pub use single_cell::pca_gpu;
 
 use crate::embeddings::parametric_umap::*;
+use crate::embeddings::tsne_gpu::tsne_manifold_gpu;
 use crate::embeddings::umap_gpu::umap_manifold_gpu;
 use crate::ml::clustering::*;
 use crate::single_cell::knn_gpu::*;
@@ -51,6 +52,9 @@ extendr_module! {
     // umap gpu
     fn rs_umap_gpu;
     fn rs_umap_from_knn_gpu;
+    // tsne gpu
+    fn rs_tsne_gpu;
+    fn rs_tsne_from_knn_gpu;
 }
 
 ////////////
@@ -853,6 +857,191 @@ fn rs_umap_from_knn_gpu(
                 min_dist,
                 spread,
                 umap_params,
+                seed,
+                verbose,
+            )
+            .to_extendr()?;
+
+            Ok(faer_to_r_matrix(res.as_ref()))
+        }
+    }
+}
+
+//////////
+// tSNE //
+//////////
+
+/// tSNE implementation
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// Leverages the tSNE implementation in manifolds-rs - a very fast Rust-based
+/// implementation. You have two optimiser options: `"bh"` which tends to be
+/// faster on smaller datasets and `"fft"` for large data sets. It leverages
+/// GPU-accelerated kNN searches under the hood.
+///
+/// @param embd Numerical matrix. The data to use to generate the embeddings.
+/// Should be of dimensions samples x features.
+/// @param n_dim Integer. Number of tSNE dimensions to return. Needs to be two,
+/// others are not supported.
+/// @param perplexity Numeric. The tSNE perplexity parameter.
+/// @param approx_type String. One of `c("fft", "bh")`. Which of the two
+/// approximations to use.
+/// @param tsne_params Named list. List that contains all of the key parameters
+/// for the tSNE generation.
+/// @param seed Integer. Seed for reproducibility.
+/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
+/// If `NULL` will use sensible default thresholding.
+/// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
+/// for detailed verbosity.
+///
+/// @return The tSNE embeddings.
+///
+/// @export
+#[extendr]
+#[allow(clippy::too_many_arguments)]
+fn rs_tsne_gpu(
+    embd: RMatrix<f64>,
+    n_dim: usize,
+    perplexity: f64,
+    approx_type: String,
+    tsne_params: List,
+    seed: usize,
+    use_high_precision: Nullable<Rbool>,
+    verbose: usize,
+) -> extendr_api::Result<RMatrix<f64>> {
+    let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
+    let precision = parse_precision(use_high_precision, embd.nrows());
+
+    match precision {
+        FloatingPointPrecision::FP64 => {
+            if verbosity.detailed_verbosity() {
+                println!("Larger data set. Using high precision floats.")
+            }
+
+            let embd = r_matrix_to_faer(&embd);
+
+            let res = tsne_manifold_gpu(
+                embd.as_ref(),
+                None,
+                n_dim,
+                &approx_type,
+                perplexity,
+                tsne_params,
+                seed,
+                verbose,
+            )
+            .to_extendr()?;
+
+            Ok(faer_to_r_matrix(res.as_ref()))
+        }
+        FloatingPointPrecision::FP32 => {
+            if verbosity.detailed_verbosity() {
+                println!("Lower precision (fp32) path chosen.")
+            }
+            let embd = r_matrix_to_faer_fp32(&embd);
+
+            let res = tsne_manifold_gpu(
+                embd.as_ref(),
+                None,
+                n_dim,
+                &approx_type,
+                perplexity as f32,
+                tsne_params,
+                seed,
+                verbose,
+            )
+            .to_extendr()?;
+
+            Ok(faer_to_r_matrix(res.as_ref()))
+        }
+    }
+}
+
+/// tSNE implementation
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// Leverages the tSNE implementation in manifolds-rs - a very fast Rust-based
+/// implementation. You have two optimiser options: `"bh"` which tends to be
+/// faster on smaller datasets and `"fft"` for large data sets. This version
+/// uses a pre-computed kNN graph, please see [new_nearest_neighbour()].
+///
+/// @param embd Numerical matrix. The data to use to generate the embeddings.
+/// Should be of dimensions samples x features.
+/// @param knn_data `NearestNeighbours` class from R.
+/// @param n_dim Integer. Number of tSNE dimensions to return. Needs to be two,
+/// others are not supported.
+/// @param perplexity Numeric. The tSNE perplexity parameter.
+/// @param approx_type String. One of `c("fft", "bh")`. Which of the two
+/// approximations to use.
+/// @param tsne_params Named list. List that contains all of the key parameters
+/// for the tSNE generation.
+/// @param seed Integer. Seed for reproducibility.
+/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
+/// If `NULL` will use sensible default thresholding.
+/// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
+/// for detailed verbosity.
+///
+/// @return The tSNE embeddings.
+///
+/// @export
+#[extendr]
+#[allow(clippy::too_many_arguments)]
+fn rs_tsne_from_knn_gpu(
+    embd: RMatrix<f64>,
+    knn_data: List,
+    n_dim: usize,
+    perplexity: f64,
+    approx_type: String,
+    tsne_params: List,
+    seed: usize,
+    use_high_precision: Nullable<Rbool>,
+    verbose: usize,
+) -> extendr_api::Result<RMatrix<f64>> {
+    let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
+    let precision = parse_precision(use_high_precision, embd.nrows());
+
+    match precision {
+        FloatingPointPrecision::FP32 => {
+            if verbosity.detailed_verbosity() {
+                println!("Lower precision (fp32) path chosen.")
+            }
+
+            let embd = r_matrix_to_faer_fp32(&embd);
+
+            let knn = nearest_neighbours_to_rust(knn_data);
+
+            let res = tsne_manifold_gpu(
+                embd.as_ref(),
+                knn,
+                n_dim,
+                &approx_type,
+                perplexity as f32,
+                tsne_params,
+                seed,
+                verbose,
+            )
+            .to_extendr()?;
+
+            Ok(faer_to_r_matrix(res.as_ref()))
+        }
+        FloatingPointPrecision::FP64 => {
+            if verbosity.detailed_verbosity() {
+                println!("Large data set. Using higher precision floats.")
+            }
+
+            let embd = r_matrix_to_faer(&embd);
+
+            let knn = nearest_neighbours_to_rust(knn_data);
+
+            let res = tsne_manifold_gpu(
+                embd.as_ref(),
+                knn,
+                n_dim,
+                &approx_type,
+                perplexity,
+                tsne_params,
                 seed,
                 verbose,
             )

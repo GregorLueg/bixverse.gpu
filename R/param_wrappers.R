@@ -311,6 +311,7 @@ params_nn_gpu <- function(
     node_degree_final = node_degree_final,
     k_build = k_build,
     n_tree = n_tree,
+    refine_sweeps = refine_sweeps,
     delta = delta,
     rho = rho,
     beam_width = beam_width,

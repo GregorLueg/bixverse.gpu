@@ -482,7 +482,7 @@ expect_warning(
 knn_cagra_ext <- generate_cagra_knn_sc(
   object = sc_obj_plain,
   embd_to_use = "pca",
-  cagra_params = params_sc_cagra(k_query = knn_k),
+  cagra_params = params_sc_cagra(k = knn_k),
   extract_knn = TRUE,
   .verbose = FALSE
 )
@@ -501,7 +501,7 @@ expect_true(
 knn_cagra_beam <- generate_cagra_knn_sc(
   object = sc_obj_plain,
   embd_to_use = "pca",
-  cagra_params = params_sc_cagra(k_query = knn_k),
+  cagra_params = params_sc_cagra(k = knn_k),
   extract_knn = FALSE,
   .verbose = FALSE
 )
@@ -592,7 +592,7 @@ expect_warning(
 
 obj_cagra <- find_neighbours_cagra_sc(
   object = sc_obj_plain,
-  cagra_params = params_sc_cagra(k_query = knn_k),
+  cagra_params = params_sc_cagra(k = knn_k),
   extract_knn = FALSE,
   .verbose = FALSE
 )

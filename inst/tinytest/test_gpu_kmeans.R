@@ -77,7 +77,7 @@ expect_equal(
 )
 
 expect_equal(
-  current = get_centroids(res_gpu),
+  current = manifoldsR::get_centroids(res_gpu),
   target = res_gpu$centroids,
   info = "get_centroids() returns centroids"
 )

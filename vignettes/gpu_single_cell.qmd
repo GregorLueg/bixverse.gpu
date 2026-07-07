@@ -28,9 +28,10 @@ makes sense in the `bixverse` framework, please read
 first.
 
 The core idea behind `bixverse.gpu` is hardware-agnostic GPU code, hence the
-use of [CubeCL with the WGPU backend](https://github.com/tracel-ai/cubecl).
+use of [cubecl with the wpgu backend](https://github.com/tracel-ai/cubecl).
 For small data sets the host-to-device transfer and kernel launch overhead can
-outweigh the speedup, but the larger the data, the more these methods pay off.
+outweigh the speedup, but the larger the data, the more these methods pay off
+(if you have sufficient VRAM/unified memory that is...).
 
 `bixverse.gpu` currently provides:
 

@@ -104,7 +104,7 @@ expect_true(
 
 gpu_cagra <- rs_cagra_gpu_knn(
   embd = data,
-  cagra_params = params_sc_cagra(k_query = k, ann_dist = "euclidean"),
+  cagra_params = params_sc_cagra(k = k, ann_dist = "euclidean"),
   extract_knn = FALSE,
   seed = 42L,
   verbose = 0L
