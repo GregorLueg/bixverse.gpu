@@ -83,12 +83,12 @@ reference:
   - title: Other GPU-accelerated methods
     desc:
       Other GPU-accelerated methods that you might find useful... k-means
-      clustering has been implemented and likely more to come.
+      clustering and a direct interface into the GPU-accelerated kNN searches
+      can be found here.
     contents:
       - k_means_cluster_gpu
-      - get_centroids
-      - membership
       - params_kmeans_gpu
+      - generate_knn_graph_gpu
   - title: Rust wrappers
     desc: 
       Everything rusty - only use this if you know what you are doing... Maybe 
@@ -105,3 +105,5 @@ reference:
       - rs_parametric_umap
       - rs_umap_gpu
       - rs_umap_from_knn_gpu
+      - rs_tsne_gpu
+      - rs_tsne_from_knn_gpu
