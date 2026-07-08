@@ -7,7 +7,7 @@ n_clusters <- 3L
 
 zeallot::`%<-%`(
   c(cluster_data, cluster_membership),
-  rs_data_clusters(
+  manifoldsR::rs_data_clusters(
     n_samples = n_samples,
     dim = 32L,
     n_clusters = n_clusters,
@@ -62,7 +62,10 @@ expect_equal(
   info = "gpu kmeans uses all clusters"
 )
 
-ari_gpu <- calc_ari(as.integer(cluster_membership), res_gpu$assignments)
+ari_gpu <- manifoldsR::calc_ari(
+  as.integer(cluster_membership),
+  res_gpu$assignments
+)
 expect_true(
   current = ari_gpu > 0.9,
   info = "gpu kmeans recovers known clusters"
@@ -142,7 +145,7 @@ expect_true(
   info = "quantised gpu kmeans centroids have correct dimensions"
 )
 
-ari_quantised <- calc_ari(
+ari_quantised <- manifoldsR::calc_ari(
   as.integer(cluster_membership),
   res_quantised$assignments
 )
@@ -153,13 +156,17 @@ expect_true(
 )
 
 expect_true(
-  current = calc_ari(res_gpu$assignments, res_quantised$assignments) > 0.9,
+  current = manifoldsR::calc_ari(
+    res_gpu$assignments,
+    res_quantised$assignments
+  ) >
+    0.9,
   info = "quantised agrees with full precision"
 )
 
 ## agreement with cpu full k-means ---------------------------------------------
 
-res_cpu_full <- kmeans_cluster(
+res_cpu_full <- manifoldsR::kmeans_cluster(
   data = cluster_data,
   k = n_clusters,
   method = "full",
@@ -168,6 +175,10 @@ res_cpu_full <- kmeans_cluster(
 )
 
 expect_true(
-  current = calc_ari(res_cpu_full$assignments, res_gpu$assignments) > 0.9,
+  current = manifoldsR::calc_ari(
+    res_cpu_full$assignments,
+    res_gpu$assignments
+  ) >
+    0.9,
   info = "gpu kmeans agrees with cpu full kmeans"
 )

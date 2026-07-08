@@ -34,7 +34,7 @@
 #' @export
 #'
 #' @importFrom manifoldsR new_nearest_neighbour
-generate_knn_graph <- function(
+generate_knn_graph_gpu <- function(
   data,
   k,
   knn_method = c(
@@ -66,6 +66,11 @@ generate_knn_graph <- function(
 
   # overwrite this parameter here
   nn_params$k <- k
+  n <- nrow(data)
+
+  # due to naming issues, set also ann_dist - not super elegant, but does the
+  # job
+  nn_params$ann_dist <- nn_params$dist_metric
 
   # rust
   nn_data <- switch(
@@ -84,7 +89,7 @@ generate_knn_graph <- function(
     ),
     nndescent = rs_cagra_gpu_knn(
       embd = data,
-      ivf_params = nn_params,
+      cagra_params = nn_params,
       extract_knn = extract_knn,
       seed = seed,
       verbose = parse_verbosity(.verbose)
@@ -94,8 +99,8 @@ generate_knn_graph <- function(
   res <- with(
     nn_data,
     new_nearest_neighbour(
-      indices = indices + 1L, # 1-index
-      dist = dist,
+      indices = c(t(indices)) + 1L, # 1-index
+      dist = c(t(dist)),
       k = as.integer(k),
       n = as.integer(n)
     )

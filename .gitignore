@@ -18,3 +18,5 @@ target/
 # files
 scratch.R
 scratch_*.R
+
+.claude/*

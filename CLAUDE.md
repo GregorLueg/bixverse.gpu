@@ -60,6 +60,10 @@ Three sibling crates (same maintainer) hold most of the real work — `bixverse.
 - `.onLoad` in `R/zzz.R` calls `S7::methods_register()` — do not remove; single-cell generics need it.
 - Package is `lifecycle: experimental`; new user-facing functions get `r lifecycle::badge("experimental")` in the roxygen `@description`.
 
+## Writing style
+
+- No em-dashes (`—` or `--`) in prose you write for this repo (vignettes, README, roxygen, commit messages, PR descriptions). Reads as AI-generated. Use commas, colons, semicolons, or full stops instead.
+
 ## Notes and non-obvious things
 
 - `scratch.R` and `scratch_large_data.R` at the repo root are personal experimentation scratchpads — not part of the package, ignored by `.Rbuildignore`. Don't touch unless asked.

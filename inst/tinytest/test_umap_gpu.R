@@ -1,12 +1,22 @@
 # umap gpu tests ---------------------------------------------------------------
 
+#' Helper function to check cluster separation
+#'
+#' Base R is unbearable slow, so, Rust...
+check_cluster_separation <- function(embd, cluster_membership) {
+  manifoldsR::rs_check_cluster_separation(
+    embd = embd,
+    cluster_membership = as.integer(cluster_membership)
+  )
+}
+
 ## synthetic data --------------------------------------------------------------
 
 n_samples <- 200L
 
 zeallot::`%<-%`(
   c(cluster_data, cluster_membership),
-  rs_data_clusters(
+  manifoldsR::rs_data_clusters(
     n_samples = n_samples,
     dim = 32L,
     n_clusters = 3L,

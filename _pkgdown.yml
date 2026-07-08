@@ -28,8 +28,12 @@ navbar:
       menu:
         - text: GPU-acceleration for single cell
           href: articles/gpu_single_cell.html
+        - text: GPU-accelerated UMAP
+          href: articles/gpu_umap.html
         - text: Parametric UMAP
           href: articles/parametric_umap.html
+        - text: Other GPU-accelerated methods
+          href: articles/other_gpu.html
     github:
       icon: fab fa-github
       href: https://github.com/GregorLueg/bixverse.gpu
@@ -40,7 +44,9 @@ articles:
     navbar: Articles
     contents:
       - gpu_single_cell
+      - gpu_umap
       - parametric_umap
+      - other_gpu
 
 reference:
   - title: Single cell GPU
@@ -56,6 +62,14 @@ reference:
       - params_sc_ivf
       - params_sc_cagra
       - params_sc_harmony_v2_gpu
+  - title: GPU-accelerated UMAP
+    desc:
+      GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent,
+      exhaustive) and CPU/GPU optimisers.
+    contents:
+      - umap_gpu
+      - params_umap_gpu
+      - params_nn_gpu
   - title: Parametric UMAP
     desc:
       Want to train a neural net to do your UMAP embeddings? Want to train
@@ -89,3 +103,5 @@ reference:
       - rs_kmeans_gpu
       - rs_parametric_umap_predict
       - rs_parametric_umap
+      - rs_umap_gpu
+      - rs_umap_from_knn_gpu
