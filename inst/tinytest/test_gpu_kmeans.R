@@ -74,7 +74,7 @@ expect_true(
 ## getters ---------------------------------------------------------------------
 
 expect_equal(
-  current = membership(res_gpu),
+  current = manifoldsR::membership(res_gpu),
   target = res_gpu$assignments,
   info = "membership() returns assignments"
 )

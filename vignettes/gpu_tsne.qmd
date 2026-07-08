@@ -72,11 +72,11 @@ CPU.
 #| label: tsne default
 tsne_default <- tsne_gpu(
   data = cluster_data$data,
-  perplexity = 30,
+  perplexity = 20,
   knn_method = "nndescent",
   tsne_params = params_tsne_gpu(),
   seed = 42L,
-  .verbose = FALSE
+  .verbose = TRUE
 )
 
 plot_df <- as.data.table(tsne_default) |>
@@ -96,11 +96,12 @@ Clusters separate cleanly, as expected from t-SNE.
 
 Three GPU backends via `knn_method`:
 
-- **`"nndescent"`**: NN-descent with CAGRA-style graph pruning. Solid default.
-- **`"ivf"`**: inverted file index over Voronoi cells. Wins on large data
-  where an approximate answer is fine.
 - **`"exhaustive"`**: exact brute force. Small data or ground-truth checks.
   Quadratic in N.
+- **`"ivf"`**: inverted file index over Voronoi cells. Wins on large data
+  where an approximate answer is fine. Works very well on strongly clustered
+  data.
+- **`"nndescent"`**: NN-descent with CAGRA-style graph pruning. Solid default.
 
 Tuning knobs live in `params_nn_gpu()`, defaults are fine for most cases.
 The knobs are identical to the ones described in the UMAP vignette.
@@ -111,7 +112,7 @@ The knobs are identical to the ones described in the UMAP vignette.
 #| label: tsne ivf
 tsne_ivf <- tsne_gpu(
   data = cluster_data$data,
-  perplexity = 30,
+  perplexity = 20,
   knn_method = "ivf",
   tsne_params = params_tsne_gpu(),
   seed = 42L,
@@ -143,7 +144,7 @@ FFT is Unix-only (FFTW cross-compilation constraint).
 #| eval: !expr .Platform$OS.type == "unix"
 tsne_fft <- tsne_gpu(
   data = cluster_data$data,
-  perplexity = 30,
+  perplexity = 20,
   approx_type = "fft",
   knn_method = "nndescent",
   tsne_params = params_tsne_gpu(),
@@ -176,7 +177,7 @@ usually where you spend the most time. Cache the kNN once and hand it in.
 #| label: tsne precomputed knn
 knn_precomputed <- generate_knn_graph_gpu(
   data = cluster_data$data,
-  k = 90L, # ~ 3 * perplexity for perplexity = 30
+  k = 60L, # ~ 3 * perplexity for perplexity = 30
   knn_method = "nndescent",
   .verbose = FALSE
 )
@@ -208,14 +209,10 @@ Note the kNN needs enough neighbours for the perplexity you're using;
 
 The CPU t-SNE in `manifoldsR` is already fast (Rust, SIMD kNN, FFT
 optimiser on Unix). The GPU version's advantage is entirely in the kNN step,
-so the payoff depends on how much of your wall-clock the kNN eats.
-
-Rough shape:
-
-- Below ~10k points: CPU is competitive, GPU pays a fixed setup cost.
-- 10k to 100k: kNN starts to dominate, GPU pulls ahead.
-- Above 100k: GPU kNN clearly faster; once the optimiser also moves to GPU
-  the advantage will widen further.
+so the payoff depends on how much of your wall-clock the kNN eats. Generally
+speaking, if you have a larger data set, hit it with a GPU-accelerated kNN and
+the FFT optimiser. Longer term, the idea is to also implement 2D-FFT that is
+GPU-accelerated, but that is a larger project.
 
 The kNN backend matters more here than in UMAP because the optimiser is
 still CPU either way. `"nndescent"` and `"ivf"` are the workhorses,

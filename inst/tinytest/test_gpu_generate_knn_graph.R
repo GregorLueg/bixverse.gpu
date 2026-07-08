@@ -124,13 +124,15 @@ expect_true(
 # for larger data but recall dips on small sets. nndescent defaults are OK.
 approx_configs <- list(
   ivf = params_nn_gpu(n_list = 3L, n_probes = 3L, dist_metric = "euclidean"),
-  nndescent = params_nn_gpu(dist_metric = "euclidean")
+  nndescent = params_nn_gpu(node_degree_final = 15L, dist_metric = "euclidean")
 )
+
+methods <- "nndescent"
 
 for (method in names(approx_configs)) {
   idx_i <- generate_knn_graph_gpu(
     data = cluster_data,
-    k = n_neighbours,
+    k = 30L,
     knn_method = method,
     nn_params = approx_configs[[method]],
     seed = 42L,
