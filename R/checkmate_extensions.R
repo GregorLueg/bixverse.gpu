@@ -556,6 +556,100 @@ checkUmapParamsGpu <- function(x) {
 #' @keywords internal
 assertUmapParamsGpu <- checkmate::makeAssertionFunction(checkUmapParamsGpu)
 
+### tsne ----------------------------------------------------------------------
+
+#' Check t-SNE parameters (GPU version)
+#'
+#' @description Checkmate extension for checking the t-SNE parameters (GPU
+#' version).
+#'
+#' @param x The list to check.
+#'
+#' @return `TRUE` if the check was successful, otherwise an error message.
+#'
+#' @keywords internal
+checkTsneParamsGpu <- function(x) {
+  res <- checkmate::checkList(x)
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- checkmate::checkNames(
+    names(x),
+    must.include = c(
+      "lr",
+      "n_epochs",
+      "early_exag_iter",
+      "early_exag_factor",
+      "late_exag_factor",
+      "theta",
+      "n_interp_points",
+      "init",
+      "randomised"
+    )
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  rules <- list(
+    "lr" = list(type = "nullable_numeric"),
+    "n_epochs" = list(type = "fixed", rule = "I1[1,)"),
+    "early_exag_iter" = list(type = "fixed", rule = "I1[1,)"),
+    "early_exag_factor" = list(type = "fixed", rule = "N1"),
+    "late_exag_factor" = list(type = "nullable_numeric"),
+    "theta" = list(type = "fixed", rule = "N1[0,1]"),
+    "n_interp_points" = list(type = "fixed", rule = "I1[1,)"),
+    "init" = list(type = "choice", choices = c("pca", "spectral", "random")),
+    "randomised" = list(type = "fixed", rule = "B1")
+  )
+
+  res <- purrr::imap_lgl(x, \(val, name) {
+    spec <- rules[[name]]
+    if (spec$type == "choice") {
+      checkmate::testChoice(val, spec$choices)
+    } else if (spec$type == "nullable_numeric") {
+      is.null(val) || checkmate::qtest(val, "N1")
+    } else {
+      checkmate::qtest(val, spec$rule)
+    }
+  })
+
+  if (!isTRUE(all(res))) {
+    broken_elem <- names(res)[which(!res)][1]
+    return(sprintf(
+      paste(
+        "Element `%s` in t-SNE params does not conform.",
+        "lr and late_exag_factor must be numeric or NULL,",
+        "n_epochs/early_exag_iter/n_interp_points must be integers >= 1,",
+        "early_exag_factor must be numeric, theta must be numeric in [0,1],",
+        "init must be one of 'pca'/'spectral'/'random',",
+        "and randomised must be logical."
+      ),
+      broken_elem
+    ))
+  }
+
+  return(TRUE)
+}
+
+#' Assert t-SNE parameters (GPU version)
+#'
+#' @description Checkmate extension for asserting the t-SNE parameters (GPU
+#' version).
+#'
+#' @inheritParams checkTsneParamsGpu
+#'
+#' @param .var.name Name of the checked object to print in assertions. Defaults
+#' to the heuristic implemented in checkmate.
+#' @param add Collection to store assertion messages. See
+#' [checkmate::makeAssertCollection()].
+#'
+#' @return Invisibly returns the checked object if the assertion is successful.
+#'
+#' @keywords internal
+assertTsneParamsGpu <- checkmate::makeAssertionFunction(checkTsneParamsGpu)
+
 ## gpu-accelerated k means -----------------------------------------------------
 
 #' Check KMeansGpu parameters
