@@ -72,7 +72,7 @@ CPU.
 #| label: tsne default
 tsne_default <- tsne_gpu(
   data = cluster_data$data,
-  perplexity = 20,
+  perplexity = 10,
   knn_method = "nndescent",
   tsne_params = params_tsne_gpu(),
   seed = 42L,
@@ -112,11 +112,11 @@ The knobs are identical to the ones described in the UMAP vignette.
 #| label: tsne ivf
 tsne_ivf <- tsne_gpu(
   data = cluster_data$data,
-  perplexity = 20,
+  perplexity = 10,
   knn_method = "ivf",
   tsne_params = params_tsne_gpu(),
   seed = 42L,
-  .verbose = FALSE
+  .verbose = TRUE
 )
 
 plot_df_ivf <- as.data.table(tsne_ivf) |>
@@ -144,12 +144,12 @@ FFT is Unix-only (FFTW cross-compilation constraint).
 #| eval: !expr .Platform$OS.type == "unix"
 tsne_fft <- tsne_gpu(
   data = cluster_data$data,
-  perplexity = 20,
+  perplexity = 10,
   approx_type = "fft",
   knn_method = "nndescent",
   tsne_params = params_tsne_gpu(),
   seed = 42L,
-  .verbose = FALSE
+  .verbose = TRUE
 )
 
 plot_df_fft <- as.data.table(tsne_fft) |>
@@ -178,7 +178,7 @@ usually where you spend the most time. Cache the kNN once and hand it in.
 knn_precomputed <- generate_knn_graph_gpu(
   data = cluster_data$data,
   k = 60L, # ~ 3 * perplexity for perplexity = 30
-  knn_method = "nndescent",
+  knn_method = "ivf",
   .verbose = FALSE
 )
 
