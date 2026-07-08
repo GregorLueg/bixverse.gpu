@@ -30,6 +30,8 @@ navbar:
           href: articles/gpu_single_cell.html
         - text: GPU-accelerated UMAP
           href: articles/gpu_umap.html
+        - text: GPU-accelerated t-SNE
+          href: articles/gpu_tsne.html
         - text: Parametric UMAP
           href: articles/parametric_umap.html
         - text: Other GPU-accelerated methods
@@ -45,6 +47,7 @@ articles:
     contents:
       - gpu_single_cell
       - gpu_umap
+      - gpu_tsne
       - parametric_umap
       - other_gpu
 
@@ -70,6 +73,14 @@ reference:
       - umap_gpu
       - params_umap_gpu
       - params_nn_gpu
+  - title: GPU-accelerated t-SNE
+    desc:
+      t-SNE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive).
+      Optimiser (BH or FFT) runs on CPU via the Rust implementation in
+      manifoldsR.
+    contents:
+      - tsne_gpu
+      - params_tsne_gpu
   - title: Parametric UMAP
     desc:
       Want to train a neural net to do your UMAP embeddings? Want to train
