@@ -57,7 +57,7 @@ set.seed(42L)
 
 cluster_data <- manifold_synthetic_data(
   type = "clusters",
-  n_samples = 15000L,
+  n_samples = 10000L,
   dim = 32L,
   parameters = params_clusters(n_clusters = 25L)
 )
