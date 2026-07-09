@@ -19,7 +19,7 @@
 #' @param k Integer. The number of nearest neighbours to compute.
 #' @param knn_method Character. The algorithm to use for nearest neighbour
 #' search. One of `c("exhaustive", "ivf", "nndescent")`. Defaults to
-#' `"exhaustive"`
+#' `"nndescent"`
 #' @param nn_params List. Output of [params_nn_gpu()].
 #' @param extract_knn Boolean. CAGRA-specific (`knn_method = "nndescent"`).
 #' Shall the beam search be skipped and the kNN graph be extracted directly
@@ -38,9 +38,9 @@ generate_knn_graph_gpu <- function(
   data,
   k,
   knn_method = c(
+    "nndescent",
     "exhaustive",
-    "ivf",
-    "nndescent"
+    "ivf"
   ),
   nn_params = params_nn_gpu(),
   seed = 42L,

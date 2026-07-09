@@ -50,7 +50,9 @@ library(ggplot2)
 ::: {.callout-note}
 Vignettes are built on GitHub CI/CD runners with no GPU. GPU code falls back
 to software Vulkan (lavapipe), so N is dialled down here for build time. Real
-hardware handles much bigger N without issue.
+hardware handles much bigger N without issue. Also, there are some weird 
+problems on the GH runners with Lavapipe compiling the wgpu code that affects
+specifically the IVF indices. `eval = FALSE` for these code chunks.
 :::
 
 ## Generating data
@@ -116,6 +118,9 @@ The knobs are identical to the ones described in the UMAP vignette.
 
 ```{r}
 #| label: tsne ivf
+#| eval: false
+
+# not evaluated on CI: lavapipe/cubecl miscompile, runs fine on real GPUs
 tsne_ivf <- tsne_gpu(
   data = cluster_data$data,
   perplexity = 15,
@@ -134,6 +139,34 @@ ggplot(plot_df_ivf, aes(x = tSNE1, y = tSNE2)) +
   theme_bw() +
   theme(legend.position = "none") +
   ggtitle("tsne_gpu, IVF kNN")
+```
+
+Structurally the embeddings agree. Differences are within the noise of
+t-SNE's non-deterministic optimisation.
+
+### Exhaustive backend
+
+```{r}
+#| label: tsne exhaustive
+
+tsne_exhaustive <- tsne_gpu(
+  data = cluster_data$data,
+  perplexity = 15,
+  knn_method = "exhaustive",
+  tsne_params = params_tsne_gpu(),
+  seed = 42L,
+  .verbose = TRUE
+)
+
+plot_df_exhaustive <- as.data.table(tsne_exhaustive) |>
+  setnames(c("tSNE1", "tSNE2"))
+plot_df_exhaustive[, cluster := as.factor(cluster_data$membership)]
+
+ggplot(plot_df_exhaustive, aes(x = tSNE1, y = tSNE2)) +
+  geom_point(aes(colour = cluster), size = 0.5, alpha = 0.5) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  ggtitle("tsne_gpu, exhaustive kNN")
 ```
 
 Structurally the embeddings agree. Differences are within the noise of
@@ -184,7 +217,7 @@ usually where you spend the most time. Cache the kNN once and hand it in.
 knn_precomputed <- generate_knn_graph_gpu(
   data = cluster_data$data,
   k = 90L, # ~ 3 * perplexity for perplexity = 30
-  knn_method = "ivf",
+  knn_method = "exhaustive",
   .verbose = TRUE
 )
 

@@ -51,7 +51,9 @@ library(ggplot2)
 ::: {.callout-note}
 Vignettes are built on GitHub CI/CD runners with no GPU. GPU code falls back
 to software Vulkan (lavapipe), so N is dialled down here for build time. Real
-hardware handles much bigger N without issue.
+hardware handles much bigger N without issue. Also, there are some weird 
+problems on the GH runners with Lavapipe compiling the wgpu code that affects
+specifically the IVF indices. `eval = FALSE` for these code chunks.
 :::
 
 ## Generating data
@@ -119,6 +121,9 @@ Tuning knobs live in `params_nn_gpu()`, defaults are fine for most cases.
 
 ```{r}
 #| label: umap ivf
+#| eval: false
+
+# not evaluated on CI: lavapipe/cubecl miscompile, runs fine on real GPUs
 umap_ivf <- umap_gpu(
   data = cluster_data$data,
   k = 15L,
@@ -243,7 +248,7 @@ argument and skip the graph build. Handy when sweeping UMAP parameters.
 
 ```{r}
 #| label: umap precomputed knn
-knn_precomputed <- generate_knn_graph(
+knn_precomputed <- generate_knn_graph_gpu(
   data = cluster_data$data,
   k = 15L,
   .verbose = FALSE
