@@ -63,7 +63,7 @@ set.seed(42L)
 
 cluster_data <- manifold_synthetic_data(
   type = "clusters",
-  n_samples = 1000L, # strongly reduced for speed
+  n_samples = 10000L, # strongly reduced for speed
   dim = 32L,
   parameters = params_clusters(n_clusters = 25L)
 )
@@ -97,47 +97,6 @@ ggplot(plot_df, aes(x = tSNE1, y = tSNE2)) +
 ```
 
 Clusters separate cleanly, as expected from t-SNE.
-
-## Choosing a kNN backend
-
-Three GPU backends via `knn_method`:
-
-- **`"exhaustive"`**: exact brute force. Small data or ground-truth checks.
-  Quadratic in N.
-- **`"ivf"`**: inverted file index over Voronoi cells. Wins on large data
-  where an approximate answer is fine. Works very well on strongly clustered
-  data.
-- **`"nndescent"`**: NN-descent with CAGRA-style graph pruning. Solid default.
-
-Tuning knobs live in `params_nn_gpu()`, defaults are fine for most cases.
-The knobs are identical to the ones described in the UMAP vignette.
-
-### IVF backend
-
-```{r}
-#| label: tsne ivf
-tsne_ivf <- tsne_gpu(
-  data = cluster_data$data,
-  perplexity = 10,
-  knn_method = "ivf",
-  tsne_params = params_tsne_gpu(),
-  seed = 42L,
-  .verbose = TRUE
-)
-
-plot_df_ivf <- as.data.table(tsne_ivf) |>
-  setnames(c("tSNE1", "tSNE2"))
-plot_df_ivf[, cluster := as.factor(cluster_data$membership)]
-
-ggplot(plot_df_ivf, aes(x = tSNE1, y = tSNE2)) +
-  geom_point(aes(colour = cluster), size = 0.5, alpha = 0.5) +
-  theme_bw() +
-  theme(legend.position = "none") +
-  ggtitle("tsne_gpu, IVF kNN")
-```
-
-Structurally the embeddings agree. Differences are within the noise of
-t-SNE's non-deterministic optimisation.
 
 ## FFT-accelerated t-SNE
 
@@ -184,7 +143,7 @@ usually where you spend the most time. Cache the kNN once and hand it in.
 knn_precomputed <- generate_knn_graph_gpu(
   data = cluster_data$data,
   k = 60L, # ~ 3 * perplexity for perplexity = 30
-  knn_method = "ivf",
+  knn_method = "exhaustive",
   .verbose = FALSE
 )
 
