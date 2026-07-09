@@ -127,12 +127,12 @@ approx_configs <- list(
   nndescent = params_nn_gpu(node_degree_final = 15L, dist_metric = "euclidean")
 )
 
-methods <- "nndescent"
+method <- "nndescent"
 
 for (method in names(approx_configs)) {
   idx_i <- generate_knn_graph_gpu(
     data = cluster_data,
-    k = 30L,
+    k = n_neighbours,
     knn_method = method,
     nn_params = approx_configs[[method]],
     seed = 42L,
