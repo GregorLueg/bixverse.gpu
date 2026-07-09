@@ -10,7 +10,7 @@ crate-type = ['staticlib', 'rlib']
 name = 'bixverse_gpu'
 
 [dependencies]
-ann-search-rs = { version = "0.4.4", features = [ "gpu" ] }
+ann-search-rs = { git = "https://github.com/GregorLueg/ann-search-rs.git", branch = "fix-ivf-gpu-v2", features = [ "gpu" ] }
 burn = { version = "0.21.0", features = [ "wgpu", "flex" ] }
 bixverse-rs = { version = "0.3.6", features = [ "gpu", "single-cell" ] }
 cubecl = "0.10.0"

@@ -586,7 +586,7 @@ dependencies = [
 name = "bixverse_gpu"
 version = "0.2.1"
 dependencies = [
- "ann-search-rs 0.4.4",
+ "ann-search-rs 0.4.5",
  "bixverse-rs",
  "burn",
  "cubecl",
