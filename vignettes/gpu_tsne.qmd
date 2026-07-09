@@ -47,6 +47,12 @@ library(data.table)
 library(ggplot2)
 ```
 
+::: {.callout-note}
+Vignettes are built on GitHub CI/CD runners with no GPU. GPU code falls back
+to software Vulkan (lavapipe), so N is dialled down here for build time. Real
+hardware handles much bigger N without issue.
+:::
+
 ## Generating data
 
 Same clustered synthetic data as in the UMAP vignette.

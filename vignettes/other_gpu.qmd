@@ -26,15 +26,6 @@ Everything here runs on
 [cubecl with the wgpu backend](https://github.com/tracel-ai/cubecl), so no
 CUDA-only dependencies.
 
-::: {.callout-note}
-The correlation and covariance timing blocks below are set to `eval: false`
-in the rendered docs. This vignette is built on GitHub Actions Linux
-runners, which don't have real GPUs and fall back to software Vulkan via
-Mesa (`WGPU_BACKEND=vulkan`). Any numbers produced there would be
-misleading. Run the vignette locally on a machine with a proper GPU (or
-Apple Silicon) to see the real comparison.
-:::
-
 ```{r}
 #| label: setup
 library(bixverse)
@@ -43,6 +34,16 @@ library(manifoldsR)
 library(data.table)
 library(ggplot2)
 ```
+
+::: {.callout-note}
+The correlation and covariance timing blocks below are set to `eval: false`
+in the rendered docs. This vignette is built on GitHub Actions Linux
+runners, which don't have real GPUs and fall back to software Vulkan via
+Mesa (`WGPU_BACKEND=vulkan`). Any numbers produced there would be
+misleading. Run the vignette locally on a machine with a proper GPU (or
+Apple Silicon) to see the real comparison. This is also the reason why the 
+timing eval is set to FALSE here.
+:::
 
 ## GPU-accelerated k-means
 

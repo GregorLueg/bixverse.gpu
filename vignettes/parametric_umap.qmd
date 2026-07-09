@@ -47,6 +47,13 @@ library(ggplot2)
 library(data.table)
 ```
 
+::: {.callout-note}
+Vignettes are built on GitHub CI/CD runners with no dedicated GPU. GPU code
+falls back to software Vulkan (lavapipe), which is roughly 100x slower than a
+real GPU, so N is dialled down here. On real hardware these workflows scale
+comfortably to hundreds of thousands of samples.
+:::
+
 ## Generating data
 
 We generate a small clustered data set and split it into a training and

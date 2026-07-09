@@ -48,6 +48,12 @@ library(data.table)
 library(ggplot2)
 ```
 
+::: {.callout-note}
+Vignettes are built on GitHub CI/CD runners with no GPU. GPU code falls back
+to software Vulkan (lavapipe), so N is dialled down here for build time. Real
+hardware handles much bigger N without issue.
+:::
+
 ## Generating data
 
 Focus is on the case UMAP handles well: clustered data. 25k points across
