@@ -124,29 +124,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ann-search-rs"
-version = "0.4.5"
-source = "git+https://github.com/GregorLueg/ann-search-rs.git?branch=fix-ivf-gpu-v2#6abed092ff5f49237b46904d961c4cee5557e732"
-dependencies = [
- "approx",
- "clap",
- "cubecl",
- "document-features",
- "faer",
- "faer-traits",
- "fixedbitset 0.5.7",
- "num-traits",
- "rand 0.9.4",
- "rand_distr 0.5.1",
- "rayon",
- "rdst",
- "rustc-hash 2.1.2",
- "thiserror 2.0.18",
- "thousands",
- "wide 1.5.0",
-]
-
-[[package]]
 name = "anstream"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -546,11 +523,11 @@ dependencies = [
 
 [[package]]
 name = "bixverse-rs"
-version = "0.3.6"
+version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "427abdd0d4bf58afb160149674dc81c39559494be0087b197dc3c784c515dabf"
+checksum = "321a22c01c378a9a35bd4a02498c739b104e2e7f74cd55f0108b86f52d0efc2c"
 dependencies = [
- "ann-search-rs 0.4.4",
+ "ann-search-rs",
  "approx",
  "bincode",
  "cubecl",
@@ -586,7 +563,7 @@ dependencies = [
 name = "bixverse_gpu"
 version = "0.2.1"
 dependencies = [
- "ann-search-rs 0.4.5",
+ "ann-search-rs",
  "bixverse-rs",
  "burn",
  "cubecl",
@@ -640,7 +617,7 @@ version = "3.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "519bd3116aeeb42d5372c29d982d16d0170d3d4a5ed85fc7dd91642ffff3c67c"
 dependencies = [
- "darling 0.20.11",
+ "darling 0.23.0",
  "ident_case",
  "prettyplease",
  "proc-macro2",
@@ -4688,9 +4665,10 @@ checksum = "670fdfda89751bc4a84ac13eaa63e205cf0fd22b4c9a5fbfa085b63c1f1d3a30"
 [[package]]
 name = "manifolds-rs"
 version = "0.3.9"
-source = "git+https://github.com/GregorLueg/manifolds-rs?branch=ann-search-rs-bump#5a327598cef2c72e16f3f7eda48b9c9e82a9b80a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd76117644f80806bd9fc2674515958c120b192871cf7e4823059c310a109df2"
 dependencies = [
- "ann-search-rs 0.4.5",
+ "ann-search-rs",
  "approx",
  "bincode",
  "burn",
