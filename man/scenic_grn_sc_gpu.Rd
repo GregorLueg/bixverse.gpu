@@ -35,8 +35,9 @@ If \code{NULL}, the CPU gene filter runs first.}
 \code{NULL}, all filtered cells are used.}
 
 \item{streaming}{Optional boolean. Only used on \code{SingleCells}. If \code{TRUE},
-the streaming GPU driver is used (bounded host memory). If \code{NULL}, defaults
-to \code{\link[bixverse:::auto_streaming]{bixverse::::auto_streaming()}}. Ignored for \code{MetaCells}.}
+the streaming GPU driver is used (bounded host memory). If \code{NULL}, is
+auto-picked from cell count via bixverse's internal \code{auto_streaming}.
+Ignored for \code{MetaCells}.}
 
 \item{random_seed}{Integer. For reproducibility.}
 

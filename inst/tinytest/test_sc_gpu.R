@@ -624,6 +624,116 @@ expect_true(
   info = "find_neighbours_cagra_sc - leiden recovers cell groups"
 )
 
+## umap_gpu_sc ----------------------------------------------------------------
+
+### warning on missing embedding -----------------------------------------------
+
+expect_warning(
+  current = umap_gpu_sc(
+    object = sc_obj_plain,
+    embd_to_use = "fake_embd",
+    .verbose = FALSE
+  ),
+  info = "umap_gpu_sc - warning when embedding not found"
+)
+
+### standard run (uses cached kNN) ---------------------------------------------
+
+sc_obj_plain <- umap_gpu_sc(
+  object = sc_obj_plain,
+  k = knn_k,
+  slot_name = "umap",
+  .verbose = FALSE
+)
+
+umap_embd <- get_embedding(sc_obj_plain, "umap")
+
+expect_true(
+  current = checkmate::testMatrix(
+    umap_embd,
+    mode = "numeric",
+    ncols = 2L,
+    row.names = "named",
+    col.names = "named"
+  ),
+  info = "umap_gpu_sc - embedding stored with correct shape and names"
+)
+
+expect_true(
+  current = {
+    sep <- manifoldsR::rs_check_cluster_separation(
+      embd = umap_embd,
+      cluster_membership = as.integer(factor(
+        unlist(sc_obj_plain[["cell_grp"]])
+      ))
+    )
+    mean(sep$within_dists) < mean(sep$between_dists)
+  },
+  info = "umap_gpu_sc - clusters separated in embedding"
+)
+
+### custom slot name -----------------------------------------------------------
+
+sc_obj_plain <- umap_gpu_sc(
+  object = sc_obj_plain,
+  k = knn_k,
+  slot_name = "umap_gpu_slot",
+  .verbose = FALSE
+)
+
+expect_true(
+  current = "umap_gpu_slot" %in% get_available_embeddings(sc_obj_plain),
+  info = "umap_gpu_sc - custom slot name honoured"
+)
+
+## tsne_gpu_sc ----------------------------------------------------------------
+
+### warning on missing embedding -----------------------------------------------
+
+expect_warning(
+  current = tsne_gpu_sc(
+    object = sc_obj_plain,
+    embd_to_use = "fake_embd",
+    .verbose = FALSE
+  ),
+  info = "tsne_gpu_sc - warning when embedding not found"
+)
+
+### standard run (fresh GPU kNN sized to perplexity) ---------------------------
+
+sc_obj_plain <- tsne_gpu_sc(
+  object = sc_obj_plain,
+  perplexity = 15.0,
+  slot_name = "tsne",
+  .verbose = FALSE
+)
+
+tsne_embd <- get_embedding(sc_obj_plain, "tsne")
+
+expect_true(
+  current = checkmate::testMatrix(
+    tsne_embd,
+    mode = "numeric",
+    ncols = 2L,
+    row.names = "named",
+    col.names = "named"
+  ),
+  info = "tsne_gpu_sc - embedding stored with correct shape and names"
+)
+
+expect_true(
+  current = {
+    sep <- manifoldsR::rs_check_cluster_separation(
+      embd = tsne_embd,
+      cluster_membership = as.integer(factor(
+        unlist(sc_obj_plain[["cell_grp"]])
+      ))
+    )
+    mean(sep$within_dists) < mean(sep$between_dists)
+  },
+  info = "tsne_gpu_sc - clusters separated in embedding"
+)
+
 # clean up ---------------------------------------------------------------------
 
 on.exit(unlink(test_temp_dir, recursive = TRUE, force = TRUE), add = TRUE)
