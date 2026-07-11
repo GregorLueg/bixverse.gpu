@@ -7,7 +7,7 @@
 generate_knn_graph_gpu(
   data,
   k,
-  knn_method = c("exhaustive", "ivf", "nndescent"),
+  knn_method = c("nndescent", "exhaustive", "ivf"),
   nn_params = params_nn_gpu(),
   seed = 42L,
   extract_knn = FALSE,
@@ -22,7 +22,7 @@ neighbours on. Rows are observations, columns are features.}
 
 \item{knn_method}{Character. The algorithm to use for nearest neighbour
 search. One of \code{c("exhaustive", "ivf", "nndescent")}. Defaults to
-\code{"exhaustive"}}
+\code{"nndescent"}}
 
 \item{nn_params}{List. Output of \code{\link[=params_nn_gpu]{params_nn_gpu()}}.}
 
