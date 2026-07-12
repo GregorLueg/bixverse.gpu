@@ -143,12 +143,6 @@ ggplot(test_df, aes(x = pUMAP1, y = pUMAP2)) +
   ggtitle("Parametric UMAP -- held-out set (predicted)")
 ```
 
-## To-do's 
-
-I realised that for now saving the model is actually not really possible due to
-the way R will drop pointers (and thus clean up the memory) during serialisation
-to RDS (or qs2). I will need to figure out how to do this.
-
 ## Comparing training and held-out embeddings
 
 We can overlay both sets to confirm that the encoder generalises and places
@@ -191,6 +185,7 @@ rm(pumap)
 And now let's load it again and predict again the test data.
 
 ```{r}
+#| label: load the model
 pumap <- load_parametric_umap(f_path_model)
 
 test_embedding_2 <- predict(pumap, newdata = test_data)

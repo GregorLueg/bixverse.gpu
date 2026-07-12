@@ -68,18 +68,22 @@ reference:
   - title: GPU-accelerated UMAP
     desc:
       GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent,
-      exhaustive) and CPU/GPU optimisers.
+      exhaustive) and CPU/GPU optimisers. Also a version for the single cells
+      analysis suite in bixverse.
     contents:
       - umap_gpu
+      - umap_gpu_sc
       - params_umap_gpu
       - params_nn_gpu
   - title: GPU-accelerated t-SNE
     desc:
       t-SNE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive).
       Optimiser (BH or FFT) runs on CPU via the Rust implementation in
-      manifoldsR.
+      manifoldsR. Also a version for the single cells analysis suite in 
+      bixverse.
     contents:
       - tsne_gpu
+      - tsne_gpu_sc
       - params_tsne_gpu
   - title: Parametric UMAP
     desc:
