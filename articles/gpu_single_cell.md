@@ -17,10 +17,11 @@ read
 first.
 
 The core idea behind `bixverse.gpu` is hardware-agnostic GPU code, hence
-the use of [CubeCL with the WGPU
+the use of [cubecl with the wpgu
 backend](https://github.com/tracel-ai/cubecl). For small data sets the
 host-to-device transfer and kernel launch overhead can outweigh the
-speedup, but the larger the data, the more these methods pay off.
+speedup, but the larger the data, the more these methods pay off (if you
+have sufficient VRAM/unified memory that is…).
 
 `bixverse.gpu` currently provides:
 
@@ -50,11 +51,6 @@ speedup, but the larger the data, the more these methods pay off.
 
 library(bixverse)
 library(bixverse.gpu)
-#> 
-#> Attaching package: 'bixverse.gpu'
-#> The following object is masked from 'package:bixverse':
-#> 
-#>     get_centroids
 library(bixverse.plots)
 library(data.table)
 #> 
@@ -64,6 +60,12 @@ library(data.table)
 #>     %notin%
 library(ggplot2)
 ```
+
+> **Note**
+>
+> Vignettes are built on GitHub CI/CD runners with no GPU. GPU code
+> falls back to software Vulkan (lavapipe), so N is dialled down here
+> for build time. Real hardware handles much bigger N without issue.
 
 ## Loading the data
 
@@ -95,6 +97,10 @@ sc_object <- load_multi_h5ad(
 )
 #>  Using light streaming for the CSR to CSC conversion.
 #> Loading observation data from h5ad files into DuckDB.
+#> duckdb is keeping downloaded extensions in a temporary directory:
+#> ℹ /tmp/RtmpubRiwM/duckdb/extensions
+#> This is removed when the R session ends, so extensions are re-downloaded each session.
+#> ℹ To keep them, point `options(duckdb.extension_directory =)` or the `DUCKDB_EXTENSION_DIRECTORY` environment variable at a permanent path.
 #> Loading variable data into DuckDB.
 ```
 
@@ -346,7 +352,7 @@ sc_object <- find_neighbours_cagra_sc(
 
 From here downstream methods, clustering, UMAP/tSNE, marker detection,
 work without modification, exactly as after a
-[`find_neighbours_sc()`](https://rdrr.io/pkg/bixverse/man/find_neighbours_sc.html)
+[`find_neighbours_sc()`](https://gregorlueg.github.io/bixverse/reference/find_neighbours_sc.html)
 call.
 
 ## Comparing GPU vs CPU Harmony
@@ -368,8 +374,8 @@ lisi_gpu <- calculate_batch_lisi_sc(sc_object, batch_column = "exp_id")
 kbet_gpu
 #> kBET Scores
 #>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.2661 (1554 / 5841)
-#>   Mean Chi-Square:     3.0966 (expected under H0: 1)
+#>   Rejection rate:      0.2655 (1551 / 5841)
+#>   Mean Chi-Square:     3.0924 (expected under H0: 1)
 #>   Median Chi-Square:   1.9151
 asw_gpu
 #> Batch Silhouette Width
@@ -379,7 +385,7 @@ asw_gpu
 lisi_gpu
 #> Batch LISI Scores
 #>   Cells: 5841 | Batches: 2
-#>   Mean LISI:    1.4518 (1 = no mixing, 2 = perfect mixing)
+#>   Mean LISI:    1.4524 (1 = no mixing, 2 = perfect mixing)
 #>   Median LISI:  1.4706
 ```
 
@@ -409,8 +415,8 @@ lisi_cpu <- calculate_batch_lisi_sc(sc_object, batch_column = "exp_id")
 kbet_cpu
 #> kBET Scores
 #>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.2659 (1553 / 5841)
-#>   Mean Chi-Square:     3.0972 (expected under H0: 1)
+#>   Rejection rate:      0.2649 (1547 / 5841)
+#>   Mean Chi-Square:     3.0942 (expected under H0: 1)
 #>   Median Chi-Square:   1.9151
 asw_cpu
 #> Batch Silhouette Width
@@ -420,7 +426,7 @@ asw_cpu
 lisi_cpu
 #> Batch LISI Scores
 #>   Cells: 5841 | Batches: 2
-#>   Mean LISI:    1.4518 (1 = no mixing, 2 = perfect mixing)
+#>   Mean LISI:    1.4520 (1 = no mixing, 2 = perfect mixing)
 #>   Median LISI:  1.4706
 ```
 
@@ -428,11 +434,17 @@ Harmony has stochastic elements, so the two embeddings will not be
 identical, but the batch correction quality should be in the same
 ballpark across the metrics.
 
-### tSNE on the GPU Harmony embedding
+### UMAP on the GPU Harmony embedding
 
-For a sanity check and because and everyone loves visuals (even if you
-should not over-interpret them ([Chari et al.,
-2023](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011288))):
+Everyone loves visuals, even if you should not over-interpret them
+([Chari et al.,
+2023](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011288)).
+[`umap_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/umap_gpu_sc.md)
+runs the full GPU-accelerated UMAP path: GPU kNN plus a GPU Adam
+optimiser (`optimiser = "adam_gpu"` in
+[`params_umap_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_umap_gpu.md),
+the default). On the CAGRA kNN we just computed above, it plugs straight
+in with `use_knn = TRUE`.
 
 ``` r
 
@@ -447,13 +459,53 @@ sc_object <- find_neighbours_cagra_sc(
 #> Generating sNN graph (full: TRUE).
 #> Transforming sNN data to igraph.
 
-sc_object <- tsne_sc(
+sc_object <- umap_gpu_sc(
   object = sc_object,
-  slot_name = "tsne_harm_gpu",
+  embd_to_use = "harmony_gpu",
+  slot_name = "umap_harm_gpu",
   use_knn = TRUE
 )
-#> Running t-SNE.
+#> Running GPU UMAP.
+#> Using n_epochs = 500 (dataset <10k samples or 'adam_parallel'/'adam_gpu' optimiser)
 #> Using provided kNN graph.
+```
+
+``` r
+
+embedding_plot_sc(
+  sc_object,
+  embedding = "umap_harm_gpu",
+  colour_by = "exp_id",
+  discrete = TRUE
+) +
+  labs(
+    title = "GPU Harmony v2 + GPU CAGRA kNN + GPU UMAP",
+    colour = "Batch:"
+  )
+```
+
+![](gpu_single_cell_files/figure-html/umap%20plot-1.png)
+
+### tSNE on the GPU Harmony embedding
+
+[`tsne_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/tsne_gpu_sc.md)
+mirrors the shape of
+[`umap_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/umap_gpu_sc.md)
+but only the kNN step runs on GPU. The optimiser (Barnes-Hut or FIt-SNE
+FFT) still runs on CPU; a GPU optimiser is on the roadmap. Because t-SNE
+derives `k` from `3 * perplexity` on the Rust side, `use_knn` defaults
+to `FALSE` so that every call builds a fresh GPU kNN sized to the
+requested perplexity. Handy when sweeping perplexities.
+
+``` r
+
+sc_object <- tsne_gpu_sc(
+  object = sc_object,
+  embd_to_use = "harmony_gpu",
+  slot_name = "tsne_harm_gpu",
+  perplexity = 30.0
+)
+#> Running GPU t-SNE.
 ```
 
 ``` r
@@ -465,7 +517,7 @@ embedding_plot_sc(
   discrete = TRUE
 ) +
   labs(
-    title = "GPU Harmony v2 + GPU CAGRA kNN",
+    title = "GPU Harmony v2 + GPU t-SNE (GPU kNN, CPU optimiser)",
     colour = "Batch:"
   )
 ```
@@ -474,9 +526,10 @@ embedding_plot_sc(
 
 ## Conclusions
 
-The full GPU path – PCA, Harmony v2, kNN – plugs into the existing
-`SingleCells` workflow without any glue code. The downstream object
-behaves identically to whatever you would get from the CPU equivalents.
+The full GPU path (PCA, Harmony v2, kNN, UMAP with GPU Adam optimiser,
+t-SNE with GPU kNN) plugs into the existing `SingleCells` workflow
+without any glue code. The downstream object behaves identically to
+whatever you would get from the CPU equivalents.
 
 Longer term, the GPU kNN methods are the obvious building block for
 GPU-accelerated versions of methods that lean heavily on kNN graphs:

@@ -32,11 +32,6 @@ a compatible GPU is beneficial but not strictly required.
 
 library(bixverse.gpu)
 library(manifoldsR)
-#> 
-#> Attaching package: 'manifoldsR'
-#> The following objects are masked from 'package:bixverse.gpu':
-#> 
-#>     get_centroids, membership
 library(ggplot2)
 library(data.table)
 #> 
@@ -45,6 +40,13 @@ library(data.table)
 #> 
 #>     %notin%
 ```
+
+> **Note**
+>
+> Vignettes are built on GitHub CI/CD runners with no dedicated GPU. GPU
+> code falls back to software Vulkan (lavapipe), which is roughly 100x
+> slower than a real GPU, so N is dialled down here. On real hardware
+> these workflows scale comfortably to hundreds of thousands of samples.
 
 ### Generating data
 
@@ -143,13 +145,6 @@ ggplot(test_df, aes(x = pUMAP1, y = pUMAP2)) +
 ```
 
 ![](parametric_umap_files/figure-html/predict-1.png)
-
-### To-do’s
-
-I realised that for now saving the model is actually not really possible
-due to the way R will drop pointers (and thus clean up the memory)
-during serialisation to RDS (or qs2). I will need to figure out how to
-do this.
 
 ### Comparing training and held-out embeddings
 

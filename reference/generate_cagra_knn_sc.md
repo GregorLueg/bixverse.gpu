@@ -9,7 +9,7 @@ NNDescent graph (`extract_knn = TRUE`), which is faster but slightly
 less precise, or beam search over the pruned CAGRA graph
 (`extract_knn = FALSE`), which is slower but yields higher recall. This
 function is the CAGRA counterpart of
-[`generate_knn_sc()`](https://rdrr.io/pkg/bixverse/man/generate_knn_sc.html).
+[`generate_knn_sc()`](https://gregorlueg.github.io/bixverse/reference/generate_knn_sc.html).
 
 ## Usage
 

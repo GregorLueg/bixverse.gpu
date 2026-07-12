@@ -32,13 +32,13 @@ calculate_pca_gpu_sc(
 
   Named list. Controls the parameters to be used for the PCA calculation
   which is single cell-specific, see
-  [`params_sc_pca()`](https://rdrr.io/pkg/bixverse/man/params_sc_pca.html).
+  [`params_sc_pca()`](https://gregorlueg.github.io/bixverse/reference/params_sc_pca.html).
 
 - hvg:
 
   Optional integer. If you want to provide your own HVG genes.
   Otherwise, the function will default to what is found in
-  [`bixverse::get_hvg()`](https://rdrr.io/pkg/bixverse/man/get_hvg.html).
+  [`bixverse::get_hvg()`](https://gregorlueg.github.io/bixverse/reference/get_hvg.html).
   Please provide 1-indexed genes here! If you provide these, the
   internal HVG will be overwritten.
 

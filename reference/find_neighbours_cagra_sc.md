@@ -1,4 +1,4 @@
-# Find CAGRA GPU-accelerated neighbours for single cells
+# Find neighbours via CAGRA GPU-acceleration for single cells
 
 This function generates kNN data using the CAGRA (CUDA-Accelerated Graph
 Retrieval Approximation) algorithm on the wgpu backend via the
@@ -61,8 +61,9 @@ find_neighbours_cagra_sc(
 - snn_params:
 
   List. Output of
-  [`bixverse::params_sc_neighbours()`](https://rdrr.io/pkg/bixverse/man/params_sc_neighbours.html).
-  The kNN graph-related parameters will be ignored.
+  [`bixverse::params_sc_neighbours()`](https://gregorlueg.github.io/bixverse/reference/params_sc_neighbours.html).
+  The kNN graph-related parameters will be ignored in favour of
+  `cagra_params`.
 
 - seed:
 

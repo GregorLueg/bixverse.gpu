@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,7 +37,10 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
+    <li><a class="dropdown-item" href="../articles/other_gpu.html">Other GPU-accelerated methods</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -59,7 +62,7 @@
       <h1>Using Parametric UMAP</h1>
 
       <p class="author">Gregor Lueg</p>
-      <p class="date">2026-06-28</p>
+      <p class="date">2026-07-12</p>
 
 
       <div class="d-none name"><code></code></div>
@@ -83,11 +86,6 @@
 <div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse.gpu/">bixverse.gpu</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/manifoldsR/" class="external-link">manifoldsR</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'manifoldsR'</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:bixverse.gpu':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     get_centroids, membership</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -95,6 +93,12 @@
 <span><span class="co">#&gt; The following object is masked from 'package:base':</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;     %notin%</span></span></code></pre></div>
+</div>
+<div>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>Vignettes are built on GitHub CI/CD runners with no dedicated GPU. GPU code falls back to software Vulkan (lavapipe), which is roughly 100x slower than a real GPU, so N is dialled down here. On real hardware these workflows scale comfortably to hundreds of thousands of samples.</p>
+</blockquote>
 </div>
 </section><section class="level2"><h3 id="generating-data">Generating data<a class="anchor" aria-label="anchor" href="#generating-data"></a>
 </h3>
@@ -183,9 +187,6 @@
 </div>
 </div>
 </div>
-</section><section class="level2"><h3 id="to-dos">To-do’s<a class="anchor" aria-label="anchor" href="#to-dos"></a>
-</h3>
-<p>I realised that for now saving the model is actually not really possible due to the way R will drop pointers (and thus clean up the memory) during serialisation to RDS (or qs2). I will need to figure out how to do this.</p>
 </section><section class="level2"><h3 id="comparing-training-and-held-out-embeddings">Comparing training and held-out embeddings<a class="anchor" aria-label="anchor" href="#comparing-training-and-held-out-embeddings"></a>
 </h3>
 <p>We can overlay both sets to confirm that the encoder generalises and places held-out points in consistent positions relative to the training embedding.</p>
@@ -331,7 +332,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

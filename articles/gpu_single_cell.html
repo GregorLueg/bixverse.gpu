@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,7 +37,10 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
+    <li><a class="dropdown-item" href="../articles/other_gpu.html">Other GPU-accelerated methods</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -59,7 +62,7 @@
       <h1>GPU-accelerated workflows for bixverse single cell</h1>
 
       <p class="author">Gregor Lueg</p>
-      <p class="date">2026-06-28</p>
+      <p class="date">2026-07-12</p>
 
 
       <div class="d-none name"><code></code></div>
@@ -73,7 +76,7 @@
     <section class="level2"><h2 id="intro">Intro<a class="anchor" aria-label="anchor" href="#intro"></a>
 </h2>
 <p>This vignette walks through a GPU-accelerated single cell workflow on the two-batch PBMC data set (pbmc3k + pbmc4k) used in the <a href="https://gregorlueg.github.io/bixverse/articles/single_cell_batch_correction.html" class="external-link">batch correction vignette</a>. The point is to demonstrate how <code>bixverse.gpu</code> can drop into the heavier steps of a standard pipeline: PCA, Harmony v2 batch correction, and the kNN search. Two batches give us a natural reason to run all three in sequence: PCA generates the embedding, Harmony corrects it, and the kNN methods build the neighbour graph for downstream clustering. If none of this single cell stuff makes sense in the <code>bixverse</code> framework, please read <a href="https://gregorlueg.github.io/bixverse/articles/thinking_single_cell.html" class="external-link">this</a> first.</p>
-<p>The core idea behind <code>bixverse.gpu</code> is hardware-agnostic GPU code, hence the use of <a href="https://github.com/tracel-ai/cubecl" class="external-link">CubeCL with the WGPU backend</a>. For small data sets the host-to-device transfer and kernel launch overhead can outweigh the speedup, but the larger the data, the more these methods pay off.</p>
+<p>The core idea behind <code>bixverse.gpu</code> is hardware-agnostic GPU code, hence the use of <a href="https://github.com/tracel-ai/cubecl" class="external-link">cubecl with the wpgu backend</a>. For small data sets the host-to-device transfer and kernel launch overhead can outweigh the speedup, but the larger the data, the more these methods pay off (if you have sufficient VRAM/unified memory that is…).</p>
 <p><code>bixverse.gpu</code> currently provides:</p>
 <ul>
 <li>
@@ -92,13 +95,8 @@
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">bixverse</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse" class="external-link">bixverse</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse.gpu/">bixverse.gpu</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'bixverse.gpu'</span></span>
-<span><span class="co">#&gt; The following object is masked from 'package:bixverse':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     get_centroids</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse.plots/" class="external-link">bixverse.plots</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -108,12 +106,18 @@
 <span><span class="co">#&gt;     %notin%</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
 </div>
+<div>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>Vignettes are built on GitHub CI/CD runners with no GPU. GPU code falls back to software Vulkan (lavapipe), so N is dialled down here for build time. Real hardware handles much bigger N without issue.</p>
+</blockquote>
+</div>
 </section><section class="level2"><h2 id="loading-the-data">Loading the data<a class="anchor" aria-label="anchor" href="#loading-the-data"></a>
 </h2>
 <p>The pbmc3k and pbmc4k data sets share tissue but differ in sequencing depth and cell counts, which produces a clear batch effect.</p>
 <div class="cell">
 <details class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dir_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/download_pbmc_batches.html" class="external-link">download_pbmc_batches</a></span><span class="op">(</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">dir_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/download_pbmc_batches.html" class="external-link">download_pbmc_batches</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">tempdir_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"gpu_workflow"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">tempdir_gpu</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -123,17 +127,21 @@
 <span><span class="va">h5ad_paths</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_data</span>, <span class="va">h5ad_files</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">h5ad_paths</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pbmc3k"</span>, <span class="st">"pbmc4k"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">h5_tasks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/prescan_h5ad_files.html" class="external-link">prescan_h5ad_files</a></span><span class="op">(</span>h5_paths <span class="op">=</span> <span class="va">h5ad_paths</span><span class="op">)</span></span>
+<span><span class="va">h5_tasks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/prescan_h5ad_files.html" class="external-link">prescan_h5ad_files</a></span><span class="op">(</span>h5_paths <span class="op">=</span> <span class="va">h5ad_paths</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/SingleCells.html" class="external-link">SingleCells</a></span><span class="op">(</span>dir_data <span class="op">=</span> <span class="va">tempdir_gpu</span><span class="op">)</span></span>
+<span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/SingleCells.html" class="external-link">SingleCells</a></span><span class="op">(</span>dir_data <span class="op">=</span> <span class="va">tempdir_gpu</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/load_multi_h5ad.html" class="external-link">load_multi_h5ad</a></span><span class="op">(</span></span>
+<span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/load_multi_h5ad.html" class="external-link">load_multi_h5ad</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
 <span>  prescan_result <span class="op">=</span> <span class="va">h5_tasks</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt;  Using light streaming for the CSR to CSC conversion.</span></span>
 <span><span class="co">#&gt; Loading observation data from h5ad files into DuckDB.</span></span>
+<span><span class="co">#&gt; duckdb is keeping downloaded extensions in a temporary directory:</span></span>
+<span><span class="co">#&gt; ℹ /tmp/RtmpubRiwM/duckdb/extensions</span></span>
+<span><span class="co">#&gt; This is removed when the R session ends, so extensions are re-downloaded each session.</span></span>
+<span><span class="co">#&gt; ℹ To keep them, point `options(duckdb.extension_directory =)` or the `DUCKDB_EXTENSION_DIRECTORY` environment variable at a permanent path.</span></span>
 <span><span class="co">#&gt; Loading variable data into DuckDB.</span></span></code></pre></div>
 </details>
 </div>
@@ -142,9 +150,9 @@
 <p>Standard QC -&gt; mitochondrial proportions, library size and complexity outliers.</p>
 <div class="cell">
 <details class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">var</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/get_sc_var.html" class="external-link">get_sc_var</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">var</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/get_sc_var.html" class="external-link">get_sc_var</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">h5_metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/read_h5ad_metadata.html" class="external-link">read_h5ad_metadata</a></span><span class="op">(</span><span class="va">h5ad_paths</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">h5_metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/read_h5ad_metadata.html" class="external-link">read_h5ad_metadata</a></span><span class="op">(</span><span class="va">h5ad_paths</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">var</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span></span>
 <span>  <span class="va">var</span>,</span>
@@ -160,7 +168,7 @@
 <span>  Ribo <span class="op">=</span> <span class="va">var</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"^RPS|^RPL"</span>, <span class="va">gene_symbol</span><span class="op">)</span>, <span class="va">gene_id</span><span class="op">]</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/gene_set_proportions_sc.html" class="external-link">gene_set_proportions_sc</a></span><span class="op">(</span></span>
+<span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/gene_set_proportions_sc.html" class="external-link">gene_set_proportions_sc</a></span><span class="op">(</span></span>
 <span>  <span class="va">sc_object</span>,</span>
 <span>  <span class="va">gs_of_interest</span>,</span>
 <span>  streaming <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -180,16 +188,16 @@
 <span>  MT <span class="op">=</span> <span class="st">"above"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">qc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/run_cell_qc.html" class="external-link">run_cell_qc</a></span><span class="op">(</span></span>
+<span><span class="va">qc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/run_cell_qc.html" class="external-link">run_cell_qc</a></span><span class="op">(</span></span>
 <span>  metrics <span class="op">=</span> <span class="va">metrics</span>,</span>
-<span>  cells_to_keep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/get_cells_to_keep.html" class="external-link">get_cells_to_keep</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span>,</span>
+<span>  cells_to_keep <span class="op">=</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/get_cells_to_keep.html" class="external-link">get_cells_to_keep</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span>,</span>
 <span>  directions <span class="op">=</span> <span class="va">directions</span>,</span>
 <span>  threshold <span class="op">=</span> <span class="fl">3</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">sc_object</span><span class="op">[[</span><span class="st">"outlier"</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">qc</span><span class="op">$</span><span class="va">combined</span></span>
 <span><span class="va">cells_to_keep</span> <span class="op">&lt;-</span> <span class="va">qc_df</span><span class="op">[</span><span class="op">!</span><span class="va">qc</span><span class="op">$</span><span class="va">combined</span>, <span class="va">cell_id</span><span class="op">]</span></span>
-<span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/set_cells_to_keep.html" class="external-link">set_cells_to_keep</a></span><span class="op">(</span><span class="va">sc_object</span>, <span class="va">cells_to_keep</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/set_cells_to_keep.html" class="external-link">set_cells_to_keep</a></span><span class="op">(</span><span class="va">sc_object</span>, <span class="va">cells_to_keep</span><span class="op">)</span></span></code></pre></div>
 </details>
 </div>
 </section><section class="level2"><h2 id="highly-variable-genes">Highly variable genes<a class="anchor" aria-label="anchor" href="#highly-variable-genes"></a>
@@ -197,7 +205,7 @@
 <p>HVG selection stays on the CPU.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/find_hvg_sc.html" class="external-link">find_hvg_sc</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/find_hvg_sc.html" class="external-link">find_hvg_sc</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
 <span>  hvg_no <span class="op">=</span> <span class="fl">2000L</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -208,23 +216,23 @@
 <p>However, with PCA things start changing. Let’s run first the CPU version which you know</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/calculate_pca_sc.html" class="external-link">calculate_pca_sc</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_pca_sc.html" class="external-link">calculate_pca_sc</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
 <span>  no_pcs <span class="op">=</span> <span class="fl">32L</span>,</span>
 <span>  sparse_svd <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Using sparse SVD solving on scaled data on 2000 HVG.</span></span>
 <span><span class="co"># extract the factors and singular values</span></span>
-<span><span class="va">cpu_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/get_pca_factors.html" class="external-link">get_pca_factors</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span></span>
-<span><span class="va">cpu_s</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/get_pca_singular_val.html" class="external-link">get_pca_singular_val</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">cpu_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/get_pca_factors.html" class="external-link">get_pca_factors</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span></span>
+<span><span class="va">cpu_s</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/get_pca_singular_val.html" class="external-link">get_pca_singular_val</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>The GPU version looks very similar</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculate_pca_gpu_sc.html">calculate_pca_gpu_sc</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">sc_object</span>, no_pcs <span class="op">=</span> <span class="fl">32L</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Using GPU-accelerated, randomised sparse SVD data with 2000 HVG.</span></span>
-<span><span class="va">gpu_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/get_pca_factors.html" class="external-link">get_pca_factors</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span></span>
-<span><span class="va">gpu_s</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/get_pca_singular_val.html" class="external-link">get_pca_singular_val</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">gpu_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/get_pca_factors.html" class="external-link">get_pca_factors</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span></span>
+<span><span class="va">gpu_s</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/get_pca_singular_val.html" class="external-link">get_pca_singular_val</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>Let’s compare against the CPU version:</p>
 <div class="cell">
@@ -279,10 +287,10 @@
 <p>For comparison, the CPU version of v2; stored as <code>"harmony_v2"</code> so both embeddings coexist.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/harmony_v2_sc.html" class="external-link">harmony_v2_sc</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/harmony_v2_sc.html" class="external-link">harmony_v2_sc</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
 <span>  batch_column <span class="op">=</span> <span class="st">"exp_id"</span>,</span>
-<span>  harmony_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/params_sc_harmony_v2.html" class="external-link">params_sc_harmony_v2</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  harmony_params <span class="op">=</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/params_sc_harmony_v2.html" class="external-link">params_sc_harmony_v2</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt;  Auto-determined number of Harmony clusters: 100</span></span></code></pre></div>
 </div>
@@ -339,25 +347,25 @@
 <span><span class="co">#&gt; Generating sNN graph (full: TRUE).</span></span>
 <span><span class="co">#&gt; Transforming sNN data to igraph.</span></span></code></pre></div>
 </div>
-<p>From here downstream methods, clustering, UMAP/tSNE, marker detection, work without modification, exactly as after a <code><a href="https://rdrr.io/pkg/bixverse/man/find_neighbours_sc.html" class="external-link">find_neighbours_sc()</a></code> call.</p>
+<p>From here downstream methods, clustering, UMAP/tSNE, marker detection, work without modification, exactly as after a <code><a href="https://gregorlueg.github.io/bixverse/reference/find_neighbours_sc.html" class="external-link">find_neighbours_sc()</a></code> call.</p>
 </section></section><section class="level2"><h2 id="comparing-gpu-vs-cpu-harmony">Comparing GPU vs CPU Harmony<a class="anchor" aria-label="anchor" href="#comparing-gpu-vs-cpu-harmony"></a>
 </h2>
 <p>With the kNN graph in place on the GPU Harmony embedding, we can compute batch metrics for it and then repeat the kNN step on the CPU embedding to compare.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">kbet_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/calculate_kbet_sc.html" class="external-link">calculate_kbet_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, batch_column <span class="op">=</span> <span class="st">"exp_id"</span><span class="op">)</span></span>
-<span><span class="va">asw_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/calculate_batch_asw_sc.html" class="external-link">calculate_batch_asw_sc</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">kbet_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_kbet_sc.html" class="external-link">calculate_kbet_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, batch_column <span class="op">=</span> <span class="st">"exp_id"</span><span class="op">)</span></span>
+<span><span class="va">asw_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_batch_asw_sc.html" class="external-link">calculate_batch_asw_sc</a></span><span class="op">(</span></span>
 <span>  <span class="va">sc_object</span>,</span>
 <span>  embd_to_use <span class="op">=</span> <span class="st">"harmony_gpu"</span>,</span>
 <span>  batch_column <span class="op">=</span> <span class="st">"exp_id"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">lisi_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/calculate_batch_lisi_sc.html" class="external-link">calculate_batch_lisi_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, batch_column <span class="op">=</span> <span class="st">"exp_id"</span><span class="op">)</span></span>
+<span><span class="va">lisi_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_batch_lisi_sc.html" class="external-link">calculate_batch_lisi_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, batch_column <span class="op">=</span> <span class="st">"exp_id"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">kbet_gpu</span></span>
 <span><span class="co">#&gt; kBET Scores</span></span>
 <span><span class="co">#&gt;   Cells: 5841 | Batches: 2 | Threshold: 0.050</span></span>
-<span><span class="co">#&gt;   Rejection rate:      0.2661 (1554 / 5841)</span></span>
-<span><span class="co">#&gt;   Mean Chi-Square:     3.0966 (expected under H0: 1)</span></span>
+<span><span class="co">#&gt;   Rejection rate:      0.2655 (1551 / 5841)</span></span>
+<span><span class="co">#&gt;   Mean Chi-Square:     3.0924 (expected under H0: 1)</span></span>
 <span><span class="co">#&gt;   Median Chi-Square:   1.9151</span></span>
 <span><span class="va">asw_gpu</span></span>
 <span><span class="co">#&gt; Batch Silhouette Width</span></span>
@@ -367,7 +375,7 @@
 <span><span class="va">lisi_gpu</span></span>
 <span><span class="co">#&gt; Batch LISI Scores</span></span>
 <span><span class="co">#&gt;   Cells: 5841 | Batches: 2</span></span>
-<span><span class="co">#&gt;   Mean LISI:    1.4518 (1 = no mixing, 2 = perfect mixing)</span></span>
+<span><span class="co">#&gt;   Mean LISI:    1.4524 (1 = no mixing, 2 = perfect mixing)</span></span>
 <span><span class="co">#&gt;   Median LISI:  1.4706</span></span></code></pre></div>
 </div>
 <p>Same kNN setup on the CPU Harmony embedding:</p>
@@ -384,19 +392,19 @@
 <span><span class="co">#&gt; Generating sNN graph (full: TRUE).</span></span>
 <span><span class="co">#&gt; Transforming sNN data to igraph.</span></span>
 <span></span>
-<span><span class="va">kbet_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/calculate_kbet_sc.html" class="external-link">calculate_kbet_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, batch_column <span class="op">=</span> <span class="st">"exp_id"</span><span class="op">)</span></span>
-<span><span class="va">asw_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/calculate_batch_asw_sc.html" class="external-link">calculate_batch_asw_sc</a></span><span class="op">(</span></span>
+<span><span class="va">kbet_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_kbet_sc.html" class="external-link">calculate_kbet_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, batch_column <span class="op">=</span> <span class="st">"exp_id"</span><span class="op">)</span></span>
+<span><span class="va">asw_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_batch_asw_sc.html" class="external-link">calculate_batch_asw_sc</a></span><span class="op">(</span></span>
 <span>  <span class="va">sc_object</span>,</span>
 <span>  embd_to_use <span class="op">=</span> <span class="st">"harmony_v2"</span>,</span>
 <span>  batch_column <span class="op">=</span> <span class="st">"exp_id"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">lisi_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/calculate_batch_lisi_sc.html" class="external-link">calculate_batch_lisi_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, batch_column <span class="op">=</span> <span class="st">"exp_id"</span><span class="op">)</span></span>
+<span><span class="va">lisi_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_batch_lisi_sc.html" class="external-link">calculate_batch_lisi_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, batch_column <span class="op">=</span> <span class="st">"exp_id"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">kbet_cpu</span></span>
 <span><span class="co">#&gt; kBET Scores</span></span>
 <span><span class="co">#&gt;   Cells: 5841 | Batches: 2 | Threshold: 0.050</span></span>
-<span><span class="co">#&gt;   Rejection rate:      0.2659 (1553 / 5841)</span></span>
-<span><span class="co">#&gt;   Mean Chi-Square:     3.0972 (expected under H0: 1)</span></span>
+<span><span class="co">#&gt;   Rejection rate:      0.2649 (1547 / 5841)</span></span>
+<span><span class="co">#&gt;   Mean Chi-Square:     3.0942 (expected under H0: 1)</span></span>
 <span><span class="co">#&gt;   Median Chi-Square:   1.9151</span></span>
 <span><span class="va">asw_cpu</span></span>
 <span><span class="co">#&gt; Batch Silhouette Width</span></span>
@@ -406,13 +414,13 @@
 <span><span class="va">lisi_cpu</span></span>
 <span><span class="co">#&gt; Batch LISI Scores</span></span>
 <span><span class="co">#&gt;   Cells: 5841 | Batches: 2</span></span>
-<span><span class="co">#&gt;   Mean LISI:    1.4518 (1 = no mixing, 2 = perfect mixing)</span></span>
+<span><span class="co">#&gt;   Mean LISI:    1.4520 (1 = no mixing, 2 = perfect mixing)</span></span>
 <span><span class="co">#&gt;   Median LISI:  1.4706</span></span></code></pre></div>
 </div>
 <p>Harmony has stochastic elements, so the two embeddings will not be identical, but the batch correction quality should be in the same ballpark across the metrics.</p>
-<section class="level3"><h3 id="tsne-on-the-gpu-harmony-embedding">tSNE on the GPU Harmony embedding<a class="anchor" aria-label="anchor" href="#tsne-on-the-gpu-harmony-embedding"></a>
+<section class="level3"><h3 id="umap-on-the-gpu-harmony-embedding">UMAP on the GPU Harmony embedding<a class="anchor" aria-label="anchor" href="#umap-on-the-gpu-harmony-embedding"></a>
 </h3>
-<p>For a sanity check and because and everyone loves visuals (even if you should not over-interpret them (<a href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011288" class="external-link">Chari et al., 2023</a>)):</p>
+<p>Everyone loves visuals, even if you should not over-interpret them (<a href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011288" class="external-link">Chari et al., 2023</a>). <code><a href="../reference/umap_gpu_sc.html">umap_gpu_sc()</a></code> runs the full GPU-accelerated UMAP path: GPU kNN plus a GPU Adam optimiser (<code>optimiser = "adam_gpu"</code> in <code><a href="../reference/params_umap_gpu.html">params_umap_gpu()</a></code>, the default). On the CAGRA kNN we just computed above, it plugs straight in with <code>use_knn = TRUE</code>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_neighbours_cagra_sc.html">find_neighbours_cagra_sc</a></span><span class="op">(</span></span>
@@ -426,16 +434,50 @@
 <span><span class="co">#&gt; Generating sNN graph (full: TRUE).</span></span>
 <span><span class="co">#&gt; Transforming sNN data to igraph.</span></span>
 <span></span>
-<span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/tsne_sc.html" class="external-link">tsne_sc</a></span><span class="op">(</span></span>
+<span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/umap_gpu_sc.html">umap_gpu_sc</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
-<span>  slot_name <span class="op">=</span> <span class="st">"tsne_harm_gpu"</span>,</span>
+<span>  embd_to_use <span class="op">=</span> <span class="st">"harmony_gpu"</span>,</span>
+<span>  slot_name <span class="op">=</span> <span class="st">"umap_harm_gpu"</span>,</span>
 <span>  use_knn <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Running t-SNE.</span></span>
+<span><span class="co">#&gt; Running GPU UMAP.</span></span>
+<span><span class="co">#&gt; Using n_epochs = 500 (dataset &lt;10k samples or 'adam_parallel'/'adam_gpu' optimiser)</span></span>
 <span><span class="co">#&gt; Using provided kNN graph.</span></span></code></pre></div>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://gregorlueg.github.io/bixverse.plots/reference/embedding_plot_sc.html" class="external-link">embedding_plot_sc</a></span><span class="op">(</span></span>
+<span>  <span class="va">sc_object</span>,</span>
+<span>  embedding <span class="op">=</span> <span class="st">"umap_harm_gpu"</span>,</span>
+<span>  colour_by <span class="op">=</span> <span class="st">"exp_id"</span>,</span>
+<span>  discrete <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    title <span class="op">=</span> <span class="st">"GPU Harmony v2 + GPU CAGRA kNN + GPU UMAP"</span>,</span>
+<span>    colour <span class="op">=</span> <span class="st">"Batch:"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure><p><img src="gpu_single_cell_files/figure-html/umap%20plot-1.png" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section><section class="level3"><h3 id="tsne-on-the-gpu-harmony-embedding">tSNE on the GPU Harmony embedding<a class="anchor" aria-label="anchor" href="#tsne-on-the-gpu-harmony-embedding"></a>
+</h3>
+<p><code><a href="../reference/tsne_gpu_sc.html">tsne_gpu_sc()</a></code> mirrors the shape of <code><a href="../reference/umap_gpu_sc.html">umap_gpu_sc()</a></code> but only the kNN step runs on GPU. The optimiser (Barnes-Hut or FIt-SNE FFT) still runs on CPU; a GPU optimiser is on the roadmap. Because t-SNE derives <code>k</code> from <code>3 * perplexity</code> on the Rust side, <code>use_knn</code> defaults to <code>FALSE</code> so that every call builds a fresh GPU kNN sized to the requested perplexity. Handy when sweeping perplexities.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tsne_gpu_sc.html">tsne_gpu_sc</a></span><span class="op">(</span></span>
+<span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
+<span>  embd_to_use <span class="op">=</span> <span class="st">"harmony_gpu"</span>,</span>
+<span>  slot_name <span class="op">=</span> <span class="st">"tsne_harm_gpu"</span>,</span>
+<span>  perplexity <span class="op">=</span> <span class="fl">30.0</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Running GPU t-SNE.</span></span></code></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://gregorlueg.github.io/bixverse.plots/reference/embedding_plot_sc.html" class="external-link">embedding_plot_sc</a></span><span class="op">(</span></span>
 <span>  <span class="va">sc_object</span>,</span>
 <span>  embedding <span class="op">=</span> <span class="st">"tsne_harm_gpu"</span>,</span>
@@ -443,7 +485,7 @@
 <span>  discrete <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
-<span>    title <span class="op">=</span> <span class="st">"GPU Harmony v2 + GPU CAGRA kNN"</span>,</span>
+<span>    title <span class="op">=</span> <span class="st">"GPU Harmony v2 + GPU t-SNE (GPU kNN, CPU optimiser)"</span>,</span>
 <span>    colour <span class="op">=</span> <span class="st">"Batch:"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
@@ -455,7 +497,7 @@
 </div>
 </section></section><section class="level2"><h2 id="conclusions">Conclusions<a class="anchor" aria-label="anchor" href="#conclusions"></a>
 </h2>
-<p>The full GPU path – PCA, Harmony v2, kNN – plugs into the existing <code>SingleCells</code> workflow without any glue code. The downstream object behaves identically to whatever you would get from the CPU equivalents.</p>
+<p>The full GPU path (PCA, Harmony v2, kNN, UMAP with GPU Adam optimiser, t-SNE with GPU kNN) plugs into the existing <code>SingleCells</code> workflow without any glue code. The downstream object behaves identically to whatever you would get from the CPU equivalents.</p>
 <p>Longer term, the GPU kNN methods are the obvious building block for GPU-accelerated versions of methods that lean heavily on kNN graphs:</p>
 <ul>
 <li>
@@ -467,7 +509,7 @@
 </section><section class="level2"><h2 id="clean-up">Clean up<a class="anchor" aria-label="anchor" href="#clean-up"></a>
 </h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">tempdir_gpu</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span>, force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 </section><script id="quarto-html-after-body" type="application/javascript">
@@ -563,7 +605,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

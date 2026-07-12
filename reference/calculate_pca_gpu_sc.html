@@ -13,7 +13,7 @@ works on the "rna" modality.'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,7 +25,10 @@ works on the "rna" modality.'></head><body>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
+    <li><a class="dropdown-item" href="../articles/other_gpu.html">Other GPU-accelerated methods</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -56,7 +59,7 @@ works on the <code>"rna"</code> modality.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calculate_pca_gpu_sc</span><span class="op">(</span></span>
 <span>  <span class="va">object</span>,</span>
 <span>  <span class="va">no_pcs</span>,</span>
-<span>  pca_params <span class="op">=</span> <span class="fu">bixverse</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/bixverse/man/params_sc_pca.html" class="external-link">params_sc_pca</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  pca_params <span class="op">=</span> <span class="fu">bixverse</span><span class="fu">::</span><span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/params_sc_pca.html" class="external-link">params_sc_pca</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  hvg <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">42L</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -77,13 +80,13 @@ works on the <code>"rna"</code> modality.</p>
 
 <dt id="arg-pca-params">pca_params<a class="anchor" aria-label="anchor" href="#arg-pca-params"></a></dt>
 <dd><p>Named list. Controls the parameters to be used for the
-PCA calculation which is single cell-specific, see <code><a href="https://rdrr.io/pkg/bixverse/man/params_sc_pca.html" class="external-link">params_sc_pca()</a></code>.</p></dd>
+PCA calculation which is single cell-specific, see <code><a href="https://gregorlueg.github.io/bixverse/reference/params_sc_pca.html" class="external-link">params_sc_pca()</a></code>.</p></dd>
 
 
 <dt id="arg-hvg">hvg<a class="anchor" aria-label="anchor" href="#arg-hvg"></a></dt>
 <dd><p>Optional integer. If you want to provide your own HVG genes.
 Otherwise, the function will default to what is found in
-<code><a href="https://rdrr.io/pkg/bixverse/man/get_hvg.html" class="external-link">bixverse::get_hvg()</a></code>. Please provide 1-indexed genes here! If you provide
+<code><a href="https://gregorlueg.github.io/bixverse/reference/get_hvg.html" class="external-link">bixverse::get_hvg()</a></code>. Please provide 1-indexed genes here! If you provide
 these, the internal HVG will be overwritten.</p></dd>
 
 
@@ -113,7 +116,7 @@ to the object cache in memory.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

@@ -9,7 +9,7 @@ params_kmeans_gpu(
   k_means_iter = 50L,
   k_means_init = NULL,
   metric = c("euclidean", "cosine"),
-  fixed = TRUE,
+  fixed = FALSE,
   quantise = FALSE
 )
 ```
@@ -31,11 +31,13 @@ params_kmeans_gpu(
 
 - fixed:
 
-  Logical. Whether cluster centres are fixed after initialisation.
+  Logical. Shall the algorithm be run for a fixed number of iterations,
+  without checking for convergence.
 
 - quantise:
 
-  Logical. Whether to quantise data to f16 before clustering.
+  Logical. Whether to quantise data to `fp16` before clustering. This
+  can improve performance in circumstances where it is memory bound.
 
 ## Value
 

@@ -1,6 +1,6 @@
-# Check IVF parameters
+# Check IVF GPU parameters
 
-Checkmate extension for checking IVF parameters.
+Checkmate extension for checking IVF GPU parameters.
 
 ## Usage
 

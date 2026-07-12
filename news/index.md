@@ -1,5 +1,22 @@
 # Changelog
 
+## bixverse.gpu 0.2.1
+
+### Features
+
+- GPU-accelerated UMAP optimisation exposed.
+- GPU-accelerated kNN generation for both tSNE and UMAP (longer term
+  also a GPU-accelerated tSNE optimiser planned). Additionally, the kNN
+  graphs can be used more broadly.
+- [`umap_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/umap_gpu_sc.md)
+  and
+  [`tsne_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/tsne_gpu_sc.md)
+  wire the GPU UMAP and t-SNE paths directly into the `SingleCells`
+  workflow, mirroring
+  [`bixverse::umap_sc()`](https://gregorlueg.github.io/bixverse/reference/umap_sc.html)
+  and
+  [`bixverse::tsne_sc()`](https://gregorlueg.github.io/bixverse/reference/tsne_sc.html).
+
 ## bixverse.gpu 0.2.0
 
 Major release.

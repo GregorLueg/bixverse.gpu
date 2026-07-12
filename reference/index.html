@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,7 +19,10 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
+    <li><a class="dropdown-item" href="../articles/other_gpu.html">Other GPU-accelerated methods</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -86,7 +89,7 @@
           <code><a href="find_neighbours_cagra_sc.html">find_neighbours_cagra_sc()</a></code>
 
         </dt>
-        <dd>Find CAGRA GPU-accelerated neighbours for single cells</dd>
+        <dd>Find neighbours via CAGRA GPU-acceleration for single cells</dd>
 
         <dt>
 
@@ -108,6 +111,73 @@
 
         </dt>
         <dd>Default parameters for Harmony v2 GPU batch correction</dd>
+      </dl></div><div class="section level2">
+      <h2 id="gpu-accelerated-umap">GPU-accelerated UMAP<a class="anchor" aria-label="anchor" href="#gpu-accelerated-umap"></a></h2>
+
+      <div class="section-desc"><p>GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent, exhaustive) and CPU/GPU optimisers. Also a version for the single cells analysis suite in bixverse.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="umap_gpu.html">umap_gpu()</a></code>
+
+        </dt>
+        <dd>Rust-based UMAP (GPU)</dd>
+
+        <dt>
+
+          <code><a href="umap_gpu_sc.html">umap_gpu_sc()</a></code>
+
+        </dt>
+        <dd>Run UMAP on a SingleCells object (GPU)</dd>
+
+        <dt>
+
+          <code><a href="params_umap_gpu.html">params_umap_gpu()</a></code>
+
+        </dt>
+        <dd>Wrapper function to generate UMAP parameters (GPU version)</dd>
+
+        <dt>
+
+          <code><a href="params_nn_gpu.html">params_nn_gpu()</a></code>
+
+        </dt>
+        <dd>Wrapper function to generate GPU nearest neighbour parameters</dd>
+      </dl></div><div class="section level2">
+      <h2 id="gpu-accelerated-t-sne">GPU-accelerated t-SNE<a class="anchor" aria-label="anchor" href="#gpu-accelerated-t-sne"></a></h2>
+
+      <div class="section-desc"><p>t-SNE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive). Optimiser (BH or FFT) runs on CPU via the Rust implementation in manifoldsR. Also a version for the single cells analysis suite in bixverse.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="tsne_gpu.html">tsne_gpu()</a></code>
+
+        </dt>
+        <dd>Rust-based t-SNE (GPU)</dd>
+
+        <dt>
+
+          <code><a href="tsne_gpu_sc.html">tsne_gpu_sc()</a></code>
+
+        </dt>
+        <dd>Run t-SNE on a SingleCells object (GPU)</dd>
+
+        <dt>
+
+          <code><a href="params_tsne_gpu.html">params_tsne_gpu()</a></code>
+
+        </dt>
+        <dd>Wrapper function to generate t-SNE parameters (GPU version)</dd>
       </dl></div><div class="section level2">
       <h2 id="parametric-umap">Parametric UMAP<a class="anchor" aria-label="anchor" href="#parametric-umap"></a></h2>
 
@@ -155,7 +225,7 @@
       </dl></div><div class="section level2">
       <h2 id="other-gpu-accelerated-methods">Other GPU-accelerated methods<a class="anchor" aria-label="anchor" href="#other-gpu-accelerated-methods"></a></h2>
 
-      <div class="section-desc"><p>Other GPU-accelerated methods that you might find useful… k-means clustering has been implemented and likely more to come.</p></div>
+      <div class="section-desc"><p>Other GPU-accelerated methods that you might find useful… k-means clustering and a direct interface into the GPU-accelerated kNN searches can be found here.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -171,24 +241,17 @@
 
         <dt>
 
-          <code><a href="get_centroids.html">get_centroids()</a></code>
-
-        </dt>
-        <dd>Get cluster centroids</dd>
-
-        <dt>
-
-          <code><a href="membership.html">membership()</a></code>
-
-        </dt>
-        <dd>Get cluster assignments</dd>
-
-        <dt>
-
           <code><a href="params_kmeans_gpu.html">params_kmeans_gpu()</a></code>
 
         </dt>
         <dd>Default parameters for GPU k-means</dd>
+
+        <dt>
+
+          <code><a href="generate_knn_graph_gpu.html">generate_knn_graph_gpu()</a></code>
+
+        </dt>
+        <dd>Generate a k-nearest neighbour graph (GPU-accelerated)</dd>
       </dl></div><div class="section level2">
       <h2 id="rust-wrappers">Rust wrappers<a class="anchor" aria-label="anchor" href="#rust-wrappers"></a></h2>
 
@@ -261,6 +324,34 @@
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Parametric UMAP implementation</dd>
+
+        <dt>
+
+          <code><a href="rs_umap_gpu.html">rs_umap_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>UMAP implementation</dd>
+
+        <dt>
+
+          <code><a href="rs_umap_from_knn_gpu.html">rs_umap_from_knn_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>UMAP implementation</dd>
+
+        <dt>
+
+          <code><a href="rs_tsne_gpu.html">rs_tsne_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>tSNE implementation</dd>
+
+        <dt>
+
+          <code><a href="rs_tsne_from_knn_gpu.html">rs_tsne_from_knn_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>tSNE implementation</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
@@ -271,7 +362,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

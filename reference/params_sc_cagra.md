@@ -6,9 +6,9 @@ Default parameters for CAGRA-style kNN search
 
 ``` r
 params_sc_cagra(
-  k_query = 15L,
+  k = 15L,
   ann_dist = "euclidean",
-  k = NULL,
+  node_degree_final = NULL,
   k_build = NULL,
   refine_sweeps = 0L,
   max_iters = NULL,
@@ -23,7 +23,7 @@ params_sc_cagra(
 
 ## Arguments
 
-- k_query:
+- k:
 
   Integer. Number of neighbours to identify.
 
@@ -31,7 +31,7 @@ params_sc_cagra(
 
   Character. Distance metric to use. One of `"euclidean"` or `"cosine"`.
 
-- k:
+- node_degree_final:
 
   Optional integer. Final node degree of the CAGRA navigational graph.
   If `NULL`, defaults to `30` on the Rust side.
@@ -39,8 +39,8 @@ params_sc_cagra(
 - k_build:
 
   Optional integer. Number of k-neighbours during the NNDescent build
-  phase before CAGRA pruning. If `NULL`, defaults to `1.5 * k` on the
-  Rust side.
+  phase before CAGRA pruning. If `NULL`, defaults to
+  `1.5 * node_degree_final` on the Rust side.
 
 - refine_sweeps:
 

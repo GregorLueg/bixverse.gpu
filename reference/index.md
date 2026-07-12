@@ -15,13 +15,42 @@ Different GPU-accelerated methods specifically for the GPU.
 - [`find_neighbours_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_gpu_sc.md)
   : Find GPU-accelerated neighbours for single cells (exhaustive / IVF)
 - [`find_neighbours_cagra_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_cagra_sc.md)
-  : Find CAGRA GPU-accelerated neighbours for single cells
+  : Find neighbours via CAGRA GPU-acceleration for single cells
 - [`params_sc_ivf()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.md)
   : Default parameters for IVF-GPU kNN search
 - [`params_sc_cagra()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.md)
   : Default parameters for CAGRA-style kNN search
 - [`params_sc_harmony_v2_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_harmony_v2_gpu.md)
   : Default parameters for Harmony v2 GPU batch correction
+
+## GPU-accelerated UMAP
+
+GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent,
+exhaustive) and CPU/GPU optimisers. Also a version for the single cells
+analysis suite in bixverse.
+
+- [`umap_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/umap_gpu.md)
+  : Rust-based UMAP (GPU)
+- [`umap_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/umap_gpu_sc.md)
+  : Run UMAP on a SingleCells object (GPU)
+- [`params_umap_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_umap_gpu.md)
+  : Wrapper function to generate UMAP parameters (GPU version)
+- [`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md)
+  : Wrapper function to generate GPU nearest neighbour parameters
+
+## GPU-accelerated t-SNE
+
+t-SNE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive).
+Optimiser (BH or FFT) runs on CPU via the Rust implementation in
+manifoldsR. Also a version for the single cells analysis suite in
+bixverse.
+
+- [`tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/tsne_gpu.md)
+  : Rust-based t-SNE (GPU)
+- [`tsne_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/tsne_gpu_sc.md)
+  : Run t-SNE on a SingleCells object (GPU)
+- [`params_tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_tsne_gpu.md)
+  : Wrapper function to generate t-SNE parameters (GPU version)
 
 ## Parametric UMAP
 
@@ -43,16 +72,15 @@ flexibly on CPU or GPU? Here’s what you need.
 ## Other GPU-accelerated methods
 
 Other GPU-accelerated methods that you might find useful… k-means
-clustering has been implemented and likely more to come.
+clustering and a direct interface into the GPU-accelerated kNN searches
+can be found here.
 
 - [`k_means_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/k_means_cluster_gpu.md)
   : GPU-accelerated k-means clustering
-- [`get_centroids()`](https://gregorlueg.github.io/bixverse.gpu/reference/get_centroids.md)
-  : Get cluster centroids
-- [`membership()`](https://gregorlueg.github.io/bixverse.gpu/reference/membership.md)
-  : Get cluster assignments
 - [`params_kmeans_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_kmeans_gpu.md)
   : Default parameters for GPU k-means
+- [`generate_knn_graph_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_knn_graph_gpu.md)
+  : Generate a k-nearest neighbour graph (GPU-accelerated)
 
 ## Rust wrappers
 
@@ -81,3 +109,11 @@ useful for your own package? Use with care and read the documentation!
   UMAP model
 - [`rs_parametric_umap()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_parametric_umap.md)
   **\[experimental\]** : Parametric UMAP implementation
+- [`rs_umap_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_umap_gpu.md)
+  **\[experimental\]** : UMAP implementation
+- [`rs_umap_from_knn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_umap_from_knn_gpu.md)
+  **\[experimental\]** : UMAP implementation
+- [`rs_tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_tsne_gpu.md)
+  **\[experimental\]** : tSNE implementation
+- [`rs_tsne_from_knn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_tsne_from_knn_gpu.md)
+  **\[experimental\]** : tSNE implementation
