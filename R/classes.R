@@ -89,41 +89,23 @@ new_kmeans_cluster_gpu <- function(centroids, assignments, k, metric) {
 
 ## getters ---------------------------------------------------------------------
 
-#' Get cluster assignments
-#'
-#' @param x A `KMeansClusterGPU` object.
-#'
-#' @returns Integer vector of length samples with cluster assignments
-#'   (1-indexed).
-#'
 #' @export
-membership <- function(x) {
-  UseMethod("membership")
-}
-
-#' @rdname membership
-#' @export
+#'
+#' @importFrom manifoldsR membership
 membership.KMeansClusterGPU <- function(x) {
+  # checks
+  checkmate::assertClass(x, "KMeansClusterGPU")
+
   x$assignments
 }
 
-#' Get cluster centroids
-#'
-#' @param x A `KMeansClusterGPU` object.
-#'
-#' @returns Numeric matrix of shape k x features.
-#'
-#' @export
-get_centroids <- function(x) {
-  UseMethod("get_centroids")
-}
 
-#' @rdname get_centroids
-#'
 #' @export
+#'
+#' @importFrom manifoldsR get_centroids
 get_centroids.KMeansClusterGPU <- function(x) {
   # checks
-  checkmate::assertClass(x, "KMeansCluster")
+  checkmate::assertClass(x, "KMeansClusterGPU")
 
   x$centroids
 }

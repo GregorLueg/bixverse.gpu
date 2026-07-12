@@ -28,9 +28,10 @@ makes sense in the `bixverse` framework, please read
 first.
 
 The core idea behind `bixverse.gpu` is hardware-agnostic GPU code, hence the
-use of [CubeCL with the WGPU backend](https://github.com/tracel-ai/cubecl).
+use of [cubecl with the wpgu backend](https://github.com/tracel-ai/cubecl).
 For small data sets the host-to-device transfer and kernel launch overhead can
-outweigh the speedup, but the larger the data, the more these methods pay off.
+outweigh the speedup, but the larger the data, the more these methods pay off
+(if you have sufficient VRAM/unified memory that is...).
 
 `bixverse.gpu` currently provides:
 
@@ -59,6 +60,12 @@ library(bixverse.plots)
 library(data.table)
 library(ggplot2)
 ```
+
+::: {.callout-note}
+Vignettes are built on GitHub CI/CD runners with no GPU. GPU code falls back
+to software Vulkan (lavapipe), so N is dialled down here for build time. Real
+hardware handles much bigger N without issue.
+:::
 
 ## Loading the data
 
@@ -361,13 +368,17 @@ Harmony has stochastic elements, so the two embeddings will not be identical,
 but the batch correction quality should be in the same ballpark across the
 metrics.
 
-### tSNE on the GPU Harmony embedding
+### UMAP on the GPU Harmony embedding
 
-For a sanity check and because and everyone loves visuals (even if you
-should not over-interpret them ([Chari et al., 2023](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011288))):
+Everyone loves visuals, even if you should not over-interpret them
+([Chari et al., 2023](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011288)).
+`umap_gpu_sc()` runs the full GPU-accelerated UMAP path: GPU kNN plus a
+GPU Adam optimiser (`optimiser = "adam_gpu"` in `params_umap_gpu()`, the
+default). On the CAGRA kNN we just computed above, it plugs straight in
+with `use_knn = TRUE`.
 
 ```{r}
-#| label: tsne gpu harmony
+#| label: umap gpu harmony
 sc_object <- find_neighbours_cagra_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
@@ -376,10 +387,46 @@ sc_object <- find_neighbours_cagra_sc(
   .verbose = TRUE
 )
 
-sc_object <- tsne_sc(
+sc_object <- umap_gpu_sc(
   object = sc_object,
-  slot_name = "tsne_harm_gpu",
+  embd_to_use = "harmony_gpu",
+  slot_name = "umap_harm_gpu",
   use_knn = TRUE
+)
+```
+
+```{r}
+#| label: umap plot
+#| fig-width: 7
+#| fig-height: 5
+embedding_plot_sc(
+  sc_object,
+  embedding = "umap_harm_gpu",
+  colour_by = "exp_id",
+  discrete = TRUE
+) +
+  labs(
+    title = "GPU Harmony v2 + GPU CAGRA kNN + GPU UMAP",
+    colour = "Batch:"
+  )
+```
+
+### tSNE on the GPU Harmony embedding
+
+`tsne_gpu_sc()` mirrors the shape of `umap_gpu_sc()` but only the kNN step
+runs on GPU. The optimiser (Barnes-Hut or FIt-SNE FFT) still runs on CPU;
+a GPU optimiser is on the roadmap. Because t-SNE derives `k` from
+`3 * perplexity` on the Rust side, `use_knn` defaults to `FALSE` so that
+every call builds a fresh GPU kNN sized to the requested perplexity.
+Handy when sweeping perplexities.
+
+```{r}
+#| label: tsne gpu harmony
+sc_object <- tsne_gpu_sc(
+  object = sc_object,
+  embd_to_use = "harmony_gpu",
+  slot_name = "tsne_harm_gpu",
+  perplexity = 30.0
 )
 ```
 
@@ -394,16 +441,17 @@ embedding_plot_sc(
   discrete = TRUE
 ) +
   labs(
-    title = "GPU Harmony v2 + GPU CAGRA kNN",
+    title = "GPU Harmony v2 + GPU t-SNE (GPU kNN, CPU optimiser)",
     colour = "Batch:"
   )
 ```
 
 ## Conclusions
 
-The full GPU path -- PCA, Harmony v2, kNN -- plugs into the existing
-`SingleCells` workflow without any glue code. The downstream object behaves
-identically to whatever you would get from the CPU equivalents.
+The full GPU path (PCA, Harmony v2, kNN, UMAP with GPU Adam optimiser,
+t-SNE with GPU kNN) plugs into the existing `SingleCells` workflow without
+any glue code. The downstream object behaves identically to whatever you
+would get from the CPU equivalents.
 
 Longer term, the GPU kNN methods are the obvious building block for
 GPU-accelerated versions of methods that lean heavily on kNN graphs:

@@ -19,9 +19,9 @@ checkScCagraParams <- function(x) {
   res <- checkmate::checkNames(
     names(x),
     must.include = c(
-      "k_query",
-      "ann_dist",
       "k",
+      "ann_dist",
+      "node_degree_final",
       "k_build",
       "refine_sweeps",
       "max_iters",
@@ -42,7 +42,7 @@ checkScCagraParams <- function(x) {
   }
   # Required integer fields (must not be NULL)
   required_int_rules <- list(
-    "k_query" = "I1[1,)",
+    "k" = "I1[1,)",
     "refine_sweeps" = "I1[1,)"
   )
   res <- purrr::imap_lgl(x, \(x, name) {
@@ -66,7 +66,7 @@ checkScCagraParams <- function(x) {
   }
   # Optional integer fields (NULL or integer >= 1)
   optional_int_rules <- list(
-    "k" = c("I1[1,)", "0"),
+    "node_degree_final" = c("I1[1,)", "0"),
     "k_build" = c("I1[1,)", "0"),
     "max_iters" = c("I1[1,)", "0"),
     "n_trees" = c("I1[1,)", "0"),
@@ -87,8 +87,8 @@ checkScCagraParams <- function(x) {
       sprintf(
         paste(
           "The following element `%s` in CAGRA parameters is incorrect:",
-          "k, k_build, max_iters, n_trees, beam_width, max_beam_iters,",
-          "and n_entry_points must be NULL or integers >= 1."
+          "node_degree_final, k_build, max_iters, n_trees, beam_width,",
+          "max_beam_iters and n_entry_points must be NULL or integers >= 1."
         ),
         broken_elem
       )
@@ -161,9 +161,9 @@ assertScCagraParams <- checkmate::makeAssertionFunction(checkScCagraParams)
 
 ## ivf -------------------------------------------------------------------------
 
-#' Check IVF parameters
+#' Check IVF GPU parameters
 #'
-#' @description Checkmate extension for checking IVF parameters.
+#' @description Checkmate extension for checking IVF GPU parameters.
 #'
 #' @param x The list to check/assert.
 #'
@@ -353,6 +353,302 @@ checkParametricUmapParams <- function(x) {
 assertParametricUmapParams <- checkmate::makeAssertionFunction(
   checkParametricUmapParams
 )
+
+## umap gpu --------------------------------------------------------------------
+
+### nearest neighbours ---------------------------------------------------------
+
+#' Check GPU nearest neighbour parameters
+#'
+#' @description Checkmate extension for checking the GPU nearest neighbour
+#' parameters.
+#'
+#' @param x The list to check.
+#'
+#' @return `TRUE` if the check was successful, otherwise an error message.
+#'
+#' @keywords internal
+checkNnParamsGpu <- function(x) {
+  res <- checkmate::checkList(x)
+  if (!isTRUE(res)) {
+    return(res)
+  }
+  res <- checkmate::checkNames(
+    names(x),
+    must.include = c(
+      "dist_metric",
+      "n_list",
+      "n_probes",
+      "node_degree_final",
+      "k_build",
+      "n_tree",
+      "delta",
+      "rho",
+      "refine_sweeps",
+      "beam_width",
+      "max_beam_iters",
+      "n_entry_points"
+    )
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+  rules <- list(
+    "dist_metric" = list(type = "choice", choices = c("cosine", "euclidean")),
+    "n_list" = list(type = "nullable_int"),
+    "n_probes" = list(type = "nullable_int"),
+    "node_degree_final" = list(type = "nullable_int"),
+    "k_build" = list(type = "nullable_int"),
+    "n_tree" = list(type = "nullable_int"),
+    "delta" = list(type = "fixed", rule = "N1"),
+    "rho" = list(type = "nullable_numeric"),
+    "refine_sweeps" = list(type = "fixed", rule = "I1[0,)"),
+    "beam_width" = list(type = "nullable_int"),
+    "max_beam_iters" = list(type = "nullable_int"),
+    "n_entry_points" = list(type = "nullable_int")
+  )
+  res <- purrr::imap_lgl(x, \(val, name) {
+    spec <- rules[[name]]
+    if (spec$type == "choice") {
+      checkmate::testChoice(val, spec$choices)
+    } else if (spec$type == "nullable_int") {
+      is.null(val) || checkmate::qtest(val, "I1")
+    } else if (spec$type == "nullable_numeric") {
+      is.null(val) || checkmate::qtest(val, "N1")
+    } else {
+      checkmate::qtest(val, spec$rule)
+    }
+  })
+  if (!isTRUE(all(res))) {
+    broken_elem <- names(res)[which(!res)][1]
+    return(
+      sprintf(
+        paste(
+          "The following element `%s` in GPU nearest neighbour params does",
+          "not conform to the expected format.",
+          "dist_metric must be one of 'cosine' or 'euclidean',",
+          "n_list/n_probes/k/k_build/n_tree/beam_width/max_beam_iters/",
+          "n_entry_points must be integers or NULL,",
+          "refine_sweeps must be an integer ≥ 0",
+          "delta must be a numeric,",
+          "and rho must be a numeric or NULL."
+        ),
+        broken_elem
+      )
+    )
+  }
+  return(TRUE)
+}
+
+#' Assert GPU nearest neighbour parameters
+#'
+#' @description Checkmate extension for asserting the GPU nearest neighbour
+#' parameters.
+#'
+#' @inheritParams checkNnParamsGpu
+#'
+#' @param .var.name Name of the checked object to print in assertions. Defaults
+#' to the heuristic implemented in checkmate.
+#' @param add Collection to store assertion messages. See
+#' [checkmate::makeAssertCollection()].
+#'
+#' @return Invisibly returns the checked object if the assertion is successful.
+#'
+#' @keywords internal
+assertNnParamsGpu <- checkmate::makeAssertionFunction(checkNnParamsGpu)
+
+### umap -----------------------------------------------------------------------
+
+#' Check UMAP parameters (GPU version)
+#'
+#' @description Checkmate extension for checking the UMAP parameters (GPU
+#' version).
+#'
+#' @param x The list to check.
+#'
+#' @return `TRUE` if the check was successful, otherwise an error message.
+#'
+#' @keywords internal
+checkUmapParamsGpu <- function(x) {
+  res <- checkmate::checkList(x)
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- checkmate::checkNames(
+    names(x),
+    must.include = c(
+      "local_connectivity",
+      "bandwidth",
+      "mix_weight",
+      "lr",
+      "n_epochs",
+      "neg_sample_rate",
+      "gamma",
+      "optimiser",
+      "init",
+      "randomised"
+    )
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  rules <- list(
+    "local_connectivity" = list(type = "fixed", rule = "N1"),
+    "bandwidth" = list(type = "fixed", rule = "N1"),
+    "mix_weight" = list(type = "fixed", rule = "N1"),
+    "lr" = list(type = "fixed", rule = "N1"),
+    "n_epochs" = list(type = "nullable_int"),
+    "neg_sample_rate" = list(type = "fixed", rule = "I1"),
+    "gamma" = list(type = "fixed", rule = "N1"),
+    "optimiser" = list(
+      type = "choice",
+      choices = c("sgd", "adam", "adam_parallel", "adam_gpu")
+    ),
+    "init" = list(type = "choice", choices = c("spectral", "pca", "random")),
+    "randomised" = list(type = "fixed", rule = "B1")
+  )
+
+  res <- purrr::imap_lgl(x, \(val, name) {
+    spec <- rules[[name]]
+    if (spec$type == "choice") {
+      checkmate::testChoice(val, spec$choices)
+    } else if (spec$type == "nullable_int") {
+      is.null(val) || checkmate::qtest(val, "I1")
+    } else {
+      checkmate::qtest(val, spec$rule)
+    }
+  })
+
+  if (!isTRUE(all(res))) {
+    broken_elem <- names(res)[which(!res)][1]
+    return(sprintf(
+      paste(
+        "Element `%s` in UMAP params does not conform.",
+        "local_connectivity/bandwidth/mix_weight/lr/gamma must be numeric,",
+        "neg_sample_rate must be an integer,",
+        "n_epochs must be a positive integer or NULL,",
+        "optimiser must be one of 'sgd'/'adam'/'adam_parallel'/'adam_gpu',",
+        "init must be one of 'spectral'/'pca'/'random',",
+        "and randomised must be logical."
+      ),
+      broken_elem
+    ))
+  }
+
+  return(TRUE)
+}
+
+#' Assert UMAP parameters
+#'
+#' @description Checkmate extension for asserting the UMAP parameters.
+#'
+#' @inheritParams checkUmapParamsGpu
+#'
+#' @param .var.name Name of the checked object to print in assertions. Defaults
+#' to the heuristic implemented in checkmate.
+#' @param add Collection to store assertion messages. See
+#' [checkmate::makeAssertCollection()].
+#'
+#' @return Invisibly returns the checked object if the assertion is successful.
+#'
+#' @keywords internal
+assertUmapParamsGpu <- checkmate::makeAssertionFunction(checkUmapParamsGpu)
+
+### tsne ----------------------------------------------------------------------
+
+#' Check t-SNE parameters (GPU version)
+#'
+#' @description Checkmate extension for checking the t-SNE parameters (GPU
+#' version).
+#'
+#' @param x The list to check.
+#'
+#' @return `TRUE` if the check was successful, otherwise an error message.
+#'
+#' @keywords internal
+checkTsneParamsGpu <- function(x) {
+  res <- checkmate::checkList(x)
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- checkmate::checkNames(
+    names(x),
+    must.include = c(
+      "lr",
+      "n_epochs",
+      "early_exag_iter",
+      "early_exag_factor",
+      "late_exag_factor",
+      "theta",
+      "n_interp_points",
+      "init",
+      "randomised"
+    )
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  rules <- list(
+    "lr" = list(type = "nullable_numeric"),
+    "n_epochs" = list(type = "fixed", rule = "I1[1,)"),
+    "early_exag_iter" = list(type = "fixed", rule = "I1[1,)"),
+    "early_exag_factor" = list(type = "fixed", rule = "N1"),
+    "late_exag_factor" = list(type = "nullable_numeric"),
+    "theta" = list(type = "fixed", rule = "N1[0,1]"),
+    "n_interp_points" = list(type = "fixed", rule = "I1[1,)"),
+    "init" = list(type = "choice", choices = c("pca", "spectral", "random")),
+    "randomised" = list(type = "fixed", rule = "B1")
+  )
+
+  res <- purrr::imap_lgl(x, \(val, name) {
+    spec <- rules[[name]]
+    if (spec$type == "choice") {
+      checkmate::testChoice(val, spec$choices)
+    } else if (spec$type == "nullable_numeric") {
+      is.null(val) || checkmate::qtest(val, "N1")
+    } else {
+      checkmate::qtest(val, spec$rule)
+    }
+  })
+
+  if (!isTRUE(all(res))) {
+    broken_elem <- names(res)[which(!res)][1]
+    return(sprintf(
+      paste(
+        "Element `%s` in t-SNE params does not conform.",
+        "lr and late_exag_factor must be numeric or NULL,",
+        "n_epochs/early_exag_iter/n_interp_points must be integers >= 1,",
+        "early_exag_factor must be numeric, theta must be numeric in [0,1],",
+        "init must be one of 'pca'/'spectral'/'random',",
+        "and randomised must be logical."
+      ),
+      broken_elem
+    ))
+  }
+
+  return(TRUE)
+}
+
+#' Assert t-SNE parameters (GPU version)
+#'
+#' @description Checkmate extension for asserting the t-SNE parameters (GPU
+#' version).
+#'
+#' @inheritParams checkTsneParamsGpu
+#'
+#' @param .var.name Name of the checked object to print in assertions. Defaults
+#' to the heuristic implemented in checkmate.
+#' @param add Collection to store assertion messages. See
+#' [checkmate::makeAssertCollection()].
+#'
+#' @return Invisibly returns the checked object if the assertion is successful.
+#'
+#' @keywords internal
+assertTsneParamsGpu <- checkmate::makeAssertionFunction(checkTsneParamsGpu)
 
 ## gpu-accelerated k means -----------------------------------------------------
 

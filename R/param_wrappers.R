@@ -6,14 +6,14 @@
 
 #' Default parameters for CAGRA-style kNN search
 #'
-#' @param k_query Integer. Number of neighbours to identify.
+#' @param k Integer. Number of neighbours to identify.
 #' @param ann_dist Character. Distance metric to use. One of `"euclidean"` or
 #' `"cosine"`.
-#' @param k Optional integer. Final node degree of the CAGRA navigational
-#' graph. If `NULL`, defaults to `30` on the Rust side.
+#' @param node_degree_final Optional integer. Final node degree of the CAGRA
+#' navigational graph. If `NULL`, defaults to `30` on the Rust side.
 #' @param k_build Optional integer. Number of k-neighbours during the
-#' NNDescent build phase before CAGRA pruning. If `NULL`, defaults to `1.5 * k`
-#' on the Rust side.
+#' NNDescent build phase before CAGRA pruning. If `NULL`, defaults to
+#' `1.5 * node_degree_final` on the Rust side.
 #' @param refine_sweeps Integer. Number of refinement sweeps during graph
 #' generation.
 #' @param max_iters Optional integer. Maximum iterations for the NNDescent
@@ -34,9 +34,9 @@
 #'
 #' @export
 params_sc_cagra <- function(
-  k_query = 15L,
+  k = 15L,
   ann_dist = "euclidean",
-  k = NULL,
+  node_degree_final = NULL,
   k_build = NULL,
   refine_sweeps = 0L,
   max_iters = NULL,
@@ -48,10 +48,10 @@ params_sc_cagra <- function(
   n_entry_points = NULL
 ) {
   # checks
-  checkmate::qassert(k_query, "I1[1,)")
+  checkmate::qassert(k, "I1[1,)")
   checkmate::qassert(ann_dist, "S1")
   checkmate::assert_choice(ann_dist, c("euclidean", "cosine"))
-  checkmate::qassert(k, c("I1[1,)", "0"))
+  checkmate::qassert(node_degree_final, c("I1[1,)", "0"))
   checkmate::qassert(k_build, c("I1[1,)", "0"))
   checkmate::qassert(refine_sweeps, "I1[0,)")
   checkmate::qassert(max_iters, c("I1[1,)", "0"))
@@ -63,9 +63,9 @@ params_sc_cagra <- function(
   checkmate::qassert(n_entry_points, c("I1[1,)", "0"))
   # return
   list(
-    k_query = k_query,
-    ann_dist = ann_dist,
     k = k,
+    ann_dist = ann_dist,
+    node_degree_final = node_degree_final,
     k_build = k_build,
     refine_sweeps = refine_sweeps,
     max_iters = max_iters,
@@ -201,8 +201,11 @@ params_parametric_umap <- function(
 #' `"random"`, `"parallel"`, or `"plusplus"`. If `NULL`, determined on the
 #' Rust side.
 #' @param metric String. One of `c("euclidean", "cosine")`.
-#' @param fixed Logical. Whether cluster centres are fixed after initialisation.
-#' @param quantise Logical. Whether to quantise data to f16 before clustering.
+#' @param fixed Logical. Shall the algorithm be run for a fixed number of
+#' iterations, without checking for convergence.
+#' @param quantise Logical. Whether to quantise data to `fp16` before
+#' clustering. This can improve performance in circumstances where it is
+#' memory bound.
 #'
 #' @return A list with the parameters.
 #'
@@ -211,7 +214,7 @@ params_kmeans_gpu <- function(
   k_means_iter = 50L,
   k_means_init = NULL,
   metric = c("euclidean", "cosine"),
-  fixed = TRUE,
+  fixed = FALSE,
   quantise = FALSE
 ) {
   metric <- match.arg(metric)
@@ -231,6 +234,227 @@ params_kmeans_gpu <- function(
     metric = metric,
     fixed = fixed,
     quantise = quantise
+  )
+}
+
+## umap gpu --------------------------------------------------------------------
+
+### nearest neighbours ---------------------------------------------------------
+
+#' Wrapper function to generate GPU nearest neighbour parameters
+#'
+#' @param dist_metric Character. The distance metric to use. Defaults to
+#' `"euclidean"`.
+#' @param n_list Optional integer. IVF GPU: Number of clusters to use. If
+#' `NULL`, will default to `sqrt(n)`.
+#' @param n_probes Optional integer. IVF GPU: Number of clusters to probe. If
+#' `NULL`, will default to `sqrt(n_list)`.
+#' @param node_degree_final Optional integer. Final node degree of the CAGRA
+#' navigational graph. If `NULL`, defaults to `30` on the Rust side.
+#' @param k_build Optional integer. Number of k-neighbours during the
+#' NNDescent build phase before CAGRA pruning. If `NULL`, defaults to
+#' `1.5 * node_degree_final` on the Rust side. (Cannot be smaller than
+#' `node_degree_final`)
+#' @param n_tree Optional integer. CAGRA GPU: Number of trees for graph build.
+#' Automatically if `NULL`.
+#' @param delta Float. CAGRA GPU: Early termination parameter for NN descent.
+#' Defaults to `0.001`.
+#' @param refine_sweeps Integer. Number of refinement sweeps during graph
+#' generation.
+#' @param rho Optional float. CAGRA GPU: Sample rate parameter for NN descent.
+#' Defaults to `0.5` if not provided.
+#' @param beam_width Optional integer. CAGRA GPU: Beam width for beam search. If
+#' not provided will be set to `max(c(k, node_degree_final, 16L)) * 2`.
+#' @param max_beam_iters Optional integer. CAGRA GPU: Maximum number of beam
+#' search iterations. If not provided, defaults to `3 * beam_width`.
+#' @param n_entry_points Optional integer. CAGRA GPU: Number of entry points for
+#' beam search. If not provided, defaults to `8L`.
+#'
+#' @returns A list with the GPU nearest neighbour parameters.
+#'
+#' @export
+params_nn_gpu <- function(
+  dist_metric = c("euclidean", "cosine"),
+  n_list = NULL,
+  n_probes = NULL,
+  node_degree_final = NULL,
+  k_build = NULL,
+  n_tree = NULL,
+  refine_sweeps = 0L,
+  delta = 0.001,
+  rho = NULL,
+  beam_width = NULL,
+  max_beam_iters = NULL,
+  n_entry_points = NULL
+) {
+  dist_metric <- match.arg(dist_metric)
+
+  # checks
+  checkmate::assertChoice(dist_metric, c("euclidean", "cosine"))
+  checkmate::qassert(n_list, c("I1", "0"))
+  checkmate::qassert(n_probes, c("I1", "0"))
+  checkmate::qassert(node_degree_final, c("I1", "0"))
+  checkmate::qassert(k_build, c("I1", "0"))
+  checkmate::qassert(n_tree, c("I1", "0"))
+  checkmate::qassert(refine_sweeps, "I1[0,)")
+  checkmate::qassert(delta, "N1")
+  checkmate::qassert(rho, c("N1", "0"))
+  checkmate::qassert(beam_width, c("I1", "0"))
+  checkmate::qassert(max_beam_iters, c("I1", "0"))
+  checkmate::qassert(n_entry_points, c("I1", "0"))
+
+  # results
+  list(
+    dist_metric = dist_metric,
+    n_list = n_list,
+    n_probes = n_probes,
+    node_degree_final = node_degree_final,
+    k_build = k_build,
+    n_tree = n_tree,
+    refine_sweeps = refine_sweeps,
+    delta = delta,
+    rho = rho,
+    beam_width = beam_width,
+    max_beam_iters = max_beam_iters,
+    n_entry_points = n_entry_points
+  )
+}
+
+### umap specific --------------------------------------------------------------
+
+#' Wrapper function to generate UMAP parameters (GPU version)
+#'
+#' @param local_connectivity Numeric. Number of nearest neighbours assumed to
+#' be at distance zero. Defaults to `1.0`.
+#' @param bandwidth Numeric. Convergence tolerance for smooth kNN distance
+#' binary search. Defaults to `1e-5`.
+#' @param mix_weight Numeric. Balance between fuzzy union and directed graph
+#' during symmetrisation. Defaults to `1.0`.
+#' @param lr Numeric. Learning rate. Defaults to `1.0`.
+#' @param n_epochs Integer or `NULL`. Number of optimisation epochs. Defaults
+#' to `NULL`, resolved downstream based on data size.
+#' @param neg_sample_rate Integer. Number of negative samples per positive
+#' sample. Defaults to `5L`.
+#' @param gamma Numeric. Repulsion strength. Defaults to `1.0`.
+#' @param optimiser Character. One of `"adam_gpu"`, `"sgd"`, `"adam"`, or
+#' `"adam_parallel"`. Defaults to `"adam_gpu"`.
+#' @param init Character. Embedding initialisation method. One of `"spectral"`,
+#' `"pca"`, or `"random"`. Defaults to `"spectral"`.
+#' @param randomised Logical. Use randomised SVD for PCA initialisation.
+#' Defaults to `FALSE`.
+#'
+#' @returns A list with the UMAP parameters.
+#'
+#' @export
+params_umap_gpu <- function(
+  local_connectivity = 1.0,
+  bandwidth = 1e-5,
+  mix_weight = 1.0,
+  lr = 1.0,
+  n_epochs = NULL,
+  neg_sample_rate = 5L,
+  gamma = 1.0,
+  optimiser = c("adam_gpu", "adam_parallel", "sgd", "adam"),
+  init = c("spectral", "pca", "random"),
+  randomised = FALSE
+) {
+  optimiser <- match.arg(optimiser)
+  init <- match.arg(init)
+
+  checkmate::qassert(local_connectivity, "N1")
+  checkmate::qassert(bandwidth, "N1")
+  checkmate::qassert(mix_weight, "N1")
+  checkmate::qassert(lr, "N1")
+  checkmate::assert(
+    checkmate::checkNull(n_epochs),
+    checkmate::checkInt(n_epochs, lower = 1L)
+  )
+  checkmate::qassert(neg_sample_rate, "I1")
+  checkmate::qassert(gamma, "N1")
+  checkmate::assertChoice(
+    optimiser,
+    c("adam_gpu", "sgd", "adam", "adam_parallel")
+  )
+  checkmate::assertChoice(init, c("spectral", "pca", "random"))
+  checkmate::qassert(randomised, "B1")
+
+  list(
+    local_connectivity = local_connectivity,
+    bandwidth = bandwidth,
+    mix_weight = mix_weight,
+    lr = lr,
+    n_epochs = n_epochs,
+    neg_sample_rate = neg_sample_rate,
+    gamma = gamma,
+    optimiser = optimiser,
+    init = init,
+    randomised = randomised
+  )
+}
+
+## tsne gpu -------------------------------------------------------------------
+
+### tsne specific -------------------------------------------------------------
+
+#' Wrapper function to generate t-SNE parameters (GPU version)
+#'
+#' @param lr Optional numeric. Learning rate. If `NULL` (the default), the Rust
+#' backend sets it to `max((n_samples / 12), 200)`, following the N-dependent
+#' heuristic of Belkina et al. (2019).
+#' @param n_epochs Integer. Number of optimisation epochs. Defaults to `1000L`.
+#' @param early_exag_iter Integer. Number of early exaggeration iterations.
+#' Defaults to `250L`.
+#' @param early_exag_factor Numeric. Early exaggeration factor. Defaults to
+#' `12.0`.
+#' @param late_exag_factor Optional numeric. If you wish to also use late
+#' exaggerations. Can be useful on large data sets (set it to `2.0` to `4.0`).
+#' @param theta Numeric. Barnes-Hut approximation angle. Lower values increase
+#' accuracy at the cost of speed. Defaults to `0.5`.
+#' @param n_interp_points Integer. Number of interpolation points per grid cell
+#' for FFT acceleration. Defaults to `3L`.
+#' @param init Character. Embedding initialisation method. One of `"pca"`,
+#' `"spectral"`, or `"random"`. Defaults to `"pca"`.
+#' @param randomised Logical. Use randomised SVD for PCA initialisation.
+#' Defaults to `TRUE`.
+#'
+#' @returns A list with the t-SNE parameters.
+#'
+#' @references Belkina, et al., Nat. Commun., 2019
+#'
+#' @export
+params_tsne_gpu <- function(
+  lr = NULL,
+  n_epochs = 1000L,
+  early_exag_iter = 250L,
+  early_exag_factor = 12.0,
+  late_exag_factor = NULL,
+  theta = 0.5,
+  n_interp_points = 3L,
+  init = c("pca", "spectral", "random"),
+  randomised = TRUE
+) {
+  init <- match.arg(init)
+
+  checkmate::qassert(lr, c("N1", "0"))
+  checkmate::qassert(n_epochs, "I1[1,)")
+  checkmate::qassert(early_exag_iter, "I1[1,)")
+  checkmate::qassert(early_exag_factor, "N1")
+  checkmate::qassert(late_exag_factor, c("N1", "0"))
+  checkmate::qassert(theta, "N1[0,1]")
+  checkmate::qassert(n_interp_points, "I1[1,)")
+  checkmate::assertChoice(init, c("pca", "spectral", "random"))
+  checkmate::qassert(randomised, "B1")
+
+  list(
+    lr = lr,
+    n_epochs = n_epochs,
+    early_exag_iter = early_exag_iter,
+    early_exag_factor = early_exag_factor,
+    late_exag_factor = late_exag_factor,
+    theta = theta,
+    n_interp_points = n_interp_points,
+    init = init,
+    randomised = randomised
   )
 }
 
