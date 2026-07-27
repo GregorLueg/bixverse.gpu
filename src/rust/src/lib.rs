@@ -627,7 +627,7 @@ fn rs_cor_gpu(
         GpuCorCov::Pearson
     };
 
-    let mut res = column_pairwise_cor_gpu::<f32, WgpuRuntime, f32>(
+    let mut res = column_pairwise_cor_gpu::<f32, WgpuRuntime>(
         data.as_ref(),
         cor_type,
         device.clone(),
@@ -668,7 +668,7 @@ fn rs_cov_gpu(x: RMatrix<f64>, verbose: bool) -> Result<RMatrix<f64>, extendr_ap
     let data = r_matrix_to_faer_fp32(&x);
     let device: WgpuDevice = Default::default();
 
-    let res = column_pairwise_cor_gpu::<f32, WgpuRuntime, f32>(
+    let res = column_pairwise_cor_gpu::<f32, WgpuRuntime>(
         data.as_ref(),
         GpuCorCov::Covariance,
         device.clone(),

@@ -18,29 +18,29 @@ author: "Gregor Lueg"
 This vignette walks through the GPU-accelerated version of the SCENIC gene
 regulatory network inference in `bixverse`. If you have not read the
 [CPU SCENIC vignette](https://gregorlueg.github.io/bixverse/articles/bag_of_genes_single_cells.html)
-first, do so. That vignette explains the biology and the CPU code path.
-This one focuses on what the GPU version buys you and how the API differs.
+first, do so. That vignette explains the biology and the CPU code path. This one 
+focuses on what the GPU version buys you and how the API differs.
 
-Behind `scenic_grn_sc_gpu()` sits a wave-scheduled, multi-tree GPU driver
-that dispatches ExtraTrees and RandomForest fits to the wgpu backend via
-[cubecl](https://github.com/tracel-ai/cubecl). GRNBoost2 stays on the CPU
+Behind `scenic_grn_sc_gpu()` sits a wave-scheduled, multi-tree GPU driver that 
+dispatches ExtraTrees and RandomForest fits to the wgpu backend via
+[cubecl](https://github.com/tracel-ai/cubecl). GRNBoost2 stays on the CPU 
 because gradient boosting doesn't map cleanly onto the same multi-output
 kernel design.
 
 The `bixverse.gpu` package provides:
 
-- **`scenic_grn_sc_gpu()`** for `SingleCells` and `MetaCells` objects.
-  Streaming and non-streaming drivers on the `SingleCells` path; a single
+- **`scenic_grn_sc_gpu()`** for `SingleCells` and `MetaCells` objects. Streaming 
+  and non-streaming drivers on the `SingleCells` path; a single
   in-memory driver on the `MetaCells` path.
-- A single GPU-specific knob, `wave_byte_budget`, that caps VRAM use of
-  the per-wave histogram tensors. Default is 4 GiB. Shrink on 8 GB
-  adapters shared with other workloads; raise on 16 GB+ adapters to let
-  the scheduler pick a wider wave.
+- A single GPU-specific knob, `wave_byte_budget`, that caps VRAM use of the 
+  per-wave histogram tensors. Default is 4 GiB. Shrink on 8 GB adapters shared 
+  with other workloads; raise on 16 GB+ adapters to let the scheduler pick a 
+  wider wave.
 
-Everything else, the params, the target-gene shortlisting, the downstream
-motif enrichment, is imported straight from `bixverse`. The GPU version
-reuses the same `params_scenic()`, the same `scenic_gene_filter_sc()`, the
-same `ScenicGrn` result class, so downstream code (`identify_tf_to_genes`,
+Everything else, the params, the target-gene shortlisting, the downstream motif 
+enrichment, is imported straight from `bixverse`. The GPU version reuses the 
+same `params_scenic()`, the same `scenic_gene_filter_sc()`, the same `ScenicGrn` 
+result class, so downstream code (`identify_tf_to_genes`,
 `tf_to_genes_correlations`, `tf_to_genes_motif_enrichment`) is identical.
 
 ```{r}
@@ -60,8 +60,8 @@ a sweat.
 
 ## Rebuilding a processed PBMC3k object
 
-We reconstruct the same `SingleCells` object used in the CPU SCENIC
-vignette. The chunk is folded because we care about SCENIC, not QC.
+We reconstruct the same `SingleCells` object used in the CPU SCENIC vignette. 
+The chunk is folded because we care about SCENIC, not QC.
 
 ```{r}
 #| label: rebuild-object
@@ -169,9 +169,9 @@ Same signature as `scenic_grn_sc()` from `bixverse`, with the extra
 
 ### ExtraTrees
 
-`extratrees` is the recommended default on GPU. Random split thresholds
-mean each level dispatches a single split-scoring kernel, and the driver
-saturates the device with wide waves.
+`extratrees` is the recommended default on GPU. Random split thresholds mean 
+each level dispatches a single split-scoring kernel, and the driver saturates 
+the device with wide waves.
 
 ```{r}
 #| label: gpu-scenic-et
@@ -183,7 +183,6 @@ scenic_res_et <- scenic_grn_sc_gpu(
     learner_type = "extratrees",
     gene_batch_size = 64L
   ),
-  wave_byte_budget = 4 * 1024^3,
   .verbose = TRUE
 )
 
@@ -192,8 +191,8 @@ scenic_res_et
 
 ### RandomForest
 
-`randomforest` uses exhaustive split evaluation. It's a bit slower per
-tree than ExtraTrees but often lands on tighter importance rankings.
+`randomforest` uses exhaustive split evaluation. It's a bit slower per tree than 
+ExtraTrees but often lands on tighter importance rankings.
 
 ```{r}
 #| label: gpu-scenic-rf
@@ -213,7 +212,7 @@ scenic_res_rf
 
 ### GRNBoost2
 
-Not available on GPU. The wrapper fails fast with a clear message before
+Not available on GPU. The wrapper fails fast with a clear message before 
 touching the device.
 
 ```{r}
@@ -232,14 +231,13 @@ Fall back to `bixverse::scenic_grn_sc()` if you need it.
 
 ### Streaming vs non-streaming
 
-On disk-backed `SingleCells` objects both drivers exist. Non-streaming
-loads the full sparse target column vector into host RAM up front and
-dispatches wave by wave. Streaming reads targets in I/O chunks and
-dispatches per chunk, capping peak host memory at roughly one chunk of
-sparse columns.
+On disk-backed `SingleCells` objects both drivers exist. Non-streaming loads the 
+full sparse target column vector into host RAM up front and dispatches wave by 
+wave. Streaming reads targets in I/O chunks and dispatches per chunk, capping 
+peak host memory at roughly one chunk of sparse columns.
 
-Set `streaming = FALSE` to force the non-streaming path when host RAM
-isn't the limiting factor:
+Set `streaming = FALSE` to force the non-streaming path when host RAM isn't the 
+limiting factor:
 
 ```{r}
 #| label: gpu-scenic-streaming
@@ -257,12 +255,12 @@ scenic_res_streaming <- scenic_grn_sc_gpu(
 )
 ```
 
-Leave `streaming = NULL` to let the same `auto_streaming()` heuristic that
-the CPU version uses pick for you.
+Leave `streaming = NULL` to let the same `auto_streaming()` heuristic that the 
+CPU version uses pick for you.
 
 ## TF-to-gene refinement
 
-Because the result is a `ScenicGrn` object, the CPU downstream steps drop
+Because the result is a `ScenicGrn` object, the CPU downstream steps drop 
 straight in.
 
 ```{r}
@@ -289,9 +287,9 @@ head(tf_gene_dt[order(-importance)], 5L)
 
 ## MetaCells path
 
-The GPU driver also dispatches on `MetaCells`. Counts already live in
-memory as a sparse CSC block, so the streaming flag has no effect (and is
-silently ignored). Build the metacells the same way as the CPU vignette:
+The GPU driver also dispatches on `MetaCells`. Counts already live in memory as 
+a sparse CSC block, so the streaming flag has no effect (and is silently 
+ignored). Build the metacells the same way as the CPU vignette:
 
 ```{r}
 #| label: gpu-scenic-metacells
@@ -324,9 +322,8 @@ unchanged.
 
 ## CisTarget motif enrichment
 
-Nothing changes on the CisTarget side. Same rankings, same annotations,
-same result. Not evaluated by default because the reference files are
-around 1.5 GB.
+Nothing changes on the CisTarget side. Same rankings, same annotations, same 
+result. Not evaluated by default because the reference files are around 1.5 GB.
 
 ```{r}
 #| label: gpu-scenic-cistarget
