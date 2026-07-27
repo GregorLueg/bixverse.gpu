@@ -54,7 +54,8 @@ articles:
 reference:
   - title: Single cell GPU
     desc: 
-      Different GPU-accelerated methods specifically for the GPU.
+      Different GPU-accelerated methods specifically for the single cell
+      applications.
     contents:
       - calculate_pca_gpu_sc
       - generate_cagra_knn_sc
@@ -62,12 +63,13 @@ reference:
       - harmony_v2_gpu_sc
       - find_neighbours_gpu_sc
       - find_neighbours_cagra_sc
+      - scenic_grn_sc_gpu
       - params_sc_ivf
       - params_sc_cagra
       - params_sc_harmony_v2_gpu
   - title: GPU-accelerated UMAP
     desc:
-      GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent,
+      GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent/CAGRA,
       exhaustive) and CPU/GPU optimisers. Also a version for the single cells
       analysis suite in bixverse.
     contents:
