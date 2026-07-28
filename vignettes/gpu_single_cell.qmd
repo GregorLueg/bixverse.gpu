@@ -62,9 +62,9 @@ library(ggplot2)
 ```
 
 ::: {.callout-note}
-Vignettes are built on GitHub CI/CD runners with no GPU. GPU code falls back
-to software Vulkan (lavapipe), so N is dialled down here for build time. Real
-hardware handles much bigger N without issue.
+Vignettes were built locally on a MacBook Pro M1 Max. The GH runners were just
+too slow and do not have proper GPU support. This gives an idea of speed on a 
+decent, but older machine.
 :::
 
 ## Loading the data
