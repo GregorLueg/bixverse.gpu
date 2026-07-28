@@ -12,3 +12,5 @@
 ^vignettes/\.quarto$
 ^vignettes/*_files$
 ^\.github$
+^vignettes/_freeze$
+^vignettes/_quarto\.yaml$
