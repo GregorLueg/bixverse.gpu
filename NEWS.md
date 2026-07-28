@@ -1,3 +1,9 @@
+# bixverse.gpu 0.2.3
+
+## Fix
+
+* Potentially broken `manifoldsR` dependency.
+
 # bixverse.gpu 0.2.2
 
 ## Features
