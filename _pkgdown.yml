@@ -28,6 +28,8 @@ navbar:
       menu:
         - text: GPU-acceleration for single cell
           href: articles/gpu_single_cell.html
+        - text: SCENIC with GPU-acceleration
+          href: articles/gpu_scenic.html
         - text: GPU-accelerated UMAP
           href: articles/gpu_umap.html
         - text: GPU-accelerated t-SNE
@@ -46,6 +48,7 @@ articles:
     navbar: Articles
     contents:
       - gpu_single_cell
+      - gpu_scenic
       - gpu_umap
       - gpu_tsne
       - parametric_umap
