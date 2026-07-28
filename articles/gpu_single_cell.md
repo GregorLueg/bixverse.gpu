@@ -53,19 +53,16 @@ library(bixverse)
 library(bixverse.gpu)
 library(bixverse.plots)
 library(data.table)
-#> 
-#> Attaching package: 'data.table'
-#> The following object is masked from 'package:base':
-#> 
-#>     %notin%
+#> Warning: package 'data.table' was built under R version 4.5.2
 library(ggplot2)
+#> Warning: package 'ggplot2' was built under R version 4.5.2
 ```
 
 > **Note**
 >
-> Vignettes are built on GitHub CI/CD runners with no GPU. GPU code
-> falls back to software Vulkan (lavapipe), so N is dialled down here
-> for build time. Real hardware handles much bigger N without issue.
+> Vignettes were built locally on a MacBook Pro M1 Max. The GH runners
+> were just too slow and do not have proper GPU support. This gives an
+> idea of speed on a decent, but older machine.
 
 ## Loading the data
 
@@ -97,10 +94,6 @@ sc_object <- load_multi_h5ad(
 )
 #>  Using light streaming for the CSR to CSC conversion.
 #> Loading observation data from h5ad files into DuckDB.
-#> duckdb is keeping downloaded extensions in a temporary directory:
-#> ℹ /tmp/RtmpubRiwM/duckdb/extensions
-#> This is removed when the R session ends, so extensions are re-downloaded each session.
-#> ℹ To keep them, point `options(duckdb.extension_directory =)` or the `DUCKDB_EXTENSION_DIRECTORY` environment variable at a permanent path.
 #> Loading variable data into DuckDB.
 ```
 
@@ -374,18 +367,18 @@ lisi_gpu <- calculate_batch_lisi_sc(sc_object, batch_column = "exp_id")
 kbet_gpu
 #> kBET Scores
 #>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.2655 (1551 / 5841)
-#>   Mean Chi-Square:     3.0924 (expected under H0: 1)
+#>   Rejection rate:      0.2785 (1627 / 5841)
+#>   Mean Chi-Square:     3.1452 (expected under H0: 1)
 #>   Median Chi-Square:   1.9151
 asw_gpu
 #> Batch Silhouette Width
 #>   Cells: 5000 | Batches: 2
-#>   Mean ASW:    0.0245 (-1 = strong intermixing, 0 = mixed, 1 = separated)
-#>   Median ASW:  0.0433
+#>   Mean ASW:    0.0239 (-1 = strong intermixing, 0 = mixed, 1 = separated)
+#>   Median ASW:  0.0457
 lisi_gpu
 #> Batch LISI Scores
 #>   Cells: 5841 | Batches: 2
-#>   Mean LISI:    1.4524 (1 = no mixing, 2 = perfect mixing)
+#>   Mean LISI:    1.4465 (1 = no mixing, 2 = perfect mixing)
 #>   Median LISI:  1.4706
 ```
 
@@ -415,18 +408,18 @@ lisi_cpu <- calculate_batch_lisi_sc(sc_object, batch_column = "exp_id")
 kbet_cpu
 #> kBET Scores
 #>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.2649 (1547 / 5841)
-#>   Mean Chi-Square:     3.0942 (expected under H0: 1)
+#>   Rejection rate:      0.2722 (1590 / 5841)
+#>   Mean Chi-Square:     3.1018 (expected under H0: 1)
 #>   Median Chi-Square:   1.9151
 asw_cpu
 #> Batch Silhouette Width
 #>   Cells: 5000 | Batches: 2
-#>   Mean ASW:    0.0244 (-1 = strong intermixing, 0 = mixed, 1 = separated)
-#>   Median ASW:  0.0433
+#>   Mean ASW:    0.0245 (-1 = strong intermixing, 0 = mixed, 1 = separated)
+#>   Median ASW:  0.0437
 lisi_cpu
 #> Batch LISI Scores
 #>   Cells: 5841 | Batches: 2
-#>   Mean LISI:    1.4520 (1 = no mixing, 2 = perfect mixing)
+#>   Mean LISI:    1.4509 (1 = no mixing, 2 = perfect mixing)
 #>   Median LISI:  1.4706
 ```
 

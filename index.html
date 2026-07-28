@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
+    <li><a class="dropdown-item" href="articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -61,7 +62,7 @@
 <div class="page-header"><h1 id="bixversegpu-package">
 <em>bixverse.gpu package</em><a class="anchor" aria-label="anchor" href="#bixversegpu-package"></a>
 </h1></div>
-<p><img src="https://img.shields.io/badge/R_package-0.2.1-orange" alt="r_package"><a href="https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml" class="external-link"><img src="https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg" alt="CI"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a> <a href="https://gregorlueg.github.io/bixverse.gpu/"><img src="https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github" alt="pkgdown"></a> <a href="https://extendr.github.io/extendr/extendr_api/" class="external-link"><img src="https://img.shields.io/badge/extendr-%5E0.9.0-276DC2" alt="extendr"></a> <a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></p>
+<p><img src="https://img.shields.io/badge/R_package-0.2.2-orange" alt="r_package"><a href="https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml" class="external-link"><img src="https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg" alt="CI"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a> <a href="https://gregorlueg.github.io/bixverse.gpu/"><img src="https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github" alt="pkgdown"></a> <a href="https://extendr.github.io/extendr/extendr_api/" class="external-link"><img src="https://img.shields.io/badge/extendr-%5E0.9.0-276DC2" alt="extendr"></a> <a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></p>
 <p></p>
 <p><img src="reference/figures/bixverse_gpu_logo.png" width="128" height="128" alt="bixverse.plots logo"></p>
 <p></p>
@@ -120,6 +121,7 @@
 <li><label><input type="checkbox">GPU-accelerated NMF.</label></li>
 <li><label><input type="checkbox">GPU-accelerated BBKNN batch correction (single cells)</label></li>
 <li><label><input type="checkbox" checked>GPU-accelerate UMAP embedding generation.</label></li>
+<li><label><input type="checkbox" checked>SCENIC has now working GPU acceleration for ExtraTrees and the RF learner.</label></li>
 </ul>
 <p><strong>General:</strong></p>
 <ul class="task-list">

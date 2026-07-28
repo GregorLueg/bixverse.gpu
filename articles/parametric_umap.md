@@ -33,20 +33,16 @@ a compatible GPU is beneficial but not strictly required.
 library(bixverse.gpu)
 library(manifoldsR)
 library(ggplot2)
+#> Warning: package 'ggplot2' was built under R version 4.5.2
 library(data.table)
-#> 
-#> Attaching package: 'data.table'
-#> The following object is masked from 'package:base':
-#> 
-#>     %notin%
+#> Warning: package 'data.table' was built under R version 4.5.2
 ```
 
 > **Note**
 >
-> Vignettes are built on GitHub CI/CD runners with no dedicated GPU. GPU
-> code falls back to software Vulkan (lavapipe), which is roughly 100x
-> slower than a real GPU, so N is dialled down here. On real hardware
-> these workflows scale comfortably to hundreds of thousands of samples.
+> Vignettes were built locally on a MacBook Pro M1 Max. The GH runners
+> were just too slow and do not have proper GPU support. This gives an
+> idea of speed on a decent, but older machine.
 
 ### Generating data
 

@@ -35,22 +35,16 @@ over.
 library(bixverse.gpu)
 library(manifoldsR)
 library(data.table)
-#> 
-#> Attaching package: 'data.table'
-#> The following object is masked from 'package:base':
-#> 
-#>     %notin%
+#> Warning: package 'data.table' was built under R version 4.5.2
 library(ggplot2)
+#> Warning: package 'ggplot2' was built under R version 4.5.2
 ```
 
 > **Note**
 >
-> Vignettes are built on GitHub CI/CD runners with no GPU. GPU code
-> falls back to software Vulkan (lavapipe), so N is dialled down here
-> for build time. Real hardware handles much bigger N without issue.
-> Also, there are some weird problems on the GH runners with Lavapipe
-> compiling the wgpu code that affects specifically the IVF indices.
-> `eval = FALSE` for these code chunks.
+> Vignettes were built locally on a MacBook Pro M1 Max. The GH runners
+> were just too slow and do not have proper GPU support. This gives an
+> idea of speed on a decent, but older machine.
 
 ## Generating data
 
@@ -120,7 +114,6 @@ described in the UMAP vignette.
 
 ``` r
 
-# not evaluated on CI: lavapipe/cubecl miscompile, runs fine on real GPUs
 tsne_ivf <- tsne_gpu(
   data = cluster_data$data,
   perplexity = 15,
@@ -140,6 +133,8 @@ ggplot(plot_df_ivf, aes(x = tSNE1, y = tSNE2)) +
   theme(legend.position = "none") +
   ggtitle("tsne_gpu, IVF kNN")
 ```
+
+![](gpu_tsne_files/figure-html/tsne%20ivf-1.png)
 
 Structurally the embeddings agree. Differences are within the noise of
 t-SNE’s non-deterministic optimisation.

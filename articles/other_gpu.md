@@ -18,23 +18,16 @@ library(bixverse)
 library(bixverse.gpu)
 library(manifoldsR)
 library(data.table)
-#> 
-#> Attaching package: 'data.table'
-#> The following object is masked from 'package:base':
-#> 
-#>     %notin%
+#> Warning: package 'data.table' was built under R version 4.5.2
 library(ggplot2)
+#> Warning: package 'ggplot2' was built under R version 4.5.2
 ```
 
 > **Note**
 >
-> The correlation and covariance timing blocks below are set to
-> `eval: false` in the rendered docs. This vignette is built on GitHub
-> Actions Linux runners, which don’t have real GPUs and fall back to
-> software Vulkan via Mesa (`WGPU_BACKEND=vulkan`). Any numbers produced
-> there would be misleading. Run the vignette locally on a machine with
-> a proper GPU (or Apple Silicon) to see the real comparison. This is
-> also the reason why the timing eval is set to FALSE here.
+> Vignettes were built locally on a MacBook Pro M1 Max. The GH runners
+> were just too slow and do not have proper GPU support. This gives an
+> idea of speed on a decent, but older machine.
 
 ## GPU-accelerated k-means
 
@@ -142,9 +135,9 @@ cat(sprintf("ARI (CPU vs GPU): %.3f\n", ari_cpu_gpu))
 ### Quantised GPU version
 
 For memory-bound workloads (very wide feature matrices, very large N),
-`quantise = TRUE` keeps the data buffer at fp16 on the GPU while
-centroids and accumulators stay at fp32. Frees up bandwidth on Apple
-Silicon. Accuracy loss is small and easy to check:
+`quantise = TRUE` keeps the data buffer at `fp16` on the GPU while
+centroids and accumulators stay at `fp32`. Frees up bandwidth on your
+GPU. Accuracy loss is (usually) small and easy to check:
 
 ``` r
 
@@ -170,16 +163,12 @@ Tracks the full-precision run closely at a fraction of the memory.
 
 ### When to use the GPU version
 
-On small data (a few thousand points, low dim) the CPU wins comfortably.
+On small data (a few thousand points, low dim) the CPU tends to win.
 Launch overhead and host-device transfers dominate. GPU pays off when:
 
 - N is large (roughly \> 50k),
 - k is large (hundreds to thousands of centroids),
 - Features are moderate to high dimensional.
-
-The IVF kNN index in the single cell pipeline is the natural downstream
-user: Voronoi cells over millions of vectors with `sqrt(N)` centroids
-sits right in the target zone.
 
 ## GPU-accelerated correlation and covariance
 
@@ -191,13 +180,14 @@ which is why the crossover point isn’t always where you’d expect.
 `bixverse` already ships
 [`rs_cor()`](https://gregorlueg.github.io/bixverse/reference/rs_cor.html),
 which dispatches to [`faer`](https://github.com/sarah-quinones/faer-rs)
-under the hood. faer is a Rust BLAS with strong SIMD support and on
-Apple Silicon it’s hard to beat with a general-purpose GPU.
-`bixverse.gpu` adds
+under the hood. faer is a Rust BLAS with strong SIMD support and initial
+cubek-based GEMM only beat this on very large data sets. However,
+`bixverse-rs` ships specific GPU kernels for correlations and
+co-variance calculations that actually beat `faer`. `bixverse.gpu` adds
 [`rs_cor_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_cor_gpu.md)
-for when the CPU path is bandwidth-bound.
+and
 [`rs_cov_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_cov_gpu.md)
-does the same for covariance.
+for when you need have your correlations fast on large data sets.
 
 ### Correlation
 
@@ -208,7 +198,7 @@ does the same for covariance.
 set.seed(42L)
 
 n_samples <- 25000L
-n_features <- 1000L
+n_features <- 2500L
 
 random_data <- matrix(
   data = rnorm(n_samples * n_features),
@@ -221,13 +211,15 @@ Base R [`cor()`](https://rdrr.io/r/stats/cor.html):
 
 ``` r
 
+# Base R will be slow...
 t_base <- system.time({
   cor_base <- cor(random_data)
 })
 cat(sprintf("base R cor():   %.2fs\n", t_base[["elapsed"]]))
+#> base R cor():   74.12s
 ```
 
-faer-backed CPU:
+faer-backed CPU (via `bixverse`):
 
 ``` r
 
@@ -235,9 +227,10 @@ t_cpu <- system.time({
   cor_cpu <- rs_cor(random_data, spearman = FALSE)
 })
 cat(sprintf("rs_cor() CPU:   %.2fs\n", t_cpu[["elapsed"]]))
+#> rs_cor() CPU:   0.84s
 ```
 
-GPU:
+And GPU-accelerated:
 
 ``` r
 
@@ -245,6 +238,7 @@ t_gpu <- system.time({
   cor_gpu <- rs_cor_gpu(random_data, spearman = FALSE, verbose = FALSE)
 })
 cat(sprintf("rs_cor_gpu():   %.2fs\n", t_gpu[["elapsed"]]))
+#> rs_cor_gpu():   0.52s
 ```
 
 All three should agree:
@@ -267,13 +261,16 @@ t_cpu_cov <- system.time({
   cov_cpu <- rs_covariance(random_data)
 })
 cat(sprintf("rs_covariance() CPU: %.2fs\n", t_cpu_cov[["elapsed"]]))
+#> rs_covariance() CPU: 0.80s
 
 t_gpu_cov <- system.time({
   cov_gpu <- rs_cov_gpu(random_data, verbose = FALSE)
 })
 cat(sprintf("rs_cov_gpu():        %.2fs\n", t_gpu_cov[["elapsed"]]))
+#> rs_cov_gpu():        0.43s
 
 cat(sprintf("max |cpu - gpu|:     %.2e\n", max(abs(cov_cpu - cov_gpu))))
+#> max |cpu - gpu|:     4.68e-06
 ```
 
 ### When to use the GPU version

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,6 +19,7 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -41,9 +42,15 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.2.1" id="bixversegpu-021">bixverse.gpu 0.2.1<a class="anchor" aria-label="anchor" href="#bixversegpu-021"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.2.2" id="bixversegpu-022">bixverse.gpu 0.2.2<a class="anchor" aria-label="anchor" href="#bixversegpu-022"></a></h2>
 <div class="section level3">
-<h3 id="features-0-2-1">Features<a class="anchor" aria-label="anchor" href="#features-0-2-1"></a></h3>
+<h3 id="features-0-2-2">Features<a class="anchor" aria-label="anchor" href="#features-0-2-2"></a></h3>
+<ul><li>GPU-accelerated SCENIC</li>
+<li>Improvement in the GPU-accelerated kNN searches ported over from <code>ann-search-rs</code>.</li>
+<li>Handrolled correlation kernels to increase performance there.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="features-0-2-2-1">Features<a class="anchor" aria-label="anchor" href="#features-0-2-2-1"></a></h3>
 <ul><li>GPU-accelerated UMAP optimisation exposed.</li>
 <li>GPU-accelerated kNN generation for both tSNE and UMAP (longer term also a GPU-accelerated tSNE optimiser planned). Additionally, the kNN graphs can be used more broadly.</li>
 <li>

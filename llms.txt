@@ -1,6 +1,6 @@
 # *bixverse.gpu package*
 
-![r_package](https://img.shields.io/badge/R_package-0.2.1-orange)[![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
+![r_package](https://img.shields.io/badge/R_package-0.2.2-orange)[![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![pkgdown](https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github)](https://gregorlueg.github.io/bixverse.gpu/)
@@ -107,6 +107,9 @@ GPU-accelerated BBKNN batch correction (single cells)
 
 GPU-accelerate UMAP embedding generation.
 
+SCENIC has now working GPU acceleration for ExtraTrees and the RF
+learner.
+
 **General:**
 
 ~~More vignettes on some of the implemented functions.~~ Got a bit
@@ -118,7 +121,8 @@ If you have some other ideas, please feel free to make an issue.
 
 ## Single cell GPU
 
-Different GPU-accelerated methods specifically for the GPU.
+Different GPU-accelerated methods specifically for the single cell
+applications.
 
 - [`calculate_pca_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/calculate_pca_gpu_sc.md)
   : GPU-accelerated PCA for single cell
@@ -132,6 +136,8 @@ Different GPU-accelerated methods specifically for the GPU.
   : Find GPU-accelerated neighbours for single cells (exhaustive / IVF)
 - [`find_neighbours_cagra_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_cagra_sc.md)
   : Find neighbours via CAGRA GPU-acceleration for single cells
+- [`scenic_grn_sc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/scenic_grn_sc_gpu.md)
+  : GPU-accelerated SCENIC GRN inference
 - [`params_sc_ivf()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.md)
   : Default parameters for IVF-GPU kNN search
 - [`params_sc_cagra()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.md)
@@ -141,7 +147,7 @@ Different GPU-accelerated methods specifically for the GPU.
 
 ## GPU-accelerated UMAP
 
-GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent,
+GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent/CAGRA,
 exhaustive) and CPU/GPU optimisers. Also a version for the single cells
 analysis suite in bixverse.
 
@@ -240,6 +246,8 @@ useful for your own package? Use with care and read the documentation!
 
 - [GPU-accelerated workflows for bixverse single
   cell](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_single_cell.md):
+- [GPU-accelerated
+  SCENIC](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scenic.md):
 - [GPU-accelerated
   UMAP](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_umap.md):
 - [GPU-accelerated

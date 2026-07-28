@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,6 +19,7 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -42,7 +43,7 @@
     <div class="section level2">
       <h2 id="single-cell-gpu">Single cell GPU<a class="anchor" aria-label="anchor" href="#single-cell-gpu"></a></h2>
 
-      <div class="section-desc"><p>Different GPU-accelerated methods specifically for the GPU.</p></div>
+      <div class="section-desc"><p>Different GPU-accelerated methods specifically for the single cell applications.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -93,6 +94,13 @@
 
         <dt>
 
+          <code><a href="scenic_grn_sc_gpu.html">scenic_grn_sc_gpu()</a></code>
+
+        </dt>
+        <dd>GPU-accelerated SCENIC GRN inference</dd>
+
+        <dt>
+
           <code><a href="params_sc_ivf.html">params_sc_ivf()</a></code>
 
         </dt>
@@ -114,7 +122,7 @@
       </dl></div><div class="section level2">
       <h2 id="gpu-accelerated-umap">GPU-accelerated UMAP<a class="anchor" aria-label="anchor" href="#gpu-accelerated-umap"></a></h2>
 
-      <div class="section-desc"><p>GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent, exhaustive) and CPU/GPU optimisers. Also a version for the single cells analysis suite in bixverse.</p></div>
+      <div class="section-desc"><p>GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent/CAGRA, exhaustive) and CPU/GPU optimisers. Also a version for the single cells analysis suite in bixverse.</p></div>
 
       <dl></dl></div><div class="section level2">
 

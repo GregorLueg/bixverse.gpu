@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -62,7 +63,7 @@
       <h1>GPU-accelerated t-SNE</h1>
 
       <p class="author">Gregor Lueg</p>
-      <p class="date">2026-07-12</p>
+      <p class="date">2026-07-28</p>
 
 
       <div class="d-none name"><code></code></div>
@@ -90,17 +91,14 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse.gpu/">bixverse.gpu</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/manifoldsR/" class="external-link">manifoldsR</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'data.table'</span></span>
-<span><span class="co">#&gt; The following object is masked from 'package:base':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     %notin%</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt; Warning: package 'data.table' was built under R version 4.5.2</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: package 'ggplot2' was built under R version 4.5.2</span></span></code></pre></div>
 </div>
 <div>
 <blockquote>
 <p><strong>Note</strong></p>
-<p>Vignettes are built on GitHub CI/CD runners with no GPU. GPU code falls back to software Vulkan (lavapipe), so N is dialled down here for build time. Real hardware handles much bigger N without issue. Also, there are some weird problems on the GH runners with Lavapipe compiling the wgpu code that affects specifically the IVF indices. <code>eval = FALSE</code> for these code chunks.</p>
+<p>Vignettes were built locally on a MacBook Pro M1 Max. The GH runners were just too slow and do not have proper GPU support. This gives an idea of speed on a decent, but older machine.</p>
 </blockquote>
 </div>
 </section><section class="level2"><h2 id="generating-data">Generating data<a class="anchor" aria-label="anchor" href="#generating-data"></a>
@@ -164,8 +162,7 @@
 </h3>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># not evaluated on CI: lavapipe/cubecl miscompile, runs fine on real GPUs</span></span>
-<span><span class="va">tsne_ivf</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tsne_gpu.html">tsne_gpu</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">tsne_ivf</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tsne_gpu.html">tsne_gpu</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">cluster_data</span><span class="op">$</span><span class="va">data</span>,</span>
 <span>  perplexity <span class="op">=</span> <span class="fl">15</span>,</span>
 <span>  knn_method <span class="op">=</span> <span class="st">"ivf"</span>,</span>
@@ -183,6 +180,12 @@
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"tsne_gpu, IVF kNN"</span><span class="op">)</span></span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure><p><img src="gpu_tsne_files/figure-html/tsne%20ivf-1.png" width="672"></p>
+</figure>
+</div>
+</div>
 </div>
 <p>Structurally the embeddings agree. Differences are within the noise of t-SNE’s non-deterministic optimisation.</p>
 </section><section class="level3"><h3 id="exhaustive-backend">Exhaustive backend<a class="anchor" aria-label="anchor" href="#exhaustive-backend"></a>

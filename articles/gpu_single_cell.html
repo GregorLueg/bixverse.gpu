@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -62,7 +63,7 @@
       <h1>GPU-accelerated workflows for bixverse single cell</h1>
 
       <p class="author">Gregor Lueg</p>
-      <p class="date">2026-07-12</p>
+      <p class="date">2026-07-28</p>
 
 
       <div class="d-none name"><code></code></div>
@@ -99,17 +100,14 @@
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse.gpu/">bixverse.gpu</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse.plots/" class="external-link">bixverse.plots</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'data.table'</span></span>
-<span><span class="co">#&gt; The following object is masked from 'package:base':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     %notin%</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt; Warning: package 'data.table' was built under R version 4.5.2</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: package 'ggplot2' was built under R version 4.5.2</span></span></code></pre></div>
 </div>
 <div>
 <blockquote>
 <p><strong>Note</strong></p>
-<p>Vignettes are built on GitHub CI/CD runners with no GPU. GPU code falls back to software Vulkan (lavapipe), so N is dialled down here for build time. Real hardware handles much bigger N without issue.</p>
+<p>Vignettes were built locally on a MacBook Pro M1 Max. The GH runners were just too slow and do not have proper GPU support. This gives an idea of speed on a decent, but older machine.</p>
 </blockquote>
 </div>
 </section><section class="level2"><h2 id="loading-the-data">Loading the data<a class="anchor" aria-label="anchor" href="#loading-the-data"></a>
@@ -138,10 +136,6 @@
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt;  Using light streaming for the CSR to CSC conversion.</span></span>
 <span><span class="co">#&gt; Loading observation data from h5ad files into DuckDB.</span></span>
-<span><span class="co">#&gt; duckdb is keeping downloaded extensions in a temporary directory:</span></span>
-<span><span class="co">#&gt; ℹ /tmp/RtmpubRiwM/duckdb/extensions</span></span>
-<span><span class="co">#&gt; This is removed when the R session ends, so extensions are re-downloaded each session.</span></span>
-<span><span class="co">#&gt; ℹ To keep them, point `options(duckdb.extension_directory =)` or the `DUCKDB_EXTENSION_DIRECTORY` environment variable at a permanent path.</span></span>
 <span><span class="co">#&gt; Loading variable data into DuckDB.</span></span></code></pre></div>
 </details>
 </div>
@@ -364,18 +358,18 @@
 <span><span class="va">kbet_gpu</span></span>
 <span><span class="co">#&gt; kBET Scores</span></span>
 <span><span class="co">#&gt;   Cells: 5841 | Batches: 2 | Threshold: 0.050</span></span>
-<span><span class="co">#&gt;   Rejection rate:      0.2655 (1551 / 5841)</span></span>
-<span><span class="co">#&gt;   Mean Chi-Square:     3.0924 (expected under H0: 1)</span></span>
+<span><span class="co">#&gt;   Rejection rate:      0.2785 (1627 / 5841)</span></span>
+<span><span class="co">#&gt;   Mean Chi-Square:     3.1452 (expected under H0: 1)</span></span>
 <span><span class="co">#&gt;   Median Chi-Square:   1.9151</span></span>
 <span><span class="va">asw_gpu</span></span>
 <span><span class="co">#&gt; Batch Silhouette Width</span></span>
 <span><span class="co">#&gt;   Cells: 5000 | Batches: 2</span></span>
-<span><span class="co">#&gt;   Mean ASW:    0.0245 (-1 = strong intermixing, 0 = mixed, 1 = separated)</span></span>
-<span><span class="co">#&gt;   Median ASW:  0.0433</span></span>
+<span><span class="co">#&gt;   Mean ASW:    0.0239 (-1 = strong intermixing, 0 = mixed, 1 = separated)</span></span>
+<span><span class="co">#&gt;   Median ASW:  0.0457</span></span>
 <span><span class="va">lisi_gpu</span></span>
 <span><span class="co">#&gt; Batch LISI Scores</span></span>
 <span><span class="co">#&gt;   Cells: 5841 | Batches: 2</span></span>
-<span><span class="co">#&gt;   Mean LISI:    1.4524 (1 = no mixing, 2 = perfect mixing)</span></span>
+<span><span class="co">#&gt;   Mean LISI:    1.4465 (1 = no mixing, 2 = perfect mixing)</span></span>
 <span><span class="co">#&gt;   Median LISI:  1.4706</span></span></code></pre></div>
 </div>
 <p>Same kNN setup on the CPU Harmony embedding:</p>
@@ -403,18 +397,18 @@
 <span><span class="va">kbet_cpu</span></span>
 <span><span class="co">#&gt; kBET Scores</span></span>
 <span><span class="co">#&gt;   Cells: 5841 | Batches: 2 | Threshold: 0.050</span></span>
-<span><span class="co">#&gt;   Rejection rate:      0.2649 (1547 / 5841)</span></span>
-<span><span class="co">#&gt;   Mean Chi-Square:     3.0942 (expected under H0: 1)</span></span>
+<span><span class="co">#&gt;   Rejection rate:      0.2722 (1590 / 5841)</span></span>
+<span><span class="co">#&gt;   Mean Chi-Square:     3.1018 (expected under H0: 1)</span></span>
 <span><span class="co">#&gt;   Median Chi-Square:   1.9151</span></span>
 <span><span class="va">asw_cpu</span></span>
 <span><span class="co">#&gt; Batch Silhouette Width</span></span>
 <span><span class="co">#&gt;   Cells: 5000 | Batches: 2</span></span>
-<span><span class="co">#&gt;   Mean ASW:    0.0244 (-1 = strong intermixing, 0 = mixed, 1 = separated)</span></span>
-<span><span class="co">#&gt;   Median ASW:  0.0433</span></span>
+<span><span class="co">#&gt;   Mean ASW:    0.0245 (-1 = strong intermixing, 0 = mixed, 1 = separated)</span></span>
+<span><span class="co">#&gt;   Median ASW:  0.0437</span></span>
 <span><span class="va">lisi_cpu</span></span>
 <span><span class="co">#&gt; Batch LISI Scores</span></span>
 <span><span class="co">#&gt;   Cells: 5841 | Batches: 2</span></span>
-<span><span class="co">#&gt;   Mean LISI:    1.4520 (1 = no mixing, 2 = perfect mixing)</span></span>
+<span><span class="co">#&gt;   Mean LISI:    1.4509 (1 = no mixing, 2 = perfect mixing)</span></span>
 <span><span class="co">#&gt;   Median LISI:  1.4706</span></span></code></pre></div>
 </div>
 <p>Harmony has stochastic elements, so the two embeddings will not be identical, but the batch correction quality should be in the same ballpark across the metrics.</p>

@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -62,7 +63,7 @@
       <h1>Other GPU-accelerated methods</h1>
 
       <p class="author">Gregor Lueg</p>
-      <p class="date">2026-07-12</p>
+      <p class="date">2026-07-28</p>
 
 
       <div class="d-none name"><code></code></div>
@@ -83,17 +84,14 @@
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse.gpu/">bixverse.gpu</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/manifoldsR/" class="external-link">manifoldsR</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'data.table'</span></span>
-<span><span class="co">#&gt; The following object is masked from 'package:base':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     %notin%</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt; Warning: package 'data.table' was built under R version 4.5.2</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: package 'ggplot2' was built under R version 4.5.2</span></span></code></pre></div>
 </div>
 <div>
 <blockquote>
 <p><strong>Note</strong></p>
-<p>The correlation and covariance timing blocks below are set to <code>eval: false</code> in the rendered docs. This vignette is built on GitHub Actions Linux runners, which don’t have real GPUs and fall back to software Vulkan via Mesa (<code>WGPU_BACKEND=vulkan</code>). Any numbers produced there would be misleading. Run the vignette locally on a machine with a proper GPU (or Apple Silicon) to see the real comparison. This is also the reason why the timing eval is set to FALSE here.</p>
+<p>Vignettes were built locally on a MacBook Pro M1 Max. The GH runners were just too slow and do not have proper GPU support. This gives an idea of speed on a decent, but older machine.</p>
 </blockquote>
 </div>
 </section><section class="level2"><h2 id="gpu-accelerated-k-means">GPU-accelerated k-means<a class="anchor" aria-label="anchor" href="#gpu-accelerated-k-means"></a>
@@ -169,7 +167,7 @@
 </div>
 </section><section class="level3"><h3 id="quantised-gpu-version">Quantised GPU version<a class="anchor" aria-label="anchor" href="#quantised-gpu-version"></a>
 </h3>
-<p>For memory-bound workloads (very wide feature matrices, very large N), <code>quantise = TRUE</code> keeps the data buffer at fp16 on the GPU while centroids and accumulators stay at fp32. Frees up bandwidth on Apple Silicon. Accuracy loss is small and easy to check:</p>
+<p>For memory-bound workloads (very wide feature matrices, very large N), <code>quantise = TRUE</code> keeps the data buffer at <code>fp16</code> on the GPU while centroids and accumulators stay at <code>fp32</code>. Frees up bandwidth on your GPU. Accuracy loss is (usually) small and easy to check:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">km_gpu_q</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/k_means_cluster_gpu.html">k_means_cluster_gpu</a></span><span class="op">(</span></span>
@@ -192,17 +190,15 @@
 <p>Tracks the full-precision run closely at a fraction of the memory.</p>
 </section><section class="level3"><h3 id="when-to-use-the-gpu-version">When to use the GPU version<a class="anchor" aria-label="anchor" href="#when-to-use-the-gpu-version"></a>
 </h3>
-<p>On small data (a few thousand points, low dim) the CPU wins comfortably. Launch overhead and host-device transfers dominate. GPU pays off when:</p>
+<p>On small data (a few thousand points, low dim) the CPU tends to win. Launch overhead and host-device transfers dominate. GPU pays off when:</p>
 <ul>
 <li>N is large (roughly &gt; 50k),</li>
 <li>k is large (hundreds to thousands of centroids),</li>
 <li>Features are moderate to high dimensional.</li>
-</ul>
-<p>The IVF kNN index in the single cell pipeline is the natural downstream user: Voronoi cells over millions of vectors with <code>sqrt(N)</code> centroids sits right in the target zone.</p>
-</section></section><section class="level2"><h2 id="gpu-accelerated-correlation-and-covariance">GPU-accelerated correlation and covariance<a class="anchor" aria-label="anchor" href="#gpu-accelerated-correlation-and-covariance"></a>
+</ul></section></section><section class="level2"><h2 id="gpu-accelerated-correlation-and-covariance">GPU-accelerated correlation and covariance<a class="anchor" aria-label="anchor" href="#gpu-accelerated-correlation-and-covariance"></a>
 </h2>
 <p>Pairwise Pearson correlation over a wide matrix looks trivial until you notice it’s a symmetric <code>X^T X</code> after centring and scaling. Textbook BLAS-3 GEMM. GPUs love this; modern CPU BLAS with SIMD also loves this, which is why the crossover point isn’t always where you’d expect.</p>
-<p><code>bixverse</code> already ships <code><a href="https://gregorlueg.github.io/bixverse/reference/rs_cor.html" class="external-link">rs_cor()</a></code>, which dispatches to <a href="https://github.com/sarah-quinones/faer-rs" class="external-link"><code>faer</code></a> under the hood. faer is a Rust BLAS with strong SIMD support and on Apple Silicon it’s hard to beat with a general-purpose GPU. <code>bixverse.gpu</code> adds <code><a href="../reference/rs_cor_gpu.html">rs_cor_gpu()</a></code> for when the CPU path is bandwidth-bound. <code><a href="../reference/rs_cov_gpu.html">rs_cov_gpu()</a></code> does the same for covariance.</p>
+<p><code>bixverse</code> already ships <code><a href="https://gregorlueg.github.io/bixverse/reference/rs_cor.html" class="external-link">rs_cor()</a></code>, which dispatches to <a href="https://github.com/sarah-quinones/faer-rs" class="external-link"><code>faer</code></a> under the hood. faer is a Rust BLAS with strong SIMD support and initial cubek-based GEMM only beat this on very large data sets. However, <code>bixverse-rs</code> ships specific GPU kernels for correlations and co-variance calculations that actually beat <code>faer</code>. <code>bixverse.gpu</code> adds <code><a href="../reference/rs_cor_gpu.html">rs_cor_gpu()</a></code> and <code><a href="../reference/rs_cov_gpu.html">rs_cov_gpu()</a></code> for when you need have your correlations fast on large data sets.</p>
 <section class="level3"><h3 id="correlation">Correlation<a class="anchor" aria-label="anchor" href="#correlation"></a>
 </h3>
 <p>25k samples, 1k features. Base R vs CPU vs GPU:</p>
@@ -211,7 +207,7 @@
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42L</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">n_samples</span> <span class="op">&lt;-</span> <span class="fl">25000L</span></span>
-<span><span class="va">n_features</span> <span class="op">&lt;-</span> <span class="fl">1000L</span></span>
+<span><span class="va">n_features</span> <span class="op">&lt;-</span> <span class="fl">2500L</span></span>
 <span></span>
 <span><span class="va">random_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_samples</span> <span class="op">*</span> <span class="va">n_features</span><span class="op">)</span>,</span>
@@ -222,26 +218,30 @@
 <p>Base R <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor()</a></code>:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">t_base</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="op">{</span></span>
+<code class="sourceCode R"><span><span class="co"># Base R will be slow...</span></span>
+<span><span class="va">t_base</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">cor_base</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">random_data</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"base R cor():   %.2fs\n"</span>, <span class="va">t_base</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"base R cor():   %.2fs\n"</span>, <span class="va">t_base</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; base R cor():   74.12s</span></span></code></pre></div>
 </div>
-<p>faer-backed CPU:</p>
+<p>faer-backed CPU (via <code>bixverse</code>):</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">t_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">cor_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/rs_cor.html" class="external-link">rs_cor</a></span><span class="op">(</span><span class="va">random_data</span>, spearman <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"rs_cor() CPU:   %.2fs\n"</span>, <span class="va">t_cpu</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"rs_cor() CPU:   %.2fs\n"</span>, <span class="va">t_cpu</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; rs_cor() CPU:   0.84s</span></span></code></pre></div>
 </div>
-<p>GPU:</p>
+<p>And GPU-accelerated:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">t_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">cor_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rs_cor_gpu.html">rs_cor_gpu</a></span><span class="op">(</span><span class="va">random_data</span>, spearman <span class="op">=</span> <span class="cn">FALSE</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"rs_cor_gpu():   %.2fs\n"</span>, <span class="va">t_gpu</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"rs_cor_gpu():   %.2fs\n"</span>, <span class="va">t_gpu</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; rs_cor_gpu():   0.52s</span></span></code></pre></div>
 </div>
 <p>All three should agree:</p>
 <div class="cell">
@@ -259,13 +259,16 @@
 <span>  <span class="va">cov_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/rs_covariance.html" class="external-link">rs_covariance</a></span><span class="op">(</span><span class="va">random_data</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"rs_covariance() CPU: %.2fs\n"</span>, <span class="va">t_cpu_cov</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; rs_covariance() CPU: 0.80s</span></span>
 <span></span>
 <span><span class="va">t_gpu_cov</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">cov_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rs_cov_gpu.html">rs_cov_gpu</a></span><span class="op">(</span><span class="va">random_data</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"rs_cov_gpu():        %.2fs\n"</span>, <span class="va">t_gpu_cov</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; rs_cov_gpu():        0.43s</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"max |cpu - gpu|:     %.2e\n"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">cov_cpu</span> <span class="op">-</span> <span class="va">cov_gpu</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"max |cpu - gpu|:     %.2e\n"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">cov_cpu</span> <span class="op">-</span> <span class="va">cov_gpu</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; max |cpu - gpu|:     4.68e-06</span></span></code></pre></div>
 </div>
 </section><section class="level3"><h3 id="when-to-use-the-gpu-version-1">When to use the GPU version<a class="anchor" aria-label="anchor" href="#when-to-use-the-gpu-version-1"></a>
 </h3>

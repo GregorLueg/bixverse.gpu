@@ -1,6 +1,13 @@
 # Changelog
 
-## bixverse.gpu 0.2.1
+## bixverse.gpu 0.2.2
+
+### Features
+
+- GPU-accelerated SCENIC
+- Improvement in the GPU-accelerated kNN searches ported over from
+  `ann-search-rs`.
+- Handrolled correlation kernels to increase performance there.
 
 ### Features
 
