@@ -18,6 +18,7 @@ pub mod utils;
 
 pub use single_cell::harmony_gpu;
 pub use single_cell::pca_gpu;
+pub use single_cell::scenic_gpu;
 
 use crate::embeddings::parametric_umap::*;
 use crate::embeddings::tsne_gpu::tsne_manifold_gpu;
@@ -35,6 +36,7 @@ extendr_module! {
     // modules
     use pca_gpu;
     use harmony_gpu;
+    use scenic_gpu;
     // knn
     fn rs_cagra_gpu_knn;
     fn rs_ivf_gpu_knn;
@@ -625,7 +627,7 @@ fn rs_cor_gpu(
         GpuCorCov::Pearson
     };
 
-    let mut res = column_pairwise_cor_gpu::<f32, WgpuRuntime, f32>(
+    let mut res = column_pairwise_cor_gpu::<f32, WgpuRuntime>(
         data.as_ref(),
         cor_type,
         device.clone(),
@@ -666,7 +668,7 @@ fn rs_cov_gpu(x: RMatrix<f64>, verbose: bool) -> Result<RMatrix<f64>, extendr_ap
     let data = r_matrix_to_faer_fp32(&x);
     let device: WgpuDevice = Default::default();
 
-    let res = column_pairwise_cor_gpu::<f32, WgpuRuntime, f32>(
+    let res = column_pairwise_cor_gpu::<f32, WgpuRuntime>(
         data.as_ref(),
         GpuCorCov::Covariance,
         device.clone(),

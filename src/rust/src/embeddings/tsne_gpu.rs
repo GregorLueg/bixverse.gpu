@@ -1,5 +1,3 @@
-use ann_search_rs::cpu::nndescent::NNDescentQuery;
-use ann_search_rs::gpu::nndescent_gpu::NNDescentGpu;
 use bixverse_rs::prelude::IntoExtendrErr;
 use cubecl::prelude::Runtime;
 use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
@@ -194,7 +192,6 @@ pub fn tsne_manifold_gpu<T>(
 ) -> Result<Mat<T>>
 where
     T: ManifoldsFloatGpu + FftwFloat,
-    NNDescentGpu<T, WgpuRuntime>: NNDescentQuery<T>,
     StandardNormal: Distribution<T>,
 {
     assert!(
@@ -217,7 +214,7 @@ where
         init_range: Some(T::from_f64(1e-2).unwrap()),
     };
 
-    let res = tsne_gpu(
+    let res = tsne_gpu::<T, WgpuRuntime>(
         data,
         pre_computed_knn,
         &tsne_params,
@@ -274,7 +271,6 @@ pub fn tsne_manifold_gpu<T>(
 ) -> Result<Mat<T>>
 where
     T: ManifoldsFloatGpu + FftwFloat,
-    NNDescentGpu<T, WgpuRuntime>: NNDescentQuery<T>,
     StandardNormal: Distribution<T>,
 {
     assert!(
@@ -297,7 +293,7 @@ where
         init_range: Some(T::from_f64(1e-2).unwrap()),
     };
 
-    let res = tsne_gpu(
+    let res = tsne_gpu::<T, WgpuRuntime>(
         data,
         pre_computed_knn,
         &tsne_params,

@@ -1,5 +1,6 @@
 use ann_search_rs::cpu::hnsw::{HnswIndex, HnswState};
-use ann_search_rs::cpu::nndescent::{ApplySortedUpdates, NNDescent, NNDescentQuery};
+use ann_search_rs::cpu::nndescent::{NNDescent, NNDescentQuery};
+use ann_search_rs::utils::nndescent_utils::ApplySortedUpdates;
 use bixverse_rs::prelude::IntoExtendrErr;
 use burn::tensor::backend::AutodiffBackend;
 use extendr_api::*;

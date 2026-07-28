@@ -13,13 +13,13 @@ jobs:
       matrix:
         config:
           - {os: macOS-latest,   r: 'release'}
-          - {os: ubuntu-latest,  r: 'release'}
+          - {os: ubuntu-22.04,  r: 'release'}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
     
       - uses: r-lib/actions/setup-pandoc@v2
     
@@ -35,14 +35,15 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Cache Rust
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "src/rust -> target"
-          shared-key: rmdcheck
+      # See the note in pkgdown.yaml: pak builds in temp dirs, so caching
+      # src/rust/target never hits. sccache caches per crate instead.
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
 
       - name: Cargo env
         run: |
+          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
           echo "CARGO_INCREMENTAL=0" >> $GITHUB_ENV
           echo "CARGO_NET_RETRY=10" >> $GITHUB_ENV
           echo "CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse" >> $GITHUB_ENV
@@ -79,3 +80,7 @@ jobs:
           build_args: 'c("--no-manual","--no-build-vignettes")'
           args: 'c("--no-manual", "--no-vignettes")'
           error-on: '"error"'
+
+      - name: sccache stats
+        if: always()
+        run: sccache --show-stats

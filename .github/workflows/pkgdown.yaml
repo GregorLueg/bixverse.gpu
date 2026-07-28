@@ -3,6 +3,14 @@ on:
   push:
     branches: [main, master]
   pull_request:
+    paths:
+      - 'vignettes/**'
+      - 'README.md'
+      - 'NEWS.md'
+      - 'man/**'
+      - 'pkgdown/**'
+      - '_pkgdown.yml'
+      - '.github/workflows/pkgdown.yaml'
   release:
     types: [published]
   workflow_dispatch:
@@ -32,14 +40,18 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Cache Rust
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "src/rust -> target"
-          shared-key: pkgdown
+      # pak builds this package and the three GitHub Remotes in temp dirs, so
+      # caching src/rust/target never hits. sccache caches per crate instead,
+      # which is what actually pays: manifoldsR, bixverse and bixverse.gpu
+      # share the ann-search-rs / bixverse-rs / manifolds-rs trees plus all of
+      # cubecl, burn and wgpu underneath them.
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
 
       - name: Cargo env
         run: |
+          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
           echo "CARGO_INCREMENTAL=0" >> $GITHUB_ENV
           echo "CARGO_NET_RETRY=10" >> $GITHUB_ENV
           echo "CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse" >> $GITHUB_ENV
@@ -66,7 +78,11 @@ jobs:
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE, quiet = FALSE)
         shell: Rscript {0}
-      
+
+      - name: sccache stats
+        if: always()
+        run: sccache --show-stats
+
       - name: Deploy to GitHub pages
         if: github.event_name != 'pull_request'
         uses: JamesIves/github-pages-deploy-action@v4.5.0

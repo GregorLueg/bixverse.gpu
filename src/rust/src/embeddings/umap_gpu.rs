@@ -1,5 +1,3 @@
-use ann_search_rs::cpu::nndescent::NNDescentQuery;
-use ann_search_rs::gpu::nndescent_gpu::NNDescentGpu;
 use ann_search_rs::prelude::*;
 use bixverse_rs::prelude::IntoExtendrErr;
 use cubecl::prelude::Runtime;
@@ -339,9 +337,7 @@ pub fn umap_manifold_gpu<T, R>(
 where
     T: ManifoldsFloatGpu,
     StandardNormal: Distribution<T>,
-    NNDescentGpu<T, R>: NNDescentQuery<T>,
     R: Runtime,
-    NNDescentGpu<T, WgpuRuntime>: NNDescentQuery<T>,
 {
     let device: WgpuDevice = Default::default();
 
