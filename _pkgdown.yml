@@ -2,26 +2,22 @@ url: https://gregorlueg.github.io/bixverse.gpu/
 
 template:
   bootstrap: 5
-  bootswatch: darkly
+  bootswatch: lux
+  light-switch: true
   bslib:
-    bg: "#0d1b2e"
-    fg: "#e0e0e0"
-    primary: "#e07a5a"
-    secondary: "#7ba7bc"
-    navbar-bg: "#08111e"
-    code-bg: "#0a1628"
-    border-radius: 0.4rem
-    btn-border-radius: 0.4rem
-  css: pkgdown/extra.css
+    # lux uses navbar-padding-y: 1.5rem, so pkgdown's 56px default is too small
+    pkgdown-nav-height: 104px
 
 home:
   title: bixverse.gpu
   description: 
-    GPU-accelerated methods for the bixverse
+    GPU-accelerated methods for bixverse. This includes for now quite a few
+    methods that make single cell analysis even faster, plus, some standard
+    ML and statistical methods.
 navbar:
   structure:
-    left: [intro, reference, articles, news]
-    right: [search, github]
+    left: [intro, reference, news, articles ]
+    right: [search, lightswitch, github]
   components:
     articles:
       text: Articles
