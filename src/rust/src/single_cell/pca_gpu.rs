@@ -92,8 +92,10 @@ fn rs_sc_pca_sparse_gpu(
 
     let device: WgpuDevice = Default::default();
 
-    let res = pca_on_sc_sparse_gpu::<WgpuRuntime>(
-        f_path_gene,
+    let gene_reader = ParallelSparseReader::new(f_path_gene).to_extendr()?;
+
+    let res = pca_on_sc_sparse_gpu::<WgpuRuntime, _>(
+        &gene_reader,
         &cell_set,
         &gene_indices,
         no_pcs,
