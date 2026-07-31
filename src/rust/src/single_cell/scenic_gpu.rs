@@ -107,8 +107,10 @@ fn rs_scenic_grn_gpu(
 
     let device: WgpuDevice = Default::default();
 
-    let grn_matrix = run_scenic_grn_gpu::<WgpuRuntime>(
-        &f_path_genes,
+    let reader = ParallelSparseReader::new(&f_path_genes).to_extendr()?;
+
+    let grn_matrix = run_scenic_grn_gpu::<WgpuRuntime, _>(
+        &reader,
         &cell_indices,
         &gene_indices,
         &tf_indices,
@@ -173,8 +175,10 @@ fn rs_scenic_grn_streaming_gpu(
 
     let device: WgpuDevice = Default::default();
 
-    let grn_matrix = run_scenic_grn_streaming_gpu::<WgpuRuntime>(
-        &f_path_genes,
+    let reader = ParallelSparseReader::new(&f_path_genes).to_extendr()?;
+
+    let grn_matrix = run_scenic_grn_streaming_gpu::<WgpuRuntime, _>(
+        &reader,
         &cell_indices,
         &gene_indices,
         &tf_indices,

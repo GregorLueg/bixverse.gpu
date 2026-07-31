@@ -1,3 +1,9 @@
+# bixverse.gpu 0.2.4
+
+## Features
+
+* Update to `bixverse-rs` to enable the new streaming engine.
+
 # bixverse.gpu 0.2.3
 
 ## Fix
