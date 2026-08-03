@@ -3,3 +3,4 @@
 *_files
 
 /.quarto/
+_freeze/*/libs/
