@@ -1,0 +1,250 @@
+---
+title: "GPU-accelerated SEACells"
+date: last-modified
+date-format: YYYY-MM-DD
+vignette: >
+  %\VignetteIndexEntry{GPU-accelerated SEACells}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: '#>'
+author: "Gregor Lueg"
+---
+
+## Intro
+
+SEACells ([Persad et al., 2023](https://www.nature.com/articles/s41587-023-01716-9))
+finds meta cells by kernel archetypal analysis. The expensive part is the inner
+Frank-Wolfe loop that updates the archetype matrix `B`: every iteration scans a
+gradient over all cells for every archetype and takes an argmin. That scan is
+where the runtime goes, and it is what `generate_seacells_gpu_sc()` moves onto
+the GPU.
+
+Everything else stays on the CPU: the kNN graph, the kernel matrix, the
+archetype initialisation, the `A` update and the aggregation into pseudo-bulk
+counts. So the speedup is bounded by how much of the run the B-argmin owns. That
+share grows with `n_sea_cells`, because the gradient scan is `O(n_cells x k)`
+while most of the CPU-side work is not. Ask for 50 meta cells and the win is
+small. Ask for a few thousand and it gets interesting.
+
+If you have not seen the CPU version, read the
+[bixverse meta cell vignette](https://gregorlueg.github.io/bixverse/articles/single_cell_meta_cells.html)
+first. The params, the result class and everything downstream are identical
+here.
+
+```{r}
+#| label: setup
+library(bixverse)
+library(bixverse.gpu)
+library(data.table)
+library(magrittr)
+```
+
+::: {.callout-note}
+Vignettes were built locally on a MacBook Pro M1 Max. The GH runners were just
+too slow and do not have proper GPU support. This gives an idea of speed on a
+decent, but older machine.
+:::
+
+## Rebuilding a processed PBMC3k object
+
+Same object as the other GPU vignettes. The chunk is folded because we care
+about meta cells, not QC.
+
+```{r}
+#| label: rebuild-object
+#| code-fold: true
+#| code-summary: "Rebuild the PBMC3k object (click to expand)"
+pbmc3k_path <- download_pbmc3k()
+tempdir_pbmc <- file.path(tempdir(), "gpu_metacells")
+dir.create(tempdir_pbmc, showWarnings = FALSE, recursive = TRUE)
+
+sc_object <- SingleCells(dir_data = tempdir_pbmc)
+mtx_io_params <- get_cell_ranger_params(pbmc3k_path)
+
+sc_object <- load_mtx(
+  object = sc_object,
+  sc_mtx_io_param = mtx_io_params,
+  mtx_streaming = FALSE,
+  .verbose = FALSE
+)
+
+setnames_sc(sc_object, table = "var", old = "column1", new = "gene_symbol")
+
+var <- get_sc_var(sc_object)
+ensembl_to_symbol <- setNames(var$gene_symbol, var$gene_id)
+
+gs_of_interest <- list(
+  MT = var[grepl("^MT-", gene_symbol), gene_id],
+  Ribo = var[grepl("^RPS|^RPL", gene_symbol), gene_id]
+)
+sc_object <- gene_set_proportions_sc(
+  sc_object,
+  gs_of_interest,
+  streaming = FALSE,
+  .verbose = FALSE
+)
+
+qc_df <- sc_object[[c("cell_id", "lib_size", "nnz", "MT")]]
+metrics <- list(
+  log10_lib_size = log10(qc_df$lib_size),
+  log10_nnz = log10(qc_df$nnz),
+  MT = qc_df$MT
+)
+directions <- c(
+  log10_lib_size = "twosided",
+  log10_nnz = "twosided",
+  MT = "above"
+)
+qc <- run_cell_qc(
+  metrics = metrics,
+  cells_to_keep = get_cells_to_keep(sc_object),
+  directions = directions,
+  threshold = 3
+)
+sc_object[["outlier"]] <- qc$combined
+cells_to_keep <- qc_df[!qc$combined, cell_id]
+sc_object <- set_cells_to_keep(sc_object, cells_to_keep)
+
+sc_object <- find_hvg_sc(sc_object, hvg_no = 2000L, .verbose = FALSE)
+sc_object <- calculate_pca_sc(sc_object, no_pcs = 30L, .verbose = FALSE)
+sc_object <- find_neighbours_sc(
+  sc_object,
+  neighbours_params = params_sc_neighbours(knn = list(k = 15L)),
+  .verbose = FALSE
+)
+```
+
+## Running it
+
+One call, and the params are the same `params_sc_seacells()` the CPU version
+takes. PBMC3k is small, so aim for one meta cell per ~15 cells.
+
+```{r}
+#| label: gpu-seacells
+seacell_params <- params_sc_seacells(
+  n_sea_cells = 150L,
+  knn = list(k = 25L)
+)
+
+gpu_time <- system.time({
+  mc_gpu <- generate_seacells_gpu_sc(
+    sc_object,
+    seacell_params = seacell_params,
+    .verbose = TRUE
+  )
+})
+
+mc_gpu
+```
+
+The result is a `MetaCells` object, byte for byte the same shape as the CPU one.
+Assignments live in `@original_assignment`, the RSS trace and the archetype cell
+indices in `@other_data`.
+
+```{r}
+#| label: gpu-seacells-inspect
+head(mc_gpu[[]], 3L)
+
+tail(mc_gpu@other_data$rss, 5L)
+```
+
+### Knobs that matter on large data
+
+Two params change the picture once you leave toy datasets:
+
+- **`n_landmarks`** switches archetype initialisation to a Nystroem
+  approximation on a landmark subsample. Without it, initialisation is
+  quadratic in cells and starts to dominate the run well before the
+  Frank-Wolfe loop does.
+- **`pruning`** drops tiny values during the Frank-Wolfe updates. It costs a bit
+  of numerical fidelity and buys a lot of memory, which is what makes million-
+  cell runs feasible at all. `pruning_threshold` controls how aggressive it is.
+
+```{r}
+#| label: gpu-seacells-knobs
+#| eval: false
+seacell_params_large <- params_sc_seacells(
+  n_sea_cells = 5000L,
+  n_landmarks = 20000L,
+  pruning = TRUE,
+  pruning_threshold = 1e-7,
+  knn = list(k = 25L)
+)
+```
+
+## CPU versus GPU
+
+Same object, same params, same seed.
+
+```{r}
+#| label: cpu-seacells
+cpu_time <- system.time({
+  mc_cpu <- generate_seacells_sc(
+    sc_object,
+    seacell_params = seacell_params,
+    .verbose = FALSE
+  )
+})
+
+data.table(
+  version = c("CPU", "GPU"),
+  seconds = round(c(cpu_time[["elapsed"]], gpu_time[["elapsed"]]), 2)
+)[, speed_up := round(seconds[1] / seconds, 2)][]
+```
+
+The two do not produce bit-identical assignments. GPU reduction ordering breaks
+ties differently, so a cell sitting almost equidistant between two archetypes
+can land either way. What should agree is the structure. Compare how the meta
+cells partition the cells:
+
+```{r}
+#| label: cpu-vs-gpu
+mc_sizes <- data.table(
+  version = c("CPU", "GPU"),
+  n_meta_cells = c(nrow(mc_cpu[[]]), nrow(mc_gpu[[]])),
+  median_cells = c(
+    median(mc_cpu[[]]$no_originating_cells),
+    median(mc_gpu[[]]$no_originating_cells)
+  ),
+  final_rss = round(c(
+    tail(mc_cpu@other_data$rss, 1L),
+    tail(mc_gpu@other_data$rss, 1L)
+  ), 2)
+)
+
+mc_sizes
+```
+
+On a dataset this size the GPU rarely blows the CPU out of the water. PBMC3k is
+around 2.7k cells and 150 archetypes, which is not enough work to hide the
+launch overhead, and the CPU version parallelises the same scan across all
+performance cores. The GPU path earns its keep further up the scale, where
+`n_cells x k` gets large enough that the argmin genuinely dominates.
+
+## Feeding into SCENIC
+
+The resulting `MetaCells` goes straight into the GPU SCENIC driver, no
+conversion step.
+
+```{r}
+#| label: metacells-to-scenic
+#| eval: false
+scenic_res <- scenic_grn_sc_gpu(
+  object = mc_gpu,
+  tf_ids = tf_dt$gene_id,
+  scenic_params = params_scenic(learner_type = "extratrees"),
+  .verbose = TRUE
+)
+```
+
+See the [GPU SCENIC vignette](gpu_scenic.html) for the full workflow.
+
+## What is next
+
+The Frank-Wolfe `A` update and the RSS evaluation are still CPU-side, and both
+are matrix products against the same kernel matrix that already lives near the
+device. Moving them would cut the CPU/GPU round trips per outer iteration.
+Watch this space.

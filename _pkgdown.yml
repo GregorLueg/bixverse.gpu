@@ -24,6 +24,8 @@ navbar:
       menu:
         - text: GPU-acceleration for single cell
           href: articles/gpu_single_cell.html
+        - text: SEACells with GPU-acceleration
+          href: articles/gpu_metacells.html
         - text: SCENIC with GPU-acceleration
           href: articles/gpu_scenic.html
         - text: GPU-accelerated UMAP
@@ -44,6 +46,7 @@ articles:
     navbar: Articles
     contents:
       - gpu_single_cell
+      - gpu_metacells
       - gpu_scenic
       - gpu_umap
       - gpu_tsne
@@ -62,6 +65,7 @@ reference:
       - harmony_v2_gpu_sc
       - find_neighbours_gpu_sc
       - find_neighbours_cagra_sc
+      - generate_seacells_gpu_sc
       - scenic_grn_sc_gpu
       - params_sc_ivf
       - params_sc_cagra

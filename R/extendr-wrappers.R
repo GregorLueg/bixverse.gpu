@@ -470,4 +470,38 @@ rs_scenic_grn_streaming_gpu <- function(f_path_genes, cell_indices, gene_indices
 #' @keywords internal
 rs_mc_scenic_gpu <- function(sparse_data, tf_indices, scenic_params, wave_byte_budget, seed, verbose) .Call(wrap__rs_mc_scenic_gpu, sparse_data, tf_indices, scenic_params, wave_byte_budget, seed, verbose)
 
+#' GPU: SEACells meta cell generation
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU equivalent of `bixverse::rs_get_seacells`. The Frank-Wolfe B-gradient
+#' argmin, which dominates the runtime, is dispatched to the WGPU backend. The
+#' kNN graph, the kernel matrix and the aggregation into pseudo-bulk counts all
+#' stay on the CPU.
+#'
+#' @param f_path String. Path to the `counts_cells.bin` file.
+#' @param embd Numeric matrix. Cells x components embedding, one row per
+#' QC-passing cell.
+#' @param cells_to_keep Optional integer vector. 0-indexed original row indices
+#' the embedding was built from, in embedding row order.
+#' @param cells_to_use Optional integer vector. 0-indexed original row indices
+#' to narrow the run to. Forces a kNN rebuild on that subset.
+#' @param knn_data Optional list. Precomputed kNN graph with `indices`, `dist`,
+#' `dist_metric` and `k`. Ignored when `cells_to_use` is set.
+#' @param seacells_params Named list. See [bixverse::params_sc_seacells()].
+#' @param target_size Double. Library target size the meta cells are
+#' normalised to.
+#' @param seed Integer. Random seed.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal; `2L` - detailed.
+#'
+#' @returns A list with the cell assignments, the aggregated meta cell counts
+#' in compressed sparse form, the RSS history and the archetype cell indices.
+#'
+#' @export
+#'
+#' @references Persad, et al., Nat. Biotechnol., 2023.
+#'
+#' @keywords internal
+rs_seacells_gpu <- function(f_path, embd, cells_to_keep, cells_to_use, knn_data, seacells_params, target_size, seed, verbose) .Call(wrap__rs_seacells_gpu, f_path, embd, cells_to_keep, cells_to_use, knn_data, seacells_params, target_size, seed, verbose)
+
 # nolint end
