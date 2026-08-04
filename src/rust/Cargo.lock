@@ -559,7 +559,7 @@ dependencies = [
 
 [[package]]
 name = "bixverse_gpu"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "ann-search-rs",
  "bixverse-rs",
@@ -4662,9 +4662,7 @@ checksum = "670fdfda89751bc4a84ac13eaa63e205cf0fd22b4c9a5fbfa085b63c1f1d3a30"
 
 [[package]]
 name = "manifolds-rs"
-version = "0.3.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97e7f1e978c975e853fd4ae280c5ceefe9a01639e7cca7c51716e17f90736009"
+version = "0.3.11"
 dependencies = [
  "ann-search-rs",
  "approx",

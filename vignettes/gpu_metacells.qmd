@@ -48,85 +48,58 @@ too slow and do not have proper GPU support. This gives an idea of speed on a
 decent, but older machine.
 :::
 
-## Rebuilding a processed PBMC3k object
+## Rebuilding a processed CD34
 
-Same object as the other GPU vignettes. The chunk is folded because we care
-about meta cells, not QC.
+We use the same CD34 cells from the [SEACells vignette](https://github.com/dpeerlab/SEACells/blob/main/notebooks/SEACell_computation.ipynb) to set up the parent `SingleCells` object: 
+load (QC not needed - it's already filtered data), HVG selection, PCA, 
+kNN graph. We can use the provided cell type labels to check purity.
 
 ```{r}
 #| label: rebuild-object
 #| code-fold: true
-#| code-summary: "Rebuild the PBMC3k object (click to expand)"
-pbmc3k_path <- download_pbmc3k()
-tempdir_pbmc <- file.path(tempdir(), "gpu_metacells")
-dir.create(tempdir_pbmc, showWarnings = FALSE, recursive = TRUE)
+#| code-summary: "Rebuild the CD34 cell object (click to expand)"
+cd34_path <- download_cd34_data()
 
-sc_object <- SingleCells(dir_data = tempdir_pbmc)
-mtx_io_params <- get_cell_ranger_params(pbmc3k_path)
+tempdir_cd34 <- tempdir()
 
-sc_object <- load_mtx(
+sc_object <- SingleCells(dir_data = tempdir_cd34)
+
+sc_object <- load_h5ad(object = sc_object, h5_path = cd34_path)
+
+sc_object <- find_hvg_sc(
   object = sc_object,
-  sc_mtx_io_param = mtx_io_params,
-  mtx_streaming = FALSE,
+  hvg_no = 2000L,
   .verbose = FALSE
 )
 
-setnames_sc(sc_object, table = "var", old = "column1", new = "gene_symbol")
-
-var <- get_sc_var(sc_object)
-ensembl_to_symbol <- setNames(var$gene_symbol, var$gene_id)
-
-gs_of_interest <- list(
-  MT = var[grepl("^MT-", gene_symbol), gene_id],
-  Ribo = var[grepl("^RPS|^RPL", gene_symbol), gene_id]
-)
-sc_object <- gene_set_proportions_sc(
-  sc_object,
-  gs_of_interest,
-  streaming = FALSE,
-  .verbose = FALSE
+sc_object <- calculate_pca_sc(
+  object = sc_object,
+  no_pcs = 30L,
+  sparse_svd = FALSE
 )
 
-qc_df <- sc_object[[c("cell_id", "lib_size", "nnz", "MT")]]
-metrics <- list(
-  log10_lib_size = log10(qc_df$lib_size),
-  log10_nnz = log10(qc_df$nnz),
-  MT = qc_df$MT
-)
-directions <- c(
-  log10_lib_size = "twosided",
-  log10_nnz = "twosided",
-  MT = "above"
-)
-qc <- run_cell_qc(
-  metrics = metrics,
-  cells_to_keep = get_cells_to_keep(sc_object),
-  directions = directions,
-  threshold = 3
-)
-sc_object[["outlier"]] <- qc$combined
-cells_to_keep <- qc_df[!qc$combined, cell_id]
-sc_object <- set_cells_to_keep(sc_object, cells_to_keep)
-
-sc_object <- find_hvg_sc(sc_object, hvg_no = 2000L, .verbose = FALSE)
-sc_object <- calculate_pca_sc(sc_object, no_pcs = 30L, .verbose = FALSE)
 sc_object <- find_neighbours_sc(
-  sc_object,
-  neighbours_params = params_sc_neighbours(knn = list(k = 15L)),
-  .verbose = FALSE
+  object = sc_object,
+  neighbours_params = params_sc_neighbours(
+    knn = list(ann_dist = "euclidean", knn_method = "kmknn")
+  )
 )
+
+# we need the kNN object for the diffusion maps
+knn_object <- get_knn_obj(x = sc_object)
 ```
 
 ## Running it
 
 One call, and the params are the same `params_sc_seacells()` the CPU version
-takes. PBMC3k is small, so aim for one meta cell per ~15 cells.
+takes. We will go with the same parameters as for the other vignette.
 
 ```{r}
 #| label: gpu-seacells
 seacell_params <- params_sc_seacells(
-  n_sea_cells = 150L,
-  knn = list(k = 25L)
+  n_sea_cells = 250L,
+  convergence_epsilon = 0.001,
+  pruning = TRUE
 )
 
 gpu_time <- system.time({
@@ -185,7 +158,7 @@ cpu_time <- system.time({
   mc_cpu <- generate_seacells_sc(
     sc_object,
     seacell_params = seacell_params,
-    .verbose = FALSE
+    .verbose = TRUE
   )
 })
 
@@ -209,20 +182,21 @@ mc_sizes <- data.table(
     median(mc_cpu[[]]$no_originating_cells),
     median(mc_gpu[[]]$no_originating_cells)
   ),
-  final_rss = round(c(
-    tail(mc_cpu@other_data$rss, 1L),
-    tail(mc_gpu@other_data$rss, 1L)
-  ), 2)
+  final_rss = round(
+    c(
+      tail(mc_cpu@other_data$rss, 1L),
+      tail(mc_gpu@other_data$rss, 1L)
+    ),
+    2
+  )
 )
 
 mc_sizes
 ```
 
-On a dataset this size the GPU rarely blows the CPU out of the water. PBMC3k is
-around 2.7k cells and 150 archetypes, which is not enough work to hide the
-launch overhead, and the CPU version parallelises the same scan across all
-performance cores. The GPU path earns its keep further up the scale, where
-`n_cells x k` gets large enough that the argmin genuinely dominates.
+We can already see a difference here in speed... The GPU-accelerated version
+is already 60% faster than the CPU version. The more cells and SEACells you 
+throw at the problem, the bigger the delta.
 
 ## Feeding into SCENIC
 
@@ -247,4 +221,4 @@ See the [GPU SCENIC vignette](gpu_scenic.html) for the full workflow.
 The Frank-Wolfe `A` update and the RSS evaluation are still CPU-side, and both
 are matrix products against the same kernel matrix that already lives near the
 device. Moving them would cut the CPU/GPU round trips per outer iteration.
-Watch this space.
+Watch the space.
