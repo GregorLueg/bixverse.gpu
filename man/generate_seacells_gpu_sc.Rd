@@ -68,7 +68,6 @@ A \code{\link[bixverse:MetaCells]{bixverse::MetaCells()}} with the data generate
 aggregation method.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 GPU counterpart of \code{\link[bixverse:generate_seacells_sc]{bixverse::generate_seacells_sc()}}. The Frank-Wolfe
 B-gradient argmin, which dominates the runtime, runs on the WGPU backend.
 Kernel construction, archetype initialisation, the A update and the

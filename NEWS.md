@@ -3,8 +3,9 @@
 ## Features
 
 * GPU-accelerated SEACells: the Franke-Wolfe iterations are executed on GPU,
-  increasing the speed - pending data set size - substantially.
-* Version bumps to get improved GPU performance for the UMAP optimiser.
+  increasing the speed on larger data sets.
+* Version bumps to get improved GPU performance for the UMAP optimiser from
+  `manifolds-rs`.
 
 # bixverse.gpu 0.2.4
 

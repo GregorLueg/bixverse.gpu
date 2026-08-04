@@ -12,16 +12,15 @@ name = 'bixverse_gpu'
 [dependencies]
 ann-search-rs = { version = "0.4.5", features = [ "gpu" ] }
 burn = { version = "0.21.0", features = [ "wgpu", "flex" ] }
-# TO UPDATE
-bixverse-rs = { path = "/Users/gregorlueg/repos/shared/bixverse-rs", features = [ "gpu", "single-cell" ] }
+bixverse-rs = { path = "/Users/gregorlueg/repos/shared/bixverse-rs/", features = [ "gpu", "single-cell" ] }
 cubecl = "0.10.0"
 extendr-api = "0.9.0"
 faer = { version = '0.23.2' }
 rand_distr = "0.5.1"
 [target.'cfg(not(windows))'.dependencies]
-manifolds-rs = { path = "/Users/gregorlueg/repos/shared/manifold-rs", features = [ "fft_tsne", "gpu", "parametric" ] }
+manifolds-rs = { version = "0.3.12", features = [ "fft_tsne", "gpu", "parametric" ] }
 [target.'cfg(windows)'.dependencies]
-manifolds-rs = { path = "/Users/gregorlueg/repos/shared/manifold-rs", features = [ "parametric", "gpu"] }
+manifolds-rs = { version = "0.3.12", features = [ "parametric", "gpu"] }
 
 
 [profile.dev.package.faer]

@@ -13,7 +13,6 @@
 #' Generate meta cells based on SEACells on the GPU
 #'
 #' @description
-#' `r lifecycle::badge("experimental")`
 #' GPU counterpart of [bixverse::generate_seacells_sc()]. The Frank-Wolfe
 #' B-gradient argmin, which dominates the runtime, runs on the WGPU backend.
 #' Kernel construction, archetype initialisation, the A update and the
