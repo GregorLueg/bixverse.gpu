@@ -377,11 +377,19 @@ Where the GPU still loses:
   structure across targets and gains nothing from a GPU port, so
   `scenic_grn_sc_gpu()` rejects it outright. Use
   `bixverse::scenic_grn_sc()`.
-- RandomForest at very large cell counts. The per-wave tensors grow with
-  `n_samples`, hitting roughly 8.4 GB at a million cells even at wave
-  size 1, and the driver refuses rather than thrashing. ExtraTrees stays
-  around 530 MB and is the path that scales. If you hit the ceiling,
-  either switch learner or subsample cells via `n_subsample`.
+
+RandomForest used to belong on that list. Its per-wave tensors needed
+roughly 8.4 GB at a million cells even at wave size 1, and the driver
+refused rather than thrashing. The fused-kernel rewrite moved the
+histogram into threadgroup memory and collapsed that to about 10 MB, so RF
+now scales like ExtraTrees and runs at cell counts where it previously
+would not start.
+
+What breaks first at very large cell counts is the packed feature tensor,
+one byte per (cell, TF) at four bins per `u32` word, so 1 GB at 1000 TFs
+and a million cells. The driver checks that against the adapter's
+per-binding limit up front. If you hit it, subsample cells via
+`n_subsample` or trim the TF list.
 
 `wave_byte_budget` is the knob for the middle ground. It caps VRAM for
 the per-wave histogram and cumulative tensors. Shrink it on an 8 GB

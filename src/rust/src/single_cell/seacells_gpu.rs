@@ -1,8 +1,10 @@
 //! GPU-accelerated SEACells.
 //!
-//! Mirrors `bixverse::rs_get_seacells` step for step. Only the Frank-Wolfe
-//! B-gradient argmin moves to the device; kernel construction, archetype
-//! initialisation and the A update stay on the CPU inside `bixverse-rs`. The
+//! Mirrors `bixverse::rs_get_seacells` step for step. Both Frank-Wolfe solves,
+//! the B-gradient argmin and the per-cell A columns, move to the device; kernel
+//! construction, archetype initialisation, the `K²B` bookkeeping and the RSS
+//! evaluation stay on the CPU inside `bixverse-rs`. Each solve falls back to its
+//! CPU sibling for that iteration when no workgroup tier covers `k`. The
 //! aggregation into meta cell pseudo-bulk is the same CPU reader-based path the
 //! CPU wrapper uses.
 
@@ -39,10 +41,10 @@ extendr_module! {
 ///
 /// @description
 /// `r lifecycle::badge("experimental")`
-/// GPU equivalent of `bixverse::rs_get_seacells`. The Frank-Wolfe B-gradient
-/// argmin, which dominates the runtime, is dispatched to the WGPU backend. The
-/// kNN graph, the kernel matrix and the aggregation into pseudo-bulk counts all
-/// stay on the CPU.
+/// GPU equivalent of `bixverse::rs_get_seacells`. Both Frank-Wolfe solves, the
+/// B-gradient argmin and the per-cell A columns, are dispatched to the WGPU
+/// backend. The kNN graph, the kernel matrix, the RSS evaluation and the
+/// aggregation into pseudo-bulk counts all stay on the CPU.
 ///
 /// @param f_path String. Path to the `counts_cells.bin` file.
 /// @param embd Numeric matrix. Cells x components embedding, one row per

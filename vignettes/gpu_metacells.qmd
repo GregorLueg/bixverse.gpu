@@ -16,18 +16,24 @@ author: "Gregor Lueg"
 ## Intro
 
 SEACells ([Persad et al., 2023](https://www.nature.com/articles/s41587-023-01716-9))
-finds meta cells by kernel archetypal analysis. The expensive part is the inner
-Frank-Wolfe loop that updates the archetype matrix `B`: every iteration scans a
-gradient over all cells for every archetype and takes an argmin. That scan is
-where the runtime goes, and it is what `generate_seacells_gpu_sc()` moves onto
-the GPU.
+finds meta cells by kernel archetypal analysis. The expensive part is the pair
+of inner Frank-Wolfe loops: the `B` update scans a gradient over all cells for
+every archetype and takes an argmin, and the `A` update solves a column per
+cell. Both now run on the GPU in `generate_seacells_gpu_sc()`.
 
-Everything else stays on the CPU: the kNN graph, the kernel matrix, the
-archetype initialisation, the `A` update and the aggregation into pseudo-bulk
-counts. So the speedup is bounded by how much of the run the B-argmin owns. That
-share grows with `n_sea_cells`, because the gradient scan is `O(n_cells x k)`
-while most of the CPU-side work is not. Ask for 50 meta cells and the win is
-small. Ask for a few thousand and it gets interesting.
+The rest stays on the CPU: the kNN graph, the kernel matrix, the archetype
+initialisation, the `K²B` bookkeeping, the RSS evaluation and the aggregation
+into pseudo-bulk counts. So the speedup is bounded by how much of the run the
+two solves own. That share grows with `n_sea_cells`, because both scale with
+`n_cells x k` while most of the CPU-side work does not. Ask for 50 meta cells
+and the win is small. Ask for a few thousand and it gets interesting.
+
+Two things worth knowing about the kernels. Each solve picks a workgroup width
+from a small set of tiers, and falls back to its CPU sibling for that iteration
+if no tier covers your `k`, so a very large `n_sea_cells` can quietly land back
+on the host. And nothing on the GPU path holds a dense `n x k` buffer: `B`,
+`K²B` and the transposed `A` all stay sparse, which is what makes million-cell
+runs fit at all.
 
 If you have not seen the CPU version, read the
 [bixverse meta cell vignette](https://gregorlueg.github.io/bixverse/articles/single_cell_meta_cells.html)
@@ -194,9 +200,10 @@ mc_sizes <- data.table(
 mc_sizes
 ```
 
-We can already see a difference here in speed... The GPU-accelerated version
-is already 60% faster than the CPU version. The more cells and SEACells you 
-throw at the problem, the bigger the delta.
+We can already see a difference here in speed, and this is a small data set
+asking for only 250 meta cells. The more cells and SEACells you throw at the
+problem, the bigger the delta: upstream measures the full fit at roughly 2.6x
+on 50k cells and 666 archetypes.
 
 ## Feeding into SCENIC
 
@@ -218,7 +225,9 @@ See the [GPU SCENIC vignette](gpu_scenic.html) for the full workflow.
 
 ## What is next
 
-The Frank-Wolfe `A` update and the RSS evaluation are still CPU-side, and both
-are matrix products against the same kernel matrix that already lives near the
-device. Moving them would cut the CPU/GPU round trips per outer iteration.
-Watch the space.
+Neither kernel is the bottleneck any more. Each beats the CPU scan it replaces
+by several fold in isolation, but the fit as a whole moves by less, and the gap
+is Amdahl: the blocking readbacks around the two solves were about a fifth of
+wall-clock when last attributed, and the RSS evaluation plus the `K²B`
+maintenance still sit on the host. Overlapping the readbacks and moving RSS are
+the next two levers. Watch the space.

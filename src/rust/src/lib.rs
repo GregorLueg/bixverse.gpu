@@ -76,7 +76,7 @@ const SAMPLE_THRESHOLD_HIGH_PRECISION: usize = 100_000;
 /// GPU backend via WGPU
 type GpuBackend = Autodiff<Wgpu>;
 
-/// CPU backend via Ndarray
+/// CPU backend via flex
 type CpuBackend = Autodiff<Flex<f32>>;
 
 /// Backend-agnostic wrapper around `TrainedUmapModel`.
@@ -86,7 +86,7 @@ type CpuBackend = Autodiff<Flex<f32>>;
 enum PUmapModel {
     /// Model trained on the WGPU backend
     Gpu(TrainedUmapModel<GpuBackend, f32>),
-    /// Model trained on the NdArray CPU backend
+    /// Model trained on the flex CPU backend
     Cpu(TrainedUmapModel<CpuBackend, f32>),
 }
 
@@ -380,7 +380,7 @@ fn rs_exhaustive_gpu_knn(
 /// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 /// detailed verbosity.
 /// @param use_gpu Logical. If \code{TRUE}, trains on the wgpu backend. If
-/// \code{FALSE}, trains on the CPU via NdArray. Defaults to \code{TRUE}.
+/// \code{FALSE}, trains on the CPU via flex. Defaults to \code{TRUE}.
 ///
 /// @return A named list with two elements: `embedding` (numerical matrix of
 /// dimensions samples x n_dim) and `model` (external pointer to the trained
@@ -507,12 +507,14 @@ fn rs_serialise_parametric_umap(model: Robj) -> Result<Vec<u8>, extendr_api::Err
 ///
 /// @description
 /// `r lifecycle::badge("experimental")`
-/// Deserialises a trained parametric UMAP model from points and returns an R
+/// Deserialises a trained parametric UMAP model from raw bytes and returns an R
 /// object.
 ///
-/// @param bytes The raw byte sequence
+/// @param bytes The raw byte sequence. The leading byte tags the backend the
+/// model was trained on: `0` for wgpu, `1` for the flex CPU backend.
 ///
-/// @returns Returns
+/// @returns An external pointer to the restored model, for use with
+/// `rs_parametric_umap_predict`.
 ///
 /// @keywords internal
 #[extendr]
@@ -777,12 +779,13 @@ fn rs_umap_gpu(
     }
 }
 
-/// UMAP implementation
+/// UMAP implementation from a pre-computed kNN graph
 ///
 /// @description
 /// `r lifecycle::badge("experimental")`
-/// This is the wrapper function into the Rust interface for UMAP and can use a
-/// pre-computed kNN. Leverages GPU acceleration for the optimisation.
+/// This is the wrapper function into the Rust interface for UMAP and takes a
+/// pre-computed kNN graph, skipping the graph build. GPU acceleration applies
+/// to the optimisation.
 ///
 /// @param embd Numerical matrix. The data to use to generate the embeddings.
 /// Should be of dimensions samples x features.
@@ -879,10 +882,10 @@ fn rs_umap_from_knn_gpu(
 ///
 /// @description
 /// `r lifecycle::badge("experimental")`
-/// Leverages the tSNE implementation in manifolds-rs - a very fast Rust-based
-/// implementation. You have two optimiser options: `"bh"` which tends to be
-/// faster on smaller datasets and `"fft"` for large data sets. It leverages
-/// GPU-accelerated kNN searches under the hood.
+/// Wraps the tSNE implementation in manifolds-rs. You have two optimiser
+/// options: `"bh"`, which tends to be faster on smaller data sets, and `"fft"`
+/// for large data sets. The kNN search runs on the GPU; the optimiser stays on
+/// the CPU.
 ///
 /// @param embd Numerical matrix. The data to use to generate the embeddings.
 /// Should be of dimensions samples x features.
@@ -962,14 +965,14 @@ fn rs_tsne_gpu(
     }
 }
 
-/// tSNE implementation
+/// tSNE implementation from a pre-computed kNN graph
 ///
 /// @description
 /// `r lifecycle::badge("experimental")`
-/// Leverages the tSNE implementation in manifolds-rs - a very fast Rust-based
-/// implementation. You have two optimiser options: `"bh"` which tends to be
-/// faster on smaller datasets and `"fft"` for large data sets. This version
-/// uses a pre-computed kNN graph, please see [new_nearest_neighbour()].
+/// Wraps the tSNE implementation in manifolds-rs. You have two optimiser
+/// options: `"bh"`, which tends to be faster on smaller data sets, and `"fft"`
+/// for large data sets. This version takes a pre-computed kNN graph, please see
+/// [new_nearest_neighbour()].
 ///
 /// @param embd Numerical matrix. The data to use to generate the embeddings.
 /// Should be of dimensions samples x features.

@@ -13,11 +13,13 @@
 #' Generate meta cells based on SEACells on the GPU
 #'
 #' @description
-#' GPU counterpart of [bixverse::generate_seacells_sc()]. The Frank-Wolfe
-#' B-gradient argmin, which dominates the runtime, runs on the WGPU backend.
-#' Kernel construction, archetype initialisation, the A update and the
-#' aggregation into pseudo-bulk counts stay on the CPU, so the speedup tracks
-#' how much of the run the argmin owns. That share grows with `n_sea_cells`.
+#' GPU counterpart of [bixverse::generate_seacells_sc()]. Both Frank-Wolfe
+#' solves, the B-gradient argmin and the per-cell A columns, run on the WGPU
+#' backend. Kernel construction, archetype initialisation, the `K^2 B`
+#' bookkeeping, the RSS evaluation and the aggregation into pseudo-bulk counts
+#' stay on the CPU, so the speedup tracks how much of the run the two solves
+#' own. That share grows with `n_sea_cells`. Each solve falls back to its CPU
+#' sibling for that iteration if no GPU workgroup tier covers `k`.
 #'
 #' Params, result class and downstream code are identical to the CPU version.
 #'
@@ -26,7 +28,7 @@
 #' A list with the following items:
 #' \itemize{
 #'   \item n_sea_cells - Number of SEA cells to detect.
-#'   \item max_fw_iters - Maximum iterations for the Franke-Wolfe algorithm per
+#'   \item max_fw_iters - Maximum iterations for the Frank-Wolfe algorithm per
 #'   matrix update.
 #'   \item convergence_epsilon - Convergence threshold. Algorithm stops when
 #'   RSS change < epsilon * RSS(0).
@@ -35,10 +37,10 @@
 #'   \item greedy_threshold - Maximum number of cells before defaulting to rapid
 #'   random selection of archetypes.
 #'   \item graph_building - Graph building method.
-#'   \item pruning - Boolean. Shall small values be pruned during the Franke-
+#'   \item pruning - Boolean. Shall small values be pruned during the Frank-
 #'   Wolfe iterations.
 #'   \item pruning_threshold - The threshold below which pruning shall be
-#'   applied during Franke-Wolfe iterations.
+#'   applied during Frank-Wolfe iterations.
 #'   \item n_landmarks - Optional integer. Number of landmarks for the Nystroem
 #'   archetype initialisation.
 #'   \item knn - List of kNN parameters. See [bixverse::params_knn_defaults()]

@@ -61,9 +61,8 @@
 #' @param parametric_umap_params Named list. Parametric UMAP parameters, see
 #' [params_parametric_umap()].
 #' @param use_gpu Boolean. Shall the neural net be trained on GPU via the
-#' `wgpu` backend. On smaller datasets, the CPU can be faster (via the
-#' `ndarray`) backend due to kernel launch overhead.
-#' data sets, the CPU will be faster via the Ndarray.
+#' `wgpu` backend. On smaller data sets the CPU backend (`flex`) can be faster,
+#' since kernel launch overhead dominates.
 #' @param seed Integer. Random seed for reproducibility. Defaults to `42L`.
 #' @param .verbose Boolean or integer. Controls verbosity and returns run times.
 #' `FALSE` -> quiet, `TRUE` or `1L` -> normal verbosity, `2L` -> detailed

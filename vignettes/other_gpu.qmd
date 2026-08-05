@@ -184,15 +184,15 @@ why the crossover point isn't always where you'd expect.
 
 `bixverse` already ships `rs_cor()`, which dispatches to
 [`faer`](https://github.com/sarah-quinones/faer-rs) under the hood. faer is
-a Rust BLAS with strong SIMD support and initial cubek-based GEMM only beat this
-on very large data sets. However, `bixverse-rs` ships specific GPU kernels for 
-correlations and co-variance calculations that actually beat `faer`. 
-`bixverse.gpu` adds `rs_cor_gpu()` and `rs_cov_gpu()` for when you need have
-your correlations fast on large data sets.
+a Rust BLAS with strong SIMD support, and a generic GEMM on the GPU only beat it
+on very large data sets. `bixverse-rs` now ships handrolled Gram kernels for
+correlation and covariance that actually beat `faer`, and `bixverse.gpu` exposes
+them as `rs_cor_gpu()` and `rs_cov_gpu()` for when you need your correlations
+fast on large data sets.
 
 ### Correlation
 
-25k samples, 1k features. Base R vs CPU vs GPU:
+25k samples, 2.5k features. Base R vs CPU vs GPU:
 
 ```{r}
 #| label: cor data

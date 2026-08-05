@@ -121,8 +121,13 @@ reference:
       - rs_harmony_v2_gpu
       - rs_ivf_gpu_knn
       - rs_kmeans_gpu
+      - rs_mc_scenic_gpu
       - rs_parametric_umap_predict
       - rs_parametric_umap
+      - rs_sc_pca_sparse_gpu
+      - rs_scenic_grn_gpu
+      - rs_scenic_grn_streaming_gpu
+      - rs_seacells_gpu
       - rs_umap_gpu
       - rs_umap_from_knn_gpu
       - rs_tsne_gpu
