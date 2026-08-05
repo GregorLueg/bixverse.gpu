@@ -23,7 +23,7 @@
 A list with the following items:
 \itemize{
 \item n_sea_cells - Number of SEA cells to detect.
-\item max_fw_iters - Maximum iterations for the Franke-Wolfe algorithm per
+\item max_fw_iters - Maximum iterations for the Frank-Wolfe algorithm per
 matrix update.
 \item convergence_epsilon - Convergence threshold. Algorithm stops when
 RSS change < epsilon * RSS(0).
@@ -32,10 +32,10 @@ RSS change < epsilon * RSS(0).
 \item greedy_threshold - Maximum number of cells before defaulting to rapid
 random selection of archetypes.
 \item graph_building - Graph building method.
-\item pruning - Boolean. Shall small values be pruned during the Franke-
+\item pruning - Boolean. Shall small values be pruned during the Frank-
 Wolfe iterations.
 \item pruning_threshold - The threshold below which pruning shall be
-applied during Franke-Wolfe iterations.
+applied during Frank-Wolfe iterations.
 \item n_landmarks - Optional integer. Number of landmarks for the Nystroem
 archetype initialisation.
 \item knn - List of kNN parameters. See \code{\link[bixverse:params_knn_defaults]{bixverse::params_knn_defaults()}}

@@ -46,10 +46,10 @@ in compressed sparse form, the RSS history and the archetype cell indices.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-GPU equivalent of \code{bixverse::rs_get_seacells}. The Frank-Wolfe B-gradient
-argmin, which dominates the runtime, is dispatched to the WGPU backend. The
-kNN graph, the kernel matrix and the aggregation into pseudo-bulk counts all
-stay on the CPU.
+GPU equivalent of \code{bixverse::rs_get_seacells}. Both Frank-Wolfe solves, the
+B-gradient argmin and the per-cell A columns, are dispatched to the WGPU
+backend. The kNN graph, the kernel matrix, the RSS evaluation and the
+aggregation into pseudo-bulk counts all stay on the CPU.
 }
 \references{
 Persad, et al., Nat. Biotechnol., 2023.

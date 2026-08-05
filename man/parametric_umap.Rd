@@ -43,9 +43,8 @@ to \code{0.1}.}
 \code{\link[=params_parametric_umap]{params_parametric_umap()}}.}
 
 \item{use_gpu}{Boolean. Shall the neural net be trained on GPU via the
-\code{wgpu} backend. On smaller datasets, the CPU can be faster (via the
-\code{ndarray}) backend due to kernel launch overhead.
-data sets, the CPU will be faster via the Ndarray.}
+\code{wgpu} backend. On smaller data sets the CPU backend (\code{flex}) can be faster,
+since kernel launch overhead dominates.}
 
 \item{seed}{Integer. Random seed for reproducibility. Defaults to \code{42L}.}
 

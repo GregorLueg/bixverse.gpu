@@ -2,7 +2,7 @@
 % Please edit documentation in R/extendr-wrappers.R
 \name{rs_tsne_from_knn_gpu}
 \alias{rs_tsne_from_knn_gpu}
-\title{tSNE implementation}
+\title{tSNE implementation from a pre-computed kNN graph}
 \usage{
 rs_tsne_from_knn_gpu(
   embd,
@@ -46,8 +46,8 @@ The tSNE embeddings.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Leverages the tSNE implementation in manifolds-rs - a very fast Rust-based
-implementation. You have two optimiser options: \code{"bh"} which tends to be
-faster on smaller datasets and \code{"fft"} for large data sets. This version
-uses a pre-computed kNN graph, please see \code{\link[manifoldsR:new_nearest_neighbour]{new_nearest_neighbour()}}.
+Wraps the tSNE implementation in manifolds-rs. You have two optimiser
+options: \code{"bh"}, which tends to be faster on smaller data sets, and \code{"fft"}
+for large data sets. This version takes a pre-computed kNN graph, please see
+\code{\link[manifoldsR:new_nearest_neighbour]{new_nearest_neighbour()}}.
 }

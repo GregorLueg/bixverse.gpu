@@ -7,14 +7,16 @@
 rs_deserialise_parametric_umap(bytes)
 }
 \arguments{
-\item{bytes}{The raw byte sequence}
+\item{bytes}{The raw byte sequence. The leading byte tags the backend the
+model was trained on: \code{0} for wgpu, \code{1} for the flex CPU backend.}
 }
 \value{
-Returns
+An external pointer to the restored model, for use with
+\code{rs_parametric_umap_predict}.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Deserialises a trained parametric UMAP model from points and returns an R
+Deserialises a trained parametric UMAP model from raw bytes and returns an R
 object.
 }
 \keyword{internal}
