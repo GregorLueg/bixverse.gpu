@@ -36,7 +36,7 @@ containing nearest neighbour, graph, and training configuration.}
 detailed verbosity.}
 
 \item{use_gpu}{Logical. If \code{TRUE}, trains on the wgpu backend. If
-\code{FALSE}, trains on the CPU via NdArray. Defaults to \code{TRUE}.}
+\code{FALSE}, trains on the CPU via flex. Defaults to \code{TRUE}.}
 }
 \value{
 A named list with two elements: \code{embedding} (numerical matrix of

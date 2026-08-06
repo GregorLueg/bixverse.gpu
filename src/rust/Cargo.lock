@@ -101,13 +101,14 @@ checksum = "4b46cbb362ab8752921c97e041f5e366ee6297bd428a31275b9fcf1e380f7299"
 
 [[package]]
 name = "ann-search-rs"
-version = "0.4.5"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91d8f6404a7d43a08eeac9b8338fbf01285ba0666d857ab594044dcf34ee87ac"
+checksum = "088160370d8e750693d767ee4af24abc0a56c1a8b605be2f6f87a9fb481a9bf0"
 dependencies = [
  "approx",
  "clap",
  "cubecl",
+ "cubecl-utils-rs",
  "document-features",
  "faer",
  "faer-traits",
@@ -523,14 +524,15 @@ dependencies = [
 
 [[package]]
 name = "bixverse-rs"
-version = "0.3.11"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cc165c21cb4da5dfd72f779561f4ba5e94978aa5d971055c0043540acb928a7"
+checksum = "8a2c99f31e04cea6fdd2c63eb3f07beb79387a4f33aebc73b1443c0297dbee28"
 dependencies = [
  "ann-search-rs",
  "approx",
  "bincode",
  "cubecl",
+ "cubecl-utils-rs",
  "cubek",
  "document-features",
  "either",
@@ -561,7 +563,7 @@ dependencies = [
 
 [[package]]
 name = "bixverse_gpu"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "ann-search-rs",
  "bixverse-rs",
@@ -2105,6 +2107,17 @@ dependencies = [
  "serde",
  "spin",
  "variadics_please",
+]
+
+[[package]]
+name = "cubecl-utils-rs"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "26e6098494722dab3d8243707faded9dcea26f3d6dd77d816b8c995343f3a90a"
+dependencies = [
+ "cubecl",
+ "num-traits",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -4664,15 +4677,16 @@ checksum = "670fdfda89751bc4a84ac13eaa63e205cf0fd22b4c9a5fbfa085b63c1f1d3a30"
 
 [[package]]
 name = "manifolds-rs"
-version = "0.3.10"
+version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97e7f1e978c975e853fd4ae280c5ceefe9a01639e7cca7c51716e17f90736009"
+checksum = "ff93dbd6d2ea02465e02dd65a12c98f2bc8d46a23aef812ae802d66a1cdb987b"
 dependencies = [
  "ann-search-rs",
  "approx",
  "bincode",
  "burn",
  "cubecl",
+ "cubecl-utils-rs",
  "faer",
  "faer-traits",
  "fftw",

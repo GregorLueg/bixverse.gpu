@@ -1,3 +1,13 @@
+# bixverse.gpu 0.2.5
+
+## Features
+
+* GPU-accelerated SEACells: both Frank-Wolfe solves, the B-gradient argmin and
+  the per-cell A columns, are executed on GPU, increasing the speed on larger
+  data sets.
+* Version bumps to get improved GPU performance for the UMAP optimiser from
+  `manifolds-rs`.
+
 # bixverse.gpu 0.2.4
 
 ## Features
@@ -18,6 +28,8 @@
 * Improvement in the GPU-accelerated kNN searches ported over from 
   `ann-search-rs`.
 * Handrolled correlation kernels to increase performance there.
+
+# bixverse.gpu 0.2.1
 
 ## Features
 

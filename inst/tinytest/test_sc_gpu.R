@@ -32,7 +32,8 @@ cell_markers <- list(
 sc_qc_param <- params_sc_min_quality(
   min_unique_genes = min_genes_exp,
   min_lib_size = min_lib_size,
-  min_cells = min_cells_exp
+  min_cells = min_cells_exp,
+  target_size = 1e3
 )
 
 ## synthetic data --------------------------------------------------------------

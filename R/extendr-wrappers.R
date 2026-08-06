@@ -109,7 +109,7 @@ rs_exhaustive_gpu_knn <- function(embd, k, dist_metric, verbose) .Call(wrap__rs_
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #' @param use_gpu Logical. If \code{TRUE}, trains on the wgpu backend. If
-#' \code{FALSE}, trains on the CPU via NdArray. Defaults to \code{TRUE}.
+#' \code{FALSE}, trains on the CPU via flex. Defaults to \code{TRUE}.
 #'
 #' @return A named list with two elements: `embedding` (numerical matrix of
 #' dimensions samples x n_dim) and `model` (external pointer to the trained
@@ -153,12 +153,14 @@ rs_serialise_parametric_umap <- function(model) .Call(wrap__rs_serialise_paramet
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
-#' Deserialises a trained parametric UMAP model from points and returns an R
+#' Deserialises a trained parametric UMAP model from raw bytes and returns an R
 #' object.
 #'
-#' @param bytes The raw byte sequence
+#' @param bytes The raw byte sequence. The leading byte tags the backend the
+#' model was trained on: `0` for wgpu, `1` for the flex CPU backend.
 #'
-#' @returns Returns
+#' @returns An external pointer to the restored model, for use with
+#' `rs_parametric_umap_predict`.
 #'
 #' @keywords internal
 rs_deserialise_parametric_umap <- function(bytes) .Call(wrap__rs_deserialise_parametric_umap, bytes)
@@ -247,12 +249,13 @@ rs_cov_gpu <- function(x, verbose) .Call(wrap__rs_cov_gpu, x, verbose)
 #' @export
 rs_umap_gpu <- function(embd, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, verbose) .Call(wrap__rs_umap_gpu, embd, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, verbose)
 
-#' UMAP implementation
+#' UMAP implementation from a pre-computed kNN graph
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
-#' This is the wrapper function into the Rust interface for UMAP and can use a
-#' pre-computed kNN. Leverages GPU acceleration for the optimisation.
+#' This is the wrapper function into the Rust interface for UMAP and takes a
+#' pre-computed kNN graph, skipping the graph build. GPU acceleration applies
+#' to the optimisation.
 #'
 #' @param embd Numerical matrix. The data to use to generate the embeddings.
 #' Should be of dimensions samples x features.
@@ -278,10 +281,10 @@ rs_umap_from_knn_gpu <- function(embd, knn_data, n_dim, min_dist, spread, k, uma
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
-#' Leverages the tSNE implementation in manifolds-rs - a very fast Rust-based
-#' implementation. You have two optimiser options: `"bh"` which tends to be
-#' faster on smaller datasets and `"fft"` for large data sets. It leverages
-#' GPU-accelerated kNN searches under the hood.
+#' Wraps the tSNE implementation in manifolds-rs. You have two optimiser
+#' options: `"bh"`, which tends to be faster on smaller data sets, and `"fft"`
+#' for large data sets. The kNN search runs on the GPU; the optimiser stays on
+#' the CPU.
 #'
 #' @param embd Numerical matrix. The data to use to generate the embeddings.
 #' Should be of dimensions samples x features.
@@ -303,14 +306,14 @@ rs_umap_from_knn_gpu <- function(embd, knn_data, n_dim, min_dist, spread, k, uma
 #' @export
 rs_tsne_gpu <- function(embd, n_dim, perplexity, approx_type, tsne_params, seed, use_high_precision, verbose) .Call(wrap__rs_tsne_gpu, embd, n_dim, perplexity, approx_type, tsne_params, seed, use_high_precision, verbose)
 
-#' tSNE implementation
+#' tSNE implementation from a pre-computed kNN graph
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
-#' Leverages the tSNE implementation in manifolds-rs - a very fast Rust-based
-#' implementation. You have two optimiser options: `"bh"` which tends to be
-#' faster on smaller datasets and `"fft"` for large data sets. This version
-#' uses a pre-computed kNN graph, please see [new_nearest_neighbour()].
+#' Wraps the tSNE implementation in manifolds-rs. You have two optimiser
+#' options: `"bh"`, which tends to be faster on smaller data sets, and `"fft"`
+#' for large data sets. This version takes a pre-computed kNN graph, please see
+#' [new_nearest_neighbour()].
 #'
 #' @param embd Numerical matrix. The data to use to generate the embeddings.
 #' Should be of dimensions samples x features.
@@ -469,5 +472,39 @@ rs_scenic_grn_streaming_gpu <- function(f_path_genes, cell_indices, gene_indices
 #'
 #' @keywords internal
 rs_mc_scenic_gpu <- function(sparse_data, tf_indices, scenic_params, wave_byte_budget, seed, verbose) .Call(wrap__rs_mc_scenic_gpu, sparse_data, tf_indices, scenic_params, wave_byte_budget, seed, verbose)
+
+#' GPU: SEACells meta cell generation
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU equivalent of `bixverse::rs_get_seacells`. Both Frank-Wolfe solves, the
+#' B-gradient argmin and the per-cell A columns, are dispatched to the WGPU
+#' backend. The kNN graph, the kernel matrix, the RSS evaluation and the
+#' aggregation into pseudo-bulk counts all stay on the CPU.
+#'
+#' @param f_path String. Path to the `counts_cells.bin` file.
+#' @param embd Numeric matrix. Cells x components embedding, one row per
+#' QC-passing cell.
+#' @param cells_to_keep Optional integer vector. 0-indexed original row indices
+#' the embedding was built from, in embedding row order.
+#' @param cells_to_use Optional integer vector. 0-indexed original row indices
+#' to narrow the run to. Forces a kNN rebuild on that subset.
+#' @param knn_data Optional list. Precomputed kNN graph with `indices`, `dist`,
+#' `dist_metric` and `k`. Ignored when `cells_to_use` is set.
+#' @param seacells_params Named list. See [bixverse::params_sc_seacells()].
+#' @param target_size Double. Library target size the meta cells are
+#' normalised to.
+#' @param seed Integer. Random seed.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal; `2L` - detailed.
+#'
+#' @returns A list with the cell assignments, the aggregated meta cell counts
+#' in compressed sparse form, the RSS history and the archetype cell indices.
+#'
+#' @export
+#'
+#' @references Persad, et al., Nat. Biotechnol., 2023.
+#'
+#' @keywords internal
+rs_seacells_gpu <- function(f_path, embd, cells_to_keep, cells_to_use, knn_data, seacells_params, target_size, seed, verbose) .Call(wrap__rs_seacells_gpu, f_path, embd, cells_to_keep, cells_to_use, knn_data, seacells_params, target_size, seed, verbose)
 
 # nolint end

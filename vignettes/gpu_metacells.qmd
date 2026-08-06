@@ -1,0 +1,233 @@
+---
+title: "GPU-accelerated SEACells"
+date: last-modified
+date-format: YYYY-MM-DD
+vignette: >
+  %\VignetteIndexEntry{GPU-accelerated SEACells}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: '#>'
+author: "Gregor Lueg"
+---
+
+## Intro
+
+SEACells ([Persad et al., 2023](https://www.nature.com/articles/s41587-023-01716-9))
+finds meta cells by kernel archetypal analysis. The expensive part is the pair
+of inner Frank-Wolfe loops: the `B` update scans a gradient over all cells for
+every archetype and takes an argmin, and the `A` update solves a column per
+cell. Both now run on the GPU in `generate_seacells_gpu_sc()`.
+
+The rest stays on the CPU: the kNN graph, the kernel matrix, the archetype
+initialisation, the `K²B` bookkeeping, the RSS evaluation and the aggregation
+into pseudo-bulk counts. So the speedup is bounded by how much of the run the
+two solves own. That share grows with `n_sea_cells`, because both scale with
+`n_cells x k` while most of the CPU-side work does not. Ask for 50 meta cells
+and the win is small. Ask for a few thousand and it gets interesting.
+
+Two things worth knowing about the kernels. Each solve picks a workgroup width
+from a small set of tiers, and falls back to its CPU sibling for that iteration
+if no tier covers your `k`, so a very large `n_sea_cells` can quietly land back
+on the host. And nothing on the GPU path holds a dense `n x k` buffer: `B`,
+`K²B` and the transposed `A` all stay sparse, which is what makes million-cell
+runs fit at all.
+
+If you have not seen the CPU version, read the
+[bixverse meta cell vignette](https://gregorlueg.github.io/bixverse/articles/single_cell_meta_cells.html)
+first. The params, the result class and everything downstream are identical
+here.
+
+```{r}
+#| label: setup
+library(bixverse)
+library(bixverse.gpu)
+library(data.table)
+library(magrittr)
+```
+
+::: {.callout-note}
+Vignettes were built locally on a MacBook Pro M1 Max. The GH runners were just
+too slow and do not have proper GPU support. This gives an idea of speed on a
+decent, but older machine.
+:::
+
+## Rebuilding a processed CD34
+
+We use the same CD34 cells from the [SEACells vignette](https://github.com/dpeerlab/SEACells/blob/main/notebooks/SEACell_computation.ipynb) to set up the parent `SingleCells` object: 
+load (QC not needed - it's already filtered data), HVG selection, PCA, 
+kNN graph. We can use the provided cell type labels to check purity.
+
+```{r}
+#| label: rebuild-object
+#| code-fold: true
+#| code-summary: "Rebuild the CD34 cell object (click to expand)"
+cd34_path <- download_cd34_data()
+
+tempdir_cd34 <- tempdir()
+
+sc_object <- SingleCells(dir_data = tempdir_cd34)
+
+sc_object <- load_h5ad(object = sc_object, h5_path = cd34_path)
+
+sc_object <- find_hvg_sc(
+  object = sc_object,
+  hvg_no = 2000L,
+  .verbose = FALSE
+)
+
+sc_object <- calculate_pca_sc(
+  object = sc_object,
+  no_pcs = 30L,
+  sparse_svd = FALSE
+)
+
+sc_object <- find_neighbours_sc(
+  object = sc_object,
+  neighbours_params = params_sc_neighbours(
+    knn = list(ann_dist = "euclidean", knn_method = "kmknn")
+  )
+)
+
+# we need the kNN object for the diffusion maps
+knn_object <- get_knn_obj(x = sc_object)
+```
+
+## Running it
+
+One call, and the params are the same `params_sc_seacells()` the CPU version
+takes. We will go with the same parameters as for the other vignette.
+
+```{r}
+#| label: gpu-seacells
+seacell_params <- params_sc_seacells(
+  n_sea_cells = 250L,
+  convergence_epsilon = 0.001,
+  pruning = TRUE
+)
+
+gpu_time <- system.time({
+  mc_gpu <- generate_seacells_gpu_sc(
+    sc_object,
+    seacell_params = seacell_params,
+    .verbose = TRUE
+  )
+})
+
+mc_gpu
+```
+
+The result is a `MetaCells` object, byte for byte the same shape as the CPU one.
+Assignments live in `@original_assignment`, the RSS trace and the archetype cell
+indices in `@other_data`.
+
+```{r}
+#| label: gpu-seacells-inspect
+head(mc_gpu[[]], 3L)
+
+tail(mc_gpu@other_data$rss, 5L)
+```
+
+### Knobs that matter on large data
+
+Two params change the picture once you leave toy datasets:
+
+- **`n_landmarks`** switches archetype initialisation to a Nystroem
+  approximation on a landmark subsample. Without it, initialisation is
+  quadratic in cells and starts to dominate the run well before the
+  Frank-Wolfe loop does.
+- **`pruning`** drops tiny values during the Frank-Wolfe updates. It costs a bit
+  of numerical fidelity and buys a lot of memory, which is what makes million-
+  cell runs feasible at all. `pruning_threshold` controls how aggressive it is.
+
+```{r}
+#| label: gpu-seacells-knobs
+#| eval: false
+seacell_params_large <- params_sc_seacells(
+  n_sea_cells = 5000L,
+  n_landmarks = 20000L,
+  pruning = TRUE,
+  pruning_threshold = 1e-7,
+  knn = list(k = 25L)
+)
+```
+
+## CPU versus GPU
+
+Same object, same params, same seed.
+
+```{r}
+#| label: cpu-seacells
+cpu_time <- system.time({
+  mc_cpu <- generate_seacells_sc(
+    sc_object,
+    seacell_params = seacell_params,
+    .verbose = TRUE
+  )
+})
+
+data.table(
+  version = c("CPU", "GPU"),
+  seconds = round(c(cpu_time[["elapsed"]], gpu_time[["elapsed"]]), 2)
+)[, speed_up := round(seconds[1] / seconds, 2)][]
+```
+
+The two do not produce bit-identical assignments. GPU reduction ordering breaks
+ties differently, so a cell sitting almost equidistant between two archetypes
+can land either way. What should agree is the structure. Compare how the meta
+cells partition the cells:
+
+```{r}
+#| label: cpu-vs-gpu
+mc_sizes <- data.table(
+  version = c("CPU", "GPU"),
+  n_meta_cells = c(nrow(mc_cpu[[]]), nrow(mc_gpu[[]])),
+  median_cells = c(
+    median(mc_cpu[[]]$no_originating_cells),
+    median(mc_gpu[[]]$no_originating_cells)
+  ),
+  final_rss = round(
+    c(
+      tail(mc_cpu@other_data$rss, 1L),
+      tail(mc_gpu@other_data$rss, 1L)
+    ),
+    2
+  )
+)
+
+mc_sizes
+```
+
+We can already see a difference here in speed, and this is a small data set
+asking for only 250 meta cells. The more cells and SEACells you throw at the
+problem, the bigger the delta: upstream measures the full fit at roughly 2.6x
+on 50k cells and 666 archetypes.
+
+## Feeding into SCENIC
+
+The resulting `MetaCells` goes straight into the GPU SCENIC driver, no
+conversion step.
+
+```{r}
+#| label: metacells-to-scenic
+#| eval: false
+scenic_res <- scenic_grn_sc_gpu(
+  object = mc_gpu,
+  tf_ids = tf_dt$gene_id,
+  scenic_params = params_scenic(learner_type = "extratrees"),
+  .verbose = TRUE
+)
+```
+
+See the [GPU SCENIC vignette](gpu_scenic.html) for the full workflow.
+
+## What is next
+
+Neither kernel is the bottleneck any more. Each beats the CPU scan it replaces
+by several fold in isolation, but the fit as a whole moves by less, and the gap
+is Amdahl: the blocking readbacks around the two solves were about a fifth of
+wall-clock when last attributed, and the RSS evaluation plus the `K²B`
+maintenance still sit on the host. Overlapping the readbacks and moving RSS are
+the next two levers. Watch the space.

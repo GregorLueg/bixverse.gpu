@@ -43,8 +43,8 @@ The tSNE embeddings.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Leverages the tSNE implementation in manifolds-rs - a very fast Rust-based
-implementation. You have two optimiser options: \code{"bh"} which tends to be
-faster on smaller datasets and \code{"fft"} for large data sets. It leverages
-GPU-accelerated kNN searches under the hood.
+Wraps the tSNE implementation in manifolds-rs. You have two optimiser
+options: \code{"bh"}, which tends to be faster on smaller data sets, and \code{"fft"}
+for large data sets. The kNN search runs on the GPU; the optimiser stays on
+the CPU.
 }

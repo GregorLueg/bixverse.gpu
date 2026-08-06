@@ -1,6 +1,6 @@
 Package: bixverse.gpu
 Title: GPU-accelerated methods for the bixverse
-Version: 0.2.4
+Version: 0.2.5
 Authors@R: 
     person(
         given = "Gregor", 
@@ -14,7 +14,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Config/rextendr/version: 0.5.0
-SystemRequirements: Cargo (Rust's package manager), rustc >= 1.9.0, xz
+SystemRequirements: Cargo (Rust's package manager), rustc >= 1.95, xz
 Depends: 
     R (>= 4.2)
 Suggests: 
@@ -39,4 +39,4 @@ Remotes:
     GregorLueg/manifoldsR
 VignetteBuilder: quarto
 URL: https://gregorlueg.github.io/bixverse.gpu/
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.0
