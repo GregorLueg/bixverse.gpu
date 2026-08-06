@@ -607,8 +607,8 @@ calculate_pca_gpu_sc <- S7::new_generic(
 
 #' @method calculate_pca_gpu_sc SingleCells
 #'
-#' @importFrom zeallot `%<-%`
-#' @importFrom magrittr `%>%`
+#' @importFrom zeallot %<-%
+#' @importFrom magrittr %>%
 S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
   object,
   no_pcs,
@@ -623,7 +623,7 @@ S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
   checkmate::qassert(seed, "I1")
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
-  if ((length(get_hvg(object)) == 0) && is.null(hvg)) {
+  if ((length(suppressWarnings(get_hvg(object))) == 0) && is.null(hvg)) {
     warning(paste(
       "No HVGs identified in the object nor provided.",
       "Please run find_hvg_sc() or provide the indices of the HVG",

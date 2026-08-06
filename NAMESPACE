@@ -51,9 +51,11 @@ export(tsne_gpu_sc)
 export(umap_gpu)
 export(umap_gpu_sc)
 import(bixverse)
-importFrom(magrittr,`%>%`)
-importFrom(manifoldsR,get_centroids)
-importFrom(manifoldsR,membership)
-importFrom(manifoldsR,new_nearest_neighbour)
-importFrom(zeallot,`%<-%`)
+importFrom(magrittr,"%>%")
+importFrom(manifoldsR,
+  get_centroids,
+  membership,
+  new_nearest_neighbour
+)
+importFrom(zeallot,"%<-%")
 useDynLib(bixverse.gpu, .registration = TRUE)
