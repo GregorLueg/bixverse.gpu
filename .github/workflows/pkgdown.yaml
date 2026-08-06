@@ -48,6 +48,9 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.10
 
+      # Thin LTO over the cubecl/wgpu graph is the expensive part of the build
+      # and the part sccache cannot cache. CI only needs a working binary, not
+      # the fastest one; users still build with the Cargo.toml profile.
       - name: Cargo env
         run: |
           echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
@@ -56,6 +59,8 @@ jobs:
           echo "CARGO_NET_RETRY=10" >> $GITHUB_ENV
           echo "CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse" >> $GITHUB_ENV
           echo "CARGO_TERM_COLOR=always" >> $GITHUB_ENV
+          echo "CARGO_PROFILE_RELEASE_LTO=false" >> $GITHUB_ENV
+          echo "CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16" >> $GITHUB_ENV
       
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'

@@ -4,12 +4,15 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         config:
           - {os: macOS-latest,   r: 'release'}
@@ -40,6 +43,9 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.10
 
+      # Thin LTO over the cubecl/wgpu graph is the expensive part of the build
+      # and the part sccache cannot cache. CI only needs a working binary, not
+      # the fastest one; users still build with the Cargo.toml profile.
       - name: Cargo env
         run: |
           echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
@@ -48,7 +54,21 @@ jobs:
           echo "CARGO_NET_RETRY=10" >> $GITHUB_ENV
           echo "CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse" >> $GITHUB_ENV
           echo "CARGO_TERM_COLOR=always" >> $GITHUB_ENV
-    
+          echo "CARGO_PROFILE_RELEASE_LTO=false" >> $GITHUB_ENV
+          echo "CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16" >> $GITHUB_ENV
+
+      # manifoldsR and bixverse are GitHub remotes, so pak rebuilds both (~14
+      # min) whenever the pinned SHA moves. Caching pak's own store lets a
+      # re-run on an unchanged lockfile reuse the built binaries.
+      - name: Cache pak build store
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/R/pak
+            ~/Library/Caches/org.R-project.R/R/pak
+          key: ${{ matrix.config.os }}-pak-${{ hashFiles('.github/pkg.lock') }}
+          restore-keys: ${{ matrix.config.os }}-pak-
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: |
