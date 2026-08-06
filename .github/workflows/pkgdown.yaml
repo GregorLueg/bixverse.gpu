@@ -40,17 +40,9 @@ jobs:
         with:
           toolchain: stable
 
-      # pak builds this package and the three GitHub Remotes in temp dirs, so
-      # caching src/rust/target never hits. sccache caches per crate instead,
-      # which is what actually pays: manifoldsR, bixverse and bixverse.gpu
-      # share the ann-search-rs / bixverse-rs / manifolds-rs trees plus all of
-      # cubecl, burn and wgpu underneath them.
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.10
 
-      # Thin LTO over the cubecl/wgpu graph is the expensive part of the build
-      # and the part sccache cannot cache. CI only needs a working binary, not
-      # the fastest one; users still build with the Cargo.toml profile.
       - name: Cargo env
         run: |
           echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
