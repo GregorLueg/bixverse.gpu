@@ -63,9 +63,8 @@ parametric_umap(
 - use_gpu:
 
   Boolean. Shall the neural net be trained on GPU via the `wgpu`
-  backend. On smaller datasets, the CPU can be faster (via the
-  `ndarray`) backend due to kernel launch overhead. data sets, the CPU
-  will be faster via the Ndarray.
+  backend. On smaller data sets the CPU backend (`flex`) can be faster,
+  since kernel launch overhead dominates.
 
 - seed:
 

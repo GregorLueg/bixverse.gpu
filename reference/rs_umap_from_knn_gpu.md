@@ -1,8 +1,8 @@
-# UMAP implementation
+# UMAP implementation from a pre-computed kNN graph
 
 **\[experimental\]** This is the wrapper function into the Rust
-interface for UMAP and can use a pre-computed kNN. Leverages GPU
-acceleration for the optimisation.
+interface for UMAP and takes a pre-computed kNN graph, skipping the
+graph build. GPU acceleration applies to the optimisation.
 
 ## Usage
 

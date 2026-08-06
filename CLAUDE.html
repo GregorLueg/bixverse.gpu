@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,7 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
+    <li><a class="dropdown-item" href="articles/gpu_metacells.html">SEACells with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
@@ -52,7 +53,7 @@
 <p>This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.</p>
 <div class="section level2">
 <h2 id="project">Project<a class="anchor" aria-label="anchor" href="#project"></a></h2>
-<p><code>bixverse.gpu</code> is an R package providing GPU-accelerated algorithms (kNN search, k-means, PCA, Harmony, UMAP, tSNE, parametric UMAP, SCENIC, correlations) that plug into the <code>bixverse</code> / <code>manifoldsR</code> ecosystem. The heavy lifting is Rust, exposed to R via <code>extendr</code>. GPU code runs on WGPU via <code>cubecl</code> / <code>burn</code>, so it is portable across vendors (no CUDA required).</p>
+<p><code>bixverse.gpu</code> is an R package providing GPU-accelerated algorithms (kNN search, k-means, PCA, Harmony, UMAP, tSNE, parametric UMAP, SCENIC, SEACells meta cells, correlations) that plug into the <code>bixverse</code> / <code>manifoldsR</code> ecosystem. The heavy lifting is Rust, exposed to R via <code>extendr</code>. GPU code runs on WGPU via <code>cubecl</code> / <code>burn</code>, so it is portable across vendors (no CUDA required).</p>
 </div>
 <div class="section level2">
 <h2 id="common-commands">Common commands<a class="anchor" aria-label="anchor" href="#common-commands"></a></h2>
@@ -71,15 +72,15 @@
 <h2 id="architecture">Architecture<a class="anchor" aria-label="anchor" href="#architecture"></a></h2>
 <p>The package is a thin R shim over a Rust crate. Three layers, top-down:</p>
 <ol style="list-style-type: decimal"><li>
-<strong>R user API</strong> (<code>R/*.R</code>): friendly, validated wrappers. <code>sc_gpu.R</code> (single-cell workflows, S7 generics dispatching on <code>SingleCells</code> / <code>SingleCellsMultiModal</code> from <code>bixverse</code>), <code>scenic_gpu.R</code> (SCENIC GRN inference, dispatching on <code>SingleCells</code> / <code>MetaCells</code>), <code>umap_gpu.R</code>, <code>tsne_gpu.R</code>, <code>parametric_umap.R</code>, <code>ml_gpu.R</code> (k-means), <code>nn_gpu.R</code> (kNN graphs). Argument checks use <code>checkmate</code> plus local <code>checkmate_extensions.R</code>, where each <code>checkXParams()</code> predicate is wrapped into an <code>assertXParams()</code> via <code><a href="https://mllg.github.io/checkmate/reference/makeAssertion.html" class="external-link">checkmate::makeAssertionFunction</a></code> (<code>assertNnParamsGpu</code>, <code>assertUmapParamsGpu</code>, <code>assertTsneParamsGpu</code>, and so on). Parameter builders live in <code>param_wrappers.R</code> (<code>params_sc_cagra</code>, <code>params_sc_ivf</code>, <code>params_nn_gpu</code>, <code>params_umap_gpu</code>, <code>params_tsne_gpu</code>, <code>params_kmeans_gpu</code>, <code>params_parametric_umap</code>, <code>params_sc_harmony_v2_gpu</code>): each returns a plain named list that the corresponding assert function then validates before it crosses into Rust. SCENIC has no local builder, it reuses <code><a href="https://gregorlueg.github.io/bixverse/reference/params_scenic.html" class="external-link">bixverse::params_scenic()</a></code> and <code>bixverse:::assertScenicParams()</code>.</li>
+<strong>R user API</strong> (<code>R/*.R</code>): friendly, validated wrappers. <code>sc_gpu.R</code> (single-cell workflows, S7 generics dispatching on <code>SingleCells</code> / <code>SingleCellsMultiModal</code> from <code>bixverse</code>), <code>scenic_gpu.R</code> (SCENIC GRN inference, dispatching on <code>SingleCells</code> / <code>MetaCells</code>), <code>seacells_gpu.R</code> (SEACells meta cells, dispatching on <code>SingleCells</code> / <code>SingleCellsSubset</code>), <code>umap_gpu.R</code>, <code>tsne_gpu.R</code>, <code>parametric_umap.R</code>, <code>ml_gpu.R</code> (k-means), <code>nn_gpu.R</code> (kNN graphs), <code>utils.R</code> (<code>parse_verbosity</code>). Argument checks use <code>checkmate</code> plus local <code>checkmate_extensions.R</code>, where each <code>checkXParams()</code> predicate is wrapped into an <code>assertXParams()</code> via <code><a href="https://mllg.github.io/checkmate/reference/makeAssertion.html" class="external-link">checkmate::makeAssertionFunction</a></code> (<code>assertNnParamsGpu</code>, <code>assertUmapParamsGpu</code>, <code>assertTsneParamsGpu</code>, and so on). Parameter builders live in <code>param_wrappers.R</code> (<code>params_sc_cagra</code>, <code>params_sc_ivf</code>, <code>params_nn_gpu</code>, <code>params_umap_gpu</code>, <code>params_tsne_gpu</code>, <code>params_kmeans_gpu</code>, <code>params_parametric_umap</code>, <code>params_sc_harmony_v2_gpu</code>): each returns a plain named list that the corresponding assert function then validates before it crosses into Rust. SCENIC and SEACells have no local builder: they reuse <code><a href="https://gregorlueg.github.io/bixverse/reference/params_scenic.html" class="external-link">bixverse::params_scenic()</a></code> / <code>bixverse:::assertScenicParams()</code> and <code><a href="https://gregorlueg.github.io/bixverse/reference/params_sc_seacells.html" class="external-link">bixverse::params_sc_seacells()</a></code> / <code>bixverse:::assertScSeacells()</code> respectively.</li>
 <li>
 <strong>extendr bridge</strong> (<code>R/extendr-wrappers.R</code>): GENERATED by <code><a href="https://extendr.github.io/rextendr/reference/document.html" class="external-link">rextendr::document()</a></code> from <code>#[extendr]</code> attributes in Rust; never edit by hand. Any change to a Rust-exposed function signature or doc comment requires re-running <code>document()</code>.</li>
 <li>
-<strong>Rust crate</strong> (<code>src/rust/</code>, package name <code>bixverse_gpu</code>). <code>src/lib.rs</code> holds all <code>#[extendr]</code> entry points, the <code>extendr_module!</code> registration, the precision helpers (<code>parse_precision</code>, <code>auto_precision</code>, <code>SAMPLE_THRESHOLD_HIGH_PRECISION</code>) and the <code>PUmapModel</code> backend-agnostic wrapper. Subdirectories:
+<strong>Rust crate</strong> (<code>src/rust/</code>, package name <code>bixverse_gpu</code>). <code>src/lib.rs</code> holds the top-level <code>extendr_module!</code> registration, the precision helpers (<code>parse_precision</code>, <code>auto_precision</code>, <code>SAMPLE_THRESHOLD_HIGH_PRECISION</code>) and the <code>PUmapModel</code> backend-agnostic wrapper. It also holds most <code>#[extendr]</code> entry points, but not all: <code>pca_gpu.rs</code>, <code>harmony_gpu.rs</code>, <code>scenic_gpu.rs</code> and <code>seacells_gpu.rs</code> each carry their own, registered through <code>use &lt;mod&gt;;</code> lines inside <code>extendr_module!</code> rather than <code>fn</code> lines. Subdirectories:
 <ul><li>
 <code>embeddings/</code>: <code>umap_gpu.rs</code>, <code>tsne_gpu.rs</code>, <code>parametric_umap.rs</code> (neural-net UMAP with GPU and CPU backends), <code>utils.rs</code> (R list to Rust parameter structs).</li>
 <li>
-<code>single_cell/</code>: <code>knn_gpu.rs</code> (CAGRA / IVF / exhaustive), <code>pca_gpu.rs</code> (sparse randomised SVD), <code>harmony_gpu.rs</code>, <code>scenic_gpu.rs</code> (in-memory, streaming and MetaCells GRN drivers).</li>
+<code>single_cell/</code>: <code>knn_gpu.rs</code> (CAGRA / IVF / exhaustive), <code>pca_gpu.rs</code> (sparse randomised SVD), <code>harmony_gpu.rs</code>, <code>scenic_gpu.rs</code> (in-memory, streaming and MetaCells GRN drivers), <code>seacells_gpu.rs</code>, <code>sc_utils.rs</code> (shared cell-mapping and kNN conversion helpers; only <code>seacells_gpu.rs</code> consumes them so far).</li>
 <li>
 <code>ml/clustering.rs</code>: k-means.</li>
 <li>
@@ -95,7 +96,7 @@
 <ul><li>
 <strong><code>ann-search-rs</code></strong>: approximate nearest-neighbour crate. Owns CAGRA / IVF / exhaustive kNN plus shared SIMD and GPU-tensor infrastructure that the other sibling crates reuse. Many of the GPU primitives dispatched from here originate there. (feature: <code>gpu</code>)</li>
 <li>
-<strong><code>bixverse-rs</code></strong>: Rust engine behind the whole <code>bixverse</code> ecosystem. This package consumes its GPU-accelerated pieces (linalg, PCA, Harmony, correlations, k-means, SCENIC); the main non-GPU R-facing interface lives in the separate <code>bixverse</code> R package. (features: <code>gpu</code>, <code>single-cell</code>; currently pinned to branch <code>fix-scenic-gpu</code>)</li>
+<strong><code>bixverse-rs</code></strong>: Rust engine behind the whole <code>bixverse</code> ecosystem. This package consumes its GPU-accelerated pieces (linalg, PCA, Harmony, correlations, k-means, SCENIC, SEACells); the main non-GPU R-facing interface lives in the separate <code>bixverse</code> R package. (features: <code>gpu</code>, <code>single-cell</code>) During development <code>src/rust/Cargo.toml</code> points this at a local checkout via <code>path</code>, so you always track its HEAD. That has to be swapped back to a published <code>version</code> before merging, otherwise CI cannot resolve it and the vendored offline build path breaks.</li>
 <li>
 <strong><code>manifolds-rs</code></strong>: manifold-learning crate. UMAP, tSNE, diffusion maps, PaCMAP, PHATE. Depends on <code>ann-search-rs</code> for kNN. GPU coverage is expanding: kNN searches are already GPU, and the UMAP optimiser now has a GPU path too. (features: <code>parametric</code>, <code>gpu</code>, plus <code>fft_tsne</code> off-Windows, see the h5 toolchain issue in the README)</li>
 </ul></div>
@@ -106,7 +107,7 @@
 <li>S3 classes: <code>KMeansClusterGPU</code> (in <code>R/classes.R</code>) implements <code><a href="https://gregorlueg.github.io/manifoldsR/reference/membership.html" class="external-link">manifoldsR::membership</a></code> / <code>get_centroids</code>. <code>ParametricUmapModel</code> has <code>print</code> and <code>predict</code> methods and can be serialised via <code>save_parametric_umap</code> / <code>load_parametric_umap</code> (bytes are tagged 0=GPU, 1=CPU by <code>rs_serialise_parametric_umap</code>).</li>
 <li>
 <code>.onLoad</code> in <code>R/zzz.R</code> calls <code><a href="https://rconsortium.github.io/S7/reference/methods_register.html" class="external-link">S7::methods_register()</a></code>. Do not remove it, the single-cell generics need it.</li>
-<li>Package is <code>lifecycle: experimental</code>. New user-facing functions get <code>r lifecycle::badge("experimental")</code> in the roxygen <code>@description</code>.</li>
+<li>Package is <code>lifecycle: experimental</code>, which covers the whole R-facing surface. Do not put <code>r lifecycle::badge("experimental")</code> in hand-written roxygen; the badge only appears on the <code>rs_*</code> wrappers, where it comes from the Rust <code>///</code> doc comments.</li>
 </ul></div>
 <div class="section level2">
 <h2 id="writing-style">Writing style<a class="anchor" aria-label="anchor" href="#writing-style"></a></h2>
@@ -127,9 +128,7 @@
 </div>
 <div class="section level2">
 <h2 id="notes-and-non-obvious-things">Notes and non-obvious things<a class="anchor" aria-label="anchor" href="#notes-and-non-obvious-things"></a></h2>
-<ul><li>
-<code>scratch.R</code>, <code>scratch_gpu_tests.R</code> and <code>scratch_large_data.R</code> at the repo root are personal experimentation scratchpads, not part of the package, ignored by <code>.Rbuildignore</code>. Don’t touch unless asked.</li>
-<li>The <code>document</code> binary in <code>src/rust/document.rs</code> is invoked by <code>Makevars</code> after the lib build to regenerate wrappers during install. That’s why <code>document.rs</code> sits alongside <code>Cargo.toml</code> and has its own <code>[[bin]]</code> entry.</li>
+<ul><li>The <code>document</code> binary in <code>src/rust/document.rs</code> is invoked by <code>Makevars</code> after the lib build to regenerate wrappers during install. That’s why <code>document.rs</code> sits alongside <code>Cargo.toml</code> and has its own <code>[[bin]]</code> entry.</li>
 <li>
 <code>configure</code> / <code>configure.win</code> plus <code>tools/config.R</code> and <code>tools/msrv.R</code> implement CRAN-friendly Rust detection and the vendored-crate offline build path (<code>src/rust/vendor.tar.xz</code>, generated at release time). Don’t hand-edit <code>src/Makevars</code>, it is generated from <code>src/Makevars.in</code>.</li>
 <li>

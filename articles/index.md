@@ -5,6 +5,8 @@
 - [GPU-accelerated workflows for bixverse single
   cell](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_single_cell.md):
 - [GPU-accelerated
+  SEACells](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_metacells.md):
+- [GPU-accelerated
   SCENIC](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scenic.md):
 - [GPU-accelerated
   UMAP](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_umap.md):

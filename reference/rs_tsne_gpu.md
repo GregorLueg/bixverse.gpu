@@ -1,10 +1,9 @@
 # tSNE implementation
 
-**\[experimental\]** Leverages the tSNE implementation in manifolds-rs -
-a very fast Rust-based implementation. You have two optimiser options:
-`"bh"` which tends to be faster on smaller datasets and `"fft"` for
-large data sets. It leverages GPU-accelerated kNN searches under the
-hood.
+**\[experimental\]** Wraps the tSNE implementation in manifolds-rs. You
+have two optimiser options: `"bh"`, which tends to be faster on smaller
+data sets, and `"fft"` for large data sets. The kNN search runs on the
+GPU; the optimiser stays on the CPU.
 
 ## Usage
 

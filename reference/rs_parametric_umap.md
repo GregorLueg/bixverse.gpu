@@ -62,7 +62,7 @@ rs_parametric_umap(
 - use_gpu:
 
   Logical. If `TRUE`, trains on the wgpu backend. If `FALSE`, trains on
-  the CPU via NdArray. Defaults to `TRUE`.
+  the CPU via flex. Defaults to `TRUE`.
 
 ## Value
 

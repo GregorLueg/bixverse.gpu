@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_metacells.html">SEACells with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
@@ -126,10 +127,110 @@
 <span>  mtx_streaming <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/setnames_sc.html" class="external-link">setnames_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, table <span class="op">=</span> <span class="st">"var"</span>, old <span class="op">=</span> <span class="st">"column1"</span>, new <span class="op">=</span> <span class="st">"gene_symbol"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span></span>
 <span><span class="va">var</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/get_sc_var.html" class="external-link">get_sc_var</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span><span class="va">ensembl_to_symbol</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="va">var</span><span class="op">$</span><span class="va">gene_symbol</span>, <span class="va">var</span><span class="op">$</span><span class="va">gene_id</span><span class="op">)</span></span>
 <span><span class="va">symbol_to_ensembl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="va">var</span><span class="op">$</span><span class="va">gene_id</span>, <span class="va">var</span><span class="op">$</span><span class="va">gene_symbol</span><span class="op">)</span></span>
 <span></span>
@@ -143,8 +244,28 @@
 <span>  streaming <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span></span>
 <span><span class="va">qc_df</span> <span class="op">&lt;-</span> <span class="va">sc_object</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cell_id"</span>, <span class="st">"lib_size"</span>, <span class="st">"nnz"</span>, <span class="st">"MT"</span><span class="op">)</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span><span class="va">metrics</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  log10_lib_size <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">qc_df</span><span class="op">$</span><span class="va">lib_size</span><span class="op">)</span>,</span>
 <span>  log10_nnz <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">qc_df</span><span class="op">$</span><span class="va">nnz</span><span class="op">)</span>,</span>
@@ -162,10 +283,50 @@
 <span>  threshold <span class="op">=</span> <span class="fl">3</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">sc_object</span><span class="op">[[</span><span class="st">"outlier"</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">qc</span><span class="op">$</span><span class="va">combined</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span><span class="va">cells_to_keep</span> <span class="op">&lt;-</span> <span class="va">qc_df</span><span class="op">[</span><span class="op">!</span><span class="va">qc</span><span class="op">$</span><span class="va">combined</span>, <span class="va">cell_id</span><span class="op">]</span></span>
 <span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/set_cells_to_keep.html" class="external-link">set_cells_to_keep</a></span><span class="op">(</span><span class="va">sc_object</span>, <span class="va">cells_to_keep</span><span class="op">)</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span></span>
 <span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/find_hvg_sc.html" class="external-link">find_hvg_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, hvg_no <span class="op">=</span> <span class="fl">2000L</span>, .verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_pca_sc.html" class="external-link">calculate_pca_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, no_pcs <span class="op">=</span> <span class="fl">30L</span>, .verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/find_neighbours_sc.html" class="external-link">find_neighbours_sc</a></span><span class="op">(</span></span>
 <span>  <span class="va">sc_object</span>,</span>
@@ -346,6 +507,16 @@
 <span>  <span class="op">)</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
+<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
+<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
+<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
+<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
+<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span></span>
 <span><span class="va">scenic_res_mc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/scenic_grn_sc_gpu.html">scenic_grn_sc_gpu</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">mc_object</span>,</span>
@@ -426,8 +597,9 @@
 <ul>
 <li>Small data (a few thousand cells, a few hundred targets). Fixed setup cost eats the win. Stay on CPU.</li>
 <li>GRNBoost2. Its single-target histogram-subtraction algorithm shares no structure across targets and gains nothing from a GPU port, so <code><a href="../reference/scenic_grn_sc_gpu.html">scenic_grn_sc_gpu()</a></code> rejects it outright. Use <code><a href="https://gregorlueg.github.io/bixverse/reference/scenic_grn_sc.html" class="external-link">bixverse::scenic_grn_sc()</a></code>.</li>
-<li>RandomForest at very large cell counts. The per-wave tensors grow with <code>n_samples</code>, hitting roughly 8.4 GB at a million cells even at wave size 1, and the driver refuses rather than thrashing. ExtraTrees stays around 530 MB and is the path that scales. If you hit the ceiling, either switch learner or subsample cells via <code>n_subsample</code>.</li>
 </ul>
+<p>RandomForest used to belong on that list. Its per-wave tensors needed roughly 8.4 GB at a million cells even at wave size 1, and the driver refused rather than thrashing. The fused-kernel rewrite moved the histogram into threadgroup memory and collapsed that to about 10 MB, so RF now scales like ExtraTrees and runs at cell counts where it previously would not start.</p>
+<p>What breaks first at very large cell counts is the packed feature tensor, one byte per (cell, TF) at four bins per <code>u32</code> word, so 1 GB at 1000 TFs and a million cells. The driver checks that against the adapter’s per-binding limit up front. If you hit it, subsample cells via <code>n_subsample</code> or trim the TF list.</p>
 <p><code>wave_byte_budget</code> is the knob for the middle ground. It caps VRAM for the per-wave histogram and cumulative tensors. Shrink it on an 8 GB adapter you’re sharing with a display; raise it on 16 GB+ to let the scheduler pick a wider wave.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {

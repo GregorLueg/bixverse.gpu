@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,7 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_metacells.html">SEACells with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
@@ -97,6 +98,13 @@
 
         </dt>
         <dd>Find neighbours via CAGRA GPU-acceleration for single cells</dd>
+
+        <dt>
+
+          <code><a href="generate_seacells_gpu_sc.html">generate_seacells_gpu_sc()</a></code>
+
+        </dt>
+        <dd>Generate meta cells based on SEACells on the GPU</dd>
 
         <dt>
 
@@ -327,6 +335,13 @@
 
         <dt>
 
+          <code><a href="rs_mc_scenic_gpu.html">rs_mc_scenic_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>GPU: SCENIC GRN inference on MetaCells (in-memory sparse)</dd>
+
+        <dt>
+
           <code><a href="rs_parametric_umap_predict.html">rs_parametric_umap_predict()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
@@ -341,6 +356,34 @@
 
         <dt>
 
+          <code><a href="rs_sc_pca_sparse_gpu.html">rs_sc_pca_sparse_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Calculates sparse PCA for single cell</dd>
+
+        <dt>
+
+          <code><a href="rs_scenic_grn_gpu.html">rs_scenic_grn_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>GPU: SCENIC gene-regulatory network inference (disk-backed)</dd>
+
+        <dt>
+
+          <code><a href="rs_scenic_grn_streaming_gpu.html">rs_scenic_grn_streaming_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>GPU: SCENIC GRN inference (streaming; bounded host memory)</dd>
+
+        <dt>
+
+          <code><a href="rs_seacells_gpu.html">rs_seacells_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>GPU: SEACells meta cell generation</dd>
+
+        <dt>
+
           <code><a href="rs_umap_gpu.html">rs_umap_gpu()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
@@ -351,7 +394,7 @@
           <code><a href="rs_umap_from_knn_gpu.html">rs_umap_from_knn_gpu()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
-        <dd>UMAP implementation</dd>
+        <dd>UMAP implementation from a pre-computed kNN graph</dd>
 
         <dt>
 
@@ -365,7 +408,7 @@
           <code><a href="rs_tsne_from_knn_gpu.html">rs_tsne_from_knn_gpu()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
-        <dd>tSNE implementation</dd>
+        <dd>tSNE implementation from a pre-computed kNN graph</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

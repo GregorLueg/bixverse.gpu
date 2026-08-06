@@ -1,7 +1,7 @@
 # Deserialises raw bytes to a trained UMAP model.
 
 **\[experimental\]** Deserialises a trained parametric UMAP model from
-points and returns an R object.
+raw bytes and returns an R object.
 
 ## Usage
 
@@ -13,8 +13,10 @@ rs_deserialise_parametric_umap(bytes)
 
 - bytes:
 
-  The raw byte sequence
+  The raw byte sequence. The leading byte tags the backend the model was
+  trained on: `0` for wgpu, `1` for the flex CPU backend.
 
 ## Value
 
-Returns
+An external pointer to the restored model, for use with
+`rs_parametric_umap_predict`.

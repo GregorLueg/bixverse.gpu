@@ -17,7 +17,7 @@ typically faster owing to GPU kernel dispatch overhead."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,6 +30,7 @@ typically faster owing to GPU kernel dispatch overhead."></head><body>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_metacells.html">SEACells with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
@@ -122,7 +123,7 @@ detailed verbosity.</p></dd>
 
 <dt id="arg-use-gpu">use_gpu<a class="anchor" aria-label="anchor" href="#arg-use-gpu"></a></dt>
 <dd><p>Logical. If <code>TRUE</code>, trains on the wgpu backend. If
-<code>FALSE</code>, trains on the CPU via NdArray. Defaults to <code>TRUE</code>.</p></dd>
+<code>FALSE</code>, trains on the CPU via flex. Defaults to <code>TRUE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

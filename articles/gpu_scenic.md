@@ -77,10 +77,110 @@ sc_object <- load_mtx(
   mtx_streaming = FALSE,
   .verbose = FALSE
 )
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
 
 setnames_sc(sc_object, table = "var", old = "column1", new = "gene_symbol")
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
 
 var <- get_sc_var(sc_object)
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
 ensembl_to_symbol <- setNames(var$gene_symbol, var$gene_id)
 symbol_to_ensembl <- setNames(var$gene_id, var$gene_symbol)
 
@@ -94,8 +194,28 @@ sc_object <- gene_set_proportions_sc(
   streaming = FALSE,
   .verbose = FALSE
 )
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
 
 qc_df <- sc_object[[c("cell_id", "lib_size", "nnz", "MT")]]
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
 metrics <- list(
   log10_lib_size = log10(qc_df$lib_size),
   log10_nnz = log10(qc_df$nnz),
@@ -113,10 +233,50 @@ qc <- run_cell_qc(
   threshold = 3
 )
 sc_object[["outlier"]] <- qc$combined
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
 cells_to_keep <- qc_df[!qc$combined, cell_id]
 sc_object <- set_cells_to_keep(sc_object, cells_to_keep)
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
 
 sc_object <- find_hvg_sc(sc_object, hvg_no = 2000L, .verbose = FALSE)
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
 sc_object <- calculate_pca_sc(sc_object, no_pcs = 30L, .verbose = FALSE)
 sc_object <- find_neighbours_sc(
   sc_object,
@@ -336,6 +496,16 @@ mc_object <- generate_bt_meta_cells_sc(
   ),
   .verbose = FALSE
 )
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
+#> ℹ /Users/gregorlueg/.duckdb
+#> This persists across sessions and is shared with the DuckDB CLI and other clients.
+#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
+#> ℹ See ?duckdb_storage for details and alternatives.
 
 scenic_res_mc <- scenic_grn_sc_gpu(
   object = mc_object,
@@ -428,11 +598,19 @@ Where the GPU still loses:
   [`scenic_grn_sc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/scenic_grn_sc_gpu.md)
   rejects it outright. Use
   [`bixverse::scenic_grn_sc()`](https://gregorlueg.github.io/bixverse/reference/scenic_grn_sc.html).
-- RandomForest at very large cell counts. The per-wave tensors grow with
-  `n_samples`, hitting roughly 8.4 GB at a million cells even at wave
-  size 1, and the driver refuses rather than thrashing. ExtraTrees stays
-  around 530 MB and is the path that scales. If you hit the ceiling,
-  either switch learner or subsample cells via `n_subsample`.
+
+RandomForest used to belong on that list. Its per-wave tensors needed
+roughly 8.4 GB at a million cells even at wave size 1, and the driver
+refused rather than thrashing. The fused-kernel rewrite moved the
+histogram into threadgroup memory and collapsed that to about 10 MB, so
+RF now scales like ExtraTrees and runs at cell counts where it
+previously would not start.
+
+What breaks first at very large cell counts is the packed feature
+tensor, one byte per (cell, TF) at four bins per `u32` word, so 1 GB at
+1000 TFs and a million cells. The driver checks that against the
+adapter’s per-binding limit up front. If you hit it, subsample cells via
+`n_subsample` or trim the TF list.
 
 `wave_byte_budget` is the knob for the middle ground. It caps VRAM for
 the per-wave histogram and cumulative tensors. Shrink it on an 8 GB

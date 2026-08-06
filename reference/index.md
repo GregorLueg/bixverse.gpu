@@ -17,6 +17,8 @@ applications.
   : Find GPU-accelerated neighbours for single cells (exhaustive / IVF)
 - [`find_neighbours_cagra_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_cagra_sc.md)
   : Find neighbours via CAGRA GPU-acceleration for single cells
+- [`generate_seacells_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_seacells_gpu_sc.md)
+  : Generate meta cells based on SEACells on the GPU
 - [`scenic_grn_sc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/scenic_grn_sc_gpu.md)
   : GPU-accelerated SCENIC GRN inference
 - [`params_sc_ivf()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.md)
@@ -107,16 +109,31 @@ useful for your own package? Use with care and read the documentation!
   **\[experimental\]** : Generate an IVF-GPU-accelerated kNN graph
 - [`rs_kmeans_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_kmeans_gpu.md)
   **\[experimental\]** : GPU-accelerated k-means
+- [`rs_mc_scenic_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_mc_scenic_gpu.md)
+  **\[experimental\]** : GPU: SCENIC GRN inference on MetaCells
+  (in-memory sparse)
 - [`rs_parametric_umap_predict()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_parametric_umap_predict.md)
   **\[experimental\]** : Predict new data using a trained parametric
   UMAP model
 - [`rs_parametric_umap()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_parametric_umap.md)
   **\[experimental\]** : Parametric UMAP implementation
+- [`rs_sc_pca_sparse_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_sc_pca_sparse_gpu.md)
+  **\[experimental\]** : Calculates sparse PCA for single cell
+- [`rs_scenic_grn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_scenic_grn_gpu.md)
+  **\[experimental\]** : GPU: SCENIC gene-regulatory network inference
+  (disk-backed)
+- [`rs_scenic_grn_streaming_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_scenic_grn_streaming_gpu.md)
+  **\[experimental\]** : GPU: SCENIC GRN inference (streaming; bounded
+  host memory)
+- [`rs_seacells_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_seacells_gpu.md)
+  **\[experimental\]** : GPU: SEACells meta cell generation
 - [`rs_umap_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_umap_gpu.md)
   **\[experimental\]** : UMAP implementation
 - [`rs_umap_from_knn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_umap_from_knn_gpu.md)
-  **\[experimental\]** : UMAP implementation
+  **\[experimental\]** : UMAP implementation from a pre-computed kNN
+  graph
 - [`rs_tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_tsne_gpu.md)
   **\[experimental\]** : tSNE implementation
 - [`rs_tsne_from_knn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_tsne_from_knn_gpu.md)
-  **\[experimental\]** : tSNE implementation
+  **\[experimental\]** : tSNE implementation from a pre-computed kNN
+  graph

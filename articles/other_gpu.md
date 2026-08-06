@@ -180,18 +180,18 @@ which is why the crossover point isn’t always where you’d expect.
 `bixverse` already ships
 [`rs_cor()`](https://gregorlueg.github.io/bixverse/reference/rs_cor.html),
 which dispatches to [`faer`](https://github.com/sarah-quinones/faer-rs)
-under the hood. faer is a Rust BLAS with strong SIMD support and initial
-cubek-based GEMM only beat this on very large data sets. However,
-`bixverse-rs` ships specific GPU kernels for correlations and
-co-variance calculations that actually beat `faer`. `bixverse.gpu` adds
+under the hood. faer is a Rust BLAS with strong SIMD support, and a
+generic GEMM on the GPU only beat it on very large data sets.
+`bixverse-rs` now ships handrolled Gram kernels for correlation and
+covariance that actually beat `faer`, and `bixverse.gpu` exposes them as
 [`rs_cor_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_cor_gpu.md)
 and
 [`rs_cov_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_cov_gpu.md)
-for when you need have your correlations fast on large data sets.
+for when you need your correlations fast on large data sets.
 
 ### Correlation
 
-25k samples, 1k features. Base R vs CPU vs GPU:
+25k samples, 2.5k features. Base R vs CPU vs GPU:
 
 ``` r
 
@@ -216,7 +216,7 @@ t_base <- system.time({
   cor_base <- cor(random_data)
 })
 cat(sprintf("base R cor():   %.2fs\n", t_base[["elapsed"]]))
-#> base R cor():   74.12s
+#> base R cor():   75.41s
 ```
 
 faer-backed CPU (via `bixverse`):
@@ -227,7 +227,7 @@ t_cpu <- system.time({
   cor_cpu <- rs_cor(random_data, spearman = FALSE)
 })
 cat(sprintf("rs_cor() CPU:   %.2fs\n", t_cpu[["elapsed"]]))
-#> rs_cor() CPU:   0.84s
+#> rs_cor() CPU:   0.87s
 ```
 
 And GPU-accelerated:
@@ -238,7 +238,7 @@ t_gpu <- system.time({
   cor_gpu <- rs_cor_gpu(random_data, spearman = FALSE, verbose = FALSE)
 })
 cat(sprintf("rs_cor_gpu():   %.2fs\n", t_gpu[["elapsed"]]))
-#> rs_cor_gpu():   0.52s
+#> rs_cor_gpu():   0.57s
 ```
 
 All three should agree:
@@ -261,13 +261,13 @@ t_cpu_cov <- system.time({
   cov_cpu <- rs_covariance(random_data)
 })
 cat(sprintf("rs_covariance() CPU: %.2fs\n", t_cpu_cov[["elapsed"]]))
-#> rs_covariance() CPU: 0.80s
+#> rs_covariance() CPU: 0.73s
 
 t_gpu_cov <- system.time({
   cov_gpu <- rs_cov_gpu(random_data, verbose = FALSE)
 })
 cat(sprintf("rs_cov_gpu():        %.2fs\n", t_gpu_cov[["elapsed"]]))
-#> rs_cov_gpu():        0.43s
+#> rs_cov_gpu():        0.45s
 
 cat(sprintf("max |cpu - gpu|:     %.2e\n", max(abs(cov_cpu - cov_gpu))))
 #> max |cpu - gpu|:     4.68e-06
