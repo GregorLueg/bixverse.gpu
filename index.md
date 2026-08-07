@@ -1,11 +1,6 @@
 # *bixverse.gpu package*
 
-\<\<\<\<\<\<\< HEAD
-![r_package](https://img.shields.io/badge/R_package-0.2.5-orange)
-=======
-![r_package](https://img.shields.io/badge/R_package-0.2.4-orange)
-\>\>\>\>\>\>\> main
-[![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
+![r_package](https://img.shields.io/badge/R_package-0.2.5-orange)[![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![pkgdown](https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github)](https://gregorlueg.github.io/bixverse.gpu/)
