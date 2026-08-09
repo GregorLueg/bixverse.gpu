@@ -910,3 +910,129 @@ checkScHarmonyParamsV2Gpu <- function(x) {
 assertScHarmonyParamsV2Gpu <- checkmate::makeAssertionFunction(
   checkScHarmonyParamsV2Gpu
 )
+
+### fast clustering gpu --------------------------------------------------------
+
+#' Check GPU fast clustering parameters
+#'
+#' @description Checkmate extension for checking the GPU fast Louvain
+#' clustering parameters.
+#'
+#' @param x The list to check/assert.
+#'
+#' @return \code{TRUE} if the check was successful, otherwise an error message.
+#'
+#' @keywords internal
+checkScFastClusterGpu <- function(x) {
+  res <- checkmate::checkList(x)
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- checkmate::checkNames(
+    names(x),
+    must.include = c(
+      "k_means_iter",
+      "k_means_init",
+      "fixed",
+      "quantise",
+      "same_weight",
+      "full_snn",
+      "pruning",
+      "snn_similarity",
+      "louvain_iters",
+      "multi_level_louvain",
+      "k",
+      "knn_method",
+      "ann_dist"
+    )
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  int_rules <- list(
+    "k_means_iter" = "I1[1,)",
+    "louvain_iters" = "I1[1,)",
+    "k" = "I1[1,)",
+    "n_trees" = "I1[1,)",
+    "m" = "I1[1,)",
+    "ef_construction" = "I1[1,)",
+    "ef_search" = "I1[1,)"
+  )
+  bool_rules <- list(
+    "fixed" = "B1",
+    "quantise" = "B1",
+    "same_weight" = "B1",
+    "full_snn" = "B1",
+    "multi_level_louvain" = "B1"
+  )
+  optional_rules <- list(
+    "pruning" = c("N1[0,1]", "0"),
+    "search_budget" = c("I1[1,)", "0"),
+    "ef_budget" = c("I1[1,)", "0"),
+    "n_list" = c("I1[1,)", "0"),
+    "n_probe" = c("I1[1,)", "0")
+  )
+  numeric_rules <- list(
+    "delta" = "N1[0,1]",
+    "diversify_prob" = "N1[0,1]"
+  )
+
+  rules <- c(int_rules, bool_rules, optional_rules, numeric_rules)
+
+  res <- purrr::imap_lgl(x, \(elem, name) {
+    if (name %in% names(rules)) checkmate::qtest(elem, rules[[name]]) else TRUE
+  })
+  if (!isTRUE(all(res))) {
+    broken_elem <- names(res)[which(!res)][1]
+    return(sprintf(
+      paste(
+        "The element `%s` in the GPU fast clustering parameters is incorrect.",
+        "See ?params_sc_fast_cluster_gpu and ?bixverse::params_knn_defaults."
+      ),
+      broken_elem
+    ))
+  }
+
+  k_means_init <- x[["k_means_init"]]
+  if (
+    !is.null(k_means_init) &&
+      !checkmate::test_choice(
+        k_means_init,
+        c("random", "parallel", "plusplus")
+      )
+  ) {
+    return(paste(
+      "Element `k_means_init` must be NULL or one of 'random',",
+      "'parallel' or 'plusplus'."
+    ))
+  }
+
+  res <- checkmate::checkChoice(x[["snn_similarity"]], c("jaccard", "rank"))
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  # the GPU k-means takes its metric from here, and rejects "manhattan"
+  checkmate::checkChoice(x[["ann_dist"]], c("euclidean", "cosine"))
+}
+
+#' Assert GPU fast clustering parameters
+#'
+#' @description Checkmate extension for asserting the GPU fast Louvain
+#' clustering parameters.
+#'
+#' @inheritParams checkScFastClusterGpu
+#'
+#' @param .var.name Name of the checked object to print in assertions. Defaults
+#' to the heuristic implemented in checkmate.
+#' @param add Collection to store assertion messages. See
+#' [checkmate::makeAssertCollection()].
+#'
+#' @return Invisibly returns the checked object if the assertion is successful.
+#'
+#' @keywords internal
+assertScFastClusterGpu <- checkmate::makeAssertionFunction(
+  checkScFastClusterGpu
+)

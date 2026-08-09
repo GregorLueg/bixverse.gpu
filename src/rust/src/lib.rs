@@ -16,6 +16,7 @@ pub mod ml;
 pub mod single_cell;
 pub mod utils;
 
+pub use single_cell::fast_clusters_gpu;
 pub use single_cell::harmony_gpu;
 pub use single_cell::pca_gpu;
 pub use single_cell::scenic_gpu;
@@ -39,6 +40,7 @@ extendr_module! {
     use harmony_gpu;
     use scenic_gpu;
     use seacells_gpu;
+    use fast_clusters_gpu;
     // knn
     fn rs_cagra_gpu_knn;
     fn rs_ivf_gpu_knn;

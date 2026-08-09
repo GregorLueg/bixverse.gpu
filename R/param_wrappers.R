@@ -562,3 +562,103 @@ params_sc_harmony_v2_gpu <- function(
     quantise = quantise
   )
 }
+
+### fast clustering GPU --------------------------------------------------------
+
+#' Default parameters for GPU fast Louvain clustering
+#'
+#' @description
+#' GPU counterpart to [bixverse::params_sc_fast_cluster()]. The mini-batch
+#' k-means knobs are gone (the GPU k-means is full-batch Lloyd's) and the
+#' k-means block comes from the GPU parameters instead. Two knobs the CPU
+#' wrapper never exposed, `same_weight` and `multi_level_louvain`, are
+#' available here.
+#'
+#' The k-means distance is taken from `knn$ann_dist`, so the coarsening and the
+#' centroid graph agree on the geometry. There is no separate `metric`
+#' argument, and `"manhattan"` is not supported by the GPU k-means.
+#'
+#' @param k_means_iter Integer. Maximum number of k-means iterations.
+#' @param k_means_init Optional character. Initialisation method. One of
+#' `"random"`, `"parallel"` or `"plusplus"`. If `NULL`, picked on the Rust side
+#' based on the number of centroids.
+#' @param fixed Boolean. Shall k-means run for a fixed number of iterations,
+#' without checking for convergence.
+#' @param quantise Boolean. Shall the data buffer be held at fp16 on the GPU.
+#' Halves the buffer and helps when the assignment kernels are memory bound.
+#' @param same_weight Boolean. If `TRUE`, all kNN edges get weight `1.0`.
+#' Otherwise edges with a reverse counterpart are double counted.
+#' @param full_snn Boolean. Shall the full shared nearest neighbour graph be
+#' generated, including edges between centroids that are not neighbours.
+#' @param pruning Optional numeric. Weights below this threshold are set to 0
+#' when generating the sNN graph. If `NULL`, defaults to `1 / ceiling(k * 0.8)`.
+#' @param snn_similarity String. One of `c("jaccard", "rank")`. Jaccard
+#' computes the Jaccard index between neighbour sets; rank weights edges by the
+#' best combined rank of a shared neighbour. Both are normalised to `[0, 1]`.
+#' @param louvain_iters Integer. Number of Louvain iterations.
+#' @param multi_level_louvain Boolean. Shall multi-level Louvain be applied.
+#' @param knn List. Optional overrides for the kNN parameters applied to the
+#' centroids. See [bixverse::params_knn_defaults()] for the available
+#' parameters. Defaults to `k = 5L`.
+#'
+#' @returns A named list with the GPU fast clustering parameters.
+#'
+#' @export
+params_sc_fast_cluster_gpu <- function(
+  # kmeans
+  k_means_iter = 50L,
+  k_means_init = NULL,
+  fixed = TRUE,
+  quantise = FALSE,
+  # knn
+  same_weight = FALSE,
+  # snn
+  full_snn = FALSE,
+  pruning = NULL,
+  snn_similarity = c("jaccard", "rank"),
+  # louvain
+  louvain_iters = 10L,
+  multi_level_louvain = TRUE,
+  # knn params
+  knn = list(k = 5L)
+) {
+  snn_similarity <- match.arg(snn_similarity)
+
+  # checks
+  checkmate::qassert(k_means_iter, "I1[1,)")
+  if (!is.null(k_means_init)) {
+    checkmate::qassert(k_means_init, "S1")
+    checkmate::assertChoice(k_means_init, c("random", "parallel", "plusplus"))
+  }
+  checkmate::qassert(fixed, "B1")
+  checkmate::qassert(quantise, "B1")
+  checkmate::qassert(same_weight, "B1")
+  checkmate::qassert(full_snn, "B1")
+  checkmate::qassert(pruning, c("N1[0,1]", "0"))
+  checkmate::qassert(louvain_iters, "I1[1,)")
+  checkmate::qassert(multi_level_louvain, "B1")
+  checkmate::assertChoice(snn_similarity, c("jaccard", "rank"))
+  checkmate::assertList(knn)
+
+  knn_params <- utils::modifyList(
+    bixverse::params_knn_defaults(),
+    knn,
+    keep.null = TRUE
+  )
+
+  c(
+    list(
+      k_means_iter = k_means_iter,
+      k_means_init = k_means_init,
+      fixed = fixed,
+      quantise = quantise,
+      same_weight = same_weight,
+      full_snn = full_snn,
+      pruning = pruning,
+      snn_similarity = snn_similarity,
+      louvain_iters = louvain_iters,
+      multi_level_louvain = multi_level_louvain
+    ),
+    knn_params
+  )
+}

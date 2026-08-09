@@ -507,4 +507,78 @@ rs_mc_scenic_gpu <- function(sparse_data, tf_indices, scenic_params, wave_byte_b
 #' @keywords internal
 rs_seacells_gpu <- function(f_path, embd, cells_to_keep, cells_to_use, knn_data, seacells_params, target_size, seed, verbose) .Call(wrap__rs_seacells_gpu, f_path, embd, cells_to_keep, cells_to_use, knn_data, seacells_params, target_size, seed, verbose)
 
+#' GPU: fast Louvain clustering on the data
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU equivalent of `bixverse::rs_fast_cluster_sc`. Runs k-means clustering on
+#' the WGPU backend, followed by a kNN detection on the centroids to then run
+#' Louvain clustering on the graph and propagate the membership back to the
+#' original data. Everything after the k-means stays on the CPU.
+#'
+#' @param embd Numeric matrix. The original embedding.
+#' @param resolutions Numeric vector. The Louvain resolutions to iterate
+#' through.
+#' @param n_centroids Optional integer. The number of clusters to find. If
+#' not provided, defaults to `sqrt(nrow(embd))`.
+#' @param fc_params Named list. See [params_sc_fast_cluster_gpu()].
+#' @param snn Boolean. Shall the kNN graph be additionally transformed into
+#' an sNN graph.
+#' @param return_kmeans Boolean. Shall the k-means centroids and assignments
+#' be returned alongside the memberships.
+#' @param seed Integer. For reproducibility.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list with the following elements:
+#' \itemize{
+#'  \item membership - The memberships across the different resolutions.
+#'  \item k_means_cluster - Optional integer vector of k-means assignments.
+#'  \item centroids - Optional numeric matrix of k-means centroids.
+#' }
+#'
+#' @export
+#'
+#' @keywords internal
+rs_fast_cluster_gpu <- function(embd, resolutions, n_centroids, fc_params, snn, return_kmeans, seed, verbose) .Call(wrap__rs_fast_cluster_gpu, embd, resolutions, n_centroids, fc_params, snn, return_kmeans, seed, verbose)
+
+#' GPU: fast Louvain clustering on the data (with multiple seeds)
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU equivalent of `bixverse::rs_fast_cluster_sc_grid`. Builds the k-means to
+#' kNN/sNN graph once, then runs Louvain with several seeds (derived from the
+#' original one) for every resolution. Returns additional metrics around
+#' cluster stability and community conductance. Only the k-means runs on the
+#' GPU.
+#'
+#' @param embd Numeric matrix. The original embedding.
+#' @param resolutions Numeric vector. The Louvain resolutions to iterate
+#' through.
+#' @param n_centroids Optional integer. The number of clusters to find. If
+#' not provided, defaults to `sqrt(nrow(embd))`.
+#' @param fc_params Named list. See [params_sc_fast_cluster_gpu()].
+#' @param snn Boolean. Shall the kNN graph be additionally transformed into
+#' an sNN graph.
+#' @param return_kmeans Boolean. Shall the k-means centroids and assignments
+#' be returned alongside the grid results.
+#' @param no_seeds Integer. Number of additional seeds to use. Should be >= 2.
+#' @param seed Integer. For reproducibility.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list with the following elements:
+#' \itemize{
+#'  \item membership - A list with `memberships` (the labels from the seed with
+#'  the best conductance, per resolution) and `stats` (the metrics per
+#'  resolution).
+#'  \item k_means_cluster - Optional integer vector of k-means assignments.
+#'  \item centroids - Optional numeric matrix of k-means centroids.
+#' }
+#'
+#' @export
+#'
+#' @keywords internal
+rs_fast_cluster_grid_gpu <- function(embd, resolutions, n_centroids, fc_params, snn, return_kmeans, no_seeds, seed, verbose) .Call(wrap__rs_fast_cluster_grid_gpu, embd, resolutions, n_centroids, fc_params, snn, return_kmeans, no_seeds, seed, verbose)
+
 # nolint end

@@ -67,9 +67,11 @@ reference:
       - find_neighbours_cagra_sc
       - generate_seacells_gpu_sc
       - scenic_grn_sc_gpu
+      - fast_cluster_gpu_sc
       - params_sc_ivf
       - params_sc_cagra
       - params_sc_harmony_v2_gpu
+      - params_sc_fast_cluster_gpu
   - title: GPU-accelerated UMAP
     desc:
       GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent/CAGRA,
@@ -118,6 +120,8 @@ reference:
       - rs_cor_gpu
       - rs_cov_gpu
       - rs_exhaustive_gpu_knn
+      - rs_fast_cluster_gpu
+      - rs_fast_cluster_grid_gpu
       - rs_harmony_v2_gpu
       - rs_ivf_gpu_knn
       - rs_kmeans_gpu
