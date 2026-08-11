@@ -1,8 +1,9 @@
 name: pkgdown.yaml
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
+    branches: [main]
     paths:
       - 'vignettes/**'
       - 'README.md'

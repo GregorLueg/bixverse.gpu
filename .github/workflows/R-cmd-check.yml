@@ -58,7 +58,10 @@ jobs:
           path: |
             ~/.cache/R/pak
             ~/Library/Caches/org.R-project.R/R/pak
-          key: ${{ matrix.config.os }}-pak-${{ hashFiles('.github/pkg.lock') }}
+          # DESCRIPTION, not pkg.lock: that file does not exist, so hashFiles
+          # returned "" and the key never changed, pinning CI to a stale
+          # bixverse build even after the Remotes pin moved.
+          key: ${{ matrix.config.os }}-pak-${{ hashFiles('DESCRIPTION') }}
           restore-keys: ${{ matrix.config.os }}-pak-
 
       - uses: r-lib/actions/setup-r-dependencies@v2
