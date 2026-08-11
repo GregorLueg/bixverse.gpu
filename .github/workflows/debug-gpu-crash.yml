@@ -9,7 +9,11 @@
 
 name: debug-gpu-crash
 on:
+  # workflow_dispatch alone is not enough: GitHub only exposes it once the
+  # workflow is on the default branch, and this one must not land on main.
   workflow_dispatch:
+  push:
+    branches: [gpu-fast-cluster]
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
