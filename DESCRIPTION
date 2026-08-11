@@ -37,7 +37,7 @@ Imports:
     zeallot
 Remotes:
     GregorLueg/bixverse@v0.4.7,
-    GregorLueg/bixverse.plots@v0.2.2,
+    GregorLueg/bixverse.plots@v0.2.3,
     GregorLueg/manifoldsR@v0.2.9
 VignetteBuilder: quarto
 URL: https://gregorlueg.github.io/bixverse.gpu/
