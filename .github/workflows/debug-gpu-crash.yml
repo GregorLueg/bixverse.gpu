@@ -55,6 +55,8 @@ jobs:
           echo "CARGO_TERM_COLOR=always" >> $GITHUB_ENV
           echo "CARGO_PROFILE_RELEASE_LTO=false" >> $GITHUB_ENV
           echo "CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16" >> $GITHUB_ENV
+          # Without this the backtraces are bare addresses.
+          echo "CARGO_PROFILE_RELEASE_DEBUG=1" >> $GITHUB_ENV
 
       - name: Cache pak build store
         uses: actions/cache@v4
@@ -78,7 +80,7 @@ jobs:
           sudo apt-get install -y \
             libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev \
             libvulkan1 mesa-vulkan-drivers libgl1-mesa-dri \
-            libopenblas-dev gdb
+            libopenblas-dev gdb valgrind
           sudo update-alternatives --set libblas.so.3-x86_64-linux-gnu \
             /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
           sudo update-alternatives --set liblapack.so.3-x86_64-linux-gnu \
@@ -122,30 +124,39 @@ jobs:
           cat("repro: survived\n")
           EOF
 
-      # A: is the knn file clean on its own? If yes, it is a victim, not a cause.
-      - name: A. knn graph alone
-        continue-on-error: true
-        run: Rscript knn_only.R
+      # One step, explicit exit codes. `continue-on-error` rewrites a step's
+      # conclusion to success, so per-step results are unreadable from the API.
+      - name: A/B/C. exit codes
+        run: |
+          set +e
+          for s in knn_only fc_only repro; do
+            MALLOC_CHECK_=3 Rscript $s.R > $s.out 2>&1
+            echo "===== $s: exit $? ====="
+            tail -25 $s.out
+          done
 
-      # B: does the fast cluster path corrupt the heap within its own session?
-      - name: B. fast cluster alone (MALLOC_CHECK_=3)
-        continue-on-error: true
-        env:
-          MALLOC_CHECK_: 3
-        run: Rscript fc_only.R
-
-      # C: the CI ordering, with the allocator aborting as early as it can.
-      - name: C. fast cluster then knn (MALLOC_CHECK_=3)
-        continue-on-error: true
-        env:
-          MALLOC_CHECK_: 3
-        run: Rscript repro.R
-
-      # D: same as C, but pull a backtrace out of the abort.
-      - name: D. backtrace on the abort
+      # Backtrace at the point the allocator notices. Drive the real R binary:
+      # `R -d` mangles the argument passing and gdb never sees the R args.
+      - name: D. backtrace at the abort
         continue-on-error: true
         env:
           MALLOC_CHECK_: 3
         run: |
-          R -d "gdb -batch -ex run -ex 'thread apply all bt' --args" \
-            --vanilla -f repro.R
+          gdb -batch -ex run -ex 'thread apply all bt full' \
+            --args "$(R RHOME)/bin/exec/R" --vanilla --no-echo -f repro.R
+
+      # The one that finds the write itself rather than the later symptom.
+      # Valgrind reports the invalid write with a stack at the moment it
+      # happens, which is what names the culprit.
+      - name: E. valgrind
+        continue-on-error: true
+        timeout-minutes: 60
+        run: |
+          set +e
+          valgrind --error-limit=no --num-callers=40 --track-origins=yes \
+            --log-file=vg.log \
+            "$(R RHOME)/bin/exec/R" --vanilla --no-echo -f repro.R
+          echo "===== invalid writes / heap errors ====="
+          grep -E -A 25 "Invalid (write|read)|overrun|Mismatched|Invalid free" vg.log | head -200
+          echo "===== valgrind summary ====="
+          tail -30 vg.log
