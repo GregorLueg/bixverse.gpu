@@ -41,13 +41,20 @@ jobs:
         with:
           toolchain: stable
 
+      # Optional compile cache. The action resolves the sccache release through
+      # the GitHub API and that call can fail on the hosted runners, so never
+      # let it fail the whole job.
       - name: Setup sccache
+        id: sccache
+        continue-on-error: true
         uses: mozilla-actions/sccache-action@v0.0.10
 
       - name: Cargo env
         run: |
-          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
-          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+          if command -v sccache >/dev/null; then
+            echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+            echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+          fi
           echo "CARGO_INCREMENTAL=0" >> $GITHUB_ENV
           echo "CARGO_NET_RETRY=10" >> $GITHUB_ENV
           echo "CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse" >> $GITHUB_ENV
@@ -78,7 +85,7 @@ jobs:
         shell: Rscript {0}
 
       - name: sccache stats
-        if: always()
+        if: always() && steps.sccache.outcome == 'success'
         run: sccache --show-stats
 
       - name: Deploy to GitHub pages
