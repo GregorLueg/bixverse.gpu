@@ -36,7 +36,7 @@ Imports:
     utils,
     zeallot
 Remotes:
-    GregorLueg/bixverse,
+    GregorLueg/bixverse@0.4.7,
     GregorLueg/bixverse.plots,
     GregorLueg/manifoldsR
 VignetteBuilder: quarto
