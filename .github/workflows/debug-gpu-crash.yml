@@ -135,15 +135,44 @@ jobs:
             tail -25 $s.out
           done
 
+      # Does the crash track `dim_padded % 128 != 0`? Mechanism-agnostic, and it
+      # does not depend on valgrind getting a usable stack through lavapipe's JIT.
+      #   padded = next multiple of 4;  overrun = 128 - (128/padded)*padded
+      #    8 ->  8, 0 over (clean)     20 -> 20,  8 over (crash)
+      #   10 -> 12, 8 over (crash)     28 -> 28, 16 over (crash)
+      #   16 -> 16, 0 over (clean)
+      # Capped at 28: hvg_to_keep is 30 in the fixture, so PCA needs no_pcs <= 30.
+      - name: F. no_pcs sweep
+        continue-on-error: true
+        run: |
+          set +e
+          for d in 8 10 16 20 28; do
+            sed "s/^no_pcs <- 10L$/no_pcs <- ${d}L/" \
+              inst/tinytest/test_fast_cluster_gpu.R > fc_dim.R
+            cat > sweep.R <<EOF
+          library(bixverse.gpu)
+          library(tinytest)
+          print(run_test_file("fc_dim.R"))
+          cat(">>> dim $d: fast cluster done\n")
+          print(run_test_file("inst/tinytest/test_gpu_generate_knn_graph.R"))
+          cat(">>> dim $d: SURVIVED\n")
+          EOF
+            MALLOC_CHECK_=3 Rscript sweep.R > sweep_$d.out 2>&1
+            echo "===== no_pcs=$d exit=$? ====="
+            grep -E ">>>|realloc|Aborted|corrupt|Error" sweep_$d.out | tail -6
+          done
+
       # Backtrace at the point the allocator notices. Drive the real R binary:
       # `R -d` mangles the argument passing and gdb never sees the R args.
+      # R_HOME must be exported, the `R` wrapper normally sets it for the child.
       - name: D. backtrace at the abort
         continue-on-error: true
         env:
           MALLOC_CHECK_: 3
         run: |
+          export R_HOME=$(R RHOME)
           gdb -batch -ex run -ex 'thread apply all bt full' \
-            --args "$(R RHOME)/bin/exec/R" --vanilla --no-echo -f repro.R
+            --args "$R_HOME/bin/exec/R" --vanilla --no-echo -f repro.R
 
       # The one that finds the write itself rather than the later symptom.
       # Valgrind reports the invalid write with a stack at the moment it
@@ -153,9 +182,13 @@ jobs:
         timeout-minutes: 60
         run: |
           set +e
+          export R_HOME=$(R RHOME)
           valgrind --error-limit=no --num-callers=40 --track-origins=yes \
             --log-file=vg.log \
-            "$(R RHOME)/bin/exec/R" --vanilla --no-echo -f repro.R
+            "$R_HOME/bin/exec/R" --vanilla --no-echo -f repro.R
+          # Guard against a silent early exit like the missing-R_HOME one.
+          grep -q "total heap usage" vg.log && tail -5 vg.log
+          grep -c "" vg.log | xargs echo "vg.log lines:"
           echo "===== invalid writes / heap errors ====="
           grep -E -A 25 "Invalid (write|read)|overrun|Mismatched|Invalid free" vg.log | head -200
           echo "===== valgrind summary ====="
