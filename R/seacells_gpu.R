@@ -187,6 +187,12 @@ S7::method(generate_seacells_gpu_sc, SingleCellsSubset) <- function(
   checkmate::qassert(seed, "I1")
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
+  # hard tier: cell indices from here go straight into Rust
+  bixverse::assert_sc_state(
+    object,
+    artefacts = c(embd_to_use, if (!regenerate_knn) "knn")
+  )
+
   # function body
   embd <- bixverse::get_embedding(x = object, embd_name = embd_to_use)
 

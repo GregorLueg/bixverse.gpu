@@ -23,7 +23,7 @@ Suggests:
     quarto,
     tinytest
 Imports: 
-    bixverse (>= 0.4.0),
+    bixverse (>= 0.4.7),
     checkmate,
     data.table,
     lifecycle,
