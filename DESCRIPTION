@@ -38,7 +38,7 @@ Imports:
 Remotes:
     GregorLueg/bixverse@v0.4.7,
     GregorLueg/bixverse.plots@v0.2.3,
-    GregorLueg/manifoldsR@v0.2.9
+    GregorLueg/manifoldsR
 VignetteBuilder: quarto
 URL: https://gregorlueg.github.io/bixverse.gpu/
 Config/roxygen2/version: 8.1.0
