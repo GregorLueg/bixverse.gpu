@@ -1,0 +1,147 @@
+# TEMPORARY. Delete once the lavapipe heap corruption is pinned down.
+#
+# R CMD check aborts on the Linux runner with "realloc(): invalid next size"
+# at the start of test_gpu_generate_knn_graph.R. macOS (real Metal GPU) is
+# green. Under lavapipe there is no device, so wgpu buffers are ordinary host
+# heap and an out-of-bounds kernel write is a real heap overflow that glibc
+# catches. This workflow splits the two test files apart to find out which one
+# does the damage.
+
+name: debug-gpu-crash
+on:
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  debug:
+    runs-on: ubuntu-22.04
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+    steps:
+
+      - uses: actions/checkout@v5
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+          extra-repositories: 'https://cloud.r-project.org'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Setup sccache
+        id: sccache
+        continue-on-error: true
+        uses: mozilla-actions/sccache-action@v0.0.10
+
+      - name: Cargo env
+        run: |
+          if command -v sccache >/dev/null; then
+            echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+            echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+          fi
+          echo "CARGO_INCREMENTAL=0" >> $GITHUB_ENV
+          echo "CARGO_NET_RETRY=10" >> $GITHUB_ENV
+          echo "CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse" >> $GITHUB_ENV
+          echo "CARGO_TERM_COLOR=always" >> $GITHUB_ENV
+          echo "CARGO_PROFILE_RELEASE_LTO=false" >> $GITHUB_ENV
+          echo "CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16" >> $GITHUB_ENV
+
+      - name: Cache pak build store
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/R/pak
+          key: ubuntu-22.04-pak-${{ hashFiles('DESCRIPTION') }}
+          restore-keys: ubuntu-22.04-pak-
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::tinytest
+            any::zeallot
+            any::rextendr
+          needs: check
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev \
+            libvulkan1 mesa-vulkan-drivers libgl1-mesa-dri \
+            libopenblas-dev gdb
+          sudo update-alternatives --set libblas.so.3-x86_64-linux-gnu \
+            /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
+          sudo update-alternatives --set liblapack.so.3-x86_64-linux-gnu \
+            /usr/lib/x86_64-linux-gnu/openblas-pthread/liblapack.so.3
+
+      - name: Set wgpu backend
+        run: echo "WGPU_BACKEND=vulkan" >> $GITHUB_ENV
+
+      - name: Report the Vulkan adapter
+        continue-on-error: true
+        run: vulkaninfo --summary || true
+
+      - name: Install the package
+        run: R CMD INSTALL --no-multiarch .
+
+      - name: Write the driver scripts
+        run: |
+          cat > knn_only.R <<'EOF'
+          library(bixverse.gpu)
+          library(tinytest)
+          print(run_test_file("inst/tinytest/test_gpu_generate_knn_graph.R"))
+          cat("knn_only: survived\n")
+          EOF
+          cat > fc_only.R <<'EOF'
+          library(bixverse.gpu)
+          library(tinytest)
+          print(run_test_file("inst/tinytest/test_fast_cluster_gpu.R"))
+          cat("fc_only: survived the test file\n")
+          # Churn the heap. Corruption from the GPU path is usually only
+          # detected by the next allocator call, not at the point of damage.
+          invisible(replicate(200, numeric(1e5)))
+          gc()
+          cat("fc_only: survived the post-test heap churn\n")
+          EOF
+          cat > repro.R <<'EOF'
+          library(bixverse.gpu)
+          library(tinytest)
+          print(run_test_file("inst/tinytest/test_fast_cluster_gpu.R"))
+          cat("repro: fast cluster done, starting knn\n")
+          print(run_test_file("inst/tinytest/test_gpu_generate_knn_graph.R"))
+          cat("repro: survived\n")
+          EOF
+
+      # A: is the knn file clean on its own? If yes, it is a victim, not a cause.
+      - name: A. knn graph alone
+        continue-on-error: true
+        run: Rscript knn_only.R
+
+      # B: does the fast cluster path corrupt the heap within its own session?
+      - name: B. fast cluster alone (MALLOC_CHECK_=3)
+        continue-on-error: true
+        env:
+          MALLOC_CHECK_: 3
+        run: Rscript fc_only.R
+
+      # C: the CI ordering, with the allocator aborting as early as it can.
+      - name: C. fast cluster then knn (MALLOC_CHECK_=3)
+        continue-on-error: true
+        env:
+          MALLOC_CHECK_: 3
+        run: Rscript repro.R
+
+      # D: same as C, but pull a backtrace out of the abort.
+      - name: D. backtrace on the abort
+        continue-on-error: true
+        env:
+          MALLOC_CHECK_: 3
+        run: |
+          R -d "gdb -batch -ex run -ex 'thread apply all bt' --args" \
+            --vanilla -f repro.R
