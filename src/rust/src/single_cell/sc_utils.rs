@@ -293,11 +293,19 @@ pub type FastClusterSingle = Result<(Vec<Vec<usize>>, Option<Vec<i32>>, Option<R
 /// * `0` - The [FastLouvainGridResult] per resolution
 /// * `1` - Optional k-means cluster membership
 /// * `2` - Optional k-means centroids
-pub type FastClusterGrid = Result<(
+type FastClusterGrid = Result<(
     Vec<FastLouvainGridResult>,
     Option<Vec<i32>>,
     Option<RMatrix<f64>>,
 )>;
+
+/// Type for the fast clustering grid results
+///
+/// ### Fields
+///
+/// * `0` - Optional k-means cluster membership
+/// * `1` - Optional k-means centroids
+type KMeansBlock = Result<(Option<Vec<i32>>, Option<RMatrix<f64>>)>;
 
 /// Pull the optional k-means block out of a fast clustering result.
 ///
@@ -310,10 +318,7 @@ pub type FastClusterGrid = Result<(
 ///
 /// `(k-means assignments, centroid matrix)`, both `None` when `return_km` is
 /// `false`.
-fn fast_cluster_kmeans_block(
-    res: &FastLouvainResults,
-    return_km: bool,
-) -> Result<(Option<Vec<i32>>, Option<RMatrix<f64>>)> {
+fn fast_cluster_kmeans_block(res: &FastLouvainResults, return_km: bool) -> KMeansBlock {
     if !return_km {
         return Ok((None, None));
     }

@@ -12,9 +12,7 @@ name = 'bixverse_gpu'
 [dependencies]
 ann-search-rs = { version = "0.5.0", features = [ "gpu" ] }
 burn = { version = "0.21.0", features = [ "wgpu", "flex" ] }
-# TEMPORARY: verifying the k-means shared-memory fix. Swap back to a published
-# version before merging, the vendored offline build cannot resolve a git dep.
-bixverse-rs = { git = "https://github.com/GregorLueg/bixverse-rs", branch = "fix-gpu", features = [ "gpu", "single-cell" ] }
+bixverse-rs = { version = "0.4.2", features = [ "gpu", "single-cell" ] }
 cubecl = "0.10.0"
 extendr-api = "0.9.0"
 faer = { version = '0.23.2' }
