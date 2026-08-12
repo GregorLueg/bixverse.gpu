@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -115,6 +115,13 @@
 
         <dt>
 
+          <code><a href="fast_cluster_gpu_sc.html">fast_cluster_gpu_sc()</a></code>
+
+        </dt>
+        <dd>Run fast Louvain clustering on a SingleCells object (GPU)</dd>
+
+        <dt>
+
           <code><a href="params_sc_ivf.html">params_sc_ivf()</a></code>
 
         </dt>
@@ -133,6 +140,13 @@
 
         </dt>
         <dd>Default parameters for Harmony v2 GPU batch correction</dd>
+
+        <dt>
+
+          <code><a href="params_sc_fast_cluster_gpu.html">params_sc_fast_cluster_gpu()</a></code>
+
+        </dt>
+        <dd>Default parameters for GPU fast Louvain clustering</dd>
       </dl></div><div class="section level2">
       <h2 id="gpu-accelerated-umap">GPU-accelerated UMAP<a class="anchor" aria-label="anchor" href="#gpu-accelerated-umap"></a></h2>
 
@@ -311,6 +325,20 @@
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Generate an GPU-accelerated kNN graph from an exhaustive search</dd>
+
+        <dt>
+
+          <code><a href="rs_fast_cluster_gpu.html">rs_fast_cluster_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>GPU: fast Louvain clustering on the data</dd>
+
+        <dt>
+
+          <code><a href="rs_fast_cluster_grid_gpu.html">rs_fast_cluster_grid_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>GPU: fast Louvain clustering on the data (with multiple seeds)</dd>
 
         <dt>
 

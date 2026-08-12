@@ -18,6 +18,7 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertNnParamsGpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertParametricUmapParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertScCagraParams.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertScFastClusterGpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertScHarmonyParamsV2Gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertScIvfParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertTsneParamsGpu.html</loc></url>
@@ -27,14 +28,18 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkNnParamsGpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkParametricUmapParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkScCagraParams.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkScFastClusterGpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkScHarmonyParamsV2Gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkScIvfParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkTsneParamsGpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkUmapParamsGpu.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-fast_cluster_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-generate_seacells_gpu.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-manifold_from_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-prepare_parametric_umap_params.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-prepare_tsne_params_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-prepare_umap_params_gpu.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/fast_cluster_gpu_sc.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_cagra_sc.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_gpu_sc.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/generate_cagra_knn_sc.html</loc></url>
@@ -51,6 +56,7 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_parametric_umap.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_fast_cluster_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_harmony_v2_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_tsne_gpu.html</loc></url>
@@ -64,6 +70,8 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_cov_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_deserialise_parametric_umap.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_exhaustive_gpu_knn.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_fast_cluster_gpu.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_fast_cluster_grid_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_harmony_v2_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_ivf_gpu_knn.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_kmeans_gpu.html</loc></url>

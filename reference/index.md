@@ -21,12 +21,16 @@ applications.
   : Generate meta cells based on SEACells on the GPU
 - [`scenic_grn_sc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/scenic_grn_sc_gpu.md)
   : GPU-accelerated SCENIC GRN inference
+- [`fast_cluster_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/fast_cluster_gpu_sc.md)
+  : Run fast Louvain clustering on a SingleCells object (GPU)
 - [`params_sc_ivf()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.md)
   : Default parameters for IVF-GPU kNN search
 - [`params_sc_cagra()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.md)
   : Default parameters for CAGRA-style kNN search
 - [`params_sc_harmony_v2_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_harmony_v2_gpu.md)
   : Default parameters for Harmony v2 GPU batch correction
+- [`params_sc_fast_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_fast_cluster_gpu.md)
+  : Default parameters for GPU fast Louvain clustering
 
 ## GPU-accelerated UMAP
 
@@ -102,6 +106,11 @@ useful for your own package? Use with care and read the documentation!
 - [`rs_exhaustive_gpu_knn()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_exhaustive_gpu_knn.md)
   **\[experimental\]** : Generate an GPU-accelerated kNN graph from an
   exhaustive search
+- [`rs_fast_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_fast_cluster_gpu.md)
+  **\[experimental\]** : GPU: fast Louvain clustering on the data
+- [`rs_fast_cluster_grid_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_fast_cluster_grid_gpu.md)
+  **\[experimental\]** : GPU: fast Louvain clustering on the data (with
+  multiple seeds)
 - [`rs_harmony_v2_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_harmony_v2_gpu.md)
   **\[experimental\]** : Harmony batch correction in Rust (version 2,
   GPU-accelerated)
