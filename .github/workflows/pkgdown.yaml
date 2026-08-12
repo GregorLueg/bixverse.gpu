@@ -1,97 +1,21 @@
-name: pkgdown.yaml
+name: pkgdown
+
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
-    paths:
-      - 'vignettes/**'
-      - 'README.md'
-      - 'NEWS.md'
-      - 'man/**'
-      - 'pkgdown/**'
-      - '_pkgdown.yml'
-      - '.github/workflows/pkgdown.yaml'
+    branches: [ main ]
   release:
-    types: [published]
+    types: [ published ]
   workflow_dispatch:
-permissions: read-all
+
+permissions:
+  contents: write
+
 jobs:
   pkgdown:
-    runs-on: ubuntu-latest
-    concurrency:
-      group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      WGPU_BACKEND: vulkan
-    permissions:
-      contents: write
-    steps:
-
-      - uses: actions/checkout@v5
-
-      - uses: r-lib/actions/setup-pandoc@v2
-
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          use-public-rspm: true
-      
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-
-      # Optional compile cache. The action resolves the sccache release through
-      # the GitHub API and that call can fail on the hosted runners, so never
-      # let it fail the whole job.
-      - name: Setup sccache
-        id: sccache
-        continue-on-error: true
-        uses: mozilla-actions/sccache-action@v0.0.10
-
-      - name: Cargo env
-        run: |
-          if command -v sccache >/dev/null; then
-            echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
-            echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-          fi
-          echo "CARGO_INCREMENTAL=0" >> $GITHUB_ENV
-          echo "CARGO_NET_RETRY=10" >> $GITHUB_ENV
-          echo "CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse" >> $GITHUB_ENV
-          echo "CARGO_TERM_COLOR=always" >> $GITHUB_ENV
-          echo "CARGO_PROFILE_RELEASE_LTO=false" >> $GITHUB_ENV
-          echo "CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16" >> $GITHUB_ENV
-      
-      - name: Install system dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev \
-            libvulkan1 mesa-vulkan-drivers libgl1-mesa-dri \
-            libopenblas-dev
-          sudo update-alternatives --set libblas.so.3-x86_64-linux-gnu \
-            /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
-          sudo update-alternatives --set liblapack.so.3-x86_64-linux-gnu \
-            /usr/lib/x86_64-linux-gnu/openblas-pthread/liblapack.so.3
-      
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          extra-packages: any::pkgdown, local::.
-          needs: website
-      
-      - name: Build site
-        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE, quiet = FALSE)
-        shell: Rscript {0}
-
-      - name: sccache stats
-        if: always() && steps.sccache.outcome == 'success'
-        run: sccache --show-stats
-
-      - name: Deploy to GitHub pages
-        if: github.event_name != 'pull_request'
-        uses: JamesIves/github-pages-deploy-action@v4.5.0
-        with:
-          clean: false
-          branch: gh-pages
-          folder: docs
+    uses: GregorLueg/personal-actions/.github/workflows/r-pkgdown.yml@v1
+    with:
+      rust: true
+      gpu: true
+    secrets: inherit
