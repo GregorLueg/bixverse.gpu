@@ -4,8 +4,13 @@
 //! (`single_cell/r_sc_metacells.rs` and `single_cell/utils.rs`) rather than in
 //! `bixverse-rs`, so this crate cannot import them. Keep them in sync with the
 //! CPU originals: a divergence here means the GPU and CPU paths silently
-//! aggregate different cells.
+//! aggregate different cells, or the fast clustering results come back in a
+//! shape the R side does not expect.
 
+use bixverse_rs::prelude::*;
+use bixverse_rs::single_cell::sc_analysis::fast_clusters::{
+    FastLouvainGridResult, FastLouvainResults,
+};
 use extendr_api::*;
 use faer::Mat;
 use std::collections::HashMap;
@@ -266,4 +271,153 @@ pub fn knn_data_to_rust(knn_data: List) -> NeighboursData {
     let knn_dist = knn_distances_processing(knn_dist);
 
     Ok((knn_indices, knn_dist, k, dist_metric))
+}
+
+/////////////////
+// FastCluster //
+/////////////////
+
+/// Type for the fast clustering single results
+///
+/// ### Fields
+///
+/// * `0` - The Louvain membership per resolution
+/// * `1` - Optional k-means cluster membership
+/// * `2` - Optional k-means centroids
+pub type FastClusterSingle = Result<(Vec<Vec<usize>>, Option<Vec<i32>>, Option<RMatrix<f64>>)>;
+
+/// Type for the fast clustering grid results
+///
+/// ### Fields
+///
+/// * `0` - The [FastLouvainGridResult] per resolution
+/// * `1` - Optional k-means cluster membership
+/// * `2` - Optional k-means centroids
+type FastClusterGrid = Result<(
+    Vec<FastLouvainGridResult>,
+    Option<Vec<i32>>,
+    Option<RMatrix<f64>>,
+)>;
+
+/// Type for the fast clustering grid results
+///
+/// ### Fields
+///
+/// * `0` - Optional k-means cluster membership
+/// * `1` - Optional k-means centroids
+type KMeansBlock = Result<(Option<Vec<i32>>, Option<RMatrix<f64>>)>;
+
+/// Pull the optional k-means block out of a fast clustering result.
+///
+/// ### Params
+///
+/// * `res` - The [FastLouvainResults]
+/// * `return_km` - Shall the k-means results be returned
+///
+/// ### Returns
+///
+/// `(k-means assignments, centroid matrix)`, both `None` when `return_km` is
+/// `false`.
+fn fast_cluster_kmeans_block(res: &FastLouvainResults, return_km: bool) -> KMeansBlock {
+    if !return_km {
+        return Ok((None, None));
+    }
+
+    let k_means_clusters = res.get_k_mean_clusters().to_extendr()?;
+    let centroids = res.get_centroids().to_extendr()?;
+
+    Ok((
+        Some(k_means_clusters.r_int_convert()),
+        Some(faer_to_r_matrix(centroids.as_ref())),
+    ))
+}
+
+/// Helper function to extract the single-run results from the fast clustering
+///
+/// The variant is fixed by the driver that produced `res`, so the `Single`
+/// match cannot fail by construction. It still returns an error rather than
+/// panicking, in case the two ever drift apart.
+///
+/// ### Params
+///
+/// * `res` - The [FastLouvainResults]
+/// * `return_km` - Shall the k-means results be returned
+///
+/// ### Returns
+///
+/// [FastClusterSingle]
+pub fn fast_cluster_unwrap_single(res: FastLouvainResults, return_km: bool) -> FastClusterSingle {
+    let (k_means_membership, centroids) = fast_cluster_kmeans_block(&res, return_km)?;
+
+    let memberships = res
+        .get_assignments()
+        .left()
+        .ok_or_else(|| Error::Other("expected the single fast clustering variant".into()))?;
+
+    Ok((memberships, k_means_membership, centroids))
+}
+
+/// Helper function to extract the grid results from the fast clustering
+///
+/// Same by-construction invariant as [fast_cluster_unwrap_single], on the
+/// `GridRes` variant.
+///
+/// ### Params
+///
+/// * `res` - The [FastLouvainResults]
+/// * `return_km` - Shall the k-means results be returned
+///
+/// ### Returns
+///
+/// [FastClusterGrid]
+pub fn fast_cluster_unwrap_multiple(res: FastLouvainResults, return_km: bool) -> FastClusterGrid {
+    let (k_means_membership, centroids) = fast_cluster_kmeans_block(&res, return_km)?;
+
+    let memberships = res
+        .get_assignments()
+        .right()
+        .ok_or_else(|| Error::Other("expected the grid fast clustering variant".into()))?;
+
+    Ok((memberships, k_means_membership, centroids))
+}
+
+/// Process the fast cluster Louvain grid results
+///
+/// ### Params
+///
+/// * `results` - Vector of [FastLouvainGridResult]
+///
+/// ### Returns
+///
+/// A list with `memberships` (the best labels per resolution) and `stats` (the
+/// stability and conductance metrics per resolution, in the same order).
+pub fn process_fc_louvain_results(results: Vec<FastLouvainGridResult>) -> Result<List> {
+    let mut mean_ari: Vec<f32> = Vec::with_capacity(results.len());
+    let mut median_ari: Vec<f32> = Vec::with_capacity(results.len());
+    let mut mean_conductance: Vec<f32> = Vec::with_capacity(results.len());
+    let mut median_conductance: Vec<f32> = Vec::with_capacity(results.len());
+    let mut mean_n_comms: Vec<f32> = Vec::with_capacity(results.len());
+
+    let mut res = List::new(results.len());
+
+    for (index, louvain_res) in results.iter().enumerate() {
+        let membership = louvain_res.best_labels.clone().r_int_convert();
+        res.set_elt(index, Robj::from(membership))?;
+
+        mean_ari.push(louvain_res.mean_ari);
+        median_ari.push(louvain_res.median_ari);
+        mean_conductance.push(louvain_res.mean_conductance);
+        median_conductance.push(louvain_res.median_conductance);
+        mean_n_comms.push(louvain_res.mean_n_communities);
+    }
+
+    let stats = list![
+        mean_ari = mean_ari.r_float_convert(),
+        median_ari = median_ari.r_float_convert(),
+        mean_conductance = mean_conductance.r_float_convert(),
+        median_conductance = median_conductance.r_float_convert(),
+        mean_n_comms = mean_n_comms.r_float_convert(),
+    ];
+
+    Ok(list![memberships = res, stats = stats])
 }

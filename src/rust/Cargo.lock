@@ -524,9 +524,9 @@ dependencies = [
 
 [[package]]
 name = "bixverse-rs"
-version = "0.4.0"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a2c99f31e04cea6fdd2c63eb3f07beb79387a4f33aebc73b1443c0297dbee28"
+checksum = "1bc108c53357367b649aeaccb094a7229790218ecd2a83418d0aeb6ee4c10176"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -563,7 +563,7 @@ dependencies = [
 
 [[package]]
 name = "bixverse_gpu"
-version = "0.2.5"
+version = "0.2.6"
 dependencies = [
  "ann-search-rs",
  "bixverse-rs",

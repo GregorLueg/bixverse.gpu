@@ -51,6 +51,9 @@ outweigh the speedup, but the larger the data, the more these methods pay off
     **IVF** (inverted file index, approximate).
   - `find_neighbours_cagra_sc()` covers **CAGRA**, which prunes an NNDescent
     graph and supports either direct kNN extraction or beam search.
+- **GPU fast clustering** via `fast_cluster_gpu_sc()`: k-means coarsening on the
+  GPU, then centroid kNN, optional sNN and Louvain over a resolution grid on the
+  CPU. Only stage one is on the device, so the payoff scales with cell count.
 
 ```{r}
 #| label: setup
@@ -319,6 +322,71 @@ sc_object <- find_neighbours_cagra_sc(
 From here downstream methods, clustering, UMAP/tSNE, marker detection,
 work without modification, exactly as after a `find_neighbours_sc()` call.
 
+## GPU-accelerated fast clustering
+
+Clustering every cell directly gets painful fast. `fast_cluster_gpu_sc()`
+coarsens instead: k-means over the embedding, a kNN (optionally sNN) graph on
+the centroids, Louvain over a set of resolutions on that much smaller graph,
+then the memberships projected back down to the cells. Only the k-means runs on
+the device, so the win tracks how much of the run k-means owns. On a few
+thousand PBMCs that share is small; on millions of cells it is most of it.
+
+`grid_search = TRUE` repeats the Louvain step across several seeds per
+resolution and hands back stability numbers, which is how you pick a resolution
+without eyeballing a UMAP.
+
+```{r}
+#| label: fast clustering gpu
+fast_cluster_res <- fast_cluster_gpu_sc(
+  object = sc_object,
+  embd_to_use = "harmony_gpu",
+  resolutions = c(2, 1.5, 1, 0.5),
+  return_kmeans = TRUE,
+  grid_search = TRUE,
+  no_seeds = 25L
+)
+
+fast_cluster_res
+```
+
+One column per resolution, keyed by `cell_idx`:
+
+```{r}
+#| label: fast clustering data
+head(get_data(fast_cluster_res))
+```
+
+The grid stats are the interesting bit. `mean_ari` is how stable the partition
+is across seeds, `mean_conductance` how well separated the communities are
+(lower is better), and `mean_n_comms` how many you end up with.
+
+```{r}
+#| label: fast clustering stats
+fast_cluster_res$stats
+```
+
+The k-means centroids and per-cell assignments are there too, if you asked for
+them:
+
+```{r}
+#| label: fast clustering kmeans
+dim(get_centroids_sc(fast_cluster_res))
+
+head(get_kmeans_clusters(fast_cluster_res))
+```
+
+Push the memberships onto the object and they behave like any other obs column:
+
+```{r}
+#| label: fast clustering add
+sc_object <- add_sc_new_obs(
+  object = sc_object,
+  obs_data = get_data(fast_cluster_res)
+)
+
+head(sc_object)
+```
+
 ## Comparing GPU vs CPU Harmony
 
 With the kNN graph in place on the GPU Harmony embedding, we can compute batch
@@ -402,6 +470,25 @@ sc_object <- umap_gpu_sc(
 embedding_plot_sc(
   sc_object,
   embedding = "umap_harm_gpu",
+  colour_by = "res_1",
+  label_by = "res_1",
+  discrete = TRUE
+) +
+  labs(
+    title = "GPU Harmony v2 + GPU CAGRA kNN + GPU UMAP",
+    colour = "Fast cluster:"
+  )
+```
+
+Same embedding, coloured by batch, to check the correction held up:
+
+```{r}
+#| label: umap plot batch
+#| fig-width: 7
+#| fig-height: 5
+embedding_plot_sc(
+  sc_object,
+  embedding = "umap_harm_gpu",
   colour_by = "exp_id",
   discrete = TRUE
 ) +
@@ -437,20 +524,21 @@ sc_object <- tsne_gpu_sc(
 embedding_plot_sc(
   sc_object,
   embedding = "tsne_harm_gpu",
-  colour_by = "exp_id",
+  colour_by = "res_1",
+  label_by = "res_1",
   discrete = TRUE
 ) +
   labs(
     title = "GPU Harmony v2 + GPU t-SNE (GPU kNN, CPU optimiser)",
-    colour = "Batch:"
+    colour = "Fast cluster:"
   )
 ```
 
 ## Conclusions
 
-The full GPU path (PCA, Harmony v2, kNN, UMAP with GPU Adam optimiser,
-t-SNE with GPU kNN) plugs into the existing `SingleCells` workflow without
-any glue code. The downstream object behaves identically to whatever you
+The full GPU path (PCA, Harmony v2, kNN, fast clustering, UMAP with GPU Adam
+optimiser, t-SNE with GPU kNN) plugs into the existing `SingleCells` workflow
+without any glue code. The downstream object behaves identically to whatever you
 would get from the CPU equivalents.
 
 Longer term, the GPU kNN methods are the obvious building block for

@@ -1,98 +1,21 @@
 name: R-CMD-check
+
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   R-CMD-check:
-    runs-on: ${{ matrix.config.os }}
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-          - {os: macOS-latest,   r: 'release'}
-          - {os: ubuntu-22.04,  r: 'release'}
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      R_KEEP_PKG_SOURCE: yes
-    steps:
-
-      - uses: actions/checkout@v5
-    
-      - uses: r-lib/actions/setup-pandoc@v2
-    
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          r-version: ${{ matrix.config.r }}
-          http-user-agent: ${{ matrix.config.http-user-agent }}
-          use-public-rspm: true
-          extra-repositories: 'https://cloud.r-project.org'
-    
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-
-      - name: Setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.10
-
-      - name: Cargo env
-        run: |
-          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
-          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-          echo "CARGO_INCREMENTAL=0" >> $GITHUB_ENV
-          echo "CARGO_NET_RETRY=10" >> $GITHUB_ENV
-          echo "CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse" >> $GITHUB_ENV
-          echo "CARGO_TERM_COLOR=always" >> $GITHUB_ENV
-          echo "CARGO_PROFILE_RELEASE_LTO=false" >> $GITHUB_ENV
-          echo "CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16" >> $GITHUB_ENV
-
-      - name: Cache pak build store
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/R/pak
-            ~/Library/Caches/org.R-project.R/R/pak
-          key: ${{ matrix.config.os }}-pak-${{ hashFiles('.github/pkg.lock') }}
-          restore-keys: ${{ matrix.config.os }}-pak-
-
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          extra-packages: |
-            any::rcmdcheck
-            any::rmarkdown
-            any::knitr
-            any::rextendr
-          needs: check
-    
-      - name: Install system dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev \
-            libvulkan1 mesa-vulkan-drivers libgl1-mesa-dri \
-            libopenblas-dev
-          sudo update-alternatives --set libblas.so.3-x86_64-linux-gnu \
-            /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
-          sudo update-alternatives --set liblapack.so.3-x86_64-linux-gnu \
-            /usr/lib/x86_64-linux-gnu/openblas-pthread/liblapack.so.3
-    
-      - name: Set wgpu backend (Linux)
-        if: runner.os == 'Linux'
-        run: echo "WGPU_BACKEND=vulkan" >> $GITHUB_ENV
-    
-      - uses: r-lib/actions/check-r-package@v2
-        with:
-          build_args: 'c("--no-manual","--no-build-vignettes")'
-          args: 'c("--no-manual", "--no-vignettes")'
-          error-on: '"error"'
-
-      - name: sccache stats
-        if: always()
-        run: sccache --show-stats
+    uses: GregorLueg/personal-actions/.github/workflows/r-cmd-check.yml@v1
+    with:
+      rust: true
+      gpu: true
+      windows: false
+      linux-runner: ubuntu-22.04
+    secrets: inherit

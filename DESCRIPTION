@@ -1,6 +1,6 @@
 Package: bixverse.gpu
 Title: GPU-accelerated methods for the bixverse
-Version: 0.2.5
+Version: 0.2.6
 Authors@R: 
     person(
         given = "Gregor", 
@@ -23,8 +23,9 @@ Suggests:
     quarto,
     tinytest
 Imports: 
-    bixverse (>= 0.4.0),
+    bixverse (>= 0.4.7),
     checkmate,
+    data.table,
     lifecycle,
     magrittr,
     manifoldsR (>= 0.2.0),
@@ -32,10 +33,11 @@ Imports:
     qs2,
     rextendr,
     S7,
-    zeallot    
+    utils,
+    zeallot
 Remotes:
-    GregorLueg/bixverse,
-    GregorLueg/bixverse.plots,
+    GregorLueg/bixverse@v0.4.7,
+    GregorLueg/bixverse.plots@v0.2.3,
     GregorLueg/manifoldsR
 VignetteBuilder: quarto
 URL: https://gregorlueg.github.io/bixverse.gpu/

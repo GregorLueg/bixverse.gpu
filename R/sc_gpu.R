@@ -378,6 +378,9 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
     return(object)
   }
 
+  # hard tier: the kNN indices built here go straight to Rust downstream
+  assert_sc_state(object, artefacts = embd_to_use, modality = modality)
+
   knn_data <- generate_gpu_knn_sc(
     object = object,
     embd_to_use = embd_to_use,
@@ -390,7 +393,12 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
     seed = seed,
     .verbose = .verbose
   )
-  object <- set_knn(object, knn_data, modality = modality)
+  object <- set_knn(
+    object,
+    knn_data,
+    modality = modality,
+    from = embd_to_use
+  )
 
   if (.verbose) {
     message(sprintf("Generating sNN graph (full: %s).", snn_params$full_snn))
@@ -419,7 +427,12 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
     attr = list(weight = snn_graph_rs$weights)
   )
 
-  object <- set_snn_graph(object, snn_graph = snn_g, modality = modality)
+  object <- set_snn_graph(
+    object,
+    snn_graph = snn_g,
+    modality = modality,
+    from = "knn"
+  )
 
   return(object)
 }
@@ -516,6 +529,9 @@ S7::method(find_neighbours_cagra_sc, SingleCells) <- function(
     return(object)
   }
 
+  # hard tier: the kNN indices built here go straight to Rust downstream
+  assert_sc_state(object, artefacts = embd_to_use, modality = modality)
+
   knn_data <- generate_cagra_knn_sc(
     object = object,
     embd_to_use = embd_to_use,
@@ -526,7 +542,12 @@ S7::method(find_neighbours_cagra_sc, SingleCells) <- function(
     seed = seed,
     .verbose = .verbose
   )
-  object <- set_knn(object, knn_data, modality = modality)
+  object <- set_knn(
+    object,
+    knn_data,
+    modality = modality,
+    from = embd_to_use
+  )
 
   if (.verbose) {
     message(sprintf("Generating sNN graph (full: %s).", snn_params$full_snn))
@@ -555,7 +576,12 @@ S7::method(find_neighbours_cagra_sc, SingleCells) <- function(
     attr = list(weight = snn_graph_rs$weights)
   )
 
-  object <- set_snn_graph(object, snn_graph = snn_g, modality = modality)
+  object <- set_snn_graph(
+    object,
+    snn_graph = snn_g,
+    modality = modality,
+    from = "knn"
+  )
 
   return(object)
 }
@@ -744,6 +770,9 @@ S7::method(harmony_v2_gpu_sc, SingleCells) <- function(
     ))
   }
 
+  # hard tier: the corrected embedding is written back onto the object
+  assert_sc_state(object, artefacts = "pca", modality = modality)
+
   if (is.null(get_pca_factors(object, modality = modality))) {
     warning("No PCA embeddings found in the object. Returning class as is")
     return(object)
@@ -781,7 +810,8 @@ S7::method(harmony_v2_gpu_sc, SingleCells) <- function(
     x = object,
     embd = harmony_embd,
     name = "harmony_gpu",
-    modality = modality
+    modality = modality,
+    from = "pca"
   )
 
   return(object)
@@ -922,6 +952,13 @@ S7::method(umap_gpu_sc, SingleCells) <- function(
     ))
     return(object)
   }
+
+  # hard tier: the manifold is written back onto the object, and it is read
+  # from `cache_modality` while the kNN comes from `modality`
+  assert_sc_state(object, artefacts = embd_to_use, modality = cache_modality)
+  if (modality == "wnn" || use_knn) {
+    assert_sc_state(object, artefacts = "knn", modality = modality)
+  }
   embd <- get_embedding(
     x = object,
     embd_name = embd_to_use,
@@ -967,7 +1004,13 @@ S7::method(umap_gpu_sc, SingleCells) <- function(
     x = object,
     embd = umap_embd,
     name = slot_name,
-    modality = modality
+    modality = modality,
+    from = .manifold_from_gpu(
+      embd_to_use = embd_to_use,
+      cache_modality = cache_modality,
+      modality = modality,
+      has_knn = !is.null(knn)
+    )
   )
 
   return(object)
@@ -1106,6 +1149,13 @@ S7::method(tsne_gpu_sc, SingleCells) <- function(
     ))
     return(object)
   }
+
+  # hard tier: the manifold is written back onto the object, and it is read
+  # from `cache_modality` while the kNN comes from `modality`
+  assert_sc_state(object, artefacts = embd_to_use, modality = cache_modality)
+  if (modality == "wnn" || use_knn) {
+    assert_sc_state(object, artefacts = "knn", modality = modality)
+  }
   embd <- get_embedding(
     x = object,
     embd_name = embd_to_use,
@@ -1150,7 +1200,13 @@ S7::method(tsne_gpu_sc, SingleCells) <- function(
     x = object,
     embd = tsne_embd,
     name = slot_name,
-    modality = modality
+    modality = modality,
+    from = .manifold_from_gpu(
+      embd_to_use = embd_to_use,
+      cache_modality = cache_modality,
+      modality = modality,
+      has_knn = !is.null(knn)
+    )
   )
 
   return(object)
