@@ -28,6 +28,8 @@ navbar:
           href: articles/gpu_metacells.html
         - text: SCENIC with GPU-acceleration
           href: articles/gpu_scenic.html
+        - text: Scrublet with GPU-acceleration
+          href: articles/gpu_scrublet.html
         - text: GPU-accelerated UMAP
           href: articles/gpu_umap.html
         - text: GPU-accelerated t-SNE
@@ -48,6 +50,7 @@ articles:
       - gpu_single_cell
       - gpu_metacells
       - gpu_scenic
+      - gpu_scrublet
       - gpu_umap
       - gpu_tsne
       - parametric_umap
@@ -67,11 +70,14 @@ reference:
       - find_neighbours_cagra_sc
       - generate_seacells_gpu_sc
       - scenic_grn_sc_gpu
+      - scrublet_gpu_sc
       - fast_cluster_gpu_sc
       - params_sc_ivf
       - params_sc_cagra
       - params_sc_harmony_v2_gpu
       - params_sc_fast_cluster_gpu
+      - params_scrublet_gpu
+      - params_knn_gpu_defaults
   - title: GPU-accelerated UMAP
     desc:
       GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent/CAGRA,
@@ -129,6 +135,7 @@ reference:
       - rs_parametric_umap_predict
       - rs_parametric_umap
       - rs_sc_pca_sparse_gpu
+      - rs_sc_scrublet_gpu
       - rs_scenic_grn_gpu
       - rs_scenic_grn_streaming_gpu
       - rs_seacells_gpu

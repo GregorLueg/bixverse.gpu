@@ -20,6 +20,7 @@ pub use single_cell::fast_clusters_gpu;
 pub use single_cell::harmony_gpu;
 pub use single_cell::pca_gpu;
 pub use single_cell::scenic_gpu;
+pub use single_cell::scrublet_gpu;
 pub use single_cell::seacells_gpu;
 
 use crate::embeddings::parametric_umap::*;
@@ -39,6 +40,7 @@ extendr_module! {
     use pca_gpu;
     use harmony_gpu;
     use scenic_gpu;
+    use scrublet_gpu;
     use seacells_gpu;
     use fast_clusters_gpu;
     // knn

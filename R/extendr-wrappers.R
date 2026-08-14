@@ -473,6 +473,65 @@ rs_scenic_grn_streaming_gpu <- function(f_path_genes, cell_indices, gene_indices
 #' @keywords internal
 rs_mc_scenic_gpu <- function(sparse_data, tf_indices, scenic_params, wave_byte_budget, seed, verbose) .Call(wrap__rs_mc_scenic_gpu, sparse_data, tf_indices, scenic_params, wave_byte_budget, seed, verbose)
 
+#' GPU: Scrublet doublet detection
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU equivalent of `bixverse::rs_sc_scrublet`. The PCA of the observed
+#' cells, the projection of the simulated doublets and the kNN over the
+#' combined embedding run on the WGPU backend. HVG selection, doublet
+#' simulation, scoring and the Otsu threshold stay on the CPU. Which nearest
+#' neighbour index runs is decided by the `knn_backend` element of
+#' `scrublet_params`.
+#'
+#' @param f_path_gene String. Path to the `counts_genes.bin` file.
+#' @param f_path_cell String. Path to the `counts_cells.bin` file.
+#' @param cells_to_keep Integer vector. The indices (0-indexed!) of the cells
+#' to include in this analysis.
+#' @param scrublet_params List. Parameter list, see
+#' [params_scrublet_gpu()].
+#' @param seed Integer. Seed for reproducibility purposes.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#' @param streaming Boolean. Shall the data be streamed for the HVG
+#' calculations.
+#' @param return_combined_pca Boolean. Shall the generated PCA be returned.
+#' @param return_pairs Boolean. Shall the parents of the simulated cells be
+#' returned.
+#'
+#' @returns A list with
+#' \itemize{
+#'   \item predicted_doublets - Boolean vector indicating which observed cells
+#'   were predicted as doublets (TRUE = doublet, FALSE = singlet).
+#'   \item doublet_scores_obs - Numerical vector with the likelihood of being
+#'   a doublet for the observed cells.
+#'   \item doublet_scores_sim - Numerical vector with the likelihood of being
+#'   a doublet for the simulated cells.
+#'   \item doublet_errors_obs - Numerical vector with the standard errors of
+#'   the scores for the observed cells.
+#'   \item z_scores - Z-scores for the observed cells. Represents:
+#'   `score - threshold / error`.
+#'   \item threshold - Used threshold.
+#'   \item detected_doublet_rate - Fraction of cells that are called as
+#'   doublet.
+#'   \item detectable_doublet_fraction - Fraction of simulated doublets with
+#'   scores above the threshold.
+#'   \item overall_doublet_rate - Estimated overall doublet rate.
+#'   \item pca - Optional PCA embeddings across the original cells and
+#'   simulated doublets.
+#'   \item pair_1 - Optional index of the parent cell 1 of the simulated
+#'   doublets.
+#'   \item pair_2 - Optional index of the parent cell 2 of the simulated
+#'   doublets.
+#' }
+#'
+#' @export
+#'
+#' @references Wolock, et al., Cell Syst, 2020
+#'
+#' @keywords internal
+rs_sc_scrublet_gpu <- function(f_path_gene, f_path_cell, cells_to_keep, scrublet_params, seed, verbose, streaming, return_combined_pca, return_pairs) .Call(wrap__rs_sc_scrublet_gpu, f_path_gene, f_path_cell, cells_to_keep, scrublet_params, seed, verbose, streaming, return_combined_pca, return_pairs)
+
 #' GPU: SEACells meta cell generation
 #'
 #' @description
