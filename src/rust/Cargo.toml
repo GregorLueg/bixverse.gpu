@@ -10,7 +10,7 @@ crate-type = ['staticlib', 'rlib']
 name = 'bixverse_gpu'
 
 [dependencies]
-ann-search-rs = { version = "0.5.0", features = [ "gpu" ] }
+ann-search-rs = { version = "0.5.2", features = [ "gpu" ] }
 burn = { version = "0.21.0", features = [ "wgpu", "flex" ] }
 bixverse-rs = { path = "/Users/gregorlueg/repos/shared/bixverse-rs", features = [ "gpu", "single-cell" ] }
 cubecl = "0.10.0"
@@ -22,6 +22,17 @@ manifolds-rs = { version = "0.3.13", features = [ "fft_tsne", "gpu", "parametric
 [target.'cfg(windows)'.dependencies]
 manifolds-rs = { version = "0.3.13", features = [ "parametric", "gpu"] }
 
+
+###########
+# Patches #
+###########
+
+# ann-search-rs 0.5.2 carries the GPU k-means this crate now imports. bixverse-rs
+# patches the same crate, but patches only apply from the top-level manifest, so
+# it has to be repeated here or the two resolve to different copies. Delete this
+# block once 0.5.2 is on crates.io.
+[patch.crates-io]
+ann-search-rs = { path = "/Users/gregorlueg/repos/shared/ann-search-rs" }
 
 [profile.dev.package.faer]
 opt-level = 3

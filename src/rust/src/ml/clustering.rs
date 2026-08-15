@@ -1,4 +1,4 @@
-use bixverse_rs::gpu::ml::k_means_gpu::*;
+use ann_search_rs::gpu::k_means_gpu::{k_means_clusters_gpu, KMeansGpuParams};
 use bixverse_rs::prelude::IntoExtendrErr;
 use cubecl::wgpu::WgpuDevice;
 use cubecl::wgpu::WgpuRuntime;

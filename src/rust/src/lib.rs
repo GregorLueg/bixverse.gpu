@@ -1,5 +1,6 @@
+use ann_search_rs::gpu::k_means_gpu::KMeansGpuParams;
+use bixverse_rs::gpu::gpu_r_wrappers::KMeansGpuParamsFromR;
 use bixverse_rs::gpu::linalg::corr::{column_pairwise_cor_gpu, GpuCorCov};
-use bixverse_rs::gpu::ml::k_means_gpu::KMeansGpuParams;
 use bixverse_rs::prelude::*;
 use burn::backend::{
     flex::{Flex, FlexDevice},
