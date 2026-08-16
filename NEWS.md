@@ -10,6 +10,13 @@
   indices through `knn_backend`, with the `knn` block validated against
   whichever one was asked for. `params_knn_gpu_defaults()` holds the GPU-side
   defaults.
+* Improvements in terms of kernels taken from `ann-search-rs`.
+
+# bixverse.gpu 0.2.6
+
+## Features
+
+- GPU-accelerated fast clustering for single cell.
 
 # bixverse.gpu 0.2.5
 

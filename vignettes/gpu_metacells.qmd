@@ -174,10 +174,11 @@ data.table(
 )[, speed_up := round(seconds[1] / seconds, 2)][]
 ```
 
-The two do not produce bit-identical assignments. GPU reduction ordering breaks
-ties differently, so a cell sitting almost equidistant between two archetypes
-can land either way. What should agree is the structure. Compare how the meta
-cells partition the cells:
+On small data sets the CPU versions tends to be faster. The advantage of the GPU 
+only becomes visible on larger N. The two do not produce bit-identical 
+assignments. GPU reduction ordering breaks ties differently, so a cell sitting 
+almost equidistant between two archetypes can land either way. What should agree 
+is the structure. Compare how the meta cells partition the cells:
 
 ```{r}
 #| label: cpu-vs-gpu

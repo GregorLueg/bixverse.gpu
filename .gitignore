@@ -19,4 +19,4 @@ target/
 scratch.R
 scratch_*.R
 
-.claude/*
+.claude/worktrees/*

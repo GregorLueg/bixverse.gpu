@@ -43,6 +43,7 @@ library(bixverse)
 library(bixverse.gpu)
 library(data.table)
 library(magrittr)
+library(ggplot2)
 ```
 
 ::: {.callout-note}
@@ -220,6 +221,21 @@ data.table(
   f1 = round(c(cpu_metrics$f1, gpu_metrics$f1), 3),
   threshold = round(c(scrublet_cpu$threshold, scrublet_gpu$threshold), 4)
 )
+```
+
+```{r}
+ggplot(
+  data = data.table(
+    cpu = scrublet_cpu$doublet_scores_obs,
+    gpu = scrublet_gpu$doublet_scores_obs
+  ),
+  mapping = aes(x = cpu, y = gpu)
+) +
+  geom_point(size = 0.5, alpha = 0.5) +
+  geom_smooth(method = "lm", colour = "red", se = TRUE) +
+  xlab("CPU scrublet score") +
+  ylab("GPU scrublet score") +
+  theme_bw()
 ```
 
 ```{r}
