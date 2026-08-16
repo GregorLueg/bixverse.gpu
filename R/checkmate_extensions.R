@@ -1036,3 +1036,205 @@ checkScFastClusterGpu <- function(x) {
 assertScFastClusterGpu <- checkmate::makeAssertionFunction(
   checkScFastClusterGpu
 )
+
+## scrublet gpu ----------------------------------------------------------------
+
+# Keys the kNN block may carry, per backend. The GPU indices take a strict
+# subset of the CPU names, which is why the flat list needs `knn_backend` to
+# disambiguate: `knn_method = "exhaustive"` is legal on both sides and means a
+# different code path each time.
+.SCRUBLET_GPU_KNN_KEYS <- list(
+  gpu = c("k", "knn_method", "ann_dist", "n_list", "n_probe"),
+  cpu = c(
+    "k",
+    "knn_method",
+    "ann_dist",
+    "n_trees",
+    "search_budget",
+    "delta",
+    "diversify_prob",
+    "ef_budget",
+    "m",
+    "ef_construction",
+    "ef_search",
+    "n_list",
+    "n_probe"
+  )
+)
+
+#' Check GPU Scrublet parameters
+#'
+#' @description Checkmate extension for checking the GPU Scrublet parameters.
+#' The kNN block is validated against whichever backend `knn_backend` names.
+#'
+#' @param x The list to check/assert.
+#'
+#' @return \code{TRUE} if the check was successful, otherwise an error message.
+#'
+#' @keywords internal
+checkScrubletGpu <- function(x) {
+  res <- checkmate::checkList(x)
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- checkmate::checkNames(
+    names(x),
+    must.include = c(
+      "knn_backend",
+      "log_transform",
+      "mean_center",
+      "normalise_variance",
+      "target_size",
+      "min_gene_var_pctl",
+      "hvg_method",
+      "loess_span",
+      "clip_max",
+      "n_bins",
+      "binning_strategy",
+      "no_pcs",
+      "sim_doublet_ratio",
+      "expected_doublet_rate",
+      "stdev_doublet_rate",
+      "n_bins_hist",
+      "manual_threshold",
+      "k",
+      "knn_method",
+      "ann_dist"
+    )
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  backend <- x[["knn_backend"]]
+  res <- checkmate::checkChoice(backend, c("gpu", "cpu"))
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  int_rules <- list(
+    "no_pcs" = "I1[1,)",
+    "n_bins" = "I1[1,)",
+    "n_bins_hist" = "I1[10,)"
+  )
+  bool_rules <- list(
+    "log_transform" = "B1",
+    "mean_center" = "B1",
+    "normalise_variance" = "B1"
+  )
+  numeric_rules <- list(
+    "min_gene_var_pctl" = "N1[0,1]",
+    "loess_span" = "N1(0,)",
+    "sim_doublet_ratio" = "N1(0,)",
+    "expected_doublet_rate" = "N1[0,1]",
+    "stdev_doublet_rate" = "N1[0,1]"
+  )
+  optional_rules <- list(
+    "target_size" = c("N1(0,)", "0"),
+    "clip_max" = c("N1(0,)", "0"),
+    "manual_threshold" = c("N1[0,)", "0")
+  )
+
+  rules <- c(int_rules, bool_rules, numeric_rules, optional_rules)
+
+  res <- purrr::imap_lgl(x, \(elem, name) {
+    if (name %in% names(rules)) checkmate::qtest(elem, rules[[name]]) else TRUE
+  })
+  if (!isTRUE(all(res))) {
+    broken_elem <- names(res)[which(!res)][1]
+    return(sprintf(
+      paste(
+        "The element `%s` in the GPU Scrublet parameters is incorrect.",
+        "See ?params_scrublet_gpu."
+      ),
+      broken_elem
+    ))
+  }
+
+  res <- checkmate::checkChoice(
+    x[["hvg_method"]],
+    c("vst", "mvb", "dispersion")
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- checkmate::checkChoice(
+    x[["binning_strategy"]],
+    c("equal_width", "equal_frequency")
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  # backend-dependent kNN block
+  knn_block <- x[names(x) %in% .SCRUBLET_GPU_KNN_KEYS[[backend]]]
+
+  if (backend == "cpu") {
+    return(bixverse:::checkKnnParams(
+      knn_block,
+      required_params = .SCRUBLET_GPU_KNN_KEYS[["cpu"]]
+    ))
+  }
+
+  res <- checkmate::checkNames(
+    names(knn_block),
+    must.include = .SCRUBLET_GPU_KNN_KEYS[["gpu"]]
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  # k = 0L is legal and asks Rust for sqrt(n_obs) * 0.5
+  gpu_knn_rules <- list(
+    "k" = "I1[0,)",
+    "n_list" = c("I1[1,)", "0"),
+    "n_probe" = c("I1[1,)", "0")
+  )
+
+  res <- purrr::imap_lgl(knn_block, \(elem, name) {
+    if (name %in% names(gpu_knn_rules)) {
+      checkmate::qtest(elem, gpu_knn_rules[[name]])
+    } else {
+      TRUE
+    }
+  })
+  if (!isTRUE(all(res))) {
+    broken_elem <- names(res)[which(!res)][1]
+    return(sprintf(
+      paste(
+        "The element `%s` in the GPU kNN block is incorrect.",
+        "k must be an integer >= 0 (0 = automatic);",
+        "n_list and n_probe must be NULL or integers >= 1."
+      ),
+      broken_elem
+    ))
+  }
+
+  res <- checkmate::checkChoice(
+    knn_block[["knn_method"]],
+    c("exhaustive", "ivf")
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  checkmate::checkChoice(knn_block[["ann_dist"]], c("euclidean", "cosine"))
+}
+
+#' Assert GPU Scrublet parameters
+#'
+#' @description Checkmate extension for asserting the GPU Scrublet parameters.
+#'
+#' @inheritParams checkScrubletGpu
+#'
+#' @param .var.name Name of the checked object to print in assertions. Defaults
+#' to the heuristic implemented in checkmate.
+#' @param add Collection to store assertion messages. See
+#' [checkmate::makeAssertCollection()].
+#'
+#' @return Invisibly returns the checked object if the assertion is successful.
+#'
+#' @keywords internal
+assertScrubletGpu <- checkmate::makeAssertionFunction(checkScrubletGpu)

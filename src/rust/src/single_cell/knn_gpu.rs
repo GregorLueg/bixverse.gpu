@@ -395,7 +395,12 @@ pub fn gpu_ivf_knn_with_dist(
     }
 
     let kmeans_iters = ivf_params.max_iters.unwrap_or(30);
-    let kmeans_params = KMeansTrainingParams::new(kmeans_iters, None, None);
+    // The GPU IVF builder trains its centroids on the GPU, so it takes
+    // [KMeansGpuParams]. Only the iteration count is user-facing here.
+    let kmeans_params = KMeansGpuParams {
+        iters: kmeans_iters,
+        ..Default::default()
+    };
 
     let ivf_idx = build_ivf_index_gpu::<f32, WgpuRuntime>(
         embd,

@@ -1,3 +1,23 @@
+# bixverse.gpu 0.2.7
+
+## Features
+
+* GPU-accelerated Scrublet via `scrublet_gpu_sc()`. The randomised sparse SVD,
+  the projection of the simulated doublets and the kNN over the combined
+  embedding run on GPU. Full parity with `bixverse::scrublet_sc()`, `group_by`
+  included, and the same `ScrubletRes` object comes back.
+* `params_scrublet_gpu()` picks between the GPU and the CPU nearest neighbour
+  indices through `knn_backend`, with the `knn` block validated against
+  whichever one was asked for. `params_knn_gpu_defaults()` holds the GPU-side
+  defaults.
+* Improvements in terms of kernels taken from `ann-search-rs`.
+
+# bixverse.gpu 0.2.6
+
+## Features
+
+- GPU-accelerated fast clustering for single cell.
+
 # bixverse.gpu 0.2.5
 
 ## Features

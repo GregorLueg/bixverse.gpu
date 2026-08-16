@@ -1,5 +1,6 @@
+use ann_search_rs::gpu::k_means_gpu::KMeansGpuParams;
+use bixverse_rs::gpu::gpu_r_wrappers::KMeansGpuParamsFromR;
 use bixverse_rs::gpu::linalg::corr::{column_pairwise_cor_gpu, GpuCorCov};
-use bixverse_rs::gpu::ml::k_means_gpu::KMeansGpuParams;
 use bixverse_rs::prelude::*;
 use burn::backend::{
     flex::{Flex, FlexDevice},
@@ -20,6 +21,7 @@ pub use single_cell::fast_clusters_gpu;
 pub use single_cell::harmony_gpu;
 pub use single_cell::pca_gpu;
 pub use single_cell::scenic_gpu;
+pub use single_cell::scrublet_gpu;
 pub use single_cell::seacells_gpu;
 
 use crate::embeddings::parametric_umap::*;
@@ -39,6 +41,7 @@ extendr_module! {
     use pca_gpu;
     use harmony_gpu;
     use scenic_gpu;
+    use scrublet_gpu;
     use seacells_gpu;
     use fast_clusters_gpu;
     // knn
