@@ -9,6 +9,8 @@
 - [GPU-accelerated
   SCENIC](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scenic.md):
 - [GPU-accelerated
+  Scrublet](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scrublet.md):
+- [GPU-accelerated
   UMAP](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_umap.md):
 - [GPU-accelerated
   t-SNE](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_tsne.md):

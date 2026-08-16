@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,7 @@
 <li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_metacells.html">SEACells with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_scrublet.html">Scrublet with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -72,7 +73,7 @@
       <h1>GPU-accelerated SEACells</h1>
 
       <p class="author">Gregor Lueg</p>
-      <p class="date">2026-08-13</p>
+      <p class="date">2026-08-16</p>
 
 
       <div class="d-none name"><code></code></div>
@@ -280,6 +281,7 @@
 <span><span class="va">mc_gpu</span></span>
 <span><span class="co">#&gt; Single cell experiment (Meta Cells).</span></span>
 <span><span class="co">#&gt;   Meta cell method: seacell</span></span>
+<span><span class="co">#&gt;   Merged: FALSE</span></span>
 <span><span class="co">#&gt;   No meta cells: 250</span></span>
 <span><span class="co">#&gt;   No genes: 12464</span></span>
 <span><span class="co">#&gt;   No cells aggregated: 6881</span></span>
@@ -288,7 +290,8 @@
 <span><span class="co">#&gt;   PCA calculated: FALSE</span></span>
 <span><span class="co">#&gt;   Other embeddings: none</span></span>
 <span><span class="co">#&gt;   KNN generated: FALSE</span></span>
-<span><span class="co">#&gt;   SNN generated: FALSE</span></span></code></pre></div>
+<span><span class="co">#&gt;   SNN generated: FALSE</span></span>
+<span><span class="co">#&gt;   Stale artefacts: none</span></span></code></pre></div>
 </div>
 <p>The result is a <code>MetaCells</code> object, byte for byte the same shape as the CPU one. Assignments live in <code>@original_assignment</code>, the RSS trace and the archetype cell indices in <code>@other_data</code>.</p>
 <div class="cell">
@@ -296,17 +299,17 @@
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">mc_gpu</span><span class="op">[[</span><span class="op">]</span><span class="op">]</span>, <span class="fl">3L</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    meta_cell_idx  meta_cell_id no_originating_cells</span></span>
 <span><span class="co">#&gt;            &lt;int&gt;        &lt;char&gt;                &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:             1 meta_cell_001                   49</span></span>
-<span><span class="co">#&gt; 2:             2 meta_cell_002                   46</span></span>
-<span><span class="co">#&gt; 3:             3 meta_cell_003                   25</span></span>
+<span><span class="co">#&gt; 1:             1 meta_cell_001                   37</span></span>
+<span><span class="co">#&gt; 2:             2 meta_cell_002                   20</span></span>
+<span><span class="co">#&gt; 3:             3 meta_cell_003                   37</span></span>
 <span><span class="co">#&gt;                        original_cell_idx</span></span>
 <span><span class="co">#&gt;                                   &lt;list&gt;</span></span>
-<span><span class="co">#&gt; 1:        68,106,110,156,345,386,...[49]</span></span>
-<span><span class="co">#&gt; 2:        65,108,205,229,737,751,...[46]</span></span>
-<span><span class="co">#&gt; 3:   15,  25,  41, 567, 893,1242,...[25]</span></span>
+<span><span class="co">#&gt; 1:  537, 799, 992,1035,1055,1967,...[37]</span></span>
+<span><span class="co">#&gt; 2: 2184,2227,2274,2307,2894,3224,...[20]</span></span>
+<span><span class="co">#&gt; 3:        38, 69,291,309,475,710,...[37]</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="va">mc_gpu</span><span class="op">@</span><span class="va">other_data</span><span class="op">$</span><span class="va">rss</span>, <span class="fl">5L</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 132.6602 132.3294 132.0941 131.8425 131.7310</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 132.3253 132.1187 131.7788 131.6325 131.5371</span></span></code></pre></div>
 </div>
 <section class="level3"><h3 id="knobs-that-matter-on-large-data">Knobs that matter on large data<a class="anchor" aria-label="anchor" href="#knobs-that-matter-on-large-data"></a>
 </h3>
@@ -356,10 +359,10 @@
 <span><span class="op">)</span><span class="op">[</span>, <span class="va">speed_up</span> <span class="op">:=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">seconds</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">/</span> <span class="va">seconds</span>, <span class="fl">2</span><span class="op">)</span><span class="op">]</span><span class="op">[</span><span class="op">]</span></span>
 <span><span class="co">#&gt;    version seconds speed_up</span></span>
 <span><span class="co">#&gt;     &lt;char&gt;   &lt;num&gt;    &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:     CPU    6.89     1.00</span></span>
-<span><span class="co">#&gt; 2:     GPU    7.14     0.96</span></span></code></pre></div>
+<span><span class="co">#&gt; 1:     CPU    7.42     1.00</span></span>
+<span><span class="co">#&gt; 2:     GPU    7.81     0.95</span></span></code></pre></div>
 </div>
-<p>The two do not produce bit-identical assignments. GPU reduction ordering breaks ties differently, so a cell sitting almost equidistant between two archetypes can land either way. What should agree is the structure. Compare how the meta cells partition the cells:</p>
+<p>On small data sets the CPU versions tends to be faster. The advantage of the GPU only becomes visible on larger N. The two do not produce bit-identical assignments. GPU reduction ordering breaks ties differently, so a cell sitting almost equidistant between two archetypes can land either way. What should agree is the structure. Compare how the meta cells partition the cells:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mc_sizes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
@@ -381,8 +384,8 @@
 <span><span class="va">mc_sizes</span></span>
 <span><span class="co">#&gt;    version n_meta_cells median_cells final_rss</span></span>
 <span><span class="co">#&gt;     &lt;char&gt;        &lt;int&gt;        &lt;num&gt;     &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:     CPU          250         21.5    131.83</span></span>
-<span><span class="co">#&gt; 2:     GPU          250         21.0    131.73</span></span></code></pre></div>
+<span><span class="co">#&gt; 1:     CPU          250         22.0    131.82</span></span>
+<span><span class="co">#&gt; 2:     GPU          250         22.5    131.54</span></span></code></pre></div>
 </div>
 <p>We can already see a difference here in speed, and this is a small data set asking for only 250 meta cells. The more cells and SEACells you throw at the problem, the bigger the delta: upstream measures the full fit at roughly 2.6x on 50k cells and 666 archetypes.</p>
 </section><section class="level2"><h2 id="feeding-into-scenic">Feeding into SCENIC<a class="anchor" aria-label="anchor" href="#feeding-into-scenic"></a>

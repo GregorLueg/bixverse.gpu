@@ -21,6 +21,8 @@ applications.
   : Generate meta cells based on SEACells on the GPU
 - [`scenic_grn_sc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/scenic_grn_sc_gpu.md)
   : GPU-accelerated SCENIC GRN inference
+- [`scrublet_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/scrublet_gpu_sc.md)
+  : Doublet detection with Scrublet on the GPU
 - [`fast_cluster_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/fast_cluster_gpu_sc.md)
   : Run fast Louvain clustering on a SingleCells object (GPU)
 - [`params_sc_ivf()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.md)
@@ -31,6 +33,10 @@ applications.
   : Default parameters for Harmony v2 GPU batch correction
 - [`params_sc_fast_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_fast_cluster_gpu.md)
   : Default parameters for GPU fast Louvain clustering
+- [`params_scrublet_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_scrublet_gpu.md)
+  : Wrapper function for GPU Scrublet doublet detection parameters
+- [`params_knn_gpu_defaults()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_knn_gpu_defaults.md)
+  : Default parameters for the GPU nearest neighbour backends
 
 ## GPU-accelerated UMAP
 
@@ -128,6 +134,8 @@ useful for your own package? Use with care and read the documentation!
   **\[experimental\]** : Parametric UMAP implementation
 - [`rs_sc_pca_sparse_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_sc_pca_sparse_gpu.md)
   **\[experimental\]** : Calculates sparse PCA for single cell
+- [`rs_sc_scrublet_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_sc_scrublet_gpu.md)
+  **\[experimental\]** : GPU: Scrublet doublet detection
 - [`rs_scenic_grn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_scenic_grn_gpu.md)
   **\[experimental\]** : GPU: SCENIC gene-regulatory network inference
   (disk-backed)

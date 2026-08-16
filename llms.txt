@@ -1,6 +1,6 @@
 # *bixverse.gpu package*
 
-![r_package](https://img.shields.io/badge/R_package-0.2.6-orange)[![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
+![r_package](https://img.shields.io/badge/R_package-0.2.7-orange)[![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![pkgdown](https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github)](https://gregorlueg.github.io/bixverse.gpu/)
@@ -21,7 +21,8 @@ conditional compiling to that backend if cuda is detected (future
 problem). The package is designed to support the [bixverse
 package](https://github.com/GregorLueg/bixverse). Additionally, also
 provides some neural net-based versions of embedding methods for
-[manifoldsR](https://github.com/GregorLueg/manifoldsR).
+[manifoldsR](https://github.com/GregorLueg/manifoldsR) + a
+GPU-accelerated version of the Adam optimiser for UMAP.
 
 ## Usage
 
@@ -101,16 +102,18 @@ GPU-accelerated Harmony batch correction (single cells)
 
 GPU-accelerated correlations (Spearman and Pearson)
 
-GPU-accelerated NMF.
-
-GPU-accelerated BBKNN batch correction (single cells)
-
 GPU-accelerate UMAP embedding generation.
 
 SCENIC has now working GPU acceleration for ExtraTrees and the RF
 learner. Both beat the CPU end to end, by 2.0x and 1.8x on an M1 Max.
 
 GPU-accelerated SEACells meta cell generation (both Frank-Wolfe solves).
+
+Scrublet with GPU-acceleration.
+
+GPU-accelerated NMF.
+
+GPU-accelerated BBKNN batch correction (single cells)
 
 **General:**
 
@@ -142,6 +145,8 @@ applications.
   : Generate meta cells based on SEACells on the GPU
 - [`scenic_grn_sc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/scenic_grn_sc_gpu.md)
   : GPU-accelerated SCENIC GRN inference
+- [`scrublet_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/scrublet_gpu_sc.md)
+  : Doublet detection with Scrublet on the GPU
 - [`fast_cluster_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/fast_cluster_gpu_sc.md)
   : Run fast Louvain clustering on a SingleCells object (GPU)
 - [`params_sc_ivf()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.md)
@@ -152,6 +157,10 @@ applications.
   : Default parameters for Harmony v2 GPU batch correction
 - [`params_sc_fast_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_fast_cluster_gpu.md)
   : Default parameters for GPU fast Louvain clustering
+- [`params_scrublet_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_scrublet_gpu.md)
+  : Wrapper function for GPU Scrublet doublet detection parameters
+- [`params_knn_gpu_defaults()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_knn_gpu_defaults.md)
+  : Default parameters for the GPU nearest neighbour backends
 
 ## GPU-accelerated UMAP
 
@@ -249,6 +258,8 @@ useful for your own package? Use with care and read the documentation!
   **\[experimental\]** : Parametric UMAP implementation
 - [`rs_sc_pca_sparse_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_sc_pca_sparse_gpu.md)
   **\[experimental\]** : Calculates sparse PCA for single cell
+- [`rs_sc_scrublet_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_sc_scrublet_gpu.md)
+  **\[experimental\]** : GPU: Scrublet doublet detection
 - [`rs_scenic_grn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_scenic_grn_gpu.md)
   **\[experimental\]** : GPU: SCENIC gene-regulatory network inference
   (disk-backed)
@@ -278,6 +289,8 @@ useful for your own package? Use with care and read the documentation!
   SEACells](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_metacells.md):
 - [GPU-accelerated
   SCENIC](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scenic.md):
+- [GPU-accelerated
+  Scrublet](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scrublet.md):
 - [GPU-accelerated
   UMAP](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_umap.md):
 - [GPU-accelerated

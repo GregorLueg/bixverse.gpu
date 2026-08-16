@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,6 +22,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_metacells.html">SEACells with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_scrublet.html">Scrublet with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -48,6 +49,23 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.7" id="bixversegpu-027">bixverse.gpu 0.2.7<a class="anchor" aria-label="anchor" href="#bixversegpu-027"></a></h2>
+<div class="section level3">
+<h3 id="features-0-2-7">Features<a class="anchor" aria-label="anchor" href="#features-0-2-7"></a></h3>
+<ul><li>GPU-accelerated Scrublet via <code><a href="../reference/scrublet_gpu_sc.html">scrublet_gpu_sc()</a></code>. The randomised sparse SVD, the projection of the simulated doublets and the kNN over the combined embedding run on GPU. Full parity with <code><a href="https://gregorlueg.github.io/bixverse/reference/scrublet_sc.html" class="external-link">bixverse::scrublet_sc()</a></code>, <code>group_by</code> included, and the same <code>ScrubletRes</code> object comes back.</li>
+<li>
+<code><a href="../reference/params_scrublet_gpu.html">params_scrublet_gpu()</a></code> picks between the GPU and the CPU nearest neighbour indices through <code>knn_backend</code>, with the <code>knn</code> block validated against whichever one was asked for. <code><a href="../reference/params_knn_gpu_defaults.html">params_knn_gpu_defaults()</a></code> holds the GPU-side defaults.</li>
+<li>Improvements in terms of kernels taken from <code>ann-search-rs</code>.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.6" id="bixversegpu-026">bixverse.gpu 0.2.6<a class="anchor" aria-label="anchor" href="#bixversegpu-026"></a></h2>
+<div class="section level3">
+<h3 id="features-0-2-6">Features<a class="anchor" aria-label="anchor" href="#features-0-2-6"></a></h3>
+<ul><li>GPU-accelerated fast clustering for single cell.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.5" id="bixversegpu-025">bixverse.gpu 0.2.5<a class="anchor" aria-label="anchor" href="#bixversegpu-025"></a></h2>
 <div class="section level3">

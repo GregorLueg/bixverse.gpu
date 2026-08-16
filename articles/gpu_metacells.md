@@ -233,6 +233,7 @@ gpu_time <- system.time({
 mc_gpu
 #> Single cell experiment (Meta Cells).
 #>   Meta cell method: seacell
+#>   Merged: FALSE
 #>   No meta cells: 250
 #>   No genes: 12464
 #>   No cells aggregated: 6881
@@ -242,6 +243,7 @@ mc_gpu
 #>   Other embeddings: none
 #>   KNN generated: FALSE
 #>   SNN generated: FALSE
+#>   Stale artefacts: none
 ```
 
 The result is a `MetaCells` object, byte for byte the same shape as the
@@ -253,17 +255,17 @@ the archetype cell indices in `@other_data`.
 head(mc_gpu[[]], 3L)
 #>    meta_cell_idx  meta_cell_id no_originating_cells
 #>            <int>        <char>                <num>
-#> 1:             1 meta_cell_001                   49
-#> 2:             2 meta_cell_002                   46
-#> 3:             3 meta_cell_003                   25
+#> 1:             1 meta_cell_001                   37
+#> 2:             2 meta_cell_002                   20
+#> 3:             3 meta_cell_003                   37
 #>                        original_cell_idx
 #>                                   <list>
-#> 1:        68,106,110,156,345,386,...[49]
-#> 2:        65,108,205,229,737,751,...[46]
-#> 3:   15,  25,  41, 567, 893,1242,...[25]
+#> 1:  537, 799, 992,1035,1055,1967,...[37]
+#> 2: 2184,2227,2274,2307,2894,3224,...[20]
+#> 3:        38, 69,291,309,475,710,...[37]
 
 tail(mc_gpu@other_data$rss, 5L)
-#> [1] 132.6602 132.3294 132.0941 131.8425 131.7310
+#> [1] 132.3253 132.1187 131.7788 131.6325 131.5371
 ```
 
 ### Knobs that matter on large data
@@ -320,14 +322,16 @@ data.table(
 )[, speed_up := round(seconds[1] / seconds, 2)][]
 #>    version seconds speed_up
 #>     <char>   <num>    <num>
-#> 1:     CPU    6.89     1.00
-#> 2:     GPU    7.14     0.96
+#> 1:     CPU    7.42     1.00
+#> 2:     GPU    7.81     0.95
 ```
 
-The two do not produce bit-identical assignments. GPU reduction ordering
-breaks ties differently, so a cell sitting almost equidistant between
-two archetypes can land either way. What should agree is the structure.
-Compare how the meta cells partition the cells:
+On small data sets the CPU versions tends to be faster. The advantage of
+the GPU only becomes visible on larger N. The two do not produce
+bit-identical assignments. GPU reduction ordering breaks ties
+differently, so a cell sitting almost equidistant between two archetypes
+can land either way. What should agree is the structure. Compare how the
+meta cells partition the cells:
 
 ``` r
 
@@ -350,8 +354,8 @@ mc_sizes <- data.table(
 mc_sizes
 #>    version n_meta_cells median_cells final_rss
 #>     <char>        <int>        <num>     <num>
-#> 1:     CPU          250         21.5    131.83
-#> 2:     GPU          250         21.0    131.73
+#> 1:     CPU          250         22.0    131.82
+#> 2:     GPU          250         22.5    131.54
 ```
 
 We can already see a difference here in speed, and this is a small data

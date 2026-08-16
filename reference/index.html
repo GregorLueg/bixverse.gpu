@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,6 +22,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_metacells.html">SEACells with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_scrublet.html">Scrublet with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -115,6 +116,13 @@
 
         <dt>
 
+          <code><a href="scrublet_gpu_sc.html">scrublet_gpu_sc()</a></code>
+
+        </dt>
+        <dd>Doublet detection with Scrublet on the GPU</dd>
+
+        <dt>
+
           <code><a href="fast_cluster_gpu_sc.html">fast_cluster_gpu_sc()</a></code>
 
         </dt>
@@ -147,6 +155,20 @@
 
         </dt>
         <dd>Default parameters for GPU fast Louvain clustering</dd>
+
+        <dt>
+
+          <code><a href="params_scrublet_gpu.html">params_scrublet_gpu()</a></code>
+
+        </dt>
+        <dd>Wrapper function for GPU Scrublet doublet detection parameters</dd>
+
+        <dt>
+
+          <code><a href="params_knn_gpu_defaults.html">params_knn_gpu_defaults()</a></code>
+
+        </dt>
+        <dd>Default parameters for the GPU nearest neighbour backends</dd>
       </dl></div><div class="section level2">
       <h2 id="gpu-accelerated-umap">GPU-accelerated UMAP<a class="anchor" aria-label="anchor" href="#gpu-accelerated-umap"></a></h2>
 
@@ -388,6 +410,13 @@
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Calculates sparse PCA for single cell</dd>
+
+        <dt>
+
+          <code><a href="rs_sc_scrublet_gpu.html">rs_sc_scrublet_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>GPU: Scrublet doublet detection</dd>
 
         <dt>
 

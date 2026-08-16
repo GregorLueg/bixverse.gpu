@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,7 @@
 <li><a class="dropdown-item" href="articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
     <li><a class="dropdown-item" href="articles/gpu_metacells.html">SEACells with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
+    <li><a class="dropdown-item" href="articles/gpu_scrublet.html">Scrublet with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -71,14 +72,14 @@
 <div class="page-header"><h1 id="bixversegpu-package">
 <em>bixverse.gpu package</em><a class="anchor" aria-label="anchor" href="#bixversegpu-package"></a>
 </h1></div>
-<p><img src="https://img.shields.io/badge/R_package-0.2.6-orange" alt="r_package"><a href="https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml" class="external-link"><img src="https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg" alt="CI"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a> <a href="https://gregorlueg.github.io/bixverse.gpu/"><img src="https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github" alt="pkgdown"></a> <a href="https://extendr.github.io/extendr/extendr_api/" class="external-link"><img src="https://img.shields.io/badge/extendr-%5E0.9.0-276DC2" alt="extendr"></a> <a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></p>
+<p><img src="https://img.shields.io/badge/R_package-0.2.7-orange" alt="r_package"><a href="https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml" class="external-link"><img src="https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg" alt="CI"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a> <a href="https://gregorlueg.github.io/bixverse.gpu/"><img src="https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github" alt="pkgdown"></a> <a href="https://extendr.github.io/extendr/extendr_api/" class="external-link"><img src="https://img.shields.io/badge/extendr-%5E0.9.0-276DC2" alt="extendr"></a> <a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></p>
 <p></p>
 <p><img src="reference/figures/bixverse_gpu_logo.png" width="128" height="128" alt="bixverse.plots logo"></p>
 <p></p>
 <div class="section level2">
 <h2 id="intro">Intro<a class="anchor" aria-label="anchor" href="#intro"></a>
 </h2>
-<p>GPU-accelerated algorithms (via the WGPU backend on cubecl which allows you to run the code here on any GPU). You will need to set up your wgpu however, please check the <a href="https://burn.dev/books/cubecl/getting-started/installation.html" class="external-link">cubecl book</a>. I do not have access to an Nvidia GPU, but I will aim also to allow for conditional compiling to that backend if cuda is detected (future problem). The package is designed to support the <a href="https://github.com/GregorLueg/bixverse" class="external-link">bixverse package</a>. Additionally, also provides some neural net-based versions of embedding methods for <a href="https://github.com/GregorLueg/manifoldsR" class="external-link">manifoldsR</a>.</p>
+<p>GPU-accelerated algorithms (via the WGPU backend on cubecl which allows you to run the code here on any GPU). You will need to set up your wgpu however, please check the <a href="https://burn.dev/books/cubecl/getting-started/installation.html" class="external-link">cubecl book</a>. I do not have access to an Nvidia GPU, but I will aim also to allow for conditional compiling to that backend if cuda is detected (future problem). The package is designed to support the <a href="https://github.com/GregorLueg/bixverse" class="external-link">bixverse package</a>. Additionally, also provides some neural net-based versions of embedding methods for <a href="https://github.com/GregorLueg/manifoldsR" class="external-link">manifoldsR</a> + a GPU-accelerated version of the Adam optimiser for UMAP.</p>
 </div>
 <div class="section level2">
 <h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
@@ -127,11 +128,12 @@
 <li><label><input type="checkbox" checked>Sparse, randomised SVD for single cells</label></li>
 <li><label><input type="checkbox" checked>GPU-accelerated Harmony batch correction (single cells)</label></li>
 <li><label><input type="checkbox" checked>GPU-accelerated correlations (Spearman and Pearson)</label></li>
-<li><label><input type="checkbox">GPU-accelerated NMF.</label></li>
-<li><label><input type="checkbox">GPU-accelerated BBKNN batch correction (single cells)</label></li>
 <li><label><input type="checkbox" checked>GPU-accelerate UMAP embedding generation.</label></li>
 <li><label><input type="checkbox" checked>SCENIC has now working GPU acceleration for ExtraTrees and the RF learner. Both beat the CPU end to end, by 2.0x and 1.8x on an M1 Max.</label></li>
 <li><label><input type="checkbox" checked>GPU-accelerated SEACells meta cell generation (both Frank-Wolfe solves).</label></li>
+<li><label><input type="checkbox" checked>Scrublet with GPU-acceleration.</label></li>
+<li><label><input type="checkbox">GPU-accelerated NMF.</label></li>
+<li><label><input type="checkbox">GPU-accelerated BBKNN batch correction (single cells)</label></li>
 </ul>
 <p><strong>General:</strong></p>
 <ul class="task-list">

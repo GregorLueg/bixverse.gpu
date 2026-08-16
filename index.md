@@ -1,6 +1,6 @@
 # *bixverse.gpu package*
 
-![r_package](https://img.shields.io/badge/R_package-0.2.6-orange)[![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
+![r_package](https://img.shields.io/badge/R_package-0.2.7-orange)[![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![pkgdown](https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github)](https://gregorlueg.github.io/bixverse.gpu/)
@@ -21,7 +21,8 @@ conditional compiling to that backend if cuda is detected (future
 problem). The package is designed to support the [bixverse
 package](https://github.com/GregorLueg/bixverse). Additionally, also
 provides some neural net-based versions of embedding methods for
-[manifoldsR](https://github.com/GregorLueg/manifoldsR).
+[manifoldsR](https://github.com/GregorLueg/manifoldsR) + a
+GPU-accelerated version of the Adam optimiser for UMAP.
 
 ## Usage
 
@@ -101,16 +102,18 @@ GPU-accelerated Harmony batch correction (single cells)
 
 GPU-accelerated correlations (Spearman and Pearson)
 
-GPU-accelerated NMF.
-
-GPU-accelerated BBKNN batch correction (single cells)
-
 GPU-accelerate UMAP embedding generation.
 
 SCENIC has now working GPU acceleration for ExtraTrees and the RF
 learner. Both beat the CPU end to end, by 2.0x and 1.8x on an M1 Max.
 
 GPU-accelerated SEACells meta cell generation (both Frank-Wolfe solves).
+
+Scrublet with GPU-acceleration.
+
+GPU-accelerated NMF.
+
+GPU-accelerated BBKNN batch correction (single cells)
 
 **General:**
 

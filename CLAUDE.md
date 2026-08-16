@@ -7,10 +7,10 @@ with code in this repository.
 
 `bixverse.gpu` is an R package providing GPU-accelerated algorithms (kNN
 search, k-means, PCA, Harmony, UMAP, tSNE, parametric UMAP, SCENIC,
-SEACells meta cells, correlations) that plug into the `bixverse` /
-`manifoldsR` ecosystem. The heavy lifting is Rust, exposed to R via
-`extendr`. GPU code runs on WGPU via `cubecl` / `burn`, so it is
-portable across vendors (no CUDA required).
+SEACells meta cells, Scrublet doublet detection, correlations) that plug
+into the `bixverse` / `manifoldsR` ecosystem. The heavy lifting is Rust,
+exposed to R via `extendr`. GPU code runs on WGPU via `cubecl` / `burn`,
+so it is portable across vendors (no CUDA required).
 
 ## Common commands
 
@@ -29,6 +29,13 @@ Rust builds live under `src/rust/target/` and are always release
 (`opt-level = 3`), which is CRAN policy. `DEBUG=1` is ignored by
 `tools/config.R`; do not add a debug path.
 
+During development set `DEV_BUILD=true`. It keeps `src/rust/target/` and
+the shared cargo registry warm between installs and drops LTO, which
+cuts a `document()` cycle from minutes to seconds. Still a release
+build, so do not benchmark or submit from one. It deliberately does not
+engage on a vendored build, where `CARGO_HOME` has to stay local for
+`vendor-config.toml`.
+
 R CMD check runs in CI (`.github/workflows/R-cmd-check.yml`) on macOS
 and Ubuntu. Linux CI installs `libvulkan1` / `mesa-vulkan-drivers` and
 sets `WGPU_BACKEND=vulkan`.
@@ -45,11 +52,12 @@ The package is a thin R shim over a Rust crate. Three layers, top-down:
     `SingleCellsMultiModal` from `bixverse`), `scenic_gpu.R` (SCENIC GRN
     inference, dispatching on `SingleCells` / `MetaCells`),
     `seacells_gpu.R` (SEACells meta cells, dispatching on `SingleCells`
-    / `SingleCellsSubset`), `umap_gpu.R`, `tsne_gpu.R`,
-    `parametric_umap.R`, `ml_gpu.R` (k-means), `nn_gpu.R` (kNN graphs),
-    `utils.R` (`parse_verbosity`). Argument checks use `checkmate` plus
-    local `checkmate_extensions.R`, where each `checkXParams()`
-    predicate is wrapped into an `assertXParams()` via
+    / `SingleCellsSubset`), `scrublet_gpu.R` (Scrublet doublet
+    detection, dispatching on `SingleCells`), `umap_gpu.R`,
+    `tsne_gpu.R`, `parametric_umap.R`, `ml_gpu.R` (k-means), `nn_gpu.R`
+    (kNN graphs), `utils.R` (`parse_verbosity`). Argument checks use
+    `checkmate` plus local `checkmate_extensions.R`, where each
+    `checkXParams()` predicate is wrapped into an `assertXParams()` via
     [`checkmate::makeAssertionFunction`](https://mllg.github.io/checkmate/reference/makeAssertion.html)
     (`assertNnParamsGpu`, `assertUmapParamsGpu`, `assertTsneParamsGpu`,
     and so on). Parameter builders live in `param_wrappers.R`
@@ -73,18 +81,19 @@ The package is a thin R shim over a Rust crate. Three layers, top-down:
     precision helpers (`parse_precision`, `auto_precision`,
     `SAMPLE_THRESHOLD_HIGH_PRECISION`) and the `PUmapModel`
     backend-agnostic wrapper. It also holds most `#[extendr]` entry
-    points, but not all: `pca_gpu.rs`, `harmony_gpu.rs`, `scenic_gpu.rs`
-    and `seacells_gpu.rs` each carry their own, registered through
-    `use <mod>;` lines inside `extendr_module!` rather than `fn` lines.
-    Subdirectories:
+    points, but not all: `pca_gpu.rs`, `harmony_gpu.rs`,
+    `scenic_gpu.rs`, `scrublet_gpu.rs` and `seacells_gpu.rs` each carry
+    their own, registered through `use <mod>;` lines inside
+    `extendr_module!` rather than `fn` lines. Subdirectories:
     - `embeddings/`: `umap_gpu.rs`, `tsne_gpu.rs`, `parametric_umap.rs`
       (neural-net UMAP with GPU and CPU backends), `utils.rs` (R list to
       Rust parameter structs).
     - `single_cell/`: `knn_gpu.rs` (CAGRA / IVF / exhaustive),
       `pca_gpu.rs` (sparse randomised SVD), `harmony_gpu.rs`,
       `scenic_gpu.rs` (in-memory, streaming and MetaCells GRN drivers),
-      `seacells_gpu.rs`, `sc_utils.rs` (shared cell-mapping and kNN
-      conversion helpers; only `seacells_gpu.rs` consumes them so far).
+      `scrublet_gpu.rs`, `seacells_gpu.rs`, `sc_utils.rs` (shared
+      cell-mapping and kNN conversion helpers; only `seacells_gpu.rs`
+      consumes them so far).
     - `ml/clustering.rs`: k-means.
     - `utils.rs`: R to Rust matrix converters (`r_matrix_to_faer_fp32`,
       `faer_to_r_matrix`, `nearest_neighbours_to_rust`).
@@ -113,21 +122,33 @@ most GPU kernels do not live in this repo.
 - **`ann-search-rs`**: approximate nearest-neighbour crate. Owns CAGRA /
   IVF / exhaustive kNN plus shared SIMD and GPU-tensor infrastructure
   that the other sibling crates reuse. Many of the GPU primitives
-  dispatched from here originate there. (feature: `gpu`)
+  dispatched from here originate there, including the GPU k-means
+  (`ann_search_rs::gpu::k_means_gpu`), which used to live in
+  `bixverse-rs`. (feature: `gpu`)
 - **`bixverse-rs`**: Rust engine behind the whole `bixverse` ecosystem.
   This package consumes its GPU-accelerated pieces (linalg, PCA,
-  Harmony, correlations, k-means, SCENIC, SEACells); the main non-GPU
-  R-facing interface lives in the separate `bixverse` R package.
-  (features: `gpu`, `single-cell`) During development
-  `src/rust/Cargo.toml` points this at a local checkout via `path`, so
-  you always track its HEAD. That has to be swapped back to a published
-  `version` before merging, otherwise CI cannot resolve it and the
-  vendored offline build path breaks.
+  Harmony, correlations, SCENIC, SEACells); the main non-GPU R-facing
+  interface lives in the separate `bixverse` R package. (features:
+  `gpu`, `single-cell`) It no longer owns the GPU k-means kernels, only
+  the R-list parsing for them, via the `KMeansGpuParamsFromR` extension
+  trait in `bixverse_rs::gpu::gpu_r_wrappers`.
 - **`manifolds-rs`**: manifold-learning crate. UMAP, tSNE, diffusion
   maps, PaCMAP, PHATE. Depends on `ann-search-rs` for kNN. GPU coverage
   is expanding: kNN searches are already GPU, and the UMAP optimiser now
   has a GPU path too. (features: `parametric`, `gpu`, plus `fft_tsne`
   off-Windows, see the h5 toolchain issue in the README)
+
+During development `src/rust/Cargo.toml` wires two of these to local
+checkouts so you track their HEAD. `bixverse-rs` is a plain `path`
+dependency, nothing else in the graph depends on it. `ann-search-rs`
+cannot be: this crate, `bixverse-rs` and `manifolds-rs` all depend on
+it, and a `path` dep would resolve to a second copy whose types no
+longer match across the boundary. It goes through `[patch.crates-io]`
+instead, which unifies the whole graph. Note that `bixverse-rs` carries
+the same patch block, but patches only apply from the top-level
+manifest, so it has to be repeated here. Both the `path` dep and the
+patch block have to go before merging, otherwise CI cannot resolve them
+and the vendored offline build path breaks.
 
 ## Conventions
 
