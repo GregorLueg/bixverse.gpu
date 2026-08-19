@@ -96,7 +96,7 @@ Current roadmap (subject to change and interest):
 - [x] GPU-accelerated correlations (Spearman and Pearson)
 - [x] GPU-accelerate UMAP embedding generation.
 - [x] SCENIC has now working GPU acceleration for ExtraTrees and the RF learner.
-      Both beat the CPU end to end, by 2.0x and 1.8x on an M1 Max.
+      The grnboost2 version does not make too much sense and is left on the CPU.
 - [x] GPU-accelerated SEACells meta cell generation (both Frank-Wolfe solves).
 - [x] Scrublet with GPU-acceleration.
 - [x] GPU-accelerated NMF.
