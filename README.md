@@ -1,6 +1,6 @@
 # *bixverse.gpu package*
 
-![r_package](https://img.shields.io/badge/R_package-0.2.7-orange) 
+![r_package](https://img.shields.io/badge/R_package-0.2.8-orange) 
 [![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![pkgdown](https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github)](https://gregorlueg.github.io/bixverse.gpu/)
@@ -99,7 +99,7 @@ Current roadmap (subject to change and interest):
       Both beat the CPU end to end, by 2.0x and 1.8x on an M1 Max.
 - [x] GPU-accelerated SEACells meta cell generation (both Frank-Wolfe solves).
 - [x] Scrublet with GPU-acceleration.
-- [ ] GPU-accelerated NMF.
+- [x] GPU-accelerated NMF.
 - [ ] GPU-accelerated BBKNN batch correction (single cells)
 
 
