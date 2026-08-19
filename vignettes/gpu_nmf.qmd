@@ -1,0 +1,293 @@
+---
+title: "GPU-accelerated NMF"
+date: last-modified
+date-format: YYYY-MM-DD
+vignette: >
+  %\VignetteIndexEntry{GPU-accelerated NMF}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: '#>'
+author: "Gregor Lueg"
+---
+
+## Intro
+
+NMF factorises the counts into `V ≈ W H` with everything non-negative, which is
+why the components read as additive gene programmes rather than the
+plus-and-minus directions PCA gives you. `bixverse` solves it with HALS
+(hierarchical alternating least squares), and this package moves that solver
+onto the GPU.
+
+What actually runs on the device: both Gram products, both data products, the
+two HALS sweeps, the column normalisation and the objective. `V`, `W` and `H`
+stay resident, so the only thing crossing back per iteration is a small
+partials vector.
+
+What does not: the NNDSVD initialisation, and the whole consensus machinery.
+Pooling the components across restarts, the local-density filter, the k-means,
+the silhouette and the per-coordinate median all run on the CPU, shared verbatim
+with `bixverse`. That is deliberate. Those operate on a `(k * n_runs) x dim`
+matrix with `k * n_runs` in the hundreds, so they are nowhere near the solve in
+cost and porting them would buy nothing.
+
+So where does the GPU actually help? Not much in a single fit. It helps when the
+same matrix serves many solves, because `V` uploads once and every restart and
+every rank reuses it. On the CPU each of those solves pays full memory traffic
+over `V` again. The k sweep is `length(k_range) * n_runs` solves over one
+matrix, which is exactly that shape. On the 6.9k cells below, 20 restarts come
+back a bit over 3x faster.
+
+One limit to know up front: the kernels tier their workgroup width by rank and
+stop at 128. Ask for more and you get an error pointing you at the CPU version,
+not a silent fallback.
+
+The params, the result classes and everything downstream are identical to the
+CPU versions. If you have not seen those, read the
+[bixverse bag-of-genes vignette](https://gregorlueg.github.io/bixverse/articles/bag_of_genes_single_cells.html)
+first.
+
+```{r}
+#| label: setup
+library(bixverse)
+library(bixverse.gpu)
+library(data.table)
+library(ggplot2)
+library(magrittr)
+```
+
+::: {.callout-note}
+Vignettes were built locally on a MacBook Pro M1 Max. The GH runners were just
+too slow and do not have proper GPU support. This gives an idea of speed on a
+decent, but older machine.
+:::
+
+## Rebuilding a processed CD34
+
+Same CD34 cells as the other single cell vignettes. Load, pick HVGs, PCA. No QC
+needed, the data is already filtered.
+
+```{r}
+#| label: rebuild-object
+#| code-fold: true
+#| code-summary: "Rebuild the CD34 cell object (click to expand)"
+cd34_path <- download_cd34_data()
+
+tempdir_cd34 <- tempdir()
+
+sc_object <- SingleCells(dir_data = tempdir_cd34)
+
+sc_object <- load_h5ad(object = sc_object, h5_path = cd34_path)
+
+sc_object <- find_hvg_sc(
+  object = sc_object,
+  hvg_no = 2000L,
+  .verbose = FALSE
+)
+
+sc_object <- calculate_pca_sc(
+  object = sc_object,
+  no_pcs = 30L,
+  sparse_svd = FALSE
+)
+
+sc_object
+```
+
+## Picking k
+
+You do not know `k` in advance, and NMF is non-convex, so a single fit at a
+guessed rank tells you very little. Consensus NMF ([Kotliar et al., 2019](https://elifesciences.org/articles/43803))
+answers this by running the fit many times from different random starts and
+asking which programmes keep coming back.
+
+`nmf_k_sweep_gpu_sc()` does that across a range of ranks and reports stability
+(mean silhouette of the consensus clusters) against reconstruction error. It
+keeps no factors, so a wide range stays cheap in memory.
+
+```{r}
+#| label: nmf-k-sweep
+sweep_time <- system.time({
+  k_sweep <- nmf_k_sweep_gpu_sc(
+    object = sc_object,
+    k_range = 2:12,
+    n_runs = 10L,
+    nmf_consensus_params = params_nmf_consensus(density_threshold = 2)
+  )
+})
+
+k_sweep
+```
+
+```{r}
+#| label: nmf-k-sweep-plot
+#| fig-cap: "Consensus NMF k sweep on the CD34 cells."
+plot(k_sweep)
+```
+
+The rule of thumb is to take the last `k` before stability falls away, while
+the error curve is still coming down. Error always falls with `k`, so it never
+picks a rank on its own; stability is what stops you.
+
+Do not just read off the most stable row. Low ranks are trivially stable, since
+two components are hard to disagree about, and the header will happily tell you
+`k = 2`. What you want is the last rank that still holds up. Here stability sits
+near 1 through `k = 4`, dips at 5, recovers at 6 and 7, then falls away from 8
+onward and does not come back. Error is still dropping at 7, so that is where we
+fit.
+
+A note on `density_threshold = 2`. The filter drops components sitting in a
+sparse neighbourhood, and 2 is the cosine ceiling, so that switches it off. With
+10 restarts it has very little to work with, and a run that drops below `k`
+survivors errors out rather than quietly returning something worse. Turn it back
+on once you are running 50 or more restarts.
+
+## Fitting at the chosen k
+
+```{r}
+#| label: consensus-nmf
+nmf_res <- consensus_nmf_gpu_sc(
+  object = sc_object,
+  k = 7L,
+  n_runs = 20L,
+  nmf_consensus_params = params_nmf_consensus(density_threshold = 2)
+)
+
+nmf_res
+```
+
+`get_stability()` gives you the diagnostics behind the fit: the mean silhouette,
+the relative reconstruction errors, and a row per pooled component recording
+where it landed.
+
+```{r}
+#| label: consensus-nmf-diagnostics
+nmf_diag <- get_stability(nmf_res)
+
+nmf_diag$stability
+
+nmf_diag$cluster_sizes
+```
+
+With 20 restarts, a cluster of 20 is a programme every run found. A thin one is
+a programme only some initialisations saw, and it is worth a squint before you
+build a story on it.
+
+To read off what a programme is, rank the genes by their loading in `W`:
+
+```{r}
+#| label: consensus-nmf-top-genes
+w_mat <- get_w(nmf_res)
+
+top_genes <- lapply(colnames(w_mat), \(comp) {
+  names(sort(w_mat[, comp], decreasing = TRUE))[1:10]
+})
+names(top_genes) <- colnames(w_mat)
+
+top_genes[1:3]
+```
+
+`H` is `k x cells`, so the activations drop straight onto an embedding or into
+the obs table.
+
+```{r}
+#| label: consensus-nmf-activity
+h_mat <- get_h(nmf_res)
+
+dim(h_mat)
+
+round(h_mat[1:3, 1:4], 3)
+```
+
+## CPU versus GPU
+
+The honest comparison. Both solvers run the same HALS, the same number of
+restarts and the same host-side consensus step, so the only thing that differs
+is where the linear algebra happens.
+
+```{r}
+#| label: benchmark-consensus
+gpu_time <- system.time({
+  gpu_fit <- consensus_nmf_gpu_sc(
+    object = sc_object,
+    k = 7L,
+    n_runs = 20L,
+    nmf_consensus_params = params_nmf_consensus(density_threshold = 2),
+    seed = 42L,
+    .verbose = FALSE
+  )
+})
+
+cpu_time <- system.time({
+  cpu_fit <- consensus_nmf_sc(
+    object = sc_object,
+    k = 7L,
+    n_runs = 20L,
+    nmf_consensus_params = params_nmf_consensus(density_threshold = 2),
+    seed = 42L,
+    .verbose = FALSE
+  )
+})
+
+data.table(
+  version = c("CPU", "GPU"),
+  seconds = round(c(cpu_time[["elapsed"]], gpu_time[["elapsed"]]), 2)
+)[, speed_up := round(seconds[1] / seconds, 2)][]
+```
+
+Do the two agree? Not bit for bit, and they cannot: f32 GEMM on the device
+reduces in a different order than the CPU path, and NMF is non-convex, so tiny
+differences early can send a restart to a different local optimum. What has to
+match is the answer.
+
+```{r}
+#| label: benchmark-agreement
+data.table(
+  version = c("CPU", "GPU"),
+  rel_error = round(c(cpu_fit$rel_error, gpu_fit$rel_error), 5),
+  stability = round(c(cpu_fit$stability, gpu_fit$stability), 4)
+)
+```
+
+One thing to keep in mind about the restarts: on the CPU they run across cores,
+on the GPU they run one after the other on a single device. So the GPU is giving
+up the easiest parallelism there is and still has to win on the solve itself.
+That is also why the k sweep flatters it more than a single consensus fit does:
+more solves over the same resident matrix, and no extra upload for any of them.
+
+## Meta cells
+
+Everything above dispatches on `MetaCells` too, with the same generics. Meta
+cells are the path where consensus NMF is genuinely affordable, since a few
+thousand aggregates instead of a few hundred thousand cells makes `n_runs = 50`
+unremarkable. See the [SEACells vignette](gpu_metacells.html) for getting there.
+
+```{r}
+#| label: metacells-nmf
+#| eval: false
+mc_sweep <- nmf_k_sweep_gpu_sc(
+  object = mc_object,
+  k_range = 2:12,
+  n_runs = 20L
+)
+
+mc_nmf <- consensus_nmf_gpu_sc(
+  object = mc_object,
+  k = 6L,
+  n_runs = 20L
+)
+```
+
+## What is next
+
+The consensus step is now the floor on how fast this can get. Once the solves
+move to the device, the pooling and the k-means start showing up in the profile
+at large `n_runs`, and clustering in cell space (`consensus_target = "w"`) is
+the pathological case: it pools a dense `(k * n_runs) x n_cells` matrix and runs
+an exhaustive cosine search over it. That one is worth porting.
+
+The rank cap at 128 is a workgroup-tiering limit rather than anything
+fundamental. It has not bitten in practice, since a 128-programme
+factorisation of single cell data is well past interpretable, but it is there.

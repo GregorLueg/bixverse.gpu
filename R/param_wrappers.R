@@ -732,6 +732,8 @@ params_knn_gpu_defaults <- function() {
 #' @returns A flat named list with all GPU Scrublet parameters.
 #'
 #' @export
+#'
+#' @references Wolock, et al., Cell Syst, 2020
 params_scrublet_gpu <- function(
   sim_doublet_ratio = 1.5,
   expected_doublet_rate = 0.1,

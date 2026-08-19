@@ -525,9 +525,7 @@ dependencies = [
 
 [[package]]
 name = "bixverse-rs"
-version = "0.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c858a48629fc0ce034f4351db981efd2bfb058c30d8b794733959df6537eba6d"
+version = "0.4.5"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -564,7 +562,7 @@ dependencies = [
 
 [[package]]
 name = "bixverse_gpu"
-version = "0.2.7"
+version = "0.2.8"
 dependencies = [
  "ann-search-rs",
  "bixverse-rs",
@@ -572,6 +570,7 @@ dependencies = [
  "cubecl",
  "extendr-api",
  "faer",
+ "indexmap",
  "manifolds-rs",
  "rand_distr 0.5.1",
 ]
