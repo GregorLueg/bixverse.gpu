@@ -5,15 +5,6 @@
 * GPU-accelerated NMF for single cells and meta cells: `nmf_gpu_sc()`,
   `stabilised_nmf_gpu_sc()`, `consensus_nmf_gpu_sc()` and
   `nmf_k_sweep_gpu_sc()`, each dispatching on `SingleCells` and `MetaCells`.
-  The HALS solver runs on the WGPU backend; the consensus clustering, the
-  density filter and the NNDSVD initialisation stay on the CPU. Parameters and
-  result classes are shared with the CPU versions in `bixverse`, so downstream
-  code does not change.
-* The k sweep is where this pays off. The counts upload once and serve all
-  `length(k_range) * n_runs` solves, where the CPU pays full memory traffic
-  over the matrix for every one of them.
-* The GPU kernels cap the rank at 128 (`NMF_GPU_MAX_RANK`). Anything above that
-  errors early and points at the CPU version rather than failing inside Rust.
 
 # bixverse.gpu 0.2.7
 

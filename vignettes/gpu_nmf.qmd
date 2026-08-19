@@ -21,10 +21,10 @@ plus-and-minus directions PCA gives you. `bixverse` solves it with HALS
 (hierarchical alternating least squares), and this package moves that solver
 onto the GPU.
 
-What actually runs on the device: both Gram products, both data products, the
-two HALS sweeps, the column normalisation and the objective. `V`, `W` and `H`
-stay resident, so the only thing crossing back per iteration is a small
-partials vector.
+What actually runs on the GPU: both Gram products, both data products, the two 
+HALS sweeps, the column normalisation and the objective. `V`, `W` and `H` stay 
+resident, so the only thing crossing back per iteration is a small partials 
+vector.
 
 What does not: the NNDSVD initialisation, and the whole consensus machinery.
 Pooling the components across restarts, the local-density filter, the k-means,
@@ -33,12 +33,11 @@ with `bixverse`. That is deliberate. Those operate on a `(k * n_runs) x dim`
 matrix with `k * n_runs` in the hundreds, so they are nowhere near the solve in
 cost and porting them would buy nothing.
 
-So where does the GPU actually help? Not much in a single fit. It helps when the
-same matrix serves many solves, because `V` uploads once and every restart and
-every rank reuses it. On the CPU each of those solves pays full memory traffic
-over `V` again. The k sweep is `length(k_range) * n_runs` solves over one
-matrix, which is exactly that shape. On the 6.9k cells below, 20 restarts come
-back a bit over 3x faster.
+So where does the GPU actually help? Not too much in a single fit. It helps when 
+the same matrix serves many solves, because `V` uploads once and every restart 
+and every rank reuses it. On the CPU each of those solves pays full memory 
+traffic over `V` again. The k sweep is `length(k_range) * n_runs` solves over 
+one matrix, which is exactly that shape. 
 
 One limit to know up front: the kernels tier their workgroup width by rank and
 stop at 128. Ask for more and you get an error pointing you at the CPU version,
@@ -66,8 +65,8 @@ decent, but older machine.
 
 ## Rebuilding a processed CD34
 
-Same CD34 cells as the other single cell vignettes. Load, pick HVGs, PCA. No QC
-needed, the data is already filtered.
+Same CD34 cells as the other single cell vignettes for meta cells. Load, pick 
+HVGs, PCA. No QC needed, the data is already filtered.
 
 ```{r}
 #| label: rebuild-object
@@ -216,7 +215,7 @@ gpu_time <- system.time({
     n_runs = 20L,
     nmf_consensus_params = params_nmf_consensus(density_threshold = 2),
     seed = 42L,
-    .verbose = FALSE
+    .verbose = TRUE
   )
 })
 
@@ -227,7 +226,7 @@ cpu_time <- system.time({
     n_runs = 20L,
     nmf_consensus_params = params_nmf_consensus(density_threshold = 2),
     seed = 42L,
-    .verbose = FALSE
+    .verbose = TRUE
   )
 })
 
