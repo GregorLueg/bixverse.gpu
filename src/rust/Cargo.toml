@@ -23,8 +23,6 @@ manifolds-rs = { version = "0.3.15", features = [ "fft_tsne", "gpu", "parametric
 [target.'cfg(windows)'.dependencies]
 manifolds-rs = { version = "0.3.15", features = [ "parametric", "gpu"] }
 
-# [patch.crates-io]
-# bixverse-rs = { git = "https://github.com/GregorLueg/bixverse-rs", branch = "feat-nmf-clustering"}
 
 [profile.dev.package.faer]
 opt-level = 3

@@ -28,7 +28,7 @@ Imports:
     data.table,
     lifecycle,
     magrittr,
-    manifoldsR (>= 0.2.0),
+    manifoldsR (>= 0.2.11),
     purrr,
     qs2,
     rextendr,
@@ -36,8 +36,8 @@ Imports:
     utils,
     zeallot
 Remotes:
-    GregorLueg/bixverse@v0.4.10,
-    GregorLueg/bixverse.plots@v0.2.3,
+    GregorLueg/bixverse,
+    GregorLueg/bixverse.plots,
     GregorLueg/manifoldsR
 VignetteBuilder: quarto
 URL: https://gregorlueg.github.io/bixverse.gpu/
