@@ -9,6 +9,8 @@
 - [GPU-accelerated
   SCENIC](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scenic.md):
 - [GPU-accelerated
+  NMF](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_nmf.md):
+- [GPU-accelerated
   Scrublet](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scrublet.md):
 - [GPU-accelerated
   UMAP](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_umap.md):

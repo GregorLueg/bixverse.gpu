@@ -1,6 +1,7 @@
 # *bixverse.gpu package*
 
-![r_package](https://img.shields.io/badge/R_package-0.2.7-orange)[![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
+[![r_package](https://img.shields.io/github/r-package/v/GregorLueg/bixverse.gpu?label=R_package&color=orange)](https://github.com/GregorLueg/bixverse.gpu/blob/main/DESCRIPTION)
+[![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![pkgdown](https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github)](https://gregorlueg.github.io/bixverse.gpu/)
@@ -105,7 +106,8 @@ GPU-accelerated correlations (Spearman and Pearson)
 GPU-accelerate UMAP embedding generation.
 
 SCENIC has now working GPU acceleration for ExtraTrees and the RF
-learner. Both beat the CPU end to end, by 2.0x and 1.8x on an M1 Max.
+learner. The grnboost2 version does not make too much sense and is left
+on the CPU.
 
 GPU-accelerated SEACells meta cell generation (both Frank-Wolfe solves).
 

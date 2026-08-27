@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.8</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,6 +22,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gpu_single_cell.html">GPU-acceleration for single cell</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_metacells.html">SEACells with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_nmf.html">NMF with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_scrublet.html">Scrublet with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
@@ -127,6 +128,34 @@
 
         </dt>
         <dd>Run fast Louvain clustering on a SingleCells object (GPU)</dd>
+
+        <dt>
+
+          <code><a href="nmf_gpu_sc.html">nmf_gpu_sc()</a></code>
+
+        </dt>
+        <dd>Run single-run NMF on the GPU over single cell or meta cell data</dd>
+
+        <dt>
+
+          <code><a href="stabilised_nmf_gpu_sc.html">stabilised_nmf_gpu_sc()</a></code>
+
+        </dt>
+        <dd>Run stabilised (multi-run) NMF on the GPU over single cell or meta cell data</dd>
+
+        <dt>
+
+          <code><a href="consensus_nmf_gpu_sc.html">consensus_nmf_gpu_sc()</a></code>
+
+        </dt>
+        <dd>Run consensus NMF on the GPU over single cell or meta cell data</dd>
+
+        <dt>
+
+          <code><a href="nmf_k_sweep_gpu_sc.html">nmf_k_sweep_gpu_sc()</a></code>
+
+        </dt>
+        <dd>Sweep k for consensus NMF on the GPU over single cell or meta cell data</dd>
 
         <dt>
 
@@ -389,6 +418,62 @@
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>GPU: SCENIC GRN inference on MetaCells (in-memory sparse)</dd>
+
+        <dt>
+
+          <code><a href="rs_nmf_consensus_mc_gpu.html">rs_nmf_consensus_mc_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Run consensus NMF on the GPU over meta cells</dd>
+
+        <dt>
+
+          <code><a href="rs_nmf_consensus_sc_gpu.html">rs_nmf_consensus_sc_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Run consensus NMF on the GPU over a set of single cells and genes</dd>
+
+        <dt>
+
+          <code><a href="rs_nmf_k_sweep_mc_gpu.html">rs_nmf_k_sweep_mc_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Sweep k on the GPU over meta cells</dd>
+
+        <dt>
+
+          <code><a href="rs_nmf_k_sweep_sc_gpu.html">rs_nmf_k_sweep_sc_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Sweep k on the GPU and report consensus stability against error</dd>
+
+        <dt>
+
+          <code><a href="rs_nmf_multi_mc_gpu.html">rs_nmf_multi_mc_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Run multiple NMF (HALS) restarts on the GPU over meta cells</dd>
+
+        <dt>
+
+          <code><a href="rs_nmf_multi_sc_gpu.html">rs_nmf_multi_sc_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Run multiple NMF (HALS) restarts on the GPU over single cells and genes</dd>
+
+        <dt>
+
+          <code><a href="rs_nmf_single_mc_gpu.html">rs_nmf_single_mc_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Run NMF (HALS) on the GPU over meta cells</dd>
+
+        <dt>
+
+          <code><a href="rs_nmf_single_sc_gpu.html">rs_nmf_single_sc_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Run NMF (HALS) on the GPU over a set of single cells and genes</dd>
 
         <dt>
 

@@ -3,6 +3,7 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   gpu_metacells: gpu_metacells.html
+  gpu_nmf: gpu_nmf.html
   gpu_scenic: gpu_scenic.html
   gpu_scrublet: gpu_scrublet.html
   gpu_single_cell: gpu_single_cell.html
@@ -10,7 +11,7 @@ articles:
   gpu_umap: gpu_umap.html
   other_gpu: other_gpu.html
   parametric_umap: parametric_umap.html
-last_built: 2026-08-16T23:05Z
+last_built: 2026-08-27T09:40Z
 urls:
   reference: https://gregorlueg.github.io/bixverse.gpu/reference
   article: https://gregorlueg.github.io/bixverse.gpu/articles

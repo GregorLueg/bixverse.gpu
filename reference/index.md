@@ -25,6 +25,16 @@ applications.
   : Doublet detection with Scrublet on the GPU
 - [`fast_cluster_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/fast_cluster_gpu_sc.md)
   : Run fast Louvain clustering on a SingleCells object (GPU)
+- [`nmf_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/nmf_gpu_sc.md)
+  : Run single-run NMF on the GPU over single cell or meta cell data
+- [`stabilised_nmf_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/stabilised_nmf_gpu_sc.md)
+  : Run stabilised (multi-run) NMF on the GPU over single cell or meta
+  cell data
+- [`consensus_nmf_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/consensus_nmf_gpu_sc.md)
+  : Run consensus NMF on the GPU over single cell or meta cell data
+- [`nmf_k_sweep_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/nmf_k_sweep_gpu_sc.md)
+  : Sweep k for consensus NMF on the GPU over single cell or meta cell
+  data
 - [`params_sc_ivf()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.md)
   : Default parameters for IVF-GPU kNN search
 - [`params_sc_cagra()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.md)
@@ -127,6 +137,27 @@ useful for your own package? Use with care and read the documentation!
 - [`rs_mc_scenic_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_mc_scenic_gpu.md)
   **\[experimental\]** : GPU: SCENIC GRN inference on MetaCells
   (in-memory sparse)
+- [`rs_nmf_consensus_mc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_consensus_mc_gpu.md)
+  **\[experimental\]** : Run consensus NMF on the GPU over meta cells
+- [`rs_nmf_consensus_sc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_consensus_sc_gpu.md)
+  **\[experimental\]** : Run consensus NMF on the GPU over a set of
+  single cells and genes
+- [`rs_nmf_k_sweep_mc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_k_sweep_mc_gpu.md)
+  **\[experimental\]** : Sweep k on the GPU over meta cells
+- [`rs_nmf_k_sweep_sc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_k_sweep_sc_gpu.md)
+  **\[experimental\]** : Sweep k on the GPU and report consensus
+  stability against error
+- [`rs_nmf_multi_mc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_multi_mc_gpu.md)
+  **\[experimental\]** : Run multiple NMF (HALS) restarts on the GPU
+  over meta cells
+- [`rs_nmf_multi_sc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_multi_sc_gpu.md)
+  **\[experimental\]** : Run multiple NMF (HALS) restarts on the GPU
+  over single cells and genes
+- [`rs_nmf_single_mc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_single_mc_gpu.md)
+  **\[experimental\]** : Run NMF (HALS) on the GPU over meta cells
+- [`rs_nmf_single_sc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_single_sc_gpu.md)
+  **\[experimental\]** : Run NMF (HALS) on the GPU over a set of single
+  cells and genes
 - [`rs_parametric_umap_predict()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_parametric_umap_predict.md)
   **\[experimental\]** : Predict new data using a trained parametric
   UMAP model
