@@ -19,6 +19,7 @@ pub mod utils;
 
 pub use single_cell::fast_clusters_gpu;
 pub use single_cell::harmony_gpu;
+pub use single_cell::nmf_gpu;
 pub use single_cell::pca_gpu;
 pub use single_cell::scenic_gpu;
 pub use single_cell::scrublet_gpu;
@@ -40,6 +41,7 @@ extendr_module! {
     // modules
     use pca_gpu;
     use harmony_gpu;
+    use nmf_gpu;
     use scenic_gpu;
     use scrublet_gpu;
     use seacells_gpu;

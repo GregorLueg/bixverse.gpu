@@ -1,3 +1,11 @@
+# bixverse.gpu 0.2.8
+
+## Features
+
+* GPU-accelerated NMF for single cells and meta cells: `nmf_gpu_sc()`,
+  `stabilised_nmf_gpu_sc()`, `consensus_nmf_gpu_sc()` and
+  `nmf_k_sweep_gpu_sc()`, each dispatching on `SingleCells` and `MetaCells`.
+
 # bixverse.gpu 0.2.7
 
 ## Features

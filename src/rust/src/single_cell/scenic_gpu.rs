@@ -1,6 +1,5 @@
 use bixverse_rs::gpu::sc_gpu::scenic_gpu::{
-    run_scenic_grn_gpu, run_scenic_grn_in_memory_gpu, run_scenic_grn_streaming_gpu,
-    ScenicGpuParams,
+    run_scenic_grn_gpu, run_scenic_grn_in_memory_gpu, run_scenic_grn_streaming_gpu, ScenicGpuParams,
 };
 use bixverse_rs::prelude::*;
 use bixverse_rs::single_cell::sc_analysis::scenic::ScenicParams;

@@ -396,6 +396,316 @@ rs_sc_pca_sparse_gpu <- function(f_path_gene, f_path_cell, no_pcs, pca_params, c
 #' @export
 rs_harmony_v2_gpu <- function(pca, harmony_params, batch_labels, seed, verbose) .Call(wrap__rs_harmony_v2_gpu, pca, harmony_params, batch_labels, seed, verbose)
 
+#' Run NMF (HALS) on the GPU over a set of single cells and genes
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU counterpart of [bixverse::rs_nmf_single_sc()]. The counts are loaded
+#' from the binary store once, uploaded to the device, and the whole HALS loop
+#' runs there. The NNDSVD initialisation stays on the host.
+#'
+#' @param f_path_gene Path to the `counts_genes.bin` file.
+#' @param gene_indices Integer vector. 0-indexed(!) positions of the genes
+#' to include.
+#' @param cell_indices Integer vector. 0-indexed(!) positions of cells to
+#' include in the analysis.
+#' @param k Integer. Number of latent factors to return. At most 128, the GPU
+#' solver's rank cap.
+#' @param preprocessing String. One of `c("none", "sd", "sqrt_sd")`. Takes the
+#' data as is, or scales by standard deviation or squared standard deviation
+#' per feature.
+#' @param use_second_layer Boolean. If `TRUE`, runs NMF on the normalised
+#' counts; if `FALSE`, on the raw counts.
+#' @param nmf_hals_params Named list. Contains the NMF parameters.
+#' @param seed Integer. Random seed for initialisation.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list with the following items
+#' \itemize{
+#'   \item w - The left factor matrix (n_cells x k)
+#'   \item h - The right factor matrix (k x n_genes)
+#'   \item final_loss - Loss at the final iteration
+#'   \item n_iter - Number of iterations the algorithm run for
+#'   \item converged - Did the NMF algorithm converge
+#' }
+#'
+#' @export
+#'
+#' @keywords internal
+rs_nmf_single_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, seed, verbose) .Call(wrap__rs_nmf_single_sc_gpu, f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, seed, verbose)
+
+#' Run multiple NMF (HALS) restarts on the GPU over single cells and genes
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU counterpart of [bixverse::rs_nmf_multi_sc()]. Runs `n_runs` HALS NMF
+#' with random initialisations seeded by `seed + i`. The `nmf_init` field in
+#' `nmf_hals_params` is ignored; random init is always used. The matrix is
+#' uploaded once and reused across every restart, but the restarts themselves
+#' run one after the other on the single device.
+#'
+#' @param f_path_gene Path to the `counts_genes.bin` file.
+#' @param gene_indices Integer vector. 0-indexed(!) positions of the genes
+#' to include.
+#' @param cell_indices Integer vector. 0-indexed(!) positions of cells to
+#' include in the analysis.
+#' @param k Integer. Number of latent factors per run. At most 128, the GPU
+#' solver's rank cap.
+#' @param preprocessing String. One of `c("none", "sd", "sqrt_sd")`.
+#' @param use_second_layer Boolean. If `TRUE`, runs NMF on the normalised
+#' counts; if `FALSE`, on the raw counts.
+#' @param nmf_hals_params Named list. Contains the NMF parameters.
+#' @param n_runs Integer. Number of random restarts.
+#' @param seed Integer. Base random seed. Run `i` uses `seed + i`.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list with the following items
+#' \itemize{
+#'   \item w_all - Column-bound W matrices across all runs,
+#'   shape `n_cells x (k * n_runs)`. Columns `i*k+1..(i+1)*k` are run `i`'s
+#'   components (1-indexed).
+#'   \item h_per_run - List of H matrices, each `k x n_genes`.
+#'   \item losses - Numeric vector. Final reconstruction loss per run.
+#'   \item converged - Logical vector. Convergence flag per run.
+#'   \item best_idx - Integer. 1-indexed position of the run with the lowest
+#'   final loss.
+#' }
+#'
+#' @export
+#'
+#' @keywords internal
+rs_nmf_multi_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_multi_sc_gpu, f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, verbose)
+
+#' Run consensus NMF on the GPU over a set of single cells and genes
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU counterpart of [bixverse::rs_nmf_consensus_sc()]. Runs `n_runs` HALS
+#' restarts on the device, then pools their components, drops unstable ones by
+#' local density, k-means clusters the survivors and refits the partner factor
+#' against the per-cluster median. Everything after the restarts runs on the
+#' host, shared with the CPU implementation.
+#'
+#' The restart factors are dense and all held at once, so `n_runs` times `k`
+#' times the cell count is the memory to budget for.
+#'
+#' @param f_path_gene Path to the `counts_genes.bin` file.
+#' @param gene_indices Integer vector. 0-indexed(!) positions of the genes
+#' to include.
+#' @param cell_indices Integer vector. 0-indexed(!) positions of cells to
+#' include in the analysis.
+#' @param k Integer. Number of latent factors. Must be at least 2 and at most
+#' 128, the GPU solver's rank cap.
+#' @param preprocessing String. One of `c("none", "sd", "sqrt_sd")`.
+#' @param use_second_layer Boolean. If `TRUE`, runs NMF on the normalised
+#' counts; if `FALSE`, on the raw counts.
+#' @param nmf_hals_params Named list. Contains the NMF parameters. The
+#' `nmf_init` field is ignored, restarts always use random initialisation.
+#' @param nmf_consensus_params Named list. Contains the consensus parameters.
+#' @param n_runs Integer. Number of restarts. Must be at least 2.
+#' @param seed Integer. Base random seed. Restart `i` uses `seed + i`.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list with the following items
+#' \itemize{
+#'   \item w - The left factor matrix (n_cells x k)
+#'   \item h - The right factor matrix (k x n_genes)
+#'   \item rel_error - Reconstruction error relative to the squared Frobenius
+#'   norm of the input. Not comparable with the absolute `final_loss` the
+#'   single-run version returns.
+#'   \item rel_run_errors - The same, per restart.
+#'   \item labels - Integer vector of length `k * n_runs`. Cluster each pooled
+#'   component landed in, `NA` if it was dropped.
+#'   \item local_density - Mean cosine distance to the nearest neighbours per
+#'   pooled component.
+#'   \item kept - 1-indexed positions of the surviving pooled components.
+#'   \item silhouette - Silhouette per survivor, aligned with `kept`.
+#'   \item stability - Mean silhouette over the survivors.
+#'   \item cluster_sizes - Number of survivors per cluster.
+#'   \item n_dropped - Number of pooled components removed.
+#'   \item n_empty_clusters - Number of clusters left with no members.
+#' }
+#'
+#' @references Kotliar et al., eLife, 2019
+#'
+#' @export
+#'
+#' @keywords internal
+rs_nmf_consensus_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_consensus_sc_gpu, f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose)
+
+#' Sweep k on the GPU and report consensus stability against error
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU counterpart of [bixverse::rs_nmf_k_sweep_sc()]. Returns diagnostics
+#' only, no factors, so a wide `k_range` stays cheap in memory. This is the
+#' shape the GPU path is really for: the counts are uploaded once and serve
+#' every one of the `length(k_range) * n_runs` solves. Pick the k where
+#' stability is high and the error curve has not yet flattened, then call
+#' [rs_nmf_consensus_sc_gpu()] there.
+#'
+#' @param f_path_gene Path to the `counts_genes.bin` file.
+#' @param gene_indices Integer vector. 0-indexed(!) positions of the genes
+#' to include.
+#' @param cell_indices Integer vector. 0-indexed(!) positions of cells to
+#' include in the analysis.
+#' @param k_range Integer vector. Ranks to evaluate, every entry at least 2 and
+#' at most 128, the GPU solver's rank cap.
+#' @param preprocessing String. One of `c("none", "sd", "sqrt_sd")`.
+#' @param use_second_layer Boolean. If `TRUE`, runs NMF on the normalised
+#' counts; if `FALSE`, on the raw counts.
+#' @param nmf_hals_params Named list. Contains the NMF parameters.
+#' @param nmf_consensus_params Named list. Contains the consensus parameters.
+#' @param n_runs Integer. Number of restarts per k. Must be at least 2.
+#' @param seed Integer. Base random seed.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list of equal-length vectors, one element per swept k
+#' \itemize{
+#'   \item k - The rank.
+#'   \item stability - Mean silhouette of the consensus clusters. `NaN` where
+#'   the consensus step failed.
+#'   \item best_error - Lowest restart error, relative to the squared
+#'   Frobenius norm of the input.
+#'   \item median_error - Median restart error, same scale.
+#'   \item consensus_failed - Did the density filter leave fewer than `k`
+#'   components.
+#'   \item n_dropped - Number of pooled components removed.
+#'   \item n_empty_clusters - Number of clusters left with no members.
+#'   \item n_converged - Restarts that met the HALS tolerance.
+#' }
+#'
+#' @references Kotliar et al., eLife, 2019
+#'
+#' @export
+#'
+#' @keywords internal
+rs_nmf_k_sweep_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_k_sweep_sc_gpu, f_path_gene, gene_indices, cell_indices, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose)
+
+#' Run NMF (HALS) on the GPU over meta cells
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU counterpart of [bixverse::rs_nmf_single_mc()]. Assumes that the sparse
+#' data is pre-filtered for the cells/genes you wish to include. Indices in the
+#' sparse data need to be 0-indexed.
+#'
+#' @param sparse_data A named list with `data`, `indptr`, `indices`, `nrow`,
+#' `ncol` and `cs_type`.
+#' @param k Integer. Number of latent factors to return. At most 128, the GPU
+#' solver's rank cap.
+#' @param preprocessing String. One of `c("none", "sd", "sqrt_sd")`.
+#' @param use_second_layer Boolean. If `TRUE`, runs NMF on normalised counts.
+#' @param nmf_hals_params Named list. Contains the NMF parameters.
+#' @param seed Integer. Random seed for initialisation.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list with `w`, `h`, `final_loss`, `n_iter`, `converged`.
+#'
+#' @export
+#'
+#' @keywords internal
+rs_nmf_single_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, seed, verbose) .Call(wrap__rs_nmf_single_mc_gpu, sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, seed, verbose)
+
+#' Run multiple NMF (HALS) restarts on the GPU over meta cells
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU counterpart of [bixverse::rs_nmf_multi_mc()]. Assumes that the sparse
+#' data is pre-filtered for the cells/genes you wish to include. Indices in the
+#' sparse data need to be 0-indexed.
+#'
+#' @param sparse_data A named list with `data`, `indptr`, `indices`, `nrow`,
+#' `ncol` and `cs_type`.
+#' @param k Integer. Number of latent factors per run. At most 128, the GPU
+#' solver's rank cap.
+#' @param preprocessing String. One of `c("none", "sd", "sqrt_sd")`.
+#' @param use_second_layer Boolean. If `TRUE`, runs NMF on normalised counts.
+#' @param nmf_hals_params Named list. Contains the NMF parameters.
+#' @param n_runs Integer. Number of random restarts.
+#' @param seed Integer. Base random seed. Run `i` uses `seed + i`.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list with `w_all`, `h_per_run`, `losses`, `converged`,
+#' `best_idx` (1-indexed).
+#'
+#' @export
+#'
+#' @keywords internal
+rs_nmf_multi_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_multi_mc_gpu, sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, verbose)
+
+#' Run consensus NMF on the GPU over meta cells
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU counterpart of [bixverse::rs_nmf_consensus_mc()]. Assumes that the
+#' sparse data is pre-filtered for the cells/genes you wish to include. Indices
+#' in the sparse data need to be 0-indexed.
+#'
+#' @param sparse_data A named list with `data`, `indptr`, `indices`, `nrow`,
+#' `ncol` and `cs_type`.
+#' @param k Integer. Number of latent factors. Must be at least 2 and at most
+#' 128, the GPU solver's rank cap.
+#' @param preprocessing String. One of `c("none", "sd", "sqrt_sd")`.
+#' @param use_second_layer Boolean. If `TRUE`, runs NMF on normalised counts.
+#' @param nmf_hals_params Named list. Contains the NMF parameters. The
+#' `nmf_init` field is ignored, restarts always use random initialisation.
+#' @param nmf_consensus_params Named list. Contains the consensus parameters.
+#' @param n_runs Integer. Number of restarts. Must be at least 2.
+#' @param seed Integer. Base random seed. Restart `i` uses `seed + i`.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list with `w`, `h`, `rel_error`, `rel_run_errors`, `labels`,
+#' `local_density`, `kept`, `silhouette`, `stability`, `cluster_sizes`,
+#' `n_dropped` and `n_empty_clusters`. The errors are relative to the squared
+#' Frobenius norm of the input.
+#'
+#' @references Kotliar et al., eLife, 2019
+#'
+#' @export
+#'
+#' @keywords internal
+rs_nmf_consensus_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_consensus_mc_gpu, sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose)
+
+#' Sweep k on the GPU over meta cells
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU counterpart of [bixverse::rs_nmf_k_sweep_mc()]. Returns diagnostics
+#' only, no factors. The matrix is uploaded once and serves every one of the
+#' `length(k_range) * n_runs` solves, which is where the GPU path pays off.
+#'
+#' @param sparse_data A named list with `data`, `indptr`, `indices`, `nrow`,
+#' `ncol` and `cs_type`.
+#' @param k_range Integer vector. Ranks to evaluate, every entry at least 2 and
+#' at most 128, the GPU solver's rank cap.
+#' @param preprocessing String. One of `c("none", "sd", "sqrt_sd")`.
+#' @param use_second_layer Boolean. If `TRUE`, runs NMF on normalised counts.
+#' @param nmf_hals_params Named list. Contains the NMF parameters.
+#' @param nmf_consensus_params Named list. Contains the consensus parameters.
+#' @param n_runs Integer. Number of restarts per k. Must be at least 2.
+#' @param seed Integer. Base random seed.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list of equal-length vectors, one element per swept k: `k`,
+#' `stability`, `best_error`, `median_error`, `consensus_failed`, `n_dropped`,
+#' `n_empty_clusters` and `n_converged`.
+#'
+#' @references Kotliar et al., eLife, 2019
+#'
+#' @export
+#'
+#' @keywords internal
+rs_nmf_k_sweep_mc_gpu <- function(sparse_data, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_k_sweep_mc_gpu, sparse_data, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose)
+
 #' GPU: SCENIC gene-regulatory network inference (disk-backed)
 #'
 #' @description
