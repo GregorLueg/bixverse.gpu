@@ -12,7 +12,7 @@ name = 'bixverse_gpu'
 [dependencies]
 ann-search-rs = { version = "0.5.2", features = [ "gpu" ] }
 burn = { version = "0.21.0", features = [ "wgpu", "flex" ] }
-bixverse-rs = { version = "0.4.6", features = [ "gpu", "single-cell" ] }
+bixverse-rs = { version = "0.4.7", features = [ "gpu", "single-cell" ] }
 cubecl = "0.10.0"
 extendr-api = "0.9.0"
 faer = { version = '0.23.2' }
@@ -22,7 +22,6 @@ rand_distr = "0.5.1"
 manifolds-rs = { version = "0.3.15", features = [ "fft_tsne", "gpu", "parametric" ] }
 [target.'cfg(windows)'.dependencies]
 manifolds-rs = { version = "0.3.15", features = [ "parametric", "gpu"] }
-
 
 [profile.dev.package.faer]
 opt-level = 3
