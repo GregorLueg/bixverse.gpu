@@ -1,5 +1,9 @@
 # k means gpu tests ------------------------------------------------------------
 
+if (!gpu_available()) {
+  exit_file("no GPU adapter available")
+}
+
 ## synthetic data --------------------------------------------------------------
 
 n_samples <- 200L
