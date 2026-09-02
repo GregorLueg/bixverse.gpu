@@ -14,3 +14,11 @@
 ^\.github$
 ^vignettes/_freeze$
 ^vignettes/_quarto\.yaml$
+^CLAUDE\.md$
+^Meta$
+^doc$
+^target$
+^Cargo\.lock$
+^Cargo\.toml$
+^\.Rproj\.user$
+^\.claude$

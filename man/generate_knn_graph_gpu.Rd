@@ -10,7 +10,7 @@ generate_knn_graph_gpu(
   knn_method = c("nndescent", "exhaustive", "ivf"),
   nn_params = params_nn_gpu(),
   seed = 42L,
-  extract_knn = FALSE,
+  extract_knn = lifecycle::deprecated(),
   .verbose = TRUE
 )
 }
@@ -28,16 +28,14 @@ search. One of \code{c("exhaustive", "ivf", "nndescent")}. Defaults to
 
 \item{seed}{Integer. For reproducibility. Defaults to \code{42L}.}
 
-\item{extract_knn}{Boolean. CAGRA-specific (\code{knn_method = "nndescent"}).
-Shall the beam search be skipped and the kNN graph be extracted directly
-after the NNDescent iteration and optional refine sweeps. Lower quality, but
-faster.}
+\item{extract_knn}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use the \code{extract_knn}
+field of \code{\link[=params_nn_gpu]{params_nn_gpu()}} instead.}
 
 \item{.verbose}{Boolean. Controls verbosity.}
 }
 \value{
 A nearest neighbours class object with 1-indexed neighbour indices
-and distances.
+and distances. Euclidean distances are true L2, not squared.
 }
 \description{
 This function generates a kNN graph based on a given numeric matrix. Three

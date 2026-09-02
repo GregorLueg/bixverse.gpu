@@ -11,6 +11,7 @@ use cubecl::Runtime;
 use extendr_api::prelude::*;
 use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
+use manifolds_rs::prelude::run_ann_search_gpu;
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::OnceLock;
 
@@ -30,8 +31,8 @@ pub use single_cell::seacells_gpu;
 use crate::embeddings::parametric_umap::*;
 use crate::embeddings::tsne_gpu::tsne_manifold_gpu;
 use crate::embeddings::umap_gpu::umap_manifold_gpu;
+use crate::embeddings::utils::get_params_nn_ann_gpu;
 use crate::ml::clustering::*;
-use crate::single_cell::knn_gpu::*;
 use crate::utils::nearest_neighbours_to_rust;
 
 /////////////
@@ -51,9 +52,7 @@ extendr_module! {
     // device
     fn rs_gpu_available;
     // knn
-    fn rs_cagra_gpu_knn;
-    fn rs_ivf_gpu_knn;
-    fn rs_exhaustive_gpu_knn;
+    fn rs_gpu_knn;
     // umap parametric
     fn rs_parametric_umap;
     fn rs_parametric_umap_predict;
@@ -224,81 +223,22 @@ fn rs_gpu_available() -> bool {
 // kNN //
 /////////
 
-/// Generate a CAGRA-style GPU-accelerated kNN graph
+/// Generate a GPU-accelerated kNN graph
 ///
 /// @description
 /// `r lifecycle::badge("experimental")`
-/// Builds a kNN graph from an embedding matrix using the CAGRA algorithm on
-/// the wgpu backend. Supports two retrieval modes: direct extraction from the
-/// NNDescent graph, or beam search over the pruned CAGRA graph. The former
-/// tends to have worse Recall.
+/// Builds a kNN graph from an embedding matrix on the wgpu backend. Three
+/// searches are available: an exact brute-force scan, an IVF index that probes
+/// a subset of Voronoi cells, and a CAGRA-style NNDescent graph that is either
+/// beam searched or handed back as the descent left it.
+///
+/// Euclidean distances come back as true L2, not squared.
 ///
 /// @param embd Numeric matrix of embeddings, cells x features.
-/// @param cagra_params A named list with the parameters, see
-/// [bixverse.gpu::params_sc_cagra()]
-/// @param extract_knn Logical. If \code{TRUE}, extracts the kNN graph directly
-/// from the NNDescent result (faster, slightly lower precision). If
-/// \code{FALSE}, runs beam search over the pruned CAGRA graph (slower, higher
-/// precision).
-/// @param seed Integer. Random seed for reproducibility.
-/// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
-/// detailed verbosity.
-///
-/// @return A named list with:
-/// \itemize{
-///  \item `indices` - Integer matrix of shape cells x k_query with
-///  0-based neighbour indices.
-///  \item `dist` - Numeric matrix of shape cells x k_query with distances to
-///  the neighbours.
-///  \item `dist_metric` - Character. The distance metric used.
-/// }
-///
-/// @export
-#[extendr]
-fn rs_cagra_gpu_knn(
-    embd: RMatrix<f64>,
-    cagra_params: List,
-    extract_knn: bool,
-    seed: usize,
-    verbose: usize,
-) -> Result<List, extendr_api::Error> {
-    let verbosity = parse_verbosity_level(verbose);
-
-    let data = r_matrix_to_faer_fp32(&embd);
-    let params = CagraParams::from_r_list(cagra_params)?;
-
-    let (indices, dist) = cagra_knn_with_dist(
-        data.as_ref(),
-        &params,
-        true,
-        extract_knn,
-        seed,
-        verbosity.normal_verbosity(),
-    )
-    .to_extendr()?;
-
-    let knn_dist = dist.unwrap();
-
-    let index_mat = Mat::from_fn(embd.nrows(), params.k, |i, j| indices[i][j] as i32);
-    let dist_mat = Mat::from_fn(embd.nrows(), params.k, |i, j| knn_dist[i][j] as f64);
-
-    Ok(list!(
-        indices = faer_to_r_matrix(index_mat.as_ref()),
-        dist = faer_to_r_matrix(dist_mat.as_ref()),
-        dist_metric = params.ann_dist
-    ))
-}
-
-/// Generate an IVF-GPU-accelerated kNN graph
-///
-/// @description
-/// `r lifecycle::badge("experimental")`
-/// Builds an IVF index over the provided embedding matrix and queries each
-/// vector against it to produce a kNN graph. Runs on the wgpu backend.
-///
-/// @param embd Numeric matrix of embeddings, cells x features.
-/// @param ivf_params A named list with the parameters, see
-/// [bixverse.gpu::params_sc_ivf()]
+/// @param k Integer. Number of neighbours to return, self excluded.
+/// @param knn_method String. One of `c("nndescent", "exhaustive", "ivf")`.
+/// @param nn_params A named list with the parameters, see
+/// [bixverse.gpu::params_nn_gpu()]
 /// @param seed Integer. Random seed for reproducibility.
 /// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 /// detailed verbosity.
@@ -314,90 +254,54 @@ fn rs_cagra_gpu_knn(
 ///
 /// @export
 #[extendr]
-fn rs_ivf_gpu_knn(
-    embd: RMatrix<f64>,
-    ivf_params: List,
-    seed: usize,
-    verbose: usize,
-) -> Result<List, extendr_api::Error> {
-    let verbosity = parse_verbosity_level(verbose);
-
-    let data = r_matrix_to_faer_fp32(&embd);
-    let params = IvfGpuParams::from_r_list(ivf_params)?;
-
-    let (indices, dist) = gpu_ivf_knn_with_dist(
-        data.as_ref(),
-        &params,
-        true,
-        seed,
-        verbosity.normal_verbosity(),
-    )
-    .to_extendr()?;
-
-    let knn_dist = dist.unwrap();
-
-    let index_mat = Mat::from_fn(embd.nrows(), params.k, |i, j| indices[i][j] as i32);
-    let dist_mat = Mat::from_fn(embd.nrows(), params.k, |i, j| knn_dist[i][j] as f64);
-
-    Ok(list!(
-        indices = faer_to_r_matrix(index_mat.as_ref()),
-        dist = faer_to_r_matrix(dist_mat.as_ref()),
-        dist_metric = params.ann_dist
-    ))
-}
-
-/// Generate an GPU-accelerated kNN graph from an exhaustive search
-///
-/// @description
-/// `r lifecycle::badge("experimental")`
-/// Runs an exhaustive kNN search on the GPU.
-///
-/// @param embd Numeric matrix of embeddings, cells x features.
-/// @param k Integer. Number of neighbours to return.
-/// @param dist_metric String. Distance metric; one of
-/// `c("euclidean", "cosine")`.
-/// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
-/// detailed verbosity.
-///
-/// @return A named list with:
-/// \itemize{
-///  \item `indices` - Integer matrix of shape cells x k with 0-based neighbour
-///  indices.
-///  \item `dist` - Numeric matrix of shape cells x k with distances to the
-///  neighbours.
-///  \item `dist_metric` - Character. The distance metric used.
-/// }
-///
-/// @export
-#[extendr]
-fn rs_exhaustive_gpu_knn(
+fn rs_gpu_knn(
     embd: RMatrix<f64>,
     k: usize,
-    dist_metric: String,
+    knn_method: String,
+    nn_params: List,
+    seed: usize,
     verbose: usize,
 ) -> Result<List, extendr_api::Error> {
-    let verbosity = parse_verbosity_level(verbose);
-
     let data = r_matrix_to_faer_fp32(&embd);
+    let params = get_params_nn_ann_gpu::<f32>(nn_params)?;
+    let device: WgpuDevice = Default::default();
 
-    let (indices, dist) = gpu_exhaustive_knn_with_dist(
+    let (indices, dist) = run_ann_search_gpu::<f32, WgpuRuntime>(
         data.as_ref(),
         k,
-        &dist_metric,
-        true,
-        verbosity.normal_verbosity(),
+        knn_method,
+        &params,
+        device.clone(),
+        seed,
+        verbose,
     )
     .to_extendr()?;
 
-    let knn_dist = dist.unwrap();
+    // manifolds-rs does not release the pool, and these indices are large
+    // enough that leaving them behind starves the next call.
+    let client = WgpuRuntime::client(&device);
+    client.memory_cleanup();
+
+    // An approximate backend can hand back a short row (IVF probing too few
+    // lists, or a CAGRA graph narrower than k). Indexing straight into it would
+    // panic, which takes the whole R session with it.
+    if let Some(short) = indices.iter().find(|row| row.len() < k) {
+        return Err(extendr_api::Error::Other(format!(
+            "The kNN search returned {} neighbours where {} were asked for. \
+             Widen the search (`n_probes` for IVF, `node_degree_final` for \
+             nndescent) or lower k.",
+            short.len(),
+            k
+        )));
+    }
 
     let index_mat = Mat::from_fn(embd.nrows(), k, |i, j| indices[i][j] as i32);
-    let dist_mat = Mat::from_fn(embd.nrows(), k, |i, j| knn_dist[i][j] as f64);
+    let dist_mat = Mat::from_fn(embd.nrows(), k, |i, j| dist[i][j] as f64);
 
     Ok(list!(
         indices = faer_to_r_matrix(index_mat.as_ref()),
         dist = faer_to_r_matrix(dist_mat.as_ref()),
-        dist_metric = dist_metric
+        dist_metric = params.dist_metric
     ))
 }
 

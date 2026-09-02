@@ -1,7 +1,6 @@
 # ------------------------------------------------------------------------------
 # GPU-accelerated single cell workflows:
-# - Has GPU-accelerated kNN searches which are split into two core versions:
-#   CAGRA and the IVF/exhaustive versions
+# - GPU-accelerated kNN searches (exhaustive, IVF, CAGRA) behind one generic
 # - GPU-accelerated sparse, randomised SVD. Leverages GPU-accelerated math
 #   multiplications to accelerate that part.
 # - GPU-accelerated version of Harmony (version 2 with Arrowhead)
@@ -10,19 +9,180 @@
 
 # knn searches -----------------------------------------------------------------
 
+## helpers ---------------------------------------------------------------------
+
+#' Pull an embedding out of a single cell object for a GPU kNN search
+#'
+#' @param object `SingleCells` (or `SingleCellsMultiModal`) class.
+#' @param embd_to_use String. The embedding to use.
+#' @param cells_to_use Optional string vector. Cell names to include.
+#' @param no_embd_to_use Optional integer. Number of dimensions to keep.
+#' @param modality String. One of `c("rna", "adt")`.
+#'
+#' @return The embedding matrix, or `NULL` if the embedding is not in the
+#' object.
+#'
+#' @keywords internal
+.gpu_knn_embedding <- function(
+  object,
+  embd_to_use,
+  cells_to_use,
+  no_embd_to_use,
+  modality
+) {
+  if (modality != "rna" && !S7::S7_inherits(object, SingleCellsMultiModal)) {
+    stop(sprintf(
+      "modality = '%s' is only supported for SingleCellsMultiModal.",
+      modality
+    ))
+  }
+
+  if (!embd_to_use %in% get_available_embeddings(object, modality = modality)) {
+    return(NULL)
+  }
+
+  embd <- get_embedding(
+    x = object,
+    embd_name = embd_to_use,
+    modality = modality
+  )
+
+  if (!is.null(cells_to_use)) {
+    embd <- embd[which(rownames(embd) %in% cells_to_use), ]
+  }
+
+  if (!is.null(no_embd_to_use)) {
+    embd <- embd[, 1:min(no_embd_to_use, ncol(embd))]
+  }
+
+  embd
+}
+
+#' Build an sNN igraph from kNN data and attach it to a single cell object
+#'
+#' @param object `SingleCells` (or `SingleCellsMultiModal`) class.
+#' @param knn_data Initialised `sc_knn` with the kNN data.
+#' @param snn_params List. Output of [bixverse::params_sc_neighbours()].
+#' @param modality String. One of `c("rna", "adt")`.
+#' @param .verbose Boolean or integer. Controls verbosity.
+#'
+#' @return The object with the sNN graph in the selected modality slot.
+#'
+#' @keywords internal
+.set_snn_graph_gpu <- function(
+  object,
+  knn_data,
+  snn_params,
+  modality,
+  .verbose
+) {
+  if (.verbose) {
+    message(sprintf("Generating sNN graph (full: %s).", snn_params$full_snn))
+  }
+  snn_graph_rs <- with(
+    snn_params,
+    rs_sc_snn(
+      knn_mat = get_knn_mat(knn_data),
+      snn_method = snn_similarity,
+      pruning = pruning,
+      limited_graph = !full_snn,
+      verbose = bixverse:::parse_verbosity(.verbose)
+    )
+  )
+
+  if (.verbose) {
+    message("Transforming sNN data to igraph.")
+  }
+  snn_g <- igraph::make_empty_graph(
+    n = nrow(get_knn_mat(knn_data)),
+    directed = FALSE
+  )
+  snn_g <- igraph::add_edges(
+    snn_g,
+    snn_graph_rs$edges,
+    attr = list(weight = snn_graph_rs$weights)
+  )
+
+  set_snn_graph(
+    object,
+    snn_graph = snn_g,
+    modality = modality,
+    from = "knn"
+  )
+}
+
+#' Fold the deprecated kNN arguments into the current ones
+#'
+#' @param knn_method String. Current argument.
+#' @param nn_params List. Current argument.
+#' @param k Integer. Current argument.
+#' @param gpu_method Deprecated. Superseded by `knn_method`.
+#' @param ivf_params Deprecated. Superseded by `nn_params`.
+#' @param dist_metric Deprecated. Superseded by `params_nn_gpu(dist_metric)`.
+#' @param fn String. Name of the calling function, for the warning text.
+#'
+#' @return A list with the resolved `knn_method`, `nn_params` and `k`.
+#'
+#' @keywords internal
+#' @importFrom lifecycle deprecate_warn
+.resolve_deprecated_knn_args <- function(
+  knn_method,
+  nn_params,
+  k,
+  gpu_method,
+  ivf_params,
+  dist_metric,
+  fn
+) {
+  if (lifecycle::is_present(gpu_method)) {
+    lifecycle::deprecate_warn(
+      when = "0.4.0",
+      what = sprintf("%s(gpu_method)", fn),
+      with = sprintf("%s(knn_method)", fn)
+    )
+    knn_method <- gpu_method
+  }
+
+  if (lifecycle::is_present(ivf_params)) {
+    lifecycle::deprecate_warn(
+      when = "0.4.0",
+      what = sprintf("%s(ivf_params)", fn),
+      with = sprintf("%s(nn_params)", fn)
+    )
+    # the old IVF wrapper carried k on the list, the new one takes it as an
+    # argument
+    if (!is.null(ivf_params$k)) {
+      k <- as.integer(ivf_params$k)
+      ivf_params$k <- NULL
+    }
+    nn_params <- ivf_params
+  }
+
+  if (lifecycle::is_present(dist_metric)) {
+    lifecycle::deprecate_warn(
+      when = "0.4.0",
+      what = sprintf("%s(dist_metric)", fn),
+      with = "params_nn_gpu(dist_metric = )"
+    )
+    nn_params$dist_metric <- dist_metric
+  }
+
+  list(knn_method = knn_method, nn_params = nn_params, k = k)
+}
+
 ## to knn objects --------------------------------------------------------------
 
-### ivf / exhaustive -----------------------------------------------------------
-
-#' Generate GPU kNN data for single cells (exhaustive / IVF)
+#' Generate GPU kNN data for single cells
 #'
 #' @description
 #' This function generates a `SingleCellNearestNeighbour` object using
-#' GPU-accelerated kNN algorithms via the `bixverse.gpu` package. Two methods
+#' GPU-accelerated kNN algorithms via the `bixverse.gpu` package. Three methods
 #' are available: `"exhaustive"` performs an exact brute-force search on the
 #' GPU; `"ivf"` builds an inverted file index that partitions the embedding
-#' space into Voronoi cells and probes only a subset at query time, trading a
-#' small amount of precision for considerably faster search on larger data sets.
+#' space into Voronoi cells and probes only a subset at query time; and
+#' `"nndescent"` builds a dense NNDescent graph and prunes it into a CAGRA
+#' navigational graph, which is then either beam searched or handed back as the
+#' descent left it (`params_nn_gpu(extract_knn = TRUE)`, faster, lower recall).
 #' This function is the GPU counterpart of [generate_knn_sc()].
 #'
 #' @param object `SingleCells` (or `SingleCellsMultiModal`) class.
@@ -34,14 +194,14 @@
 #' use. If `NULL` all will be used.
 #' @param modality String. One of `c("rna", "adt")`. You can only use `"adt"`
 #' on `SingleCellsMultiModal` class.
-#' @param gpu_method String. One of `c("exhaustive", "ivf")`.
-#' @param ivf_params List. Output of [bixverse.gpu::params_sc_ivf()]. Only
-#' used when `gpu_method = "ivf"`.
-#' @param k Integer. Number of neighbours. Only used when
-#' `gpu_method = "exhaustive"`.
-#' @param dist_metric String. One of `c("euclidean", "cosine")`. Only used
-#' when `gpu_method = "exhaustive"`.
+#' @param knn_method String. One of `c("nndescent", "exhaustive", "ivf")`.
+#' @param nn_params List. Output of [bixverse.gpu::params_nn_gpu()].
+#' @param k Integer. Number of neighbours.
 #' @param seed Integer. For reproducibility.
+#' @param gpu_method `r lifecycle::badge("deprecated")` Use `knn_method`.
+#' @param ivf_params `r lifecycle::badge("deprecated")` Use `nn_params`.
+#' @param dist_metric `r lifecycle::badge("deprecated")` Use
+#' `params_nn_gpu(dist_metric = )`.
 #' @param .verbose Boolean or integer. Controls verbosity.
 #'
 #' @return Initialised `sc_knn` with the kNN data.
@@ -56,11 +216,13 @@ generate_gpu_knn_sc <- S7::new_generic(
     cells_to_use = NULL,
     no_embd_to_use = NULL,
     modality = c("rna", "adt"),
-    gpu_method = c("ivf", "exhaustive"),
-    ivf_params = params_sc_ivf(),
+    knn_method = c("nndescent", "exhaustive", "ivf"),
+    nn_params = params_nn_gpu(),
     k = 15L,
-    dist_metric = "euclidean",
     seed = 42L,
+    gpu_method = lifecycle::deprecated(),
+    ivf_params = lifecycle::deprecated(),
+    dist_metric = lifecycle::deprecated(),
     .verbose = TRUE
   ) {
     S7::S7_dispatch()
@@ -78,191 +240,66 @@ S7::method(generate_gpu_knn_sc, SingleCells) <- function(
   cells_to_use = NULL,
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
-  gpu_method = c("ivf", "exhaustive"),
-  ivf_params = params_sc_ivf(),
+  knn_method = c("nndescent", "exhaustive", "ivf"),
+  nn_params = params_nn_gpu(),
   k = 15L,
-  dist_metric = "euclidean",
   seed = 42L,
+  gpu_method = lifecycle::deprecated(),
+  ivf_params = lifecycle::deprecated(),
+  dist_metric = lifecycle::deprecated(),
   .verbose = TRUE
 ) {
   modality <- match.arg(modality)
-  gpu_method <- match.arg(gpu_method)
+
+  resolved <- .resolve_deprecated_knn_args(
+    knn_method = knn_method,
+    nn_params = nn_params,
+    k = k,
+    gpu_method = gpu_method,
+    ivf_params = ivf_params,
+    dist_metric = dist_metric,
+    fn = "generate_gpu_knn_sc"
+  )
+  knn_method <- match.arg(
+    resolved$knn_method,
+    c("nndescent", "exhaustive", "ivf")
+  )
+  nn_params <- resolved$nn_params
+  k <- resolved$k
 
   checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
   checkmate::qassert(embd_to_use, "S1")
   checkmate::qassert(cells_to_use, c("S+", "0"))
   checkmate::qassert(no_embd_to_use, c("I1", "0"))
   checkmate::assertChoice(modality, c("rna", "adt"))
-  checkmate::assertChoice(gpu_method, c("ivf", "exhaustive"))
-  assertScIvfParams(ivf_params)
+  checkmate::assertChoice(knn_method, c("nndescent", "exhaustive", "ivf"))
+  assertNnParamsGpu(nn_params)
   checkmate::qassert(k, "I1[1,)")
-  checkmate::qassert(dist_metric, "S1")
   checkmate::qassert(seed, "I1")
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
-  if (modality != "rna" && !S7::S7_inherits(object, SingleCellsMultiModal)) {
-    stop(sprintf(
-      "modality = '%s' is only supported for SingleCellsMultiModal.",
-      modality
-    ))
-  }
+  embd <- .gpu_knn_embedding(
+    object = object,
+    embd_to_use = embd_to_use,
+    cells_to_use = cells_to_use,
+    no_embd_to_use = no_embd_to_use,
+    modality = modality
+  )
 
-  if (!embd_to_use %in% get_available_embeddings(object, modality = modality)) {
+  if (is.null(embd)) {
     warning("The desired embedding was not found. Returning NULL.")
     return(NULL)
   }
 
-  embd <- get_embedding(
-    x = object,
-    embd_name = embd_to_use,
-    modality = modality
-  )
-
-  if (!is.null(cells_to_use)) {
-    embd <- embd[which(rownames(embd) %in% cells_to_use), ]
-  }
-
-  if (!is.null(no_embd_to_use)) {
-    embd <- embd[, 1:min(no_embd_to_use, ncol(embd))]
-  }
-
   if (.verbose) {
-    message(sprintf("Generating GPU kNN data with %s method.", gpu_method))
+    message(sprintf("Generating GPU kNN data with %s method.", knn_method))
   }
 
-  knn_raw <- switch(
-    gpu_method,
-    exhaustive = rs_exhaustive_gpu_knn(
-      embd = embd,
-      k = k,
-      dist_metric = dist_metric,
-      verbose = bixverse:::parse_verbosity(.verbose)
-    ),
-    ivf = rs_ivf_gpu_knn(
-      embd = embd,
-      ivf_params = ivf_params,
-      seed = seed,
-      verbose = bixverse:::parse_verbosity(.verbose)
-    )
-  )
-
-  new_sc_knn(knn_data = knn_raw, used_cells = row.names(embd))
-}
-
-### cagra ----------------------------------------------------------------------
-
-#' Generate CAGRA GPU kNN data for single cells
-#'
-#' @description
-#' This function generates a `SingleCellNearestNeighbour` object using the
-#' CAGRA (CUDA-Accelerated Graph Retrieval Approximation) algorithm via the
-#' `bixverse.gpu` package. CAGRA first builds a dense NNDescent graph, then
-#' prunes it into a sparser navigational graph optimised for beam-search
-#' traversal. Two retrieval modes are available: direct extraction from the
-#' NNDescent graph (`extract_knn = TRUE`), which is faster but slightly less
-#' precise, or beam search over the pruned CAGRA graph (`extract_knn = FALSE`),
-#' which is slower but yields higher recall. This function is the CAGRA
-#' counterpart of [generate_knn_sc()].
-#'
-#' @param object `SingleCells` (or `SingleCellsMultiModal`) class.
-#' @param embd_to_use String. The embedding to use. Whichever you choose, it
-#' needs to be part of the object for the selected modality.
-#' @param cells_to_use Optional string vector. Cell names to include. If `NULL`
-#' all cells in the object will be used.
-#' @param no_embd_to_use Optional integer. Number of embedding dimensions to
-#' use. If `NULL` all will be used.
-#' @param modality String. One of `c("rna", "adt")`. You can only use `"adt"`
-#' on `SingleCellsMultiModal` class.
-#' @param cagra_params List. Output of [bixverse.gpu::params_sc_cagra()].
-#' @param extract_knn Logical. If `TRUE`, extracts the kNN graph directly from
-#' the NNDescent result (faster, slightly lower precision). If `FALSE`, runs
-#' beam search over the pruned CAGRA graph (slower, higher precision).
-#' @param seed Integer. For reproducibility.
-#' @param .verbose Boolean or integer. Controls verbosity.
-#'
-#' @return Initialised `sc_knn` with the kNN data.
-#'
-#' @export
-generate_cagra_knn_sc <- S7::new_generic(
-  name = "generate_cagra_knn_sc",
-  dispatch_args = "object",
-  fun = function(
-    object,
-    embd_to_use = "pca",
-    cells_to_use = NULL,
-    no_embd_to_use = NULL,
-    modality = c("rna", "adt"),
-    cagra_params = params_sc_cagra(),
-    extract_knn = TRUE,
-    seed = 42L,
-    .verbose = TRUE
-  ) {
-    S7::S7_dispatch()
-  }
-)
-
-#' @method generate_cagra_knn_sc SingleCells
-#'
-#' @import bixverse
-#'
-#' @export
-S7::method(generate_cagra_knn_sc, SingleCells) <- function(
-  object,
-  embd_to_use = "pca",
-  cells_to_use = NULL,
-  no_embd_to_use = NULL,
-  modality = c("rna", "adt"),
-  cagra_params = params_sc_cagra(),
-  extract_knn = TRUE,
-  seed = 42L,
-  .verbose = TRUE
-) {
-  modality <- match.arg(modality)
-
-  checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
-  checkmate::qassert(embd_to_use, "S1")
-  checkmate::qassert(cells_to_use, c("S+", "0"))
-  checkmate::qassert(no_embd_to_use, c("I1", "0"))
-  checkmate::assertChoice(modality, c("rna", "adt"))
-  checkScCagraParams(cagra_params)
-  checkmate::qassert(extract_knn, "B1")
-  checkmate::qassert(seed, "I1")
-  checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
-
-  if (modality != "rna" && !S7::S7_inherits(object, SingleCellsMultiModal)) {
-    stop(sprintf(
-      "modality = '%s' is only supported for SingleCellsMultiModal.",
-      modality
-    ))
-  }
-
-  if (!embd_to_use %in% get_available_embeddings(object, modality = modality)) {
-    warning("The desired embedding was not found. Returning NULL.")
-    return(NULL)
-  }
-
-  embd <- get_embedding(
-    x = object,
-    embd_name = embd_to_use,
-    modality = modality
-  )
-
-  if (!is.null(cells_to_use)) {
-    embd <- embd[which(rownames(embd) %in% cells_to_use), ]
-  }
-
-  if (!is.null(no_embd_to_use)) {
-    embd <- embd[, 1:min(no_embd_to_use, ncol(embd))]
-  }
-
-  if (.verbose) {
-    message("Generating GPU kNN data with CAGRA method.")
-  }
-
-  knn_raw <- rs_cagra_gpu_knn(
+  knn_raw <- rs_gpu_knn(
     embd = embd,
-    cagra_params = cagra_params,
-    extract_knn = extract_knn,
+    k = k,
+    knn_method = knn_method,
+    nn_params = nn_params,
     seed = seed,
     verbose = bixverse:::parse_verbosity(.verbose)
   )
@@ -272,21 +309,15 @@ S7::method(generate_cagra_knn_sc, SingleCells) <- function(
 
 ## find neighbours (GPU) -------------------------------------------------------
 
-### exhaustive / ivf -----------------------------------------------------------
-
-#' Find GPU-accelerated neighbours for single cells (exhaustive / IVF)
+#' Find GPU-accelerated neighbours for single cells
 #'
 #' @description
 #' This function generates kNN data using GPU-accelerated algorithms via the
-#' `bixverse.gpu` package. Two methods are available: `"exhaustive"` performs
-#' an exact brute-force search on the GPU, which is precise but scales
-#' quadratically; `"ivf"` builds an inverted file index that partitions the
-#' embedding space into Voronoi cells and probes only a subset at query time,
-#' trading a small amount of precision for considerably faster search on larger
-#' data sets. Subsequently, the kNN data is used to generate an sNN igraph for
-#' downstream clustering. This function lives in a separate package from the
-#' CPU-based [find_neighbours_sc()] so that users without GPU hardware do not
-#' need to install the GPU dependencies.
+#' `bixverse.gpu` package, then turns it into an sNN igraph for downstream
+#' clustering. See [generate_gpu_knn_sc()] for the three searches on offer.
+#' This function lives in a separate package from the CPU-based
+#' [find_neighbours_sc()] so that users without GPU hardware do not need to
+#' install the GPU dependencies.
 #'
 #' @param object `SingleCells` (or `SingleCellsMultiModal`) class.
 #' @param embd_to_use String. The embedding to use.
@@ -294,21 +325,17 @@ S7::method(generate_cagra_knn_sc, SingleCells) <- function(
 #' use. If `NULL` all will be used.
 #' @param modality String. One of `c("rna", "adt")`. You can only use `"adt"`
 #' on `SingleCellsMultiModal` class.
-#' @param gpu_method String. One of `c("exhaustive", "ivf")`.
-#' @param ivf_params List. Output of [bixverse.gpu::params_sc_ivf()]. Only
-#' used when `gpu_method = "ivf"`.
-#' @param k Integer. Number of neighbours. Only used when
-#' `gpu_method = "exhaustive"`.
-#' @param dist_metric String. One of `c("euclidean", "cosine")` for the distance
-#' metric to use. This is used specifically only for
-#' `gpu_method = "exhaustive"`.
+#' @param knn_method String. One of `c("nndescent", "exhaustive", "ivf")`.
+#' @param nn_params List. Output of [bixverse.gpu::params_nn_gpu()].
+#' @param k Integer. Number of neighbours.
 #' @param snn_params List. Output of [bixverse::params_sc_neighbours()]. The
-#' kNN graph-related parameters will be ignored.
+#' kNN graph-related parameters will be ignored in favour of `nn_params`.
 #' @param seed Integer. For reproducibility.
+#' @param gpu_method `r lifecycle::badge("deprecated")` Use `knn_method`.
+#' @param ivf_params `r lifecycle::badge("deprecated")` Use `nn_params`.
+#' @param dist_metric `r lifecycle::badge("deprecated")` Use
+#' `params_nn_gpu(dist_metric = )`.
 #' @param .verbose Boolean. Controls verbosity.
-#'
-#' @note
-#' Euclidean distance calculates the squared Euclidean distance for speed.
 #'
 #' @return The object with added kNN matrix and sNN graph in the selected
 #' modality slot.
@@ -322,12 +349,14 @@ find_neighbours_gpu_sc <- S7::new_generic(
     embd_to_use = "pca",
     no_embd_to_use = NULL,
     modality = c("rna", "adt"),
-    gpu_method = c("ivf", "exhaustive"),
-    ivf_params = params_sc_ivf(),
+    knn_method = c("nndescent", "exhaustive", "ivf"),
+    nn_params = params_nn_gpu(),
     k = 15L,
-    dist_metric = "euclidean",
     snn_params = params_sc_neighbours(),
     seed = 42L,
+    gpu_method = lifecycle::deprecated(),
+    ivf_params = lifecycle::deprecated(),
+    dist_metric = lifecycle::deprecated(),
     .verbose = TRUE
   ) {
     S7::S7_dispatch()
@@ -344,25 +373,41 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
   embd_to_use = "pca",
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
-  gpu_method = c("ivf", "exhaustive"),
-  ivf_params = params_sc_ivf(),
+  knn_method = c("nndescent", "exhaustive", "ivf"),
+  nn_params = params_nn_gpu(),
   k = 15L,
-  dist_metric = "euclidean",
   snn_params = params_sc_neighbours(),
   seed = 42L,
+  gpu_method = lifecycle::deprecated(),
+  ivf_params = lifecycle::deprecated(),
+  dist_metric = lifecycle::deprecated(),
   .verbose = TRUE
 ) {
   modality <- match.arg(modality)
-  gpu_method <- match.arg(gpu_method)
+
+  resolved <- .resolve_deprecated_knn_args(
+    knn_method = knn_method,
+    nn_params = nn_params,
+    k = k,
+    gpu_method = gpu_method,
+    ivf_params = ivf_params,
+    dist_metric = dist_metric,
+    fn = "find_neighbours_gpu_sc"
+  )
+  knn_method <- match.arg(
+    resolved$knn_method,
+    c("nndescent", "exhaustive", "ivf")
+  )
+  nn_params <- resolved$nn_params
+  k <- resolved$k
 
   checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
   checkmate::qassert(embd_to_use, "S1")
   checkmate::qassert(no_embd_to_use, c("I1", "0"))
   checkmate::assertChoice(modality, c("rna", "adt"))
-  checkmate::assertChoice(gpu_method, c("ivf", "exhaustive"))
-  checkScIvfParams(ivf_params)
+  checkmate::assertChoice(knn_method, c("nndescent", "exhaustive", "ivf"))
+  assertNnParamsGpu(nn_params)
   checkmate::qassert(k, "I1[1,)")
-  checkmate::assertChoice(dist_metric, c("euclidean", "cosine"))
   checkmate::qassert(seed, "I1")
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
@@ -386,10 +431,9 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
     embd_to_use = embd_to_use,
     no_embd_to_use = no_embd_to_use,
     modality = modality,
-    gpu_method = gpu_method,
-    ivf_params = ivf_params,
+    knn_method = knn_method,
+    nn_params = nn_params,
     k = k,
-    dist_metric = dist_metric,
     seed = seed,
     .verbose = .verbose
   )
@@ -400,190 +444,13 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
     from = embd_to_use
   )
 
-  if (.verbose) {
-    message(sprintf("Generating sNN graph (full: %s).", snn_params$full_snn))
-  }
-  snn_graph_rs <- with(
-    snn_params,
-    rs_sc_snn(
-      knn_mat = get_knn_mat(knn_data),
-      snn_method = snn_similarity,
-      pruning = pruning,
-      limited_graph = !full_snn,
-      verbose = bixverse:::parse_verbosity(.verbose)
-    )
-  )
-
-  if (.verbose) {
-    message("Transforming sNN data to igraph.")
-  }
-  snn_g <- igraph::make_empty_graph(
-    n = nrow(get_knn_mat(knn_data)),
-    directed = FALSE
-  )
-  snn_g <- igraph::add_edges(
-    snn_g,
-    snn_graph_rs$edges,
-    attr = list(weight = snn_graph_rs$weights)
-  )
-
-  object <- set_snn_graph(
-    object,
-    snn_graph = snn_g,
-    modality = modality,
-    from = "knn"
-  )
-
-  return(object)
-}
-
-### cagra ----------------------------------------------------------------------
-
-#' Find neighbours via CAGRA GPU-acceleration for single cells
-#'
-#' @description
-#' This function generates kNN data using the CAGRA (CUDA-Accelerated Graph
-#' Retrieval Approximation) algorithm on the wgpu backend via the `bixverse.gpu`
-#' package. CAGRA first builds a dense NNDescent graph, then prunes it into a
-#' sparser navigational graph optimised for beam-search traversal. Two retrieval
-#' modes are available: direct extraction from the NNDescent graph
-#' (`extract_knn = TRUE`), which is faster but slightly less precise, or beam
-#' search over the pruned CAGRA graph (`extract_knn = FALSE`), which is slower
-#' but yields higher recall. Subsequently, the kNN data is used to generate an
-#' sNN igraph for downstream clustering.
-#'
-#' @param object `SingleCells` (or `SingleCellsMultiModal`) class.
-#' @param embd_to_use String. The embedding to use.
-#' @param no_embd_to_use Optional integer. Number of embedding dimensions to
-#' use. If `NULL` all will be used.
-#' @param modality String. One of `c("rna", "adt")`. You can only use `"adt"`
-#' on `SingleCellsMultiModal` class.
-#' @param cagra_params List. Output of [bixverse.gpu::params_sc_cagra()].
-#' @param extract_knn Logical. If `TRUE`, extracts the kNN graph directly from
-#' the NNDescent result. If `FALSE`, runs beam search over the pruned CAGRA
-#' graph. The extraction is faster, but creates a lower quality kNN graph.
-#' @param snn_params List. Output of [bixverse::params_sc_neighbours()]. The
-#' kNN graph-related parameters will be ignored in favour of `cagra_params`.
-#' @param seed Integer. For reproducibility.
-#' @param .verbose Boolean. Controls verbosity.
-#'
-#' @note
-#' Euclidean distance calculates the squared Euclidean distance for speed.
-#'
-#' @return The object with added kNN matrix and sNN graph in the selected
-#' modality slot.
-#'
-#' @export
-find_neighbours_cagra_sc <- S7::new_generic(
-  name = "find_neighbours_cagra_sc",
-  dispatch_args = "object",
-  fun = function(
-    object,
-    embd_to_use = "pca",
-    no_embd_to_use = NULL,
-    modality = c("rna", "adt"),
-    cagra_params = params_sc_cagra(),
-    extract_knn = FALSE,
-    snn_params = params_sc_neighbours(),
-    seed = 42L,
-    .verbose = TRUE
-  ) {
-    S7::S7_dispatch()
-  }
-)
-
-#' @method find_neighbours_cagra_sc SingleCells
-#'
-#' @import bixverse
-#'
-#' @export
-S7::method(find_neighbours_cagra_sc, SingleCells) <- function(
-  object,
-  embd_to_use = "pca",
-  no_embd_to_use = NULL,
-  modality = c("rna", "adt"),
-  cagra_params = params_sc_cagra(),
-  extract_knn = FALSE,
-  snn_params = params_sc_neighbours(),
-  seed = 42L,
-  .verbose = TRUE
-) {
-  modality <- match.arg(modality)
-
-  checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
-  checkmate::qassert(embd_to_use, "S1")
-  checkmate::qassert(no_embd_to_use, c("I1", "0"))
-  checkmate::qassert(extract_knn, "B1")
-  checkmate::qassert(seed, "I1")
-  checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
-
-  if (modality != "rna" && !S7::S7_inherits(object, SingleCellsMultiModal)) {
-    stop(sprintf(
-      "modality = '%s' is only supported for SingleCellsMultiModal.",
-      modality
-    ))
-  }
-
-  if (!embd_to_use %in% get_available_embeddings(object, modality = modality)) {
-    warning("The desired embedding was not found. Returning class as is.")
-    return(object)
-  }
-
-  # hard tier: the kNN indices built here go straight to Rust downstream
-  assert_sc_state(object, artefacts = embd_to_use, modality = modality)
-
-  knn_data <- generate_cagra_knn_sc(
+  .set_snn_graph_gpu(
     object = object,
-    embd_to_use = embd_to_use,
-    no_embd_to_use = no_embd_to_use,
+    knn_data = knn_data,
+    snn_params = snn_params,
     modality = modality,
-    cagra_params = cagra_params,
-    extract_knn = extract_knn,
-    seed = seed,
     .verbose = .verbose
   )
-  object <- set_knn(
-    object,
-    knn_data,
-    modality = modality,
-    from = embd_to_use
-  )
-
-  if (.verbose) {
-    message(sprintf("Generating sNN graph (full: %s).", snn_params$full_snn))
-  }
-  snn_graph_rs <- with(
-    snn_params,
-    rs_sc_snn(
-      knn_mat = get_knn_mat(knn_data),
-      snn_method = snn_similarity,
-      pruning = pruning,
-      limited_graph = !full_snn,
-      verbose = bixverse:::parse_verbosity(.verbose)
-    )
-  )
-
-  if (.verbose) {
-    message("Transforming sNN data to igraph.")
-  }
-  snn_g <- igraph::make_empty_graph(
-    n = nrow(get_knn_mat(knn_data)),
-    directed = FALSE
-  )
-  snn_g <- igraph::add_edges(
-    snn_g,
-    snn_graph_rs$edges,
-    attr = list(weight = snn_graph_rs$weights)
-  )
-
-  object <- set_snn_graph(
-    object,
-    snn_graph = snn_g,
-    modality = modality,
-    from = "knn"
-  )
-
-  return(object)
 }
 
 # pca --------------------------------------------------------------------------

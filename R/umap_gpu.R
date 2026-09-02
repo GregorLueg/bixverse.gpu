@@ -107,7 +107,7 @@
 #' @param spread Numeric. Effective scale of embedded points. Determines the
 #' scale at which embedded points will be spread out. Defaults to `1.0`.
 #' @param knn_method Character. (Approximate) Nearest neighbour method to use.
-#' One of `"exhaustive"`, `"ivf"` or `"nndescent_gpu"`. These are
+#' One of `"exhaustive"`, `"ivf"` or `"nndescent"`. These are
 #' GPU-accelerated methods.
 #' @param nn_params_gpu Named list. Nearest neighbour search parameters, see
 #' [params_nn_gpu()].

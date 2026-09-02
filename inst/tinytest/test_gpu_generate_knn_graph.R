@@ -131,8 +131,6 @@ approx_configs <- list(
   nndescent = params_nn_gpu(node_degree_final = 15L, dist_metric = "euclidean")
 )
 
-method <- "nndescent"
-
 for (method in names(approx_configs)) {
   idx_i <- generate_knn_graph_gpu(
     data = cluster_data,
@@ -177,8 +175,7 @@ cagra_direct <- generate_knn_graph_gpu(
   data = cluster_data,
   k = n_neighbours,
   knn_method = "nndescent",
-  nn_params = params_nn_gpu(),
-  extract_knn = TRUE,
+  nn_params = params_nn_gpu(extract_knn = TRUE),
   seed = 42L,
   .verbose = FALSE
 )

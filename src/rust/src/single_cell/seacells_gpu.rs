@@ -121,7 +121,7 @@ fn rs_seacells_gpu(
     let subset_to_orig = mapping.subset_to_orig;
     let n_total_cells = mapping.n_total;
 
-    let (knn_indices, knn_dist, dist_squared) = if knn_provided && !is_subset {
+    let (knn_indices, knn_dist) = if knn_provided && !is_subset {
         if verbosity.normal_verbosity() {
             println!("Using provided kNN graph.")
         }
@@ -130,7 +130,7 @@ fn rs_seacells_gpu(
             .into_robj()
             .as_list()
             .ok_or_else(|| Error::Other("'knn_data' is not a list".into()))?;
-        let (knn_indices, knn_dist, _, distance) = knn_data_to_rust(knn_data)?;
+        let (knn_indices, knn_dist, _, _) = knn_data_to_rust(knn_data)?;
 
         if knn_indices.len() != embd_mat.nrows() {
             return Err(format!(
@@ -141,8 +141,7 @@ fn rs_seacells_gpu(
             .into());
         }
 
-        let dist_squared = distance == "euclidean";
-        (knn_indices, knn_dist, dist_squared)
+        (knn_indices, knn_dist)
     } else {
         let start_knn = Instant::now();
 
@@ -162,7 +161,6 @@ fn rs_seacells_gpu(
         let knn_dist = knn_dist.ok_or_else(|| {
             Error::Other("kNN generation returned no distances despite being asked for".into())
         })?;
-        let dist_squared = seacells_params.knn_params.ann_dist == "euclidean";
 
         if verbosity.normal_verbosity() {
             println!(
@@ -172,7 +170,7 @@ fn rs_seacells_gpu(
             );
         }
 
-        (knn_indices, knn_dist, dist_squared)
+        (knn_indices, knn_dist)
     };
 
     let device: WgpuDevice = Default::default();
@@ -181,7 +179,6 @@ fn rs_seacells_gpu(
         embd_mat.as_ref(),
         &knn_indices,
         &knn_dist,
-        dist_squared,
         &seacells_params,
         seed,
         device.clone(),

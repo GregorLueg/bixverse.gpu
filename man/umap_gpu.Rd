@@ -43,7 +43,7 @@ consider reducing this!}
 scale at which embedded points will be spread out. Defaults to \code{1.0}.}
 
 \item{knn_method}{Character. (Approximate) Nearest neighbour method to use.
-One of \code{"exhaustive"}, \code{"ivf"} or \code{"nndescent_gpu"}. These are
+One of \code{"exhaustive"}, \code{"ivf"} or \code{"nndescent"}. These are
 GPU-accelerated methods.}
 
 \item{umap_params}{Named list. UMAP (GPU) algorithm parameters, see

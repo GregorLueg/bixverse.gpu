@@ -46,11 +46,10 @@ outweigh the speedup, but the larger the data, the more these methods pay off
   updates of the original: faster, but results are very similar rather than 
   bit-identical. GPU floating point reduction ordering adds small
   further deviations.
-- **GPU kNN** via two generics:
-  - `find_neighbours_gpu_sc()` covers **exhaustive** (exact brute force) and
-    **IVF** (inverted file index, approximate).
-  - `find_neighbours_cagra_sc()` covers **CAGRA**, which prunes an NNDescent
-    graph and supports either direct kNN extraction or beam search.
+- **GPU kNN** via `find_neighbours_gpu_sc()`: **exhaustive** (exact brute
+  force), **IVF** (inverted file index, approximate) and **nndescent**, which
+  prunes an NNDescent graph into a CAGRA index and supports either direct kNN
+  extraction or beam search.
 - **GPU fast clustering** via `fast_cluster_gpu_sc()`: k-means coarsening on the
   GPU, then centroid kNN, optional sNN and Louvain over a resolution grid on the
   CPU. Only stage one is on the device, so the payoff scales with cell count.
@@ -273,9 +272,9 @@ need exact neighbours. Scales quadratically, so it gets painful on large data.
 sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
-  gpu_method = "exhaustive",
+  knn_method = "exhaustive",
+  nn_params = params_nn_gpu(dist_metric = "euclidean"),
   k = 15L,
-  dist_metric = "euclidean",
   .verbose = TRUE
 )
 ```
@@ -284,7 +283,7 @@ sc_object <- find_neighbours_gpu_sc(
 
 Inverted file index. Partitions the embedding space into Voronoi cells and
 probes only a subset at query time. Worthwhile on larger data sets. The key
-knobs (`nlist` and `nprobe`) live in `params_sc_ivf()`; defaults are fine
+knobs (`n_list` and `n_probes`) live in `params_nn_gpu()`; defaults are fine
 here.
 
 ```{r}
@@ -292,8 +291,8 @@ here.
 sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
-  gpu_method = "ivf",
-  ivf_params = params_sc_ivf(),
+  knn_method = "ivf",
+  nn_params = params_nn_gpu(),
   .verbose = TRUE
 )
 ```
@@ -310,11 +309,11 @@ data.
 
 ```{r}
 #| label: gpu cagra
-sc_object <- find_neighbours_cagra_sc(
+sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
-  cagra_params = params_sc_cagra(),
-  extract_knn = FALSE,
+  knn_method = "nndescent",
+  nn_params = params_nn_gpu(extract_knn = FALSE),
   .verbose = TRUE
 )
 ```
@@ -411,11 +410,11 @@ Same kNN setup on the CPU Harmony embedding:
 
 ```{r}
 #| label: cpu harmony knn + metrics
-sc_object <- find_neighbours_cagra_sc(
+sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_v2",
-  cagra_params = params_sc_cagra(),
-  extract_knn = FALSE,
+  knn_method = "nndescent",
+  nn_params = params_nn_gpu(extract_knn = FALSE),
   .verbose = TRUE
 )
 
@@ -447,11 +446,11 @@ with `use_knn = TRUE`.
 
 ```{r}
 #| label: umap gpu harmony
-sc_object <- find_neighbours_cagra_sc(
+sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
-  cagra_params = params_sc_cagra(),
-  extract_knn = FALSE,
+  knn_method = "nndescent",
+  nn_params = params_nn_gpu(extract_knn = FALSE),
   .verbose = TRUE
 )
 

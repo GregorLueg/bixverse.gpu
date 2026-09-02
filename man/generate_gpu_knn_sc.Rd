@@ -2,7 +2,7 @@
 % Please edit documentation in R/sc_gpu.R
 \name{generate_gpu_knn_sc}
 \alias{generate_gpu_knn_sc}
-\title{Generate GPU kNN data for single cells (exhaustive / IVF)}
+\title{Generate GPU kNN data for single cells}
 \usage{
 generate_gpu_knn_sc(
   object,
@@ -10,11 +10,13 @@ generate_gpu_knn_sc(
   cells_to_use = NULL,
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
-  gpu_method = c("ivf", "exhaustive"),
-  ivf_params = params_sc_ivf(),
+  knn_method = c("nndescent", "exhaustive", "ivf"),
+  nn_params = params_nn_gpu(),
   k = 15L,
-  dist_metric = "euclidean",
   seed = 42L,
+  gpu_method = lifecycle::deprecated(),
+  ivf_params = lifecycle::deprecated(),
+  dist_metric = lifecycle::deprecated(),
   .verbose = TRUE
 )
 }
@@ -33,18 +35,20 @@ use. If \code{NULL} all will be used.}
 \item{modality}{String. One of \code{c("rna", "adt")}. You can only use \code{"adt"}
 on \code{SingleCellsMultiModal} class.}
 
-\item{gpu_method}{String. One of \code{c("exhaustive", "ivf")}.}
+\item{knn_method}{String. One of \code{c("nndescent", "exhaustive", "ivf")}.}
 
-\item{ivf_params}{List. Output of \code{\link[=params_sc_ivf]{params_sc_ivf()}}. Only
-used when \code{gpu_method = "ivf"}.}
+\item{nn_params}{List. Output of \code{\link[=params_nn_gpu]{params_nn_gpu()}}.}
 
-\item{k}{Integer. Number of neighbours. Only used when
-\code{gpu_method = "exhaustive"}.}
-
-\item{dist_metric}{String. One of \code{c("euclidean", "cosine")}. Only used
-when \code{gpu_method = "exhaustive"}.}
+\item{k}{Integer. Number of neighbours.}
 
 \item{seed}{Integer. For reproducibility.}
+
+\item{gpu_method}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{knn_method}.}
+
+\item{ivf_params}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{nn_params}.}
+
+\item{dist_metric}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use
+\code{params_nn_gpu(dist_metric = )}.}
 
 \item{.verbose}{Boolean or integer. Controls verbosity.}
 }
@@ -53,10 +57,12 @@ Initialised \code{sc_knn} with the kNN data.
 }
 \description{
 This function generates a \code{SingleCellNearestNeighbour} object using
-GPU-accelerated kNN algorithms via the \code{bixverse.gpu} package. Two methods
+GPU-accelerated kNN algorithms via the \code{bixverse.gpu} package. Three methods
 are available: \code{"exhaustive"} performs an exact brute-force search on the
 GPU; \code{"ivf"} builds an inverted file index that partitions the embedding
-space into Voronoi cells and probes only a subset at query time, trading a
-small amount of precision for considerably faster search on larger data sets.
+space into Voronoi cells and probes only a subset at query time; and
+\code{"nndescent"} builds a dense NNDescent graph and prunes it into a CAGRA
+navigational graph, which is then either beam searched or handed back as the
+descent left it (\code{params_nn_gpu(extract_knn = TRUE)}, faster, lower recall).
 This function is the GPU counterpart of \code{\link[bixverse:generate_knn_sc]{generate_knn_sc()}}.
 }

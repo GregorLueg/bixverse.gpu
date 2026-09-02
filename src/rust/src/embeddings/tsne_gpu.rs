@@ -11,7 +11,7 @@ use std::collections::HashMap;
 #[cfg(not(target_os = "windows"))]
 use manifolds_rs::utils::fft::FftwFloat;
 
-use crate::embeddings::umap_gpu::get_params_nn_ann_gpu;
+use crate::embeddings::utils::get_params_nn_ann_gpu;
 
 /////////////
 // Helpers //

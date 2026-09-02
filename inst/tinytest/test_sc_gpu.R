@@ -395,9 +395,8 @@ expect_warning(
 knn_ex <- generate_gpu_knn_sc(
   object = sc_obj_plain,
   embd_to_use = "pca",
-  gpu_method = "exhaustive",
+  knn_method = "exhaustive",
   k = knn_k,
-  dist_metric = "euclidean",
   .verbose = FALSE
 )
 
@@ -415,8 +414,9 @@ expect_true(
 knn_ivf <- generate_gpu_knn_sc(
   object = sc_obj_plain,
   embd_to_use = "pca",
-  gpu_method = "ivf",
-  ivf_params = params_sc_ivf(k = knn_k, nlist = 3L, nprobe = 3L),
+  knn_method = "ivf",
+  nn_params = params_nn_gpu(n_list = 3L, n_probes = 3L),
+  k = knn_k,
   .verbose = FALSE
 )
 
@@ -429,6 +429,31 @@ expect_true(
   info = "generate_gpu_knn_sc (ivf) - kNN matrix of correct dim"
 )
 
+### nndescent ------------------------------------------------------------------
+
+for (extract in c(TRUE, FALSE)) {
+  knn_cagra <- generate_gpu_knn_sc(
+    object = sc_obj_plain,
+    embd_to_use = "pca",
+    knn_method = "nndescent",
+    nn_params = params_nn_gpu(extract_knn = extract),
+    k = knn_k,
+    .verbose = FALSE
+  )
+
+  expect_true(
+    current = checkmate::testMatrix(
+      get_knn_mat(knn_cagra),
+      mode = "integer",
+      ncols = knn_k
+    ),
+    info = sprintf(
+      "generate_gpu_knn_sc (nndescent, extract_knn = %s) - kNN matrix of correct dim",
+      extract
+    )
+  )
+}
+
 ### cells_to_use ---------------------------------------------------------------
 
 cells_subset <- get_cell_names(sc_obj_plain, filtered = TRUE)[1:300]
@@ -437,9 +462,8 @@ knn_subset <- generate_gpu_knn_sc(
   object = sc_obj_plain,
   embd_to_use = "pca",
   cells_to_use = cells_subset,
-  gpu_method = "exhaustive",
+  knn_method = "exhaustive",
   k = knn_k,
-  dist_metric = "euclidean",
   .verbose = FALSE
 )
 
@@ -455,9 +479,8 @@ knn_few_pcs <- generate_gpu_knn_sc(
   object = sc_obj_plain,
   embd_to_use = "pca",
   no_embd_to_use = 5L,
-  gpu_method = "exhaustive",
+  knn_method = "exhaustive",
   k = knn_k,
-  dist_metric = "euclidean",
   .verbose = FALSE
 )
 
@@ -468,56 +491,6 @@ expect_true(
     ncols = knn_k
   ),
   info = "generate_gpu_knn_sc - no_embd_to_use truncates dimensions"
-)
-
-## generate_cagra_knn_sc -------------------------------------------------------
-
-### warning when embedding missing ---------------------------------------------
-
-expect_warning(
-  current = generate_cagra_knn_sc(
-    object = sc_obj_plain,
-    embd_to_use = "fake_embd"
-  ),
-  info = "generate_cagra_knn_sc - warning when embedding not found"
-)
-
-### extract_knn = TRUE ---------------------------------------------------------
-
-knn_cagra_ext <- generate_cagra_knn_sc(
-  object = sc_obj_plain,
-  embd_to_use = "pca",
-  cagra_params = params_sc_cagra(k = knn_k),
-  extract_knn = TRUE,
-  .verbose = FALSE
-)
-
-expect_true(
-  current = checkmate::testMatrix(
-    get_knn_mat(knn_cagra_ext),
-    mode = "integer",
-    ncols = knn_k
-  ),
-  info = "generate_cagra_knn_sc (extract_knn = TRUE) - kNN matrix of correct dim"
-)
-
-### extract_knn = FALSE --------------------------------------------------------
-
-knn_cagra_beam <- generate_cagra_knn_sc(
-  object = sc_obj_plain,
-  embd_to_use = "pca",
-  cagra_params = params_sc_cagra(k = knn_k),
-  extract_knn = FALSE,
-  .verbose = FALSE
-)
-
-expect_true(
-  current = checkmate::testMatrix(
-    get_knn_mat(knn_cagra_beam),
-    mode = "integer",
-    ncols = knn_k
-  ),
-  info = "generate_cagra_knn_sc (extract_knn = FALSE) - kNN matrix of correct dim"
 )
 
 ## find_neighbours_gpu_sc ------------------------------------------------------
@@ -537,9 +510,8 @@ expect_warning(
 
 obj_ex <- find_neighbours_gpu_sc(
   object = sc_obj_plain,
-  gpu_method = "exhaustive",
+  knn_method = "exhaustive",
   k = knn_k,
-  dist_metric = "euclidean",
   .verbose = FALSE
 )
 
@@ -561,8 +533,9 @@ expect_true(
 
 obj_ivf <- find_neighbours_gpu_sc(
   object = sc_obj_plain,
-  gpu_method = "ivf",
-  ivf_params = params_sc_ivf(k = knn_k, nlist = 3L, nprobe = 3L),
+  knn_method = "ivf",
+  nn_params = params_nn_gpu(n_list = 3L, n_probes = 3L),
+  k = knn_k,
   .verbose = FALSE
 )
 
@@ -580,25 +553,13 @@ expect_true(
   info = "find_neighbours_gpu_sc (ivf) - sNN graph generated"
 )
 
-## find_neighbours_cagra_sc ----------------------------------------------------
+### nndescent + downstream clustering ------------------------------------------
 
-### warning when embedding missing ---------------------------------------------
-
-expect_warning(
-  current = find_neighbours_cagra_sc(
-    object = sc_obj_plain,
-    embd_to_use = "fake_embd",
-    .verbose = FALSE
-  ),
-  info = "find_neighbours_cagra_sc - warning when embedding not found"
-)
-
-### standard run + downstream clustering ---------------------------------------
-
-obj_cagra <- find_neighbours_cagra_sc(
+obj_cagra <- find_neighbours_gpu_sc(
   object = sc_obj_plain,
-  cagra_params = params_sc_cagra(k = knn_k),
-  extract_knn = FALSE,
+  knn_method = "nndescent",
+  nn_params = params_nn_gpu(extract_knn = FALSE),
+  k = knn_k,
   .verbose = FALSE
 )
 
@@ -608,12 +569,12 @@ expect_true(
     mode = "integer",
     ncols = knn_k
   ),
-  info = "find_neighbours_cagra_sc - kNN matrix set on object"
+  info = "find_neighbours_gpu_sc (nndescent) - kNN matrix set on object"
 )
 
 expect_true(
   current = checkmate::testClass(get_snn_graph(obj_cagra), "igraph"),
-  info = "find_neighbours_cagra_sc - sNN graph generated"
+  info = "find_neighbours_gpu_sc (nndescent) - sNN graph generated"
 )
 
 obj_cagra <- find_clusters_sc(obj_cagra)
@@ -626,7 +587,87 @@ expect_true(
     ) >
       0.9
   ),
-  info = "find_neighbours_cagra_sc - leiden recovers cell groups"
+  info = "find_neighbours_gpu_sc (nndescent) - leiden recovers cell groups"
+)
+
+## deprecated cagra entry points -----------------------------------------------
+
+expect_warning(
+  current = generate_cagra_knn_sc(
+    object = sc_obj_plain,
+    embd_to_use = "pca",
+    cagra_params = params_nn_gpu(),
+    extract_knn = TRUE,
+    .verbose = FALSE
+  ),
+  info = "generate_cagra_knn_sc - deprecation warning"
+)
+
+expect_warning(
+  current = find_neighbours_cagra_sc(
+    object = sc_obj_plain,
+    cagra_params = params_nn_gpu(),
+    extract_knn = FALSE,
+    .verbose = FALSE
+  ),
+  info = "find_neighbours_cagra_sc - deprecation warning"
+)
+
+expect_warning(
+  current = params_sc_cagra(k = knn_k),
+  info = "params_sc_cagra - deprecation warning"
+)
+
+expect_warning(
+  current = params_sc_ivf(k = knn_k),
+  info = "params_sc_ivf - deprecation warning"
+)
+
+### old argument names still work ----------------------------------------------
+
+# gpu_method / ivf_params / dist_metric were replaced by knn_method / nn_params.
+# They warn and forward, so scripts written against 0.3.0 keep running.
+
+expect_warning(
+  current = generate_gpu_knn_sc(
+    object = sc_obj_plain,
+    embd_to_use = "pca",
+    gpu_method = "exhaustive",
+    k = knn_k,
+    dist_metric = "euclidean",
+    .verbose = FALSE
+  ),
+  info = "generate_gpu_knn_sc - gpu_method/dist_metric warn"
+)
+
+knn_old_args <- suppressWarnings(generate_gpu_knn_sc(
+  object = sc_obj_plain,
+  embd_to_use = "pca",
+  gpu_method = "ivf",
+  ivf_params = suppressWarnings(
+    params_sc_ivf(k = knn_k, nlist = 3L, nprobe = 3L)
+  ),
+  .verbose = FALSE
+))
+
+expect_true(
+  current = checkmate::testMatrix(
+    get_knn_mat(knn_old_args),
+    mode = "integer",
+    ncols = knn_k
+  ),
+  info = "generate_gpu_knn_sc - ivf_params still carries k through"
+)
+
+expect_warning(
+  current = find_neighbours_gpu_sc(
+    object = sc_obj_plain,
+    gpu_method = "exhaustive",
+    k = knn_k,
+    dist_metric = "euclidean",
+    .verbose = FALSE
+  ),
+  info = "find_neighbours_gpu_sc - gpu_method/dist_metric warn"
 )
 
 ## umap_gpu_sc ----------------------------------------------------------------

@@ -21,15 +21,13 @@
 #' search. One of `c("exhaustive", "ivf", "nndescent")`. Defaults to
 #' `"nndescent"`
 #' @param nn_params List. Output of [params_nn_gpu()].
-#' @param extract_knn Boolean. CAGRA-specific (`knn_method = "nndescent"`).
-#' Shall the beam search be skipped and the kNN graph be extracted directly
-#' after the NNDescent iteration and optional refine sweeps. Lower quality, but
-#' faster.
 #' @param seed Integer. For reproducibility. Defaults to `42L`.
+#' @param extract_knn `r lifecycle::badge("deprecated")` Use the `extract_knn`
+#' field of [params_nn_gpu()] instead.
 #' @param .verbose Boolean. Controls verbosity.
 #'
 #' @return A nearest neighbours class object with 1-indexed neighbour indices
-#' and distances.
+#' and distances. Euclidean distances are true L2, not squared.
 #'
 #' @export
 #'
@@ -44,10 +42,20 @@ generate_knn_graph_gpu <- function(
   ),
   nn_params = params_nn_gpu(),
   seed = 42L,
-  extract_knn = FALSE,
+  extract_knn = lifecycle::deprecated(),
   .verbose = TRUE
 ) {
   knn_method <- match.arg(knn_method)
+
+  if (lifecycle::is_present(extract_knn)) {
+    lifecycle::deprecate_warn(
+      when = "0.4.0",
+      what = "generate_knn_graph_gpu(extract_knn)",
+      with = "params_nn_gpu(extract_knn = )"
+    )
+    checkmate::qassert(extract_knn, "B1")
+    nn_params$extract_knn <- extract_knn
+  }
 
   # checks
   checkmate::assertMatrix(data, mode = "numeric")
@@ -64,47 +72,22 @@ generate_knn_graph_gpu <- function(
   checkmate::qassert(seed, "I1")
   checkmate::qassert(.verbose, c("B1", "I1[0, 2]"))
 
-  # overwrite this parameter here
-  nn_params$k <- k
-  n <- nrow(data)
-
-  # due to naming issues, set also ann_dist - not super elegant, but does the
-  # job
-  nn_params$ann_dist <- nn_params$dist_metric
-
-  # rust
-  nn_data <- switch(
-    knn_method,
-    exhaustive = rs_exhaustive_gpu_knn(
-      embd = data,
-      k = k,
-      dist_metric = nn_params$dist_metric,
-      verbose = parse_verbosity(.verbose)
-    ),
-    ivf = rs_ivf_gpu_knn(
-      embd = data,
-      ivf_params = nn_params,
-      seed = seed,
-      verbose = parse_verbosity(.verbose)
-    ),
-    nndescent = rs_cagra_gpu_knn(
-      embd = data,
-      cagra_params = nn_params,
-      extract_knn = extract_knn,
-      seed = seed,
-      verbose = parse_verbosity(.verbose)
-    )
+  nn_data <- rs_gpu_knn(
+    embd = data,
+    k = k,
+    knn_method = knn_method,
+    nn_params = nn_params,
+    seed = seed,
+    verbose = parse_verbosity(.verbose)
   )
 
-  res <- with(
+  with(
     nn_data,
     new_nearest_neighbour(
       indices = c(t(indices)) + 1L, # 1-index
       dist = c(t(dist)),
       k = as.integer(k),
-      n = as.integer(n)
+      n = nrow(data)
     )
   )
-
-  res
 }
