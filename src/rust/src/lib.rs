@@ -11,6 +11,8 @@ use cubecl::Runtime;
 use extendr_api::prelude::*;
 use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
+use std::panic::{self, AssertUnwindSafe};
+use std::sync::OnceLock;
 
 pub mod embeddings;
 pub mod ml;
@@ -46,6 +48,8 @@ extendr_module! {
     use scrublet_gpu;
     use seacells_gpu;
     use fast_clusters_gpu;
+    // device
+    fn rs_gpu_available;
     // knn
     fn rs_cagra_gpu_knn;
     fn rs_ivf_gpu_knn;
@@ -179,6 +183,41 @@ fn parse_precision(use_high_precision: Nullable<Rbool>, n: usize) -> FloatingPoi
     } else {
         auto_precision(n)
     }
+}
+
+////////////
+// Device //
+////////////
+
+/// Check whether a usable GPU adapter is present
+///
+/// @description
+/// Probes for a WGPU adapter by initialising the same client every GPU
+/// function in this package goes through, so a `TRUE` here means those
+/// functions will actually run rather than that a device merely exists.
+/// The result is cached for the session and the client stays warm, so the
+/// first real call after a successful probe skips the setup cost.
+///
+/// @returns Boolean. `TRUE` when a WGPU adapter could be initialised.
+#[extendr]
+fn rs_gpu_available() -> bool {
+    static AVAILABLE: OnceLock<bool> = OnceLock::new();
+    *AVAILABLE.get_or_init(|| {
+        // cubecl gives no fallible entry point: `request_adapter` ends in an
+        // `expect`, so the absence of a GPU arrives as a panic rather than an
+        // Err. Catching it is the only probe available. The hook is swapped
+        // out first because extendr installs one that prints, and here a
+        // failed probe is the expected answer on a CPU-only machine, not a
+        // fault worth reporting.
+        let hook = panic::take_hook();
+        panic::set_hook(Box::new(|_| {}));
+        let probe = panic::catch_unwind(AssertUnwindSafe(|| {
+            let device = WgpuDevice::default();
+            let _ = WgpuRuntime::client(&device);
+        }));
+        panic::set_hook(hook);
+        probe.is_ok()
+    })
 }
 
 /////////

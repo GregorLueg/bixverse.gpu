@@ -1,5 +1,9 @@
 # test generate_knn_graph (manifoldsR-style embedding kNN) ---------------------
 
+if (!gpu_available()) {
+  exit_file("no GPU adapter available")
+}
+
 n_neighbours <- 10L
 n_samples <- 1000L
 

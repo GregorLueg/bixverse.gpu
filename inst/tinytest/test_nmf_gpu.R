@@ -1,5 +1,9 @@
 # gpu nmf ----------------------------------------------------------------------
 
+if (!gpu_available()) {
+  exit_file("no GPU adapter available")
+}
+
 library(magrittr)
 library(bixverse)
 

@@ -1,5 +1,9 @@
 # gpu fast clustering ----------------------------------------------------------
 
+if (!gpu_available()) {
+  exit_file("no GPU adapter available")
+}
+
 library(bixverse)
 
 set.seed(42L)

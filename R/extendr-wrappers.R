@@ -5,6 +5,18 @@
 #' @useDynLib bixverse.gpu, .registration = TRUE
 NULL
 
+#' Check whether a usable GPU adapter is present
+#'
+#' @description
+#' Probes for a WGPU adapter by initialising the same client every GPU
+#' function in this package goes through, so a `TRUE` here means those
+#' functions will actually run rather than that a device merely exists.
+#' The result is cached for the session and the client stays warm, so the
+#' first real call after a successful probe skips the setup cost.
+#'
+#' @returns Boolean. `TRUE` when a WGPU adapter could be initialised.
+rs_gpu_available <- function() .Call(wrap__rs_gpu_available)
+
 #' Generate a CAGRA-style GPU-accelerated kNN graph
 #'
 #' @description

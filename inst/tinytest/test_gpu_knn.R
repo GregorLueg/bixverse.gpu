@@ -1,5 +1,9 @@
 # tests of gpu knn searches ----------------------------------------------------
 
+if (!gpu_available()) {
+  exit_file("no GPU adapter available")
+}
+
 if (!requireNamespace("BiocNeighbors")) {
   exit_file("BiocNeighbors is not available")
 }

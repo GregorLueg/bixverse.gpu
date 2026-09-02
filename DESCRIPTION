@@ -37,8 +37,9 @@ Imports:
     zeallot
 Remotes:
     GregorLueg/bixverse,
-    GregorLueg/bixverse.plots,
-    GregorLueg/manifoldsR
+    GregorLueg/bixverse.plots
+Additional_repositories:
+    https://gregorlueg.r-universe.dev
 VignetteBuilder: quarto
 URL: https://gregorlueg.github.io/bixverse.gpu/
 Config/roxygen2/version: 8.1.0

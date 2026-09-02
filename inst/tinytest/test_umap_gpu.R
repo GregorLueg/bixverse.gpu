@@ -1,5 +1,9 @@
 # umap gpu tests ---------------------------------------------------------------
 
+if (!gpu_available()) {
+  exit_file("no GPU adapter available")
+}
+
 #' Helper function to check cluster separation
 #'
 #' Base R is unbearable slow, so, Rust...
