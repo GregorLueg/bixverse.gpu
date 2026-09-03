@@ -22,3 +22,4 @@
 ^Cargo\.toml$
 ^\.Rproj\.user$
 ^\.claude$
+^renovate\.json$

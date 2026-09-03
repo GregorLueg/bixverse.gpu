@@ -1,4 +1,4 @@
-# *bixverse.gpu package*
+# *bixverse.gpu package* <img src="man/figures/logo.png" align="right" height="138" alt="bixverse.gpu logo" />
 
 [![r_package](https://img.shields.io/github/r-package/v/GregorLueg/bixverse.gpu?label=R_package&color=orange)](https://github.com/GregorLueg/bixverse.gpu/blob/main/DESCRIPTION)
 [![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
@@ -6,12 +6,6 @@
 [![pkgdown](https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github)](https://gregorlueg.github.io/bixverse.gpu/)
 [![extendr](https://img.shields.io/badge/extendr-^0.9.0-276DC2)](https://extendr.github.io/extendr/extendr_api/)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-
-</br>
-
-<img src="man/figures/bixverse_gpu_logo.png" width="128" height="128" alt="bixverse.plots logo">
-
-</br>
 
 ## Intro
 
