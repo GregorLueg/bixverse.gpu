@@ -1,3 +1,7 @@
+# bixverse.gpu 0.3.0
+
+## Features
+
 # bixverse.gpu 0.2.8
 
 ## Features
