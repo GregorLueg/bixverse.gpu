@@ -8,10 +8,26 @@ use manifolds_rs::*;
 use rand_distr::{Distribution, StandardNormal};
 use std::collections::HashMap;
 
+use crate::embeddings::utils::get_params_nn_ann_gpu;
+
 #[cfg(not(target_os = "windows"))]
 use manifolds_rs::utils::fft::FftwFloat;
 
-use crate::embeddings::utils::get_params_nn_ann_gpu;
+/// Float bound for the GPU t-SNE
+///
+/// `manifolds-rs` is built without the `fft_tsne` feature on Windows, as FFTW
+/// does not build there, so `FftwFloat` only exists on the other platforms.
+#[cfg(not(target_os = "windows"))]
+pub trait TsneFloatGpu: ManifoldsFloatGpu + FftwFloat {}
+
+#[cfg(not(target_os = "windows"))]
+impl<T: ManifoldsFloatGpu + FftwFloat> TsneFloatGpu for T {}
+
+#[cfg(target_os = "windows")]
+pub trait TsneFloatGpu: ManifoldsFloatGpu {}
+
+#[cfg(target_os = "windows")]
+impl<T: ManifoldsFloatGpu> TsneFloatGpu for T {}
 
 /////////////
 // Helpers //
@@ -179,7 +195,6 @@ where
 ///
 /// t-SNE embeddings as matrix
 #[allow(clippy::too_many_arguments)]
-#[cfg(not(target_os = "windows"))]
 pub fn tsne_manifold_gpu<T>(
     data: MatRef<T>,
     pre_computed_knn: PreComputedKnn<T>,
@@ -191,86 +206,7 @@ pub fn tsne_manifold_gpu<T>(
     verbose: usize,
 ) -> Result<Mat<T>>
 where
-    T: ManifoldsFloatGpu + FftwFloat,
-    StandardNormal: Distribution<T>,
-{
-    assert!(
-        n_dim == 2,
-        "At the moment, this tSNE implementation only supports n_dim = 2"
-    );
-
-    let device: WgpuDevice = Default::default();
-
-    let tsne_params_internal = InternalTsneParamsGpu::from_r_list(tsne_params)?;
-
-    let tsne_params = TsneParamsGpu {
-        n_dim,
-        perplexity,
-        ann_type: tsne_params_internal.knn_method,
-        initialisation: tsne_params_internal.init,
-        nn_params: tsne_params_internal.param_knn,
-        optim_params: tsne_params_internal.param_optimiser,
-        randomised_init: tsne_params_internal.randomised,
-        init_range: Some(T::from_f64(1e-2).unwrap()),
-    };
-
-    let res = tsne_gpu::<T, WgpuRuntime>(
-        data,
-        pre_computed_knn,
-        &tsne_params,
-        approx_type,
-        device.clone(),
-        seed,
-        verbose,
-    )
-    .to_extendr()?;
-
-    // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
-
-    let ncol = res.len();
-    let nrow = res[0].len();
-
-    Ok(Mat::from_fn(nrow, ncol, |i, j| res[j][i]))
-}
-
-/// Wrapper function into the t-SNE implementation in `manifolds-rs`
-///
-/// This function wraps around the `manifolds-rs` function and exposes it to
-/// R via another function. It uses under the hood the GPU-accelerated kNN
-/// searches.
-///
-/// ### Params
-///
-/// * `data` - Input data matrix for t-SNE
-/// * `pre_computed_knn` - Optional pre-computed kNN to be used.
-/// * `n_dim` - Number of dimensions to reduce to (typically 2)
-/// * `approximation` - String. One of `"bh"` for the Barnes Hut approximation
-///   or `"fft"` for the Fast Fourier Transformation-accelerated one.
-/// * `perplexity` - Perplexity parameter (typical: 5-50)
-/// * `tsne_params` - Named R list with all t-SNE parameters
-/// * `seed` - Random seed for reproducibility
-/// * `verbose` - If `0` -> silent or `1` for normal verbosity, `2` for detailed
-///   verbosity.
-///
-/// ### Returns
-///
-/// t-SNE embeddings as matrix
-#[allow(clippy::too_many_arguments)]
-#[cfg(target_os = "windows")]
-pub fn tsne_manifold_gpu<T>(
-    data: MatRef<T>,
-    pre_computed_knn: PreComputedKnn<T>,
-    n_dim: usize,
-    approx_type: &str,
-    perplexity: T,
-    tsne_params: List,
-    seed: usize,
-    verbose: usize,
-) -> Result<Mat<T>>
-where
-    T: ManifoldsFloatGpu + FftwFloat,
+    T: TsneFloatGpu,
     StandardNormal: Distribution<T>,
 {
     assert!(
