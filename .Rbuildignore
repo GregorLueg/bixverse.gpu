@@ -23,3 +23,5 @@
 ^\.Rproj\.user$
 ^\.claude$
 ^renovate\.json$
+^vignettes$
+^[.]?air[.]toml$
