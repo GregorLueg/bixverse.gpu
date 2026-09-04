@@ -1,15 +1,10 @@
-# Find neighbours via CAGRA GPU-acceleration for single cells
+# Find neighbours via CAGRA GPU-acceleration for single cells (deprecated)
 
-This function generates kNN data using the CAGRA (CUDA-Accelerated Graph
-Retrieval Approximation) algorithm on the wgpu backend via the
-`bixverse.gpu` package. CAGRA first builds a dense NNDescent graph, then
-prunes it into a sparser navigational graph optimised for beam-search
-traversal. Two retrieval modes are available: direct extraction from the
-NNDescent graph (`extract_knn = TRUE`), which is faster but slightly
-less precise, or beam search over the pruned CAGRA graph
-(`extract_knn = FALSE`), which is slower but yields higher recall.
-Subsequently, the kNN data is used to generate an sNN igraph for
-downstream clustering.
+**\[deprecated\]**
+
+CAGRA now sits behind
+[`find_neighbours_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_gpu_sc.md)
+as `knn_method = "nndescent"`.
 
 ## Usage
 
@@ -19,7 +14,7 @@ find_neighbours_cagra_sc(
   embd_to_use = "pca",
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
-  cagra_params = params_sc_cagra(),
+  cagra_params = params_nn_gpu(),
   extract_knn = FALSE,
   snn_params = params_sc_neighbours(),
   seed = 42L,
@@ -39,31 +34,27 @@ find_neighbours_cagra_sc(
 
 - no_embd_to_use:
 
-  Optional integer. Number of embedding dimensions to use. If `NULL` all
-  will be used.
+  Optional integer. Number of embedding dimensions.
 
 - modality:
 
-  String. One of `c("rna", "adt")`. You can only use `"adt"` on
-  `SingleCellsMultiModal` class.
+  String. One of `c("rna", "adt")`.
 
 - cagra_params:
 
-  List. Output of
-  [`params_sc_cagra()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.md).
+  List. Output of the deprecated
+  [`params_sc_cagra()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.md),
+  or
+  [`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md).
 
 - extract_knn:
 
-  Logical. If `TRUE`, extracts the kNN graph directly from the NNDescent
-  result. If `FALSE`, runs beam search over the pruned CAGRA graph. The
-  extraction is faster, but creates a lower quality kNN graph.
+  Logical. Skip the beam search.
 
 - snn_params:
 
   List. Output of
   [`bixverse::params_sc_neighbours()`](https://gregorlueg.github.io/bixverse/reference/params_sc_neighbours.html).
-  The kNN graph-related parameters will be ignored in favour of
-  `cagra_params`.
 
 - seed:
 
@@ -75,9 +66,4 @@ find_neighbours_cagra_sc(
 
 ## Value
 
-The object with added kNN matrix and sNN graph in the selected modality
-slot.
-
-## Note
-
-Euclidean distance calculates the squared Euclidean distance for speed.
+The object with added kNN matrix and sNN graph.

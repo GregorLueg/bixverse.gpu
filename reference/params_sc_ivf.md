@@ -1,6 +1,10 @@
-# Default parameters for IVF-GPU kNN search
+# Default parameters for IVF-GPU kNN search (deprecated)
 
-Default parameters for IVF-GPU kNN search
+**\[deprecated\]**
+
+The CAGRA, IVF and exhaustive GPU searches share one parameter wrapper
+now, see
+[`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md).
 
 ## Usage
 
@@ -20,36 +24,34 @@ params_sc_ivf(
 
 - k:
 
-  Integer. Number of neighbours to identify.
+  Integer. Number of neighbours. Carried on the returned list so the
+  deprecated generics can still read it.
 
 - ann_dist:
 
-  Character. Distance metric to use. One of `"euclidean"` or `"cosine"`.
+  Character. One of `"euclidean"` or `"cosine"`.
 
 - nlist:
 
-  Optional integer. Number of clusters to partition the index into. If
-  `NULL`, defaults to `sqrt(n)`.
+  Optional integer. Number of clusters to partition the index into.
 
 - nprobe:
 
-  Optional integer. Number of clusters to probe at query time. If
-  `NULL`, defaults to `sqrt(nlist)`.
+  Optional integer. Number of clusters to probe at query time.
 
 - nquery:
 
-  Optional integer. Number of query vectors processed per GPU batch. If
-  `NULL`, defaults to 100,000.
+  Optional integer. Ignored, the knob is gone.
 
 - max_iters:
 
-  Optional integer. Maximum k-means iterations during index build. If
-  `NULL`, defaults to 30.
+  Optional integer. Ignored, the knob is gone.
 
 - seed:
 
-  Integer. Seed for k-means initialisation.
+  Integer. Ignored. `seed` is an argument of the calling function.
 
 ## Value
 
-A list with the parameters.
+A list with the parameters, as returned by
+[`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md).

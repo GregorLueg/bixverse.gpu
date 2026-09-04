@@ -39,13 +39,11 @@ have sufficient VRAM/unified memory that is…).
   the blockwise updates of the original: faster, but results are very
   similar rather than bit-identical. GPU floating point reduction
   ordering adds small further deviations.
-- **GPU kNN** via two generics:
-  - [`find_neighbours_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_gpu_sc.md)
-    covers **exhaustive** (exact brute force) and **IVF** (inverted file
-    index, approximate).
-  - [`find_neighbours_cagra_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_cagra_sc.md)
-    covers **CAGRA**, which prunes an NNDescent graph and supports
-    either direct kNN extraction or beam search.
+- **GPU kNN** via
+  [`find_neighbours_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_gpu_sc.md):
+  **exhaustive** (exact brute force), **IVF** (inverted file index,
+  approximate) and **nndescent**, which prunes an NNDescent graph into a
+  CAGRA index and supports either direct kNN extraction or beam search.
 - **GPU fast clustering** via
   [`fast_cluster_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/fast_cluster_gpu_sc.md):
   k-means coarsening on the GPU, then centroid kNN, optional sNN and
@@ -99,88 +97,7 @@ sc_object <- load_multi_h5ad(
 )
 #>  Using light streaming for the CSR to CSC conversion.
 #> Loading observation data from h5ad files into DuckDB.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 #> Loading variable data into DuckDB.
-#> 
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 ```
 
 ## Quality control
@@ -193,16 +110,6 @@ Code
 ``` r
 
 var <- get_sc_var(sc_object)
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 
 h5_metadata <- read_h5ad_metadata(h5ad_paths[[1]])
 
@@ -226,28 +133,8 @@ sc_object <- gene_set_proportions_sc(
   streaming = FALSE,
   .verbose = TRUE
 )
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 
 qc_df <- sc_object[[c("cell_id", "lib_size", "nnz", "MT")]]
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 
 metrics <- list(
   log10_lib_size = log10(qc_df$lib_size),
@@ -268,28 +155,8 @@ qc <- run_cell_qc(
 )
 
 sc_object[["outlier"]] <- qc$combined
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 cells_to_keep <- qc_df[!qc$combined, cell_id]
 sc_object <- set_cells_to_keep(sc_object, cells_to_keep)
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 ```
 
 ## Highly variable genes
@@ -303,26 +170,6 @@ sc_object <- find_hvg_sc(
   hvg_no = 2000L,
   .verbose = TRUE
 )
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 ```
 
 ## GPU-accelerated PCA
@@ -403,16 +250,6 @@ sc_object <- harmony_v2_gpu_sc(
   batch_column = "exp_id",
   harmony_params = params_sc_harmony_v2_gpu()
 )
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 #>  Auto-determined number of Harmony clusters: 100
 ```
 
@@ -426,16 +263,6 @@ sc_object <- harmony_v2_sc(
   batch_column = "exp_id",
   harmony_params = params_sc_harmony_v2()
 )
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 #>  Auto-determined number of Harmony clusters: 100
 ```
 
@@ -461,9 +288,9 @@ large data.
 sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
-  gpu_method = "exhaustive",
+  knn_method = "exhaustive",
+  nn_params = params_nn_gpu(dist_metric = "euclidean"),
   k = 15L,
-  dist_metric = "euclidean",
   .verbose = TRUE
 )
 #> Generating GPU kNN data with exhaustive method.
@@ -475,8 +302,8 @@ sc_object <- find_neighbours_gpu_sc(
 
 Inverted file index. Partitions the embedding space into Voronoi cells
 and probes only a subset at query time. Worthwhile on larger data sets.
-The key knobs (`nlist` and `nprobe`) live in
-[`params_sc_ivf()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.md);
+The key knobs (`n_list` and `n_probes`) live in
+[`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md);
 defaults are fine here.
 
 ``` r
@@ -484,8 +311,8 @@ defaults are fine here.
 sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
-  gpu_method = "ivf",
-  ivf_params = params_sc_ivf(),
+  knn_method = "ivf",
+  nn_params = params_nn_gpu(),
   .verbose = TRUE
 )
 #> Generating GPU kNN data with ivf method.
@@ -507,14 +334,14 @@ higher-dimensional data.
 
 ``` r
 
-sc_object <- find_neighbours_cagra_sc(
+sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
-  cagra_params = params_sc_cagra(),
-  extract_knn = FALSE,
+  knn_method = "nndescent",
+  nn_params = params_nn_gpu(extract_knn = FALSE),
   .verbose = TRUE
 )
-#> Generating GPU kNN data with CAGRA method.
+#> Generating GPU kNN data with nndescent method.
 #> Generating sNN graph (full: TRUE).
 #> Transforming sNN data to igraph.
 ```
@@ -564,12 +391,12 @@ One column per resolution, keyed by `cell_idx`:
 head(get_data(fast_cluster_res))
 #>    cell_idx res_2 res_1.5 res_1 res_0.5
 #>       <int> <int>   <int> <int>   <int>
-#> 1:        1     4       4     0       0
-#> 2:        2     0       0     2       2
-#> 3:        3     4       4     0       0
-#> 4:        4     1       1     1       1
-#> 5:        6     4       4     0       0
-#> 6:        7     5       5     0       0
+#> 1:        1     1       1     1       1
+#> 2:        2     3       3     3       3
+#> 3:        3     5       5     5       5
+#> 4:        4     6       0     0       0
+#> 5:        6     5       5     5       5
+#> 6:        7     2       2     2       2
 ```
 
 The grid stats are the interesting bit. `mean_ari` is how stable the
@@ -582,16 +409,16 @@ up with.
 fast_cluster_res$stats
 #>    resolution  mean_ari median_ari mean_conductance median_conductance
 #>         <num>     <num>      <num>            <num>              <num>
-#> 1:        2.0 0.9067342  0.9127743      0.043760799        0.042998761
-#> 2:        1.5 0.8798453  0.8823469      0.037403069        0.038986467
-#> 3:        1.0 0.8665728  0.8674591      0.026264472        0.029157147
-#> 4:        0.5 0.9183958  0.9007552      0.008316441        0.002923434
+#> 1:        2.0 0.9235639  0.8987854      0.025006620                  0
+#> 2:        1.5 0.9353009  0.9689155      0.014672038                  0
+#> 3:        1.0 0.9293569  0.9689155      0.009172788                  0
+#> 4:        0.5 0.9407509  1.0000000      0.003602102                  0
 #>    mean_n_comms
 #>           <num>
-#> 1:         9.68
-#> 2:         9.28
-#> 3:         8.36
-#> 4:         6.80
+#> 1:         7.24
+#> 2:         6.96
+#> 3:         6.72
+#> 4:         6.32
 ```
 
 The k-means centroids and per-cell assignments are there too, if you
@@ -603,7 +430,7 @@ dim(get_centroids_sc(fast_cluster_res))
 #> [1] 76 32
 
 head(get_kmeans_clusters(fast_cluster_res))
-#> [1] 55 40 10 72 51 53
+#> [1] 35  3 70 13 66 46
 ```
 
 Push the memberships onto the object and they behave like any other obs
@@ -615,28 +442,8 @@ sc_object <- add_sc_new_obs(
   object = sc_object,
   obs_data = get_data(fast_cluster_res)
 )
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 
 head(sc_object)
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 #>    cell_idx  cell_id exp_id barcode_type cell_ranger_version   chemistry
 #>       <int>   <char> <char>       <fctr>              <fctr>      <fctr>
 #> 1:        1 pbmc3k_0 pbmc3k      GemCode              v1.1.0 Chromium_v1
@@ -663,12 +470,12 @@ head(sc_object)
 #> 6:       1 AAACGCTGACCAGT   774     2161    TRUE 0.03840815 0.4183249   FALSE
 #>    res_2 res_1.5 res_1 res_0.5
 #>    <int>   <int> <int>   <int>
-#> 1:     4       4     0       0
-#> 2:     0       0     2       2
-#> 3:     4       4     0       0
-#> 4:     1       1     1       1
-#> 5:     4       4     0       0
-#> 6:     5       5     0       0
+#> 1:     1       1     1       1
+#> 2:     3       3     3       3
+#> 3:     5       5     5       5
+#> 4:     6       0     0       0
+#> 5:     5       5     5       5
+#> 6:     2       2     2       2
 ```
 
 ## Comparing GPU vs CPU Harmony
@@ -680,48 +487,18 @@ to compare.
 ``` r
 
 kbet_gpu <- calculate_kbet_sc(sc_object, batch_column = "exp_id")
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 asw_gpu <- calculate_batch_asw_sc(
   sc_object,
   embd_to_use = "harmony_gpu",
   batch_column = "exp_id"
 )
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 lisi_gpu <- calculate_batch_lisi_sc(sc_object, batch_column = "exp_id")
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 
 kbet_gpu
 #> kBET Scores
 #>   Cells: 5841 | Batches: 2 | Threshold: 0.050
 #>   Rejection rate:      0.2679 (1565 / 5841)
-#>   Mean Chi-Square:     3.0589 (expected under H0: 1)
+#>   Mean Chi-Square:     3.0560 (expected under H0: 1)
 #>   Median Chi-Square:   1.9151
 asw_gpu
 #> Batch Silhouette Width
@@ -731,7 +508,7 @@ asw_gpu
 lisi_gpu
 #> Batch LISI Scores
 #>   Cells: 5841 | Batches: 2
-#>   Mean LISI:    1.4605 (1 = no mixing, 2 = perfect mixing)
+#>   Mean LISI:    1.4610 (1 = no mixing, 2 = perfect mixing)
 #>   Median LISI:  1.4706
 ```
 
@@ -739,60 +516,30 @@ Same kNN setup on the CPU Harmony embedding:
 
 ``` r
 
-sc_object <- find_neighbours_cagra_sc(
+sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_v2",
-  cagra_params = params_sc_cagra(),
-  extract_knn = FALSE,
+  knn_method = "nndescent",
+  nn_params = params_nn_gpu(extract_knn = FALSE),
   .verbose = TRUE
 )
-#> Generating GPU kNN data with CAGRA method.
+#> Generating GPU kNN data with nndescent method.
 #> Generating sNN graph (full: TRUE).
 #> Transforming sNN data to igraph.
 
 kbet_cpu <- calculate_kbet_sc(sc_object, batch_column = "exp_id")
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 asw_cpu <- calculate_batch_asw_sc(
   sc_object,
   embd_to_use = "harmony_v2",
   batch_column = "exp_id"
 )
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 lisi_cpu <- calculate_batch_lisi_sc(sc_object, batch_column = "exp_id")
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 
 kbet_cpu
 #> kBET Scores
 #>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.2690 (1571 / 5841)
-#>   Mean Chi-Square:     3.0500 (expected under H0: 1)
+#>   Rejection rate:      0.2686 (1569 / 5841)
+#>   Mean Chi-Square:     3.0453 (expected under H0: 1)
 #>   Median Chi-Square:   1.9151
 asw_cpu
 #> Batch Silhouette Width
@@ -802,7 +549,7 @@ asw_cpu
 lisi_cpu
 #> Batch LISI Scores
 #>   Cells: 5841 | Batches: 2
-#>   Mean LISI:    1.4629 (1 = no mixing, 2 = perfect mixing)
+#>   Mean LISI:    1.4634 (1 = no mixing, 2 = perfect mixing)
 #>   Median LISI:  1.4706
 ```
 
@@ -824,14 +571,14 @@ in with `use_knn = TRUE`.
 
 ``` r
 
-sc_object <- find_neighbours_cagra_sc(
+sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
-  cagra_params = params_sc_cagra(),
-  extract_knn = FALSE,
+  knn_method = "nndescent",
+  nn_params = params_nn_gpu(extract_knn = FALSE),
   .verbose = TRUE
 )
-#> Generating GPU kNN data with CAGRA method.
+#> Generating GPU kNN data with nndescent method.
 #> Generating sNN graph (full: TRUE).
 #> Transforming sNN data to igraph.
 
@@ -859,16 +606,6 @@ embedding_plot_sc(
     title = "GPU Harmony v2 + GPU CAGRA kNN + GPU UMAP",
     colour = "Fast cluster:"
   )
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 ```
 
 ![](gpu_single_cell_files/figure-html/umap%20plot-1.png)
@@ -887,16 +624,6 @@ embedding_plot_sc(
     title = "GPU Harmony v2 + GPU CAGRA kNN + GPU UMAP",
     colour = "Batch:"
   )
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 ```
 
 ![](gpu_single_cell_files/figure-html/umap%20plot%20batch-1.png)
@@ -936,16 +663,6 @@ embedding_plot_sc(
     title = "GPU Harmony v2 + GPU t-SNE (GPU kNN, CPU optimiser)",
     colour = "Fast cluster:"
   )
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 ```
 
 ![](gpu_single_cell_files/figure-html/tsne%20plot-1.png)

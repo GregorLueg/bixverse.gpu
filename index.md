@@ -9,21 +9,28 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 
-![bixverse.plots logo](reference/figures/bixverse_gpu_logo.png)
-
 ## Intro
 
-GPU-accelerated algorithms (via the WGPU backend on cubecl which allows
-you to run the code here on any GPU). You will need to set up your wgpu
-however, please check the [cubecl
-book](https://burn.dev/books/cubecl/getting-started/installation.html).
-I do not have access to an Nvidia GPU, but I will aim also to allow for
-conditional compiling to that backend if cuda is detected (future
-problem). The package is designed to support the [bixverse
+GPU-accelerated algorithms via the WGPU backend on cubecl. All you need
+is a GPU that WGPU can talk to: Metal on macOS, Vulkan on Linux, DX12 or
+Vulkan on Windows. No CUDA, no vendor lock-in, no separate GPU toolchain
+to install. Check with
+[`gpu_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/gpu_available.md)
+after installing; if that returns `TRUE`, everything in the package will
+run. If it returns `FALSE`, your drivers are the problem, and the
+[cubecl
+book](https://burn.dev/books/cubecl/getting-started/installation.html)
+covers the set up per platform.
+
+The package is designed to support the [bixverse
 package](https://github.com/GregorLueg/bixverse). Additionally, also
 provides some neural net-based versions of embedding methods for
 [manifoldsR](https://github.com/GregorLueg/manifoldsR) + a
 GPU-accelerated version of the Adam optimiser for UMAP.
+
+Heads up: the package is being refactored at the moment, so the R-facing
+API can shift between versions. `lifecycle: experimental` covers the
+whole surface and means it.
 
 ## Usage
 
@@ -35,13 +42,11 @@ installation guide is provided
 further help written
 [here](https://extendr.github.io/rextendr/index.html) by the rextendr
 guys in terms of Rust set up. (bixverse.gpu as bixverse both use
-rextendr to interface with Rust.) Additionally, in this special case,
-you will also need the GPU drivers set up properly on your system.
-Please refer to the [cubecl book](https://burn.dev/books/cubecl/) in
-terms of how to ensure wgpu runs on your respective system. Previously,
-the CPU-based versions of neural net acceleration where running through
-ndarray and accelerated via OpenBLAS (Linux) or Accelerate (Mac). This
-has been now replaced with the
+rextendr to interface with Rust.) On the GPU side there is nothing extra
+to install beyond working drivers, whatever your OS ships is what WGPU
+picks up. Previously, the CPU-based versions of neural net acceleration
+where running through ndarray and accelerated via OpenBLAS (Linux) or
+Accelerate (Mac). This has been now replaced with the
 [flex](https://github.com/tracel-ai/burn/pull/4761) framework.
 
 #### Setting up Rust
@@ -70,12 +75,19 @@ Steps for installation:
 
 #### Windows support
 
-If you are using Windows, I am sorry, the tool chain is just very, very
-painful… I really tried to make this work and maybe there are some hacks
-in terms of compiling everything to make this work, but I cannot
-guarantee proper behaviour here due to the dependency with h5 (for
-reading in h5ad files). If you know how to make this work without
-several hacks in an easy way, please contact me!
+Windows works. WGPU was never the problem there, DX12 and Vulkan are
+both well covered, and the h5 dependency (for reading h5ad files) turned
+out to be a dull `MAX_PATH` issue rather than a cross-compile one:
+`R CMD INSTALL` builds in a deep temp directory, and the HDF5 CMake
+build pushed object paths past the 260 character limit. The build now
+puts the cargo target directory in `~/.bixverse-gpu-cargo`, which stays
+clear of it. Same fix as in
+[bixverse](https://github.com/GregorLueg/bixverse).
+
+One thing is still missing on Windows: the FFT-accelerated tSNE. FFTW
+does not come along for the ride, so `tsne_gpu(approx_type = "fft")`
+errors there. Barnes-Hut (`approx_type = "bh"`, the default) works
+everywhere.
 
 ### How to use the package.
 

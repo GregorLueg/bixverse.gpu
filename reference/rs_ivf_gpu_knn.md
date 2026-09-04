@@ -1,8 +1,11 @@
-# Generate an IVF-GPU-accelerated kNN graph
+# IVF-GPU-accelerated kNN graph (deprecated)
 
-**\[experimental\]** Builds an IVF index over the provided embedding
-matrix and queries each vector against it to produce a kNN graph. Runs
-on the wgpu backend.
+**\[deprecated\]**
+
+The three GPU kNN searches went behind one wrapper, see
+[`rs_gpu_knn()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_gpu_knn.md).
+Note that Euclidean distances now come back as true L2 rather than
+squared.
 
 ## Usage
 
@@ -18,8 +21,8 @@ rs_ivf_gpu_knn(embd, ivf_params, seed, verbose)
 
 - ivf_params:
 
-  A named list with the parameters, see
-  [`params_sc_ivf()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.md)
+  Named list, see
+  [`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md).
 
 - seed:
 
@@ -27,17 +30,8 @@ rs_ivf_gpu_knn(embd, ivf_params, seed, verbose)
 
 - verbose:
 
-  Integer. `0L` - quiet; `1L` - normal verbosity; `2L` - detailed
-  verbosity.
+  Integer. `0L` quiet, `1L` normal, `2L` detailed.
 
 ## Value
 
-A named list with:
-
-- `indices` - Integer matrix of shape cells x k with 0-based neighbour
-  indices.
-
-- `dist` - Numeric matrix of shape cells x k with distances to the
-  neighbours.
-
-- `dist_metric` - Character. The distance metric used.
+A named list with `indices`, `dist` and `dist_metric`.

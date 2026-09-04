@@ -1,6 +1,10 @@
-# Default parameters for CAGRA-style kNN search
+# Default parameters for CAGRA-style kNN search (deprecated)
 
-Default parameters for CAGRA-style kNN search
+**\[deprecated\]**
+
+The CAGRA, IVF and exhaustive GPU searches share one parameter wrapper
+now, see
+[`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md).
 
 ## Usage
 
@@ -25,36 +29,33 @@ params_sc_cagra(
 
 - k:
 
-  Integer. Number of neighbours to identify.
+  Integer. Number of neighbours. Carried on the returned list so the
+  deprecated generics can still read it.
 
 - ann_dist:
 
-  Character. Distance metric to use. One of `"euclidean"` or `"cosine"`.
+  Character. One of `"euclidean"` or `"cosine"`.
 
 - node_degree_final:
 
   Optional integer. Final node degree of the CAGRA navigational graph.
-  If `NULL`, defaults to `30` on the Rust side.
 
 - k_build:
 
-  Optional integer. Number of k-neighbours during the NNDescent build
-  phase before CAGRA pruning. If `NULL`, defaults to
-  `1.5 * node_degree_final` on the Rust side.
+  Optional integer. Node degree during the NNDescent build phase before
+  CAGRA pruning.
 
 - refine_sweeps:
 
-  Integer. Number of refinement sweeps during graph generation.
+  Integer. Ignored, the knob is gone.
 
 - max_iters:
 
-  Optional integer. Maximum iterations for the NNDescent rounds. If
-  `NULL`, determined automatically.
+  Optional integer. Ignored, the knob is gone.
 
 - n_trees:
 
-  Optional integer. Number of trees to use in the initial
-  GPU-accelerated forest. If `NULL`, determined automatically.
+  Optional integer. Number of trees in the initial forest.
 
 - delta:
 
@@ -62,24 +63,21 @@ params_sc_cagra(
 
 - rho:
 
-  Optional numeric. Sampling rate during NNDescent iterations. If
-  `NULL`, determined automatically.
+  Optional numeric. Sampling rate during NNDescent iterations.
 
 - beam_width:
 
-  Optional integer. Beam width during querying. If `NULL`, determined
-  automatically.
+  Optional integer. Beam width during querying.
 
 - max_beam_iters:
 
-  Optional integer. Maximum beam iterations. If `NULL`, determined
-  automatically.
+  Optional integer. Maximum beam iterations.
 
 - n_entry_points:
 
-  Optional integer. Number of entry points into the graph. If `NULL`,
-  determined automatically.
+  Optional integer. Number of entry points.
 
 ## Value
 
-A list with the parameters.
+A list with the parameters, as returned by
+[`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md).

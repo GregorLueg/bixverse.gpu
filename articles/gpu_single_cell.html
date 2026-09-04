@@ -6,6 +6,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>GPU-accelerated workflows for bixverse single cell • bixverse.gpu</title>
+<!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
+<link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" sizes="any" href="../favicon.ico">
+<link rel="manifest" href="../site.webmanifest">
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
@@ -14,6 +19,7 @@
 <link href="gpu_single_cell_files/libs/quarto-html/light-border.css" rel="stylesheet">
 <!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
 <meta property="og:title" content="GPU-accelerated workflows for bixverse single cell">
+<meta property="og:image" content="https://gregorlueg.github.io/bixverse.gpu/logo.png">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -23,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,11 +76,10 @@
 </nav><div class="container template-quarto">
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-
-      <h1>GPU-accelerated workflows for bixverse single cell</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>GPU-accelerated workflows for bixverse single cell</h1>
 
       <p class="author">Gregor Lueg</p>
-      <p class="date">2026-08-27</p>
+      <p class="date">2026-09-04</p>
 
 
       <div class="d-none name"><code></code></div>
@@ -96,14 +101,7 @@
 <li>
 <strong>GPU Harmony v2</strong> via <code><a href="../reference/harmony_v2_gpu_sc.html">harmony_v2_gpu_sc()</a></code>: a GPU implementation of Harmony v2 (<a href="https://www.biorxiv.org/content/10.64898/2026.03.16.711825v1" class="external-link">Patikas et al., 2026</a>) with the Arrowhead matrix inversion. Single batch covariate only on the GPU path. R is refined via full-batch Jacobi sweeps rather than the blockwise updates of the original: faster, but results are very similar rather than bit-identical. GPU floating point reduction ordering adds small further deviations.</li>
 <li>
-<strong>GPU kNN</strong> via two generics:
-<ul>
-<li>
-<code><a href="../reference/find_neighbours_gpu_sc.html">find_neighbours_gpu_sc()</a></code> covers <strong>exhaustive</strong> (exact brute force) and <strong>IVF</strong> (inverted file index, approximate).</li>
-<li>
-<code><a href="../reference/find_neighbours_cagra_sc.html">find_neighbours_cagra_sc()</a></code> covers <strong>CAGRA</strong>, which prunes an NNDescent graph and supports either direct kNN extraction or beam search.</li>
-</ul>
-</li>
+<strong>GPU kNN</strong> via <code><a href="../reference/find_neighbours_gpu_sc.html">find_neighbours_gpu_sc()</a></code>: <strong>exhaustive</strong> (exact brute force), <strong>IVF</strong> (inverted file index, approximate) and <strong>nndescent</strong>, which prunes an NNDescent graph into a CAGRA index and supports either direct kNN extraction or beam search.</li>
 <li>
 <strong>GPU fast clustering</strong> via <code><a href="../reference/fast_cluster_gpu_sc.html">fast_cluster_gpu_sc()</a></code>: k-means coarsening on the GPU, then centroid kNN, optional sNN and Louvain over a resolution grid on the CPU. Only stage one is on the device, so the payoff scales with cell count.</li>
 </ul>
@@ -149,88 +147,7 @@
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt;  Using light streaming for the CSR to CSC conversion.</span></span>
 <span><span class="co">#&gt; Loading observation data from h5ad files into DuckDB.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; Loading variable data into DuckDB.</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span></code></pre></div>
+<span><span class="co">#&gt; Loading variable data into DuckDB.</span></span></code></pre></div>
 </details>
 </div>
 </section><section class="level2"><h2 id="quality-control">Quality control<a class="anchor" aria-label="anchor" href="#quality-control"></a>
@@ -239,16 +156,6 @@
 <div class="cell">
 <details class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">var</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/get_sc_var.html" class="external-link">get_sc_var</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span></span>
 <span><span class="va">h5_metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/read_h5ad_metadata.html" class="external-link">read_h5ad_metadata</a></span><span class="op">(</span><span class="va">h5ad_paths</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span></span>
@@ -272,28 +179,8 @@
 <span>  streaming <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span></span>
 <span><span class="va">qc_df</span> <span class="op">&lt;-</span> <span class="va">sc_object</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cell_id"</span>, <span class="st">"lib_size"</span>, <span class="st">"nnz"</span>, <span class="st">"MT"</span><span class="op">)</span><span class="op">]</span><span class="op">]</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span></span>
 <span><span class="va">metrics</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  log10_lib_size <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">qc_df</span><span class="op">$</span><span class="va">lib_size</span><span class="op">)</span>,</span>
@@ -314,28 +201,8 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">sc_object</span><span class="op">[[</span><span class="st">"outlier"</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">qc</span><span class="op">$</span><span class="va">combined</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span><span class="va">cells_to_keep</span> <span class="op">&lt;-</span> <span class="va">qc_df</span><span class="op">[</span><span class="op">!</span><span class="va">qc</span><span class="op">$</span><span class="va">combined</span>, <span class="va">cell_id</span><span class="op">]</span></span>
-<span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/set_cells_to_keep.html" class="external-link">set_cells_to_keep</a></span><span class="op">(</span><span class="va">sc_object</span>, <span class="va">cells_to_keep</span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span></code></pre></div>
+<span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/set_cells_to_keep.html" class="external-link">set_cells_to_keep</a></span><span class="op">(</span><span class="va">sc_object</span>, <span class="va">cells_to_keep</span><span class="op">)</span></span></code></pre></div>
 </details>
 </div>
 </section><section class="level2"><h2 id="highly-variable-genes">Highly variable genes<a class="anchor" aria-label="anchor" href="#highly-variable-genes"></a>
@@ -347,27 +214,7 @@
 <span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
 <span>  hvg_no <span class="op">=</span> <span class="fl">2000L</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="gpu-accelerated-pca">GPU-accelerated PCA<a class="anchor" aria-label="anchor" href="#gpu-accelerated-pca"></a>
 </h2>
@@ -440,16 +287,6 @@
 <span>  batch_column <span class="op">=</span> <span class="st">"exp_id"</span>,</span>
 <span>  harmony_params <span class="op">=</span> <span class="fu"><a href="../reference/params_sc_harmony_v2_gpu.html">params_sc_harmony_v2_gpu</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span><span class="co">#&gt;  Auto-determined number of Harmony clusters: 100</span></span></code></pre></div>
 </div>
 <p>For comparison, the CPU version of v2; stored as <code>"harmony_v2"</code> so both embeddings coexist.</p>
@@ -460,16 +297,6 @@
 <span>  batch_column <span class="op">=</span> <span class="st">"exp_id"</span>,</span>
 <span>  harmony_params <span class="op">=</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/params_sc_harmony_v2.html" class="external-link">params_sc_harmony_v2</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span><span class="co">#&gt;  Auto-determined number of Harmony clusters: 100</span></span></code></pre></div>
 </div>
 <p>We will compare the two below, but only once we have kNN graphs on each embedding, since most of the batch correction metrics need a neighbourhood structure to begin with. Which is a convenient segue.</p>
@@ -484,9 +311,9 @@
 <code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_neighbours_gpu_sc.html">find_neighbours_gpu_sc</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
 <span>  embd_to_use <span class="op">=</span> <span class="st">"harmony_gpu"</span>,</span>
-<span>  gpu_method <span class="op">=</span> <span class="st">"exhaustive"</span>,</span>
+<span>  knn_method <span class="op">=</span> <span class="st">"exhaustive"</span>,</span>
+<span>  nn_params <span class="op">=</span> <span class="fu"><a href="../reference/params_nn_gpu.html">params_nn_gpu</a></span><span class="op">(</span>dist_metric <span class="op">=</span> <span class="st">"euclidean"</span><span class="op">)</span>,</span>
 <span>  k <span class="op">=</span> <span class="fl">15L</span>,</span>
-<span>  dist_metric <span class="op">=</span> <span class="st">"euclidean"</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Generating GPU kNN data with exhaustive method.</span></span>
@@ -495,14 +322,14 @@
 </div>
 </section><section class="level3"><h3 id="ivf">IVF<a class="anchor" aria-label="anchor" href="#ivf"></a>
 </h3>
-<p>Inverted file index. Partitions the embedding space into Voronoi cells and probes only a subset at query time. Worthwhile on larger data sets. The key knobs (<code>nlist</code> and <code>nprobe</code>) live in <code><a href="../reference/params_sc_ivf.html">params_sc_ivf()</a></code>; defaults are fine here.</p>
+<p>Inverted file index. Partitions the embedding space into Voronoi cells and probes only a subset at query time. Worthwhile on larger data sets. The key knobs (<code>n_list</code> and <code>n_probes</code>) live in <code><a href="../reference/params_nn_gpu.html">params_nn_gpu()</a></code>; defaults are fine here.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_neighbours_gpu_sc.html">find_neighbours_gpu_sc</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
 <span>  embd_to_use <span class="op">=</span> <span class="st">"harmony_gpu"</span>,</span>
-<span>  gpu_method <span class="op">=</span> <span class="st">"ivf"</span>,</span>
-<span>  ivf_params <span class="op">=</span> <span class="fu"><a href="../reference/params_sc_ivf.html">params_sc_ivf</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  knn_method <span class="op">=</span> <span class="st">"ivf"</span>,</span>
+<span>  nn_params <span class="op">=</span> <span class="fu"><a href="../reference/params_nn_gpu.html">params_nn_gpu</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Generating GPU kNN data with ivf method.</span></span>
@@ -514,14 +341,14 @@
 <p>Builds a pruned NNDescent graph, based on the fantastic work by <a href="https://arxiv.org/pdf/2308.15136" class="external-link">Nvidia</a>. (Unfortunately, some of the cuda primitives are not available in wgpu, but it is still a blazingly fast approximate kNN search even on wgpu). With <code>extract_knn = TRUE</code> you pull the kNN straight out of the NNDescent graph: faster, slightly less precise, useful for rapid iteration over parameters. With <code>extract_knn = FALSE</code> (the default) the function runs beam search over the pruned graph for higher recall, which matters more on larger, higher-dimensional data.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_neighbours_cagra_sc.html">find_neighbours_cagra_sc</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_neighbours_gpu_sc.html">find_neighbours_gpu_sc</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
 <span>  embd_to_use <span class="op">=</span> <span class="st">"harmony_gpu"</span>,</span>
-<span>  cagra_params <span class="op">=</span> <span class="fu"><a href="../reference/params_sc_cagra.html">params_sc_cagra</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  extract_knn <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  knn_method <span class="op">=</span> <span class="st">"nndescent"</span>,</span>
+<span>  nn_params <span class="op">=</span> <span class="fu"><a href="../reference/params_nn_gpu.html">params_nn_gpu</a></span><span class="op">(</span>extract_knn <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Generating GPU kNN data with CAGRA method.</span></span>
+<span><span class="co">#&gt; Generating GPU kNN data with nndescent method.</span></span>
 <span><span class="co">#&gt; Generating sNN graph (full: TRUE).</span></span>
 <span><span class="co">#&gt; Transforming sNN data to igraph.</span></span></code></pre></div>
 </div>
@@ -553,12 +380,12 @@
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/get_data.html" class="external-link">get_data</a></span><span class="op">(</span><span class="va">fast_cluster_res</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    cell_idx res_2 res_1.5 res_1 res_0.5</span></span>
 <span><span class="co">#&gt;       &lt;int&gt; &lt;int&gt;   &lt;int&gt; &lt;int&gt;   &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1:        1     4       4     0       0</span></span>
-<span><span class="co">#&gt; 2:        2     0       0     2       2</span></span>
-<span><span class="co">#&gt; 3:        3     4       4     0       0</span></span>
-<span><span class="co">#&gt; 4:        4     1       1     1       1</span></span>
-<span><span class="co">#&gt; 5:        6     4       4     0       0</span></span>
-<span><span class="co">#&gt; 6:        7     5       5     0       0</span></span></code></pre></div>
+<span><span class="co">#&gt; 1:        1     1       1     1       1</span></span>
+<span><span class="co">#&gt; 2:        2     3       3     3       3</span></span>
+<span><span class="co">#&gt; 3:        3     5       5     5       5</span></span>
+<span><span class="co">#&gt; 4:        4     6       0     0       0</span></span>
+<span><span class="co">#&gt; 5:        6     5       5     5       5</span></span>
+<span><span class="co">#&gt; 6:        7     2       2     2       2</span></span></code></pre></div>
 </div>
 <p>The grid stats are the interesting bit. <code>mean_ari</code> is how stable the partition is across seeds, <code>mean_conductance</code> how well separated the communities are (lower is better), and <code>mean_n_comms</code> how many you end up with.</p>
 <div class="cell">
@@ -566,16 +393,16 @@
 <code class="sourceCode R"><span><span class="va">fast_cluster_res</span><span class="op">$</span><span class="va">stats</span></span>
 <span><span class="co">#&gt;    resolution  mean_ari median_ari mean_conductance median_conductance</span></span>
 <span><span class="co">#&gt;         &lt;num&gt;     &lt;num&gt;      &lt;num&gt;            &lt;num&gt;              &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:        2.0 0.9067342  0.9127743      0.043760799        0.042998761</span></span>
-<span><span class="co">#&gt; 2:        1.5 0.8798453  0.8823469      0.037403069        0.038986467</span></span>
-<span><span class="co">#&gt; 3:        1.0 0.8665728  0.8674591      0.026264472        0.029157147</span></span>
-<span><span class="co">#&gt; 4:        0.5 0.9183958  0.9007552      0.008316441        0.002923434</span></span>
+<span><span class="co">#&gt; 1:        2.0 0.9235639  0.8987854      0.025006620                  0</span></span>
+<span><span class="co">#&gt; 2:        1.5 0.9353009  0.9689155      0.014672038                  0</span></span>
+<span><span class="co">#&gt; 3:        1.0 0.9293569  0.9689155      0.009172788                  0</span></span>
+<span><span class="co">#&gt; 4:        0.5 0.9407509  1.0000000      0.003602102                  0</span></span>
 <span><span class="co">#&gt;    mean_n_comms</span></span>
 <span><span class="co">#&gt;           &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:         9.68</span></span>
-<span><span class="co">#&gt; 2:         9.28</span></span>
-<span><span class="co">#&gt; 3:         8.36</span></span>
-<span><span class="co">#&gt; 4:         6.80</span></span></code></pre></div>
+<span><span class="co">#&gt; 1:         7.24</span></span>
+<span><span class="co">#&gt; 2:         6.96</span></span>
+<span><span class="co">#&gt; 3:         6.72</span></span>
+<span><span class="co">#&gt; 4:         6.32</span></span></code></pre></div>
 </div>
 <p>The k-means centroids and per-cell assignments are there too, if you asked for them:</p>
 <div class="cell">
@@ -584,7 +411,7 @@
 <span><span class="co">#&gt; [1] 76 32</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/get_kmeans_clusters.html" class="external-link">get_kmeans_clusters</a></span><span class="op">(</span><span class="va">fast_cluster_res</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 55 40 10 72 51 53</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 35  3 70 13 66 46</span></span></code></pre></div>
 </div>
 <p>Push the memberships onto the object and they behave like any other obs column:</p>
 <div class="cell">
@@ -593,28 +420,8 @@
 <span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
 <span>  obs_data <span class="op">=</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/get_data.html" class="external-link">get_data</a></span><span class="op">(</span><span class="va">fast_cluster_res</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span><span class="co">#&gt;    cell_idx  cell_id exp_id barcode_type cell_ranger_version   chemistry</span></span>
 <span><span class="co">#&gt;       &lt;int&gt;   &lt;char&gt; &lt;char&gt;       &lt;fctr&gt;              &lt;fctr&gt;      &lt;fctr&gt;</span></span>
 <span><span class="co">#&gt; 1:        1 pbmc3k_0 pbmc3k      GemCode              v1.1.0 Chromium_v1</span></span>
@@ -641,12 +448,12 @@
 <span><span class="co">#&gt; 6:       1 AAACGCTGACCAGT   774     2161    TRUE 0.03840815 0.4183249   FALSE</span></span>
 <span><span class="co">#&gt;    res_2 res_1.5 res_1 res_0.5</span></span>
 <span><span class="co">#&gt;    &lt;int&gt;   &lt;int&gt; &lt;int&gt;   &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1:     4       4     0       0</span></span>
-<span><span class="co">#&gt; 2:     0       0     2       2</span></span>
-<span><span class="co">#&gt; 3:     4       4     0       0</span></span>
-<span><span class="co">#&gt; 4:     1       1     1       1</span></span>
-<span><span class="co">#&gt; 5:     4       4     0       0</span></span>
-<span><span class="co">#&gt; 6:     5       5     0       0</span></span></code></pre></div>
+<span><span class="co">#&gt; 1:     1       1     1       1</span></span>
+<span><span class="co">#&gt; 2:     3       3     3       3</span></span>
+<span><span class="co">#&gt; 3:     5       5     5       5</span></span>
+<span><span class="co">#&gt; 4:     6       0     0       0</span></span>
+<span><span class="co">#&gt; 5:     5       5     5       5</span></span>
+<span><span class="co">#&gt; 6:     2       2     2       2</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="comparing-gpu-vs-cpu-harmony">Comparing GPU vs CPU Harmony<a class="anchor" aria-label="anchor" href="#comparing-gpu-vs-cpu-harmony"></a>
 </h2>
@@ -654,48 +461,18 @@
 <div class="cell">
 <div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">kbet_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_kbet_sc.html" class="external-link">calculate_kbet_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, batch_column <span class="op">=</span> <span class="st">"exp_id"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span><span class="va">asw_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_batch_asw_sc.html" class="external-link">calculate_batch_asw_sc</a></span><span class="op">(</span></span>
 <span>  <span class="va">sc_object</span>,</span>
 <span>  embd_to_use <span class="op">=</span> <span class="st">"harmony_gpu"</span>,</span>
 <span>  batch_column <span class="op">=</span> <span class="st">"exp_id"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span><span class="va">lisi_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_batch_lisi_sc.html" class="external-link">calculate_batch_lisi_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, batch_column <span class="op">=</span> <span class="st">"exp_id"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span></span>
 <span><span class="va">kbet_gpu</span></span>
 <span><span class="co">#&gt; kBET Scores</span></span>
 <span><span class="co">#&gt;   Cells: 5841 | Batches: 2 | Threshold: 0.050</span></span>
 <span><span class="co">#&gt;   Rejection rate:      0.2679 (1565 / 5841)</span></span>
-<span><span class="co">#&gt;   Mean Chi-Square:     3.0589 (expected under H0: 1)</span></span>
+<span><span class="co">#&gt;   Mean Chi-Square:     3.0560 (expected under H0: 1)</span></span>
 <span><span class="co">#&gt;   Median Chi-Square:   1.9151</span></span>
 <span><span class="va">asw_gpu</span></span>
 <span><span class="co">#&gt; Batch Silhouette Width</span></span>
@@ -705,66 +482,36 @@
 <span><span class="va">lisi_gpu</span></span>
 <span><span class="co">#&gt; Batch LISI Scores</span></span>
 <span><span class="co">#&gt;   Cells: 5841 | Batches: 2</span></span>
-<span><span class="co">#&gt;   Mean LISI:    1.4605 (1 = no mixing, 2 = perfect mixing)</span></span>
+<span><span class="co">#&gt;   Mean LISI:    1.4610 (1 = no mixing, 2 = perfect mixing)</span></span>
 <span><span class="co">#&gt;   Median LISI:  1.4706</span></span></code></pre></div>
 </div>
 <p>Same kNN setup on the CPU Harmony embedding:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_neighbours_cagra_sc.html">find_neighbours_cagra_sc</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_neighbours_gpu_sc.html">find_neighbours_gpu_sc</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
 <span>  embd_to_use <span class="op">=</span> <span class="st">"harmony_v2"</span>,</span>
-<span>  cagra_params <span class="op">=</span> <span class="fu"><a href="../reference/params_sc_cagra.html">params_sc_cagra</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  extract_knn <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  knn_method <span class="op">=</span> <span class="st">"nndescent"</span>,</span>
+<span>  nn_params <span class="op">=</span> <span class="fu"><a href="../reference/params_nn_gpu.html">params_nn_gpu</a></span><span class="op">(</span>extract_knn <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Generating GPU kNN data with CAGRA method.</span></span>
+<span><span class="co">#&gt; Generating GPU kNN data with nndescent method.</span></span>
 <span><span class="co">#&gt; Generating sNN graph (full: TRUE).</span></span>
 <span><span class="co">#&gt; Transforming sNN data to igraph.</span></span>
 <span></span>
 <span><span class="va">kbet_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_kbet_sc.html" class="external-link">calculate_kbet_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, batch_column <span class="op">=</span> <span class="st">"exp_id"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span><span class="va">asw_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_batch_asw_sc.html" class="external-link">calculate_batch_asw_sc</a></span><span class="op">(</span></span>
 <span>  <span class="va">sc_object</span>,</span>
 <span>  embd_to_use <span class="op">=</span> <span class="st">"harmony_v2"</span>,</span>
 <span>  batch_column <span class="op">=</span> <span class="st">"exp_id"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span><span class="va">lisi_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_batch_lisi_sc.html" class="external-link">calculate_batch_lisi_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, batch_column <span class="op">=</span> <span class="st">"exp_id"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
 <span></span>
 <span><span class="va">kbet_cpu</span></span>
 <span><span class="co">#&gt; kBET Scores</span></span>
 <span><span class="co">#&gt;   Cells: 5841 | Batches: 2 | Threshold: 0.050</span></span>
-<span><span class="co">#&gt;   Rejection rate:      0.2690 (1571 / 5841)</span></span>
-<span><span class="co">#&gt;   Mean Chi-Square:     3.0500 (expected under H0: 1)</span></span>
+<span><span class="co">#&gt;   Rejection rate:      0.2686 (1569 / 5841)</span></span>
+<span><span class="co">#&gt;   Mean Chi-Square:     3.0453 (expected under H0: 1)</span></span>
 <span><span class="co">#&gt;   Median Chi-Square:   1.9151</span></span>
 <span><span class="va">asw_cpu</span></span>
 <span><span class="co">#&gt; Batch Silhouette Width</span></span>
@@ -774,7 +521,7 @@
 <span><span class="va">lisi_cpu</span></span>
 <span><span class="co">#&gt; Batch LISI Scores</span></span>
 <span><span class="co">#&gt;   Cells: 5841 | Batches: 2</span></span>
-<span><span class="co">#&gt;   Mean LISI:    1.4629 (1 = no mixing, 2 = perfect mixing)</span></span>
+<span><span class="co">#&gt;   Mean LISI:    1.4634 (1 = no mixing, 2 = perfect mixing)</span></span>
 <span><span class="co">#&gt;   Median LISI:  1.4706</span></span></code></pre></div>
 </div>
 <p>Harmony has stochastic elements, so the two embeddings will not be identical, but the batch correction quality should be in the same ballpark across the metrics.</p>
@@ -783,14 +530,14 @@
 <p>Everyone loves visuals, even if you should not over-interpret them (<a href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011288" class="external-link">Chari et al., 2023</a>). <code><a href="../reference/umap_gpu_sc.html">umap_gpu_sc()</a></code> runs the full GPU-accelerated UMAP path: GPU kNN plus a GPU Adam optimiser (<code>optimiser = "adam_gpu"</code> in <code><a href="../reference/params_umap_gpu.html">params_umap_gpu()</a></code>, the default). On the CAGRA kNN we just computed above, it plugs straight in with <code>use_knn = TRUE</code>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_neighbours_cagra_sc.html">find_neighbours_cagra_sc</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_neighbours_gpu_sc.html">find_neighbours_gpu_sc</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
 <span>  embd_to_use <span class="op">=</span> <span class="st">"harmony_gpu"</span>,</span>
-<span>  cagra_params <span class="op">=</span> <span class="fu"><a href="../reference/params_sc_cagra.html">params_sc_cagra</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  extract_knn <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  knn_method <span class="op">=</span> <span class="st">"nndescent"</span>,</span>
+<span>  nn_params <span class="op">=</span> <span class="fu"><a href="../reference/params_nn_gpu.html">params_nn_gpu</a></span><span class="op">(</span>extract_knn <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Generating GPU kNN data with CAGRA method.</span></span>
+<span><span class="co">#&gt; Generating GPU kNN data with nndescent method.</span></span>
 <span><span class="co">#&gt; Generating sNN graph (full: TRUE).</span></span>
 <span><span class="co">#&gt; Transforming sNN data to igraph.</span></span>
 <span></span>
@@ -816,17 +563,7 @@
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"GPU Harmony v2 + GPU CAGRA kNN + GPU UMAP"</span>,</span>
 <span>    colour <span class="op">=</span> <span class="st">"Fast cluster:"</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span></code></pre></div>
+<span>  <span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
 <figure><p><img src="gpu_single_cell_files/figure-html/umap%20plot-1.png" width="672"></p>
@@ -846,17 +583,7 @@
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"GPU Harmony v2 + GPU CAGRA kNN + GPU UMAP"</span>,</span>
 <span>    colour <span class="op">=</span> <span class="st">"Batch:"</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span></code></pre></div>
+<span>  <span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
 <figure><p><img src="gpu_single_cell_files/figure-html/umap%20plot%20batch-1.png" width="672"></p>
@@ -889,17 +616,7 @@
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"GPU Harmony v2 + GPU t-SNE (GPU kNN, CPU optimiser)"</span>,</span>
 <span>    colour <span class="op">=</span> <span class="st">"Fast cluster:"</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span>
-<span><span class="co">#&gt; duckdb is storing downloaded extensions and secrets under ~/.duckdb:</span></span>
-<span><span class="co">#&gt; ℹ /Users/gregorlueg/.duckdb</span></span>
-<span><span class="co">#&gt; This persists across sessions and is shared with the DuckDB CLI and other clients.</span></span>
-<span><span class="co">#&gt; ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.</span></span>
-<span><span class="co">#&gt; ℹ See ?duckdb_storage for details and alternatives.</span></span></code></pre></div>
+<span>  <span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
 <figure><p><img src="gpu_single_cell_files/figure-html/tsne%20plot-1.png" width="672"></p>

@@ -12,12 +12,12 @@ params_nn_gpu(
   node_degree_final = NULL,
   k_build = NULL,
   n_tree = NULL,
-  refine_sweeps = 0L,
   delta = 0.001,
   rho = NULL,
   beam_width = NULL,
   max_beam_iters = NULL,
-  n_entry_points = NULL
+  n_entry_points = NULL,
+  extract_knn = FALSE
 )
 ```
 
@@ -54,10 +54,6 @@ params_nn_gpu(
   Optional integer. CAGRA GPU: Number of trees for graph build.
   Automatically if `NULL`.
 
-- refine_sweeps:
-
-  Integer. Number of refinement sweeps during graph generation.
-
 - delta:
 
   Float. CAGRA GPU: Early termination parameter for NN descent. Defaults
@@ -82,6 +78,12 @@ params_nn_gpu(
 
   Optional integer. CAGRA GPU: Number of entry points for beam search.
   If not provided, defaults to `8L`.
+
+- extract_knn:
+
+  Boolean. CAGRA GPU: Skip the beam search and take the graph the
+  NNDescent left it. Faster, slightly lower recall. Ignored by the other
+  two searches. Defaults to `FALSE`.
 
 ## Value
 

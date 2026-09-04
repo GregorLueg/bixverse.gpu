@@ -20,7 +20,7 @@ generate_knn_graph_gpu(
   knn_method = c("nndescent", "exhaustive", "ivf"),
   nn_params = params_nn_gpu(),
   seed = 42L,
-  extract_knn = FALSE,
+  extract_knn = lifecycle::deprecated(),
   .verbose = TRUE
 )
 ```
@@ -52,10 +52,9 @@ generate_knn_graph_gpu(
 
 - extract_knn:
 
-  Boolean. CAGRA-specific (`knn_method = "nndescent"`). Shall the beam
-  search be skipped and the kNN graph be extracted directly after the
-  NNDescent iteration and optional refine sweeps. Lower quality, but
-  faster.
+  **\[deprecated\]** Use the `extract_knn` field of
+  [`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md)
+  instead.
 
 - .verbose:
 
@@ -64,4 +63,4 @@ generate_knn_graph_gpu(
 ## Value
 
 A nearest neighbours class object with 1-indexed neighbour indices and
-distances.
+distances. Euclidean distances are true L2, not squared.

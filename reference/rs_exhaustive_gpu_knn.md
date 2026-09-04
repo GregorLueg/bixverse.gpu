@@ -1,6 +1,11 @@
-# Generate an GPU-accelerated kNN graph from an exhaustive search
+# Exhaustive GPU-accelerated kNN graph (deprecated)
 
-**\[experimental\]** Runs an exhaustive kNN search on the GPU.
+**\[deprecated\]**
+
+The three GPU kNN searches went behind one wrapper, see
+[`rs_gpu_knn()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_gpu_knn.md).
+Note that Euclidean distances now come back as true L2 rather than
+squared.
 
 ## Usage
 
@@ -20,21 +25,12 @@ rs_exhaustive_gpu_knn(embd, k, dist_metric, verbose)
 
 - dist_metric:
 
-  String. Distance metric; one of `c("euclidean", "cosine")`.
+  String. One of `c("euclidean", "cosine")`.
 
 - verbose:
 
-  Integer. `0L` - quiet; `1L` - normal verbosity; `2L` - detailed
-  verbosity.
+  Integer. `0L` quiet, `1L` normal, `2L` detailed.
 
 ## Value
 
-A named list with:
-
-- `indices` - Integer matrix of shape cells x k with 0-based neighbour
-  indices.
-
-- `dist` - Numeric matrix of shape cells x k with distances to the
-  neighbours.
-
-- `dist_metric` - Character. The distance metric used.
+A named list with `indices`, `dist` and `dist_metric`.

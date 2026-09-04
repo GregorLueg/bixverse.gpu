@@ -1,15 +1,10 @@
-# Generate CAGRA GPU kNN data for single cells
+# Generate CAGRA GPU kNN data for single cells (deprecated)
 
-This function generates a `SingleCellNearestNeighbour` object using the
-CAGRA (CUDA-Accelerated Graph Retrieval Approximation) algorithm via the
-`bixverse.gpu` package. CAGRA first builds a dense NNDescent graph, then
-prunes it into a sparser navigational graph optimised for beam-search
-traversal. Two retrieval modes are available: direct extraction from the
-NNDescent graph (`extract_knn = TRUE`), which is faster but slightly
-less precise, or beam search over the pruned CAGRA graph
-(`extract_knn = FALSE`), which is slower but yields higher recall. This
-function is the CAGRA counterpart of
-[`generate_knn_sc()`](https://gregorlueg.github.io/bixverse/reference/generate_knn_sc.html).
+**\[deprecated\]**
+
+CAGRA now sits behind
+[`generate_gpu_knn_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_gpu_knn_sc.md)
+as `knn_method = "nndescent"`.
 
 ## Usage
 
@@ -20,7 +15,7 @@ generate_cagra_knn_sc(
   cells_to_use = NULL,
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
-  cagra_params = params_sc_cagra(),
+  cagra_params = params_nn_gpu(),
   extract_knn = TRUE,
   seed = 42L,
   .verbose = TRUE
@@ -35,34 +30,30 @@ generate_cagra_knn_sc(
 
 - embd_to_use:
 
-  String. The embedding to use. Whichever you choose, it needs to be
-  part of the object for the selected modality.
+  String. The embedding to use.
 
 - cells_to_use:
 
-  Optional string vector. Cell names to include. If `NULL` all cells in
-  the object will be used.
+  Optional string vector. Cell names to include.
 
 - no_embd_to_use:
 
-  Optional integer. Number of embedding dimensions to use. If `NULL` all
-  will be used.
+  Optional integer. Number of embedding dimensions.
 
 - modality:
 
-  String. One of `c("rna", "adt")`. You can only use `"adt"` on
-  `SingleCellsMultiModal` class.
+  String. One of `c("rna", "adt")`.
 
 - cagra_params:
 
-  List. Output of
-  [`params_sc_cagra()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.md).
+  List. Output of the deprecated
+  [`params_sc_cagra()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.md),
+  or
+  [`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md).
 
 - extract_knn:
 
-  Logical. If `TRUE`, extracts the kNN graph directly from the NNDescent
-  result (faster, slightly lower precision). If `FALSE`, runs beam
-  search over the pruned CAGRA graph (slower, higher precision).
+  Logical. Skip the beam search.
 
 - seed:
 

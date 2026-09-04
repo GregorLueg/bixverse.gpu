@@ -1,12 +1,14 @@
-# Generate GPU kNN data for single cells (exhaustive / IVF)
+# Generate GPU kNN data for single cells
 
 This function generates a `SingleCellNearestNeighbour` object using
-GPU-accelerated kNN algorithms via the `bixverse.gpu` package. Two
+GPU-accelerated kNN algorithms via the `bixverse.gpu` package. Three
 methods are available: `"exhaustive"` performs an exact brute-force
 search on the GPU; `"ivf"` builds an inverted file index that partitions
 the embedding space into Voronoi cells and probes only a subset at query
-time, trading a small amount of precision for considerably faster search
-on larger data sets. This function is the GPU counterpart of
+time; and `"nndescent"` builds a dense NNDescent graph and prunes it
+into a CAGRA navigational graph, which is then either beam searched or
+handed back as the descent left it (`params_nn_gpu(extract_knn = TRUE)`,
+faster, lower recall). This function is the GPU counterpart of
 [`generate_knn_sc()`](https://gregorlueg.github.io/bixverse/reference/generate_knn_sc.html).
 
 ## Usage
@@ -18,11 +20,13 @@ generate_gpu_knn_sc(
   cells_to_use = NULL,
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
-  gpu_method = c("ivf", "exhaustive"),
-  ivf_params = params_sc_ivf(),
+  knn_method = c("nndescent", "exhaustive", "ivf"),
+  nn_params = params_nn_gpu(),
   k = 15L,
-  dist_metric = "euclidean",
   seed = 42L,
+  gpu_method = lifecycle::deprecated(),
+  ivf_params = lifecycle::deprecated(),
+  dist_metric = lifecycle::deprecated(),
   .verbose = TRUE
 )
 ```
@@ -53,29 +57,34 @@ generate_gpu_knn_sc(
   String. One of `c("rna", "adt")`. You can only use `"adt"` on
   `SingleCellsMultiModal` class.
 
-- gpu_method:
+- knn_method:
 
-  String. One of `c("exhaustive", "ivf")`.
+  String. One of `c("nndescent", "exhaustive", "ivf")`.
 
-- ivf_params:
+- nn_params:
 
   List. Output of
-  [`params_sc_ivf()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.md).
-  Only used when `gpu_method = "ivf"`.
+  [`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md).
 
 - k:
 
-  Integer. Number of neighbours. Only used when
-  `gpu_method = "exhaustive"`.
-
-- dist_metric:
-
-  String. One of `c("euclidean", "cosine")`. Only used when
-  `gpu_method = "exhaustive"`.
+  Integer. Number of neighbours.
 
 - seed:
 
   Integer. For reproducibility.
+
+- gpu_method:
+
+  **\[deprecated\]** Use `knn_method`.
+
+- ivf_params:
+
+  **\[deprecated\]** Use `nn_params`.
+
+- dist_metric:
+
+  **\[deprecated\]** Use `params_nn_gpu(dist_metric = )`.
 
 - .verbose:
 

@@ -66,8 +66,8 @@ umap_gpu(
 - knn_method:
 
   Character. (Approximate) Nearest neighbour method to use. One of
-  `"exhaustive"`, `"ivf"` or `"nndescent_gpu"`. These are
-  GPU-accelerated methods.
+  `"exhaustive"`, `"ivf"` or `"nndescent"`. These are GPU-accelerated
+  methods.
 
 - umap_params:
 

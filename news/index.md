@@ -1,5 +1,25 @@
 # Changelog
 
+## bixverse.gpu 0.3.0
+
+### Features
+
+- Take in substantial improvements on the Rust back-ends. The kNN
+  searches now return Euclidean distances instead of squared Euclidean
+  distances.
+
+### Deprecated
+
+- The previous interface of
+  [`generate_cagra_knn_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_cagra_knn_sc.md),
+  [`find_neighbours_cagra_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_cagra_sc.md),
+  [`params_sc_cagra()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.md),
+  [`rs_cagra_gpu_knn()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_cagra_gpu_knn.md),
+  [`rs_exhaustive_gpu_knn()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_exhaustive_gpu_knn.md),
+  [`params_sc_ivf()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.md)
+  has been deprecated. These are now all wired into
+  [`generate_gpu_knn_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_gpu_knn_sc.md).
+
 ## bixverse.gpu 0.2.8
 
 ### Features

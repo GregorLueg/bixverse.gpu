@@ -7,16 +7,12 @@ applications.
 
 - [`calculate_pca_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/calculate_pca_gpu_sc.md)
   : GPU-accelerated PCA for single cell
-- [`generate_cagra_knn_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_cagra_knn_sc.md)
-  : Generate CAGRA GPU kNN data for single cells
 - [`generate_gpu_knn_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_gpu_knn_sc.md)
-  : Generate GPU kNN data for single cells (exhaustive / IVF)
+  : Generate GPU kNN data for single cells
 - [`harmony_v2_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/harmony_v2_gpu_sc.md)
   : Run Harmony v2 (GPU)
 - [`find_neighbours_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_gpu_sc.md)
-  : Find GPU-accelerated neighbours for single cells (exhaustive / IVF)
-- [`find_neighbours_cagra_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_cagra_sc.md)
-  : Find neighbours via CAGRA GPU-acceleration for single cells
+  : Find GPU-accelerated neighbours for single cells
 - [`generate_seacells_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_seacells_gpu_sc.md)
   : Generate meta cells based on SEACells on the GPU
 - [`scenic_grn_sc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/scenic_grn_sc_gpu.md)
@@ -35,10 +31,6 @@ applications.
 - [`nmf_k_sweep_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/nmf_k_sweep_gpu_sc.md)
   : Sweep k for consensus NMF on the GPU over single cell or meta cell
   data
-- [`params_sc_ivf()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.md)
-  : Default parameters for IVF-GPU kNN search
-- [`params_sc_cagra()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.md)
-  : Default parameters for CAGRA-style kNN search
 - [`params_sc_harmony_v2_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_harmony_v2_gpu.md)
   : Default parameters for Harmony v2 GPU batch correction
 - [`params_sc_fast_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_fast_cluster_gpu.md)
@@ -106,32 +98,30 @@ can be found here.
   : Default parameters for GPU k-means
 - [`generate_knn_graph_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_knn_graph_gpu.md)
   : Generate a k-nearest neighbour graph (GPU-accelerated)
+- [`gpu_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/gpu_available.md)
+  : Is a GPU available
 
 ## Rust wrappers
 
 Everything rusty - only use this if you know what you are doing… Maybe
 useful for your own package? Use with care and read the documentation!
 
-- [`rs_cagra_gpu_knn()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_cagra_gpu_knn.md)
-  **\[experimental\]** : Generate a CAGRA-style GPU-accelerated kNN
-  graph
 - [`rs_cor_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_cor_gpu.md)
   **\[experimental\]** : GPU-accelerated correlation calculations
 - [`rs_cov_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_cov_gpu.md)
   **\[experimental\]** : GPU-accelerated covariance calculations
-- [`rs_exhaustive_gpu_knn()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_exhaustive_gpu_knn.md)
-  **\[experimental\]** : Generate an GPU-accelerated kNN graph from an
-  exhaustive search
 - [`rs_fast_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_fast_cluster_gpu.md)
   **\[experimental\]** : GPU: fast Louvain clustering on the data
 - [`rs_fast_cluster_grid_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_fast_cluster_grid_gpu.md)
   **\[experimental\]** : GPU: fast Louvain clustering on the data (with
   multiple seeds)
+- [`rs_gpu_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_gpu_available.md)
+  : Check whether a usable GPU adapter is present
 - [`rs_harmony_v2_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_harmony_v2_gpu.md)
   **\[experimental\]** : Harmony batch correction in Rust (version 2,
   GPU-accelerated)
-- [`rs_ivf_gpu_knn()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_ivf_gpu_knn.md)
-  **\[experimental\]** : Generate an IVF-GPU-accelerated kNN graph
+- [`rs_gpu_knn()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_gpu_knn.md)
+  **\[experimental\]** : Generate a GPU-accelerated kNN graph
 - [`rs_kmeans_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_kmeans_gpu.md)
   **\[experimental\]** : GPU-accelerated k-means
 - [`rs_mc_scenic_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_mc_scenic_gpu.md)
@@ -185,3 +175,28 @@ useful for your own package? Use with care and read the documentation!
 - [`rs_tsne_from_knn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_tsne_from_knn_gpu.md)
   **\[experimental\]** : tSNE implementation from a pre-computed kNN
   graph
+
+## Deprecated
+
+Kept so existing scripts keep running. Each one warns and forwards to
+its replacement.
+
+- [`generate_cagra_knn_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_cagra_knn_sc.md)
+  **\[deprecated\]** : Generate CAGRA GPU kNN data for single cells
+  (deprecated)
+- [`find_neighbours_cagra_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_cagra_sc.md)
+  **\[deprecated\]** : Find neighbours via CAGRA GPU-acceleration for
+  single cells (deprecated)
+- [`params_sc_cagra()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.md)
+  **\[deprecated\]** : Default parameters for CAGRA-style kNN search
+  (deprecated)
+- [`params_sc_ivf()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_ivf.md)
+  **\[deprecated\]** : Default parameters for IVF-GPU kNN search
+  (deprecated)
+- [`rs_cagra_gpu_knn()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_cagra_gpu_knn.md)
+  **\[deprecated\]** : CAGRA-style GPU-accelerated kNN graph
+  (deprecated)
+- [`rs_exhaustive_gpu_knn()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_exhaustive_gpu_knn.md)
+  **\[deprecated\]** : Exhaustive GPU-accelerated kNN graph (deprecated)
+- [`rs_ivf_gpu_knn()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_ivf_gpu_knn.md)
+  **\[deprecated\]** : IVF-GPU-accelerated kNN graph (deprecated)

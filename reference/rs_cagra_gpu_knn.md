@@ -1,9 +1,11 @@
-# Generate a CAGRA-style GPU-accelerated kNN graph
+# CAGRA-style GPU-accelerated kNN graph (deprecated)
 
-**\[experimental\]** Builds a kNN graph from an embedding matrix using
-the CAGRA algorithm on the wgpu backend. Supports two retrieval modes:
-direct extraction from the NNDescent graph, or beam search over the
-pruned CAGRA graph. The former tends to have worse Recall.
+**\[deprecated\]**
+
+The three GPU kNN searches went behind one wrapper, see
+[`rs_gpu_knn()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_gpu_knn.md).
+Note that Euclidean distances now come back as true L2 rather than
+squared.
 
 ## Usage
 
@@ -19,14 +21,12 @@ rs_cagra_gpu_knn(embd, cagra_params, extract_knn, seed, verbose)
 
 - cagra_params:
 
-  A named list with the parameters, see
-  [`params_sc_cagra()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.md)
+  Named list, see
+  [`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md).
 
 - extract_knn:
 
-  Logical. If `TRUE`, extracts the kNN graph directly from the NNDescent
-  result (faster, slightly lower precision). If `FALSE`, runs beam
-  search over the pruned CAGRA graph (slower, higher precision).
+  Logical. Skip the beam search.
 
 - seed:
 
@@ -34,17 +34,8 @@ rs_cagra_gpu_knn(embd, cagra_params, extract_knn, seed, verbose)
 
 - verbose:
 
-  Integer. `0L` - quiet; `1L` - normal verbosity; `2L` - detailed
-  verbosity.
+  Integer. `0L` quiet, `1L` normal, `2L` detailed.
 
 ## Value
 
-A named list with:
-
-- `indices` - Integer matrix of shape cells x k_query with 0-based
-  neighbour indices.
-
-- `dist` - Numeric matrix of shape cells x k_query with distances to the
-  neighbours.
-
-- `dist_metric` - Character. The distance metric used.
+A named list with `indices`, `dist` and `dist_metric`.
