@@ -1,3 +1,4 @@
+use crate::ensure_gpu;
 use bixverse_rs::gpu::sc_gpu::harmony_gpu::{harmony_v2_gpu, HarmonyParamsV2Gpu};
 use bixverse_rs::prelude::*;
 use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
@@ -41,6 +42,8 @@ fn rs_harmony_v2_gpu(
     seed: usize,
     verbose: usize,
 ) -> extendr_api::Result<RArray<f64, 2>> {
+    ensure_gpu()?;
+
     // prepare everything
     let device: WgpuDevice = Default::default();
     let mut batch_indices: Vec<Vec<usize>> = Vec::new();

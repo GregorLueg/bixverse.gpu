@@ -32,6 +32,8 @@ k_means_cluster_gpu <- function(
   seed = 42L,
   .verbose = TRUE
 ) {
+  assert_gpu()
+
   if (is.data.frame(data)) {
     data <- as.matrix(data)
   }

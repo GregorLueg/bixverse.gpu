@@ -11,6 +11,9 @@ use cubecl::Runtime;
 use extendr_api::prelude::*;
 use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
+use manifolds_rs::prelude::run_ann_search_gpu;
+use std::panic::{self, AssertUnwindSafe};
+use std::sync::OnceLock;
 
 pub mod embeddings;
 pub mod ml;
@@ -28,8 +31,8 @@ pub use single_cell::seacells_gpu;
 use crate::embeddings::parametric_umap::*;
 use crate::embeddings::tsne_gpu::tsne_manifold_gpu;
 use crate::embeddings::umap_gpu::umap_manifold_gpu;
+use crate::embeddings::utils::get_params_nn_ann_gpu;
 use crate::ml::clustering::*;
-use crate::single_cell::knn_gpu::*;
 use crate::utils::nearest_neighbours_to_rust;
 
 /////////////
@@ -46,10 +49,10 @@ extendr_module! {
     use scrublet_gpu;
     use seacells_gpu;
     use fast_clusters_gpu;
+    // device
+    fn rs_gpu_available;
     // knn
-    fn rs_cagra_gpu_knn;
-    fn rs_ivf_gpu_knn;
-    fn rs_exhaustive_gpu_knn;
+    fn rs_gpu_knn;
     // umap parametric
     fn rs_parametric_umap;
     fn rs_parametric_umap_predict;
@@ -181,85 +184,81 @@ fn parse_precision(use_high_precision: Nullable<Rbool>, n: usize) -> FloatingPoi
     }
 }
 
+////////////
+// Device //
+////////////
+
+/// Check whether a usable GPU adapter is present
+///
+/// @description
+/// Probes for a WGPU adapter by initialising the same client every GPU
+/// function in this package goes through, so a `TRUE` here means those
+/// functions will actually run rather than that a device merely exists.
+/// The result is cached for the session and the client stays warm, so the
+/// first real call after a successful probe skips the setup cost.
+///
+/// @returns Boolean. `TRUE` when a WGPU adapter could be initialised.
+#[extendr]
+fn rs_gpu_available() -> bool {
+    static AVAILABLE: OnceLock<bool> = OnceLock::new();
+    *AVAILABLE.get_or_init(|| {
+        // cubecl gives no fallible entry point: `request_adapter` ends in an
+        // `expect`, so the absence of a GPU arrives as a panic rather than an
+        // Err. Catching it is the only probe available. The hook is swapped
+        // out first because extendr installs one that prints, and here a
+        // failed probe is the expected answer on a CPU-only machine, not a
+        // fault worth reporting.
+        let hook = panic::take_hook();
+        panic::set_hook(Box::new(|_| {}));
+        let probe = panic::catch_unwind(AssertUnwindSafe(|| {
+            let device = WgpuDevice::default();
+            let _ = WgpuRuntime::client(&device);
+        }));
+        panic::set_hook(hook);
+        probe.is_ok()
+    })
+}
+
+/// Hard error when no GPU adapter is present.
+///
+/// The backstop for the R-side `assert_gpu()`: `rs_*` wrappers are exported,
+/// so they are reachable without going through the R user API. Without this
+/// the missing adapter surfaces as a panic out of cubecl rather than an R
+/// condition. Free after the first call, the probe is cached.
+pub(crate) fn ensure_gpu() -> extendr_api::Result<()> {
+    if rs_gpu_available() {
+        Ok(())
+    } else {
+        Err(extendr_api::Error::Other(
+            "no usable GPU adapter found. bixverse.gpu needs a working WGPU \
+             adapter; check your GPU drivers and \
+             https://burn.dev/books/cubecl/getting-started/installation.html. \
+             Probe with `gpu_available()`."
+                .to_string(),
+        ))
+    }
+}
+
 /////////
 // kNN //
 /////////
 
-/// Generate a CAGRA-style GPU-accelerated kNN graph
+/// Generate a GPU-accelerated kNN graph
 ///
 /// @description
 /// `r lifecycle::badge("experimental")`
-/// Builds a kNN graph from an embedding matrix using the CAGRA algorithm on
-/// the wgpu backend. Supports two retrieval modes: direct extraction from the
-/// NNDescent graph, or beam search over the pruned CAGRA graph. The former
-/// tends to have worse Recall.
+/// Builds a kNN graph from an embedding matrix on the wgpu backend. Three
+/// searches are available: an exact brute-force scan, an IVF index that probes
+/// a subset of Voronoi cells, and a CAGRA-style NNDescent graph that is either
+/// beam searched or handed back as the descent left it.
+///
+/// Euclidean distances come back as true L2, not squared.
 ///
 /// @param embd Numeric matrix of embeddings, cells x features.
-/// @param cagra_params A named list with the parameters, see
-/// [bixverse.gpu::params_sc_cagra()]
-/// @param extract_knn Logical. If \code{TRUE}, extracts the kNN graph directly
-/// from the NNDescent result (faster, slightly lower precision). If
-/// \code{FALSE}, runs beam search over the pruned CAGRA graph (slower, higher
-/// precision).
-/// @param seed Integer. Random seed for reproducibility.
-/// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
-/// detailed verbosity.
-///
-/// @return A named list with:
-/// \itemize{
-///  \item `indices` - Integer matrix of shape cells x k_query with
-///  0-based neighbour indices.
-///  \item `dist` - Numeric matrix of shape cells x k_query with distances to
-///  the neighbours.
-///  \item `dist_metric` - Character. The distance metric used.
-/// }
-///
-/// @export
-#[extendr]
-fn rs_cagra_gpu_knn(
-    embd: RMatrix<f64>,
-    cagra_params: List,
-    extract_knn: bool,
-    seed: usize,
-    verbose: usize,
-) -> Result<List, extendr_api::Error> {
-    let verbosity = parse_verbosity_level(verbose);
-
-    let data = r_matrix_to_faer_fp32(&embd);
-    let params = CagraParams::from_r_list(cagra_params)?;
-
-    let (indices, dist) = cagra_knn_with_dist(
-        data.as_ref(),
-        &params,
-        true,
-        extract_knn,
-        seed,
-        verbosity.normal_verbosity(),
-    )
-    .to_extendr()?;
-
-    let knn_dist = dist.unwrap();
-
-    let index_mat = Mat::from_fn(embd.nrows(), params.k, |i, j| indices[i][j] as i32);
-    let dist_mat = Mat::from_fn(embd.nrows(), params.k, |i, j| knn_dist[i][j] as f64);
-
-    Ok(list!(
-        indices = faer_to_r_matrix(index_mat.as_ref()),
-        dist = faer_to_r_matrix(dist_mat.as_ref()),
-        dist_metric = params.ann_dist
-    ))
-}
-
-/// Generate an IVF-GPU-accelerated kNN graph
-///
-/// @description
-/// `r lifecycle::badge("experimental")`
-/// Builds an IVF index over the provided embedding matrix and queries each
-/// vector against it to produce a kNN graph. Runs on the wgpu backend.
-///
-/// @param embd Numeric matrix of embeddings, cells x features.
-/// @param ivf_params A named list with the parameters, see
-/// [bixverse.gpu::params_sc_ivf()]
+/// @param k Integer. Number of neighbours to return, self excluded.
+/// @param knn_method String. One of `c("nndescent", "exhaustive", "ivf")`.
+/// @param nn_params A named list with the parameters, see
+/// [bixverse.gpu::params_nn_gpu()]
 /// @param seed Integer. Random seed for reproducibility.
 /// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 /// detailed verbosity.
@@ -275,90 +274,56 @@ fn rs_cagra_gpu_knn(
 ///
 /// @export
 #[extendr]
-fn rs_ivf_gpu_knn(
-    embd: RMatrix<f64>,
-    ivf_params: List,
-    seed: usize,
-    verbose: usize,
-) -> Result<List, extendr_api::Error> {
-    let verbosity = parse_verbosity_level(verbose);
-
-    let data = r_matrix_to_faer_fp32(&embd);
-    let params = IvfGpuParams::from_r_list(ivf_params)?;
-
-    let (indices, dist) = gpu_ivf_knn_with_dist(
-        data.as_ref(),
-        &params,
-        true,
-        seed,
-        verbosity.normal_verbosity(),
-    )
-    .to_extendr()?;
-
-    let knn_dist = dist.unwrap();
-
-    let index_mat = Mat::from_fn(embd.nrows(), params.k, |i, j| indices[i][j] as i32);
-    let dist_mat = Mat::from_fn(embd.nrows(), params.k, |i, j| knn_dist[i][j] as f64);
-
-    Ok(list!(
-        indices = faer_to_r_matrix(index_mat.as_ref()),
-        dist = faer_to_r_matrix(dist_mat.as_ref()),
-        dist_metric = params.ann_dist
-    ))
-}
-
-/// Generate an GPU-accelerated kNN graph from an exhaustive search
-///
-/// @description
-/// `r lifecycle::badge("experimental")`
-/// Runs an exhaustive kNN search on the GPU.
-///
-/// @param embd Numeric matrix of embeddings, cells x features.
-/// @param k Integer. Number of neighbours to return.
-/// @param dist_metric String. Distance metric; one of
-/// `c("euclidean", "cosine")`.
-/// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
-/// detailed verbosity.
-///
-/// @return A named list with:
-/// \itemize{
-///  \item `indices` - Integer matrix of shape cells x k with 0-based neighbour
-///  indices.
-///  \item `dist` - Numeric matrix of shape cells x k with distances to the
-///  neighbours.
-///  \item `dist_metric` - Character. The distance metric used.
-/// }
-///
-/// @export
-#[extendr]
-fn rs_exhaustive_gpu_knn(
+fn rs_gpu_knn(
     embd: RMatrix<f64>,
     k: usize,
-    dist_metric: String,
+    knn_method: String,
+    nn_params: List,
+    seed: usize,
     verbose: usize,
 ) -> Result<List, extendr_api::Error> {
-    let verbosity = parse_verbosity_level(verbose);
+    ensure_gpu()?;
 
     let data = r_matrix_to_faer_fp32(&embd);
+    let params = get_params_nn_ann_gpu::<f32>(nn_params)?;
+    let device: WgpuDevice = Default::default();
 
-    let (indices, dist) = gpu_exhaustive_knn_with_dist(
+    let (indices, dist) = run_ann_search_gpu::<f32, WgpuRuntime>(
         data.as_ref(),
         k,
-        &dist_metric,
-        true,
-        verbosity.normal_verbosity(),
+        knn_method,
+        &params,
+        device.clone(),
+        seed,
+        verbose,
     )
     .to_extendr()?;
 
-    let knn_dist = dist.unwrap();
+    // manifolds-rs does not release the pool, and these indices are large
+    // enough that leaving them behind starves the next call.
+    let client = WgpuRuntime::client(&device);
+    client.memory_cleanup();
+
+    // An approximate backend can hand back a short row (IVF probing too few
+    // lists, or a CAGRA graph narrower than k). Indexing straight into it would
+    // panic, which takes the whole R session with it.
+    if let Some(short) = indices.iter().find(|row| row.len() < k) {
+        return Err(extendr_api::Error::Other(format!(
+            "The kNN search returned {} neighbours where {} were asked for. \
+             Widen the search (`n_probes` for IVF, `node_degree_final` for \
+             nndescent) or lower k.",
+            short.len(),
+            k
+        )));
+    }
 
     let index_mat = Mat::from_fn(embd.nrows(), k, |i, j| indices[i][j] as i32);
-    let dist_mat = Mat::from_fn(embd.nrows(), k, |i, j| knn_dist[i][j] as f64);
+    let dist_mat = Mat::from_fn(embd.nrows(), k, |i, j| dist[i][j] as f64);
 
     Ok(list!(
         indices = faer_to_r_matrix(index_mat.as_ref()),
         dist = faer_to_r_matrix(dist_mat.as_ref()),
-        dist_metric = dist_metric
+        dist_metric = params.dist_metric
     ))
 }
 
@@ -410,6 +375,8 @@ fn rs_parametric_umap(
     let data = r_matrix_to_faer_fp32(&data);
 
     if use_gpu {
+        ensure_gpu()?;
+
         let device = WgpuDevice::default();
         let (res, model) = parametric_umap_manifold::<GpuBackend>(
             data.as_ref(),
@@ -531,10 +498,13 @@ fn rs_deserialise_parametric_umap(bytes: Vec<u8>) -> Result<Robj, extendr_api::E
     }
     let (tag, payload) = (bytes[0], &bytes[1..]);
     let model = match tag {
-        0 => PUmapModel::Gpu(
-            TrainedUmapModel::from_bytes(payload, WgpuDevice::default())
-                .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
-        ),
+        0 => {
+            ensure_gpu()?;
+            PUmapModel::Gpu(
+                TrainedUmapModel::from_bytes(payload, WgpuDevice::default())
+                    .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
+            )
+        }
         1 => PUmapModel::Cpu(
             TrainedUmapModel::from_bytes(payload, FlexDevice)
                 .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
@@ -584,6 +554,8 @@ fn rs_kmeans_gpu(
     seed: usize,
     verbose: bool,
 ) -> Result<List, extendr_api::Error> {
+    ensure_gpu()?;
+
     let data = r_matrix_to_faer_fp32(&data);
 
     let kmeans_params = KMeansGpuParams::from_r_list(kmeans_params)?;
@@ -629,6 +601,8 @@ fn rs_cor_gpu(
     spearman: bool,
     verbose: bool,
 ) -> Result<RMatrix<f64>, extendr_api::Error> {
+    ensure_gpu()?;
+
     let data = r_matrix_to_faer_fp32(&x);
     let device: WgpuDevice = Default::default();
 
@@ -676,6 +650,8 @@ fn rs_cor_gpu(
 /// @export
 #[extendr]
 fn rs_cov_gpu(x: RMatrix<f64>, verbose: bool) -> Result<RMatrix<f64>, extendr_api::Error> {
+    ensure_gpu()?;
+
     let data = r_matrix_to_faer_fp32(&x);
     let device: WgpuDevice = Default::default();
 
@@ -735,6 +711,8 @@ fn rs_umap_gpu(
     use_high_precision: Nullable<Rbool>,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
+    ensure_gpu()?;
+
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
     let precision = parse_precision(use_high_precision, embd.nrows());
 
@@ -826,6 +804,8 @@ fn rs_umap_from_knn_gpu(
     use_high_precision: Nullable<Rbool>,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
+    ensure_gpu()?;
+
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
     let precision = parse_precision(use_high_precision, embd.nrows());
 
@@ -924,6 +904,8 @@ fn rs_tsne_gpu(
     use_high_precision: Nullable<Rbool>,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
+    ensure_gpu()?;
+
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
     let precision = parse_precision(use_high_precision, embd.nrows());
 
@@ -1013,6 +995,8 @@ fn rs_tsne_from_knn_gpu(
     use_high_precision: Nullable<Rbool>,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
+    ensure_gpu()?;
+
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
     let precision = parse_precision(use_high_precision, embd.nrows());
 

@@ -5,48 +5,34 @@
 #' @useDynLib bixverse.gpu, .registration = TRUE
 NULL
 
-#' Generate a CAGRA-style GPU-accelerated kNN graph
+#' Check whether a usable GPU adapter is present
 #'
 #' @description
-#' `r lifecycle::badge("experimental")`
-#' Builds a kNN graph from an embedding matrix using the CAGRA algorithm on
-#' the wgpu backend. Supports two retrieval modes: direct extraction from the
-#' NNDescent graph, or beam search over the pruned CAGRA graph. The former
-#' tends to have worse Recall.
+#' Probes for a WGPU adapter by initialising the same client every GPU
+#' function in this package goes through, so a `TRUE` here means those
+#' functions will actually run rather than that a device merely exists.
+#' The result is cached for the session and the client stays warm, so the
+#' first real call after a successful probe skips the setup cost.
 #'
-#' @param embd Numeric matrix of embeddings, cells x features.
-#' @param cagra_params A named list with the parameters, see
-#' [bixverse.gpu::params_sc_cagra()]
-#' @param extract_knn Logical. If \code{TRUE}, extracts the kNN graph directly
-#' from the NNDescent result (faster, slightly lower precision). If
-#' \code{FALSE}, runs beam search over the pruned CAGRA graph (slower, higher
-#' precision).
-#' @param seed Integer. Random seed for reproducibility.
-#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
-#' detailed verbosity.
-#'
-#' @return A named list with:
-#' \itemize{
-#'  \item `indices` - Integer matrix of shape cells x k_query with
-#'  0-based neighbour indices.
-#'  \item `dist` - Numeric matrix of shape cells x k_query with distances to
-#'  the neighbours.
-#'  \item `dist_metric` - Character. The distance metric used.
-#' }
-#'
-#' @export
-rs_cagra_gpu_knn <- function(embd, cagra_params, extract_knn, seed, verbose) .Call(wrap__rs_cagra_gpu_knn, embd, cagra_params, extract_knn, seed, verbose)
+#' @returns Boolean. `TRUE` when a WGPU adapter could be initialised.
+rs_gpu_available <- function() .Call(wrap__rs_gpu_available)
 
-#' Generate an IVF-GPU-accelerated kNN graph
+#' Generate a GPU-accelerated kNN graph
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
-#' Builds an IVF index over the provided embedding matrix and queries each
-#' vector against it to produce a kNN graph. Runs on the wgpu backend.
+#' Builds a kNN graph from an embedding matrix on the wgpu backend. Three
+#' searches are available: an exact brute-force scan, an IVF index that probes
+#' a subset of Voronoi cells, and a CAGRA-style NNDescent graph that is either
+#' beam searched or handed back as the descent left it.
+#'
+#' Euclidean distances come back as true L2, not squared.
 #'
 #' @param embd Numeric matrix of embeddings, cells x features.
-#' @param ivf_params A named list with the parameters, see
-#' [bixverse.gpu::params_sc_ivf()]
+#' @param k Integer. Number of neighbours to return, self excluded.
+#' @param knn_method String. One of `c("nndescent", "exhaustive", "ivf")`.
+#' @param nn_params A named list with the parameters, see
+#' [bixverse.gpu::params_nn_gpu()]
 #' @param seed Integer. Random seed for reproducibility.
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
@@ -61,32 +47,7 @@ rs_cagra_gpu_knn <- function(embd, cagra_params, extract_knn, seed, verbose) .Ca
 #' }
 #'
 #' @export
-rs_ivf_gpu_knn <- function(embd, ivf_params, seed, verbose) .Call(wrap__rs_ivf_gpu_knn, embd, ivf_params, seed, verbose)
-
-#' Generate an GPU-accelerated kNN graph from an exhaustive search
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#' Runs an exhaustive kNN search on the GPU.
-#'
-#' @param embd Numeric matrix of embeddings, cells x features.
-#' @param k Integer. Number of neighbours to return.
-#' @param dist_metric String. Distance metric; one of
-#' `c("euclidean", "cosine")`.
-#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
-#' detailed verbosity.
-#'
-#' @return A named list with:
-#' \itemize{
-#'  \item `indices` - Integer matrix of shape cells x k with 0-based neighbour
-#'  indices.
-#'  \item `dist` - Numeric matrix of shape cells x k with distances to the
-#'  neighbours.
-#'  \item `dist_metric` - Character. The distance metric used.
-#' }
-#'
-#' @export
-rs_exhaustive_gpu_knn <- function(embd, k, dist_metric, verbose) .Call(wrap__rs_exhaustive_gpu_knn, embd, k, dist_metric, verbose)
+rs_gpu_knn <- function(embd, k, knn_method, nn_params, seed, verbose) .Call(wrap__rs_gpu_knn, embd, k, knn_method, nn_params, seed, verbose)
 
 #' Parametric UMAP implementation
 #'

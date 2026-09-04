@@ -1,6 +1,6 @@
 Package: bixverse.gpu
 Title: GPU-accelerated methods for the bixverse
-Version: 0.2.8
+Version: 0.3.0
 Authors@R: 
     person(
         given = "Gregor", 
@@ -18,27 +18,27 @@ SystemRequirements: Cargo (Rust's package manager), rustc >= 1.95, xz
 Depends: 
     R (>= 4.2)
 Suggests: 
+    BiocNeighbors,
     bixverse.plots,
     knitr,
     quarto,
     tinytest
 Imports: 
-    bixverse (>= 0.4.10),
+    bixverse (>= 0.5.0),
     checkmate,
     data.table,
+    igraph,
     lifecycle,
     magrittr,
-    manifoldsR (>= 0.2.11),
+    manifoldsR (>= 0.3.0),
     purrr,
     qs2,
     rextendr,
     S7,
     utils,
     zeallot
-Remotes:
-    GregorLueg/bixverse,
-    GregorLueg/bixverse.plots,
-    GregorLueg/manifoldsR
+Additional_repositories:
+    https://gregorlueg.r-universe.dev
 VignetteBuilder: quarto
 URL: https://gregorlueg.github.io/bixverse.gpu/
 Config/roxygen2/version: 8.1.0

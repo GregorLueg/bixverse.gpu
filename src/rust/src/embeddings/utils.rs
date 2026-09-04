@@ -1,5 +1,6 @@
 //! Utility functions (mostly copied over from manifoldsR)
 
+use ann_search_rs::prelude::AnnSearchFloat;
 use extendr_api::*;
 use manifolds_rs::prelude::*;
 use std::collections::HashMap;
@@ -88,9 +89,15 @@ pub fn get_params_nn(r_list: List) -> Result<NearestNeighbourParams<f32>> {
         .map(|v| v as usize);
 
     let n_probes = nn_params
-        .get("n_probe")
+        .get("n_probes")
         .and_then(|v| v.as_integer())
         .map(|v| v as usize);
+
+    // nndescent
+    let extract_knn = nn_params
+        .get("extract_knn")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
 
     Ok(NearestNeighbourParams {
         dist_metric,
@@ -105,6 +112,97 @@ pub fn get_params_nn(r_list: List) -> Result<NearestNeighbourParams<f32>> {
         bt_budget,
         n_list,
         n_probes,
+        extract_knn,
+    })
+}
+
+////////////////////////
+// Nearest neighbours //
+////////////////////////
+
+/// Helper function to generate the GPU nearest neighbour parameters
+///
+/// ### Params
+///
+/// * `r_list` - The list that has the nearest neighbour graph generation
+///   parameters.
+///
+/// ### Returns
+///
+/// The `NearestNeighbourParamsGpu` with sensible defaults if not found in
+/// the list.
+pub fn get_params_nn_ann_gpu<T>(r_list: List) -> Result<NearestNeighbourParamsGpu<T>>
+where
+    T: AnnSearchFloat,
+{
+    let nn_params: HashMap<&str, Robj> = r_list.try_into()?;
+    let dist_metric = std::string::String::from(
+        nn_params
+            .get("dist_metric")
+            .and_then(|v| v.as_str())
+            .unwrap_or("euclidean"),
+    );
+    let n_list = nn_params
+        .get("n_list")
+        .and_then(|v| v.as_integer())
+        .map(|v| v as usize);
+    let n_probes = nn_params
+        .get("n_probes")
+        .and_then(|v| v.as_integer())
+        .map(|v| v as usize);
+    // this is the final node degree of the CAGRA graph
+    let k = nn_params
+        .get("node_degree_final")
+        .and_then(|v| v.as_integer())
+        .map(|v| v as usize);
+    let k_build = nn_params
+        .get("k_build")
+        .and_then(|v| v.as_integer())
+        .map(|v| v as usize);
+    let n_tree = nn_params
+        .get("n_tree")
+        .and_then(|v| v.as_integer())
+        .map(|v| v as usize);
+    let delta = nn_params
+        .get("delta")
+        .and_then(|v| v.as_real())
+        .map(|v| T::from(v).unwrap())
+        .unwrap_or(T::from(0.001).unwrap());
+    let rho = nn_params
+        .get("rho")
+        .and_then(|v| v.as_real())
+        .map(|v| T::from(v).unwrap());
+    let beam_width = nn_params
+        .get("beam_width")
+        .and_then(|v| v.as_integer())
+        .map(|v| v as usize);
+    let max_beam_iters = nn_params
+        .get("max_beam_iters")
+        .and_then(|v| v.as_integer())
+        .map(|v| v as usize);
+    let n_entry_points = nn_params
+        .get("n_entry_points")
+        .and_then(|v| v.as_integer())
+        .map(|v| v as usize);
+
+    let extract_knn = nn_params
+        .get("extract_knn")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+
+    Ok(NearestNeighbourParamsGpu {
+        dist_metric,
+        n_list,
+        n_probes,
+        k,
+        k_build,
+        n_tree,
+        delta,
+        rho,
+        beam_width,
+        max_beam_iters,
+        n_entry_points,
+        extract_knn,
     })
 }
 

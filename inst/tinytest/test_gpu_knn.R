@@ -1,5 +1,9 @@
 # tests of gpu knn searches ----------------------------------------------------
 
+if (!gpu_available()) {
+  exit_file("no GPU adapter available")
+}
+
 if (!requireNamespace("BiocNeighbors")) {
   exit_file("BiocNeighbors is not available")
 }
@@ -29,19 +33,20 @@ calc_recall_bioc <- function(knn_mat, rs_knn_mat) {
   sum(knn_mat == (rs_knn_mat + 1)) / prod(dim(knn_mat))
 }
 
+# no sqrt: since manifolds-rs 0.4.0 the euclidean backends root their own
+# squared output before handing it back
 calc_dist_bioc <- function(knn_dist, rs_knn_dist) {
-  sum(abs(
-    knn_dist - sqrt(rs_knn_dist)
-  )) /
-    prod(dim(knn_dist))
+  sum(abs(knn_dist - rs_knn_dist)) / prod(dim(knn_dist))
 }
 
 ### exhaustive gpu -------------------------------------------------------------
 
-gpu_exhaustive_res <- rs_exhaustive_gpu_knn(
+gpu_exhaustive_res <- rs_gpu_knn(
   embd = data,
   k = k,
-  dist_metric = "euclidean",
+  knn_method = "exhaustive",
+  nn_params = params_nn_gpu(dist_metric = "euclidean"),
+  seed = 42L,
   verbose = 0L
 )
 
@@ -67,14 +72,15 @@ expect_true(
 
 ### ivf gpu --------------------------------------------------------------------
 
-gpu_ivf_res <- rs_ivf_gpu_knn(
+gpu_ivf_res <- rs_gpu_knn(
   embd = data,
-  ivf_params = params_sc_ivf(
-    k = k,
-    ann_dist = "euclidean",
+  k = k,
+  knn_method = "ivf",
+  nn_params = params_nn_gpu(
+    dist_metric = "euclidean",
     # on small data sets IVF basically does not behave...
-    nlist = 3L,
-    nprobe = 3L
+    n_list = 3L,
+    n_probes = 3L
   ),
   seed = 42L,
   verbose = 0L
@@ -102,10 +108,14 @@ expect_true(
 
 ### cagra ----------------------------------------------------------------------
 
-gpu_cagra <- rs_cagra_gpu_knn(
+gpu_cagra <- rs_gpu_knn(
   embd = data,
-  cagra_params = params_sc_cagra(k = k, ann_dist = "euclidean"),
-  extract_knn = FALSE,
+  k = k,
+  knn_method = "nndescent",
+  nn_params = params_nn_gpu(
+    dist_metric = "euclidean",
+    extract_knn = FALSE
+  ),
   seed = 42L,
   verbose = 0L
 )

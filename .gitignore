@@ -20,3 +20,5 @@ scratch.R
 scratch_*.R
 
 .claude/worktrees/*
+pkgdown/favicon/*
+vendor.tar.xz

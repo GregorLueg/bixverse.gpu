@@ -59,6 +59,8 @@ scenic_grn_sc_gpu <- S7::new_generic(
     random_seed = 42L,
     .verbose = TRUE
   ) {
+    assert_gpu()
+
     S7::S7_dispatch()
   }
 )

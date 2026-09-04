@@ -2,19 +2,21 @@
 % Please edit documentation in R/sc_gpu.R
 \name{find_neighbours_gpu_sc}
 \alias{find_neighbours_gpu_sc}
-\title{Find GPU-accelerated neighbours for single cells (exhaustive / IVF)}
+\title{Find GPU-accelerated neighbours for single cells}
 \usage{
 find_neighbours_gpu_sc(
   object,
   embd_to_use = "pca",
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
-  gpu_method = c("ivf", "exhaustive"),
-  ivf_params = params_sc_ivf(),
+  knn_method = c("nndescent", "exhaustive", "ivf"),
+  nn_params = params_nn_gpu(),
   k = 15L,
-  dist_metric = "euclidean",
   snn_params = params_sc_neighbours(),
   seed = 42L,
+  gpu_method = lifecycle::deprecated(),
+  ivf_params = lifecycle::deprecated(),
+  dist_metric = lifecycle::deprecated(),
   .verbose = TRUE
 )
 }
@@ -29,22 +31,23 @@ use. If \code{NULL} all will be used.}
 \item{modality}{String. One of \code{c("rna", "adt")}. You can only use \code{"adt"}
 on \code{SingleCellsMultiModal} class.}
 
-\item{gpu_method}{String. One of \code{c("exhaustive", "ivf")}.}
+\item{knn_method}{String. One of \code{c("nndescent", "exhaustive", "ivf")}.}
 
-\item{ivf_params}{List. Output of \code{\link[=params_sc_ivf]{params_sc_ivf()}}. Only
-used when \code{gpu_method = "ivf"}.}
+\item{nn_params}{List. Output of \code{\link[=params_nn_gpu]{params_nn_gpu()}}.}
 
-\item{k}{Integer. Number of neighbours. Only used when
-\code{gpu_method = "exhaustive"}.}
-
-\item{dist_metric}{String. One of \code{c("euclidean", "cosine")} for the distance
-metric to use. This is used specifically only for
-\code{gpu_method = "exhaustive"}.}
+\item{k}{Integer. Number of neighbours.}
 
 \item{snn_params}{List. Output of \code{\link[bixverse:params_sc_neighbours]{bixverse::params_sc_neighbours()}}. The
-kNN graph-related parameters will be ignored.}
+kNN graph-related parameters will be ignored in favour of \code{nn_params}.}
 
 \item{seed}{Integer. For reproducibility.}
+
+\item{gpu_method}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{knn_method}.}
+
+\item{ivf_params}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{nn_params}.}
+
+\item{dist_metric}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use
+\code{params_nn_gpu(dist_metric = )}.}
 
 \item{.verbose}{Boolean. Controls verbosity.}
 }
@@ -54,16 +57,9 @@ modality slot.
 }
 \description{
 This function generates kNN data using GPU-accelerated algorithms via the
-\code{bixverse.gpu} package. Two methods are available: \code{"exhaustive"} performs
-an exact brute-force search on the GPU, which is precise but scales
-quadratically; \code{"ivf"} builds an inverted file index that partitions the
-embedding space into Voronoi cells and probes only a subset at query time,
-trading a small amount of precision for considerably faster search on larger
-data sets. Subsequently, the kNN data is used to generate an sNN igraph for
-downstream clustering. This function lives in a separate package from the
-CPU-based \code{\link[bixverse:find_neighbours_sc]{find_neighbours_sc()}} so that users without GPU hardware do not
-need to install the GPU dependencies.
-}
-\note{
-Euclidean distance calculates the squared Euclidean distance for speed.
+\code{bixverse.gpu} package, then turns it into an sNN igraph for downstream
+clustering. See \code{\link[=generate_gpu_knn_sc]{generate_gpu_knn_sc()}} for the three searches on offer.
+This function lives in a separate package from the CPU-based
+\code{\link[bixverse:find_neighbours_sc]{find_neighbours_sc()}} so that users without GPU hardware do not need to
+install the GPU dependencies.
 }

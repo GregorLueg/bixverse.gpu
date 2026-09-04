@@ -1,3 +1,4 @@
+use crate::ensure_gpu;
 use bixverse_rs::gpu::sc_gpu::pca_gpu::pca_on_sc_sparse_gpu;
 use bixverse_rs::prelude::*;
 use bixverse_rs::single_cell::sc_processing::pca::SingleCellPcaParams;
@@ -70,6 +71,8 @@ fn rs_sc_pca_sparse_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<List> {
+    ensure_gpu()?;
+
     let verbosity = parse_verbosity_level(verbose);
     let pca_params = SingleCellPcaParams::from_r_list(pca_params)?;
     let cell_set = cell_indices.r_int_convert();

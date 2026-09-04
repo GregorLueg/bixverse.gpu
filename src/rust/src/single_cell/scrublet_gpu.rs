@@ -8,6 +8,7 @@
 //! unchanged from the CPU module, so `FinalScrubletRes` and the R list built
 //! from it are identical on both paths.
 
+use crate::ensure_gpu;
 use bixverse_rs::gpu::sc_gpu::scrublet_gpu::{run_scrublet_gpu, ScrubletParamsGpu};
 use bixverse_rs::prelude::*;
 use bixverse_rs::single_cell::sc_processing::scrublet::FinalScrubletRes;
@@ -100,6 +101,8 @@ fn rs_sc_scrublet_gpu(
     return_combined_pca: bool,
     return_pairs: bool,
 ) -> Result<List> {
+    ensure_gpu()?;
+
     let scrublet_params = ScrubletParamsGpu::from_r_list(scrublet_params)?;
     let cells_to_keep = cells_to_keep.r_int_convert();
 

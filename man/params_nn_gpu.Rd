@@ -11,12 +11,12 @@ params_nn_gpu(
   node_degree_final = NULL,
   k_build = NULL,
   n_tree = NULL,
-  refine_sweeps = 0L,
   delta = 0.001,
   rho = NULL,
   beam_width = NULL,
   max_beam_iters = NULL,
-  n_entry_points = NULL
+  n_entry_points = NULL,
+  extract_knn = FALSE
 )
 }
 \arguments{
@@ -40,9 +40,6 @@ NNDescent build phase before CAGRA pruning. If \code{NULL}, defaults to
 \item{n_tree}{Optional integer. CAGRA GPU: Number of trees for graph build.
 Automatically if \code{NULL}.}
 
-\item{refine_sweeps}{Integer. Number of refinement sweeps during graph
-generation.}
-
 \item{delta}{Float. CAGRA GPU: Early termination parameter for NN descent.
 Defaults to \code{0.001}.}
 
@@ -57,6 +54,10 @@ search iterations. If not provided, defaults to \code{3 * beam_width}.}
 
 \item{n_entry_points}{Optional integer. CAGRA GPU: Number of entry points for
 beam search. If not provided, defaults to \code{8L}.}
+
+\item{extract_knn}{Boolean. CAGRA GPU: Skip the beam search and take the
+graph the NNDescent left it. Faster, slightly lower recall. Ignored by the
+other two searches. Defaults to \code{FALSE}.}
 }
 \value{
 A list with the GPU nearest neighbour parameters.

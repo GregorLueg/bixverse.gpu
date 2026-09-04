@@ -16,6 +16,8 @@ jobs:
     with:
       rust: true
       gpu: true
-      windows: false
-      linux-runner: ubuntu-22.04
+      windows: true
+      macos-x86: true
+      linux-runner: ubuntu-latest
+      extra-repositories: https://gregorlueg.r-universe.dev
     secrets: inherit

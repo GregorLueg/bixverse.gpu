@@ -112,6 +112,11 @@ parametric_umap <- function(
   checkmate::qassert(seed, "I1")
   checkmate::qassert(.verbose, "B1")
 
+  # the flex CPU backend is a legitimate path here, so this is conditional
+  if (use_gpu) {
+    assert_gpu()
+  }
+
   final_params <- .prepare_parametric_umap_params(
     min_dist = min_dist,
     spread = spread,

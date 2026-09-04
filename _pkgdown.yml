@@ -2,11 +2,13 @@ url: https://gregorlueg.github.io/bixverse.gpu/
 
 template:
   bootstrap: 5
-  bootswatch: lux
   light-switch: true
+  theme: atom-one-light
+  theme-dark: atom-one-dark
   bslib:
-    # lux uses navbar-padding-y: 1.5rem, so pkgdown's 56px default is too small
-    pkgdown-nav-height: 104px
+    primary: "#3C4B6D"
+    border-radius: 0.5rem
+    btn-border-radius: 0.25rem
 
 home:
   title: bixverse.gpu
@@ -66,11 +68,9 @@ reference:
       applications.
     contents:
       - calculate_pca_gpu_sc
-      - generate_cagra_knn_sc
       - generate_gpu_knn_sc
       - harmony_v2_gpu_sc
       - find_neighbours_gpu_sc
-      - find_neighbours_cagra_sc
       - generate_seacells_gpu_sc
       - scenic_grn_sc_gpu
       - scrublet_gpu_sc
@@ -79,8 +79,6 @@ reference:
       - stabilised_nmf_gpu_sc
       - consensus_nmf_gpu_sc
       - nmf_k_sweep_gpu_sc
-      - params_sc_ivf
-      - params_sc_cagra
       - params_sc_harmony_v2_gpu
       - params_sc_fast_cluster_gpu
       - params_scrublet_gpu
@@ -124,19 +122,19 @@ reference:
       - k_means_cluster_gpu
       - params_kmeans_gpu
       - generate_knn_graph_gpu
+      - gpu_available
   - title: Rust wrappers
     desc: 
       Everything rusty - only use this if you know what you are doing... Maybe 
       useful for your own package? Use with care and read the documentation!
     contents:
-      - rs_cagra_gpu_knn
       - rs_cor_gpu
       - rs_cov_gpu
-      - rs_exhaustive_gpu_knn
       - rs_fast_cluster_gpu
       - rs_fast_cluster_grid_gpu
+      - rs_gpu_available
       - rs_harmony_v2_gpu
-      - rs_ivf_gpu_knn
+      - rs_gpu_knn
       - rs_kmeans_gpu
       - rs_mc_scenic_gpu
       - rs_nmf_consensus_mc_gpu
@@ -158,3 +156,15 @@ reference:
       - rs_umap_from_knn_gpu
       - rs_tsne_gpu
       - rs_tsne_from_knn_gpu
+  - title: Deprecated
+    desc:
+      Kept so existing scripts keep running. Each one warns and forwards to its
+      replacement.
+    contents:
+      - generate_cagra_knn_sc
+      - find_neighbours_cagra_sc
+      - params_sc_cagra
+      - params_sc_ivf
+      - rs_cagra_gpu_knn
+      - rs_exhaustive_gpu_knn
+      - rs_ivf_gpu_knn
