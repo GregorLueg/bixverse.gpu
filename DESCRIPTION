@@ -39,6 +39,5 @@ Imports:
     zeallot
 Additional_repositories:
     https://gregorlueg.r-universe.dev
-VignetteBuilder: quarto
 URL: https://gregorlueg.github.io/bixverse.gpu/
 Config/roxygen2/version: 8.1.0
