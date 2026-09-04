@@ -225,6 +225,8 @@ generate_gpu_knn_sc <- S7::new_generic(
     dist_metric = lifecycle::deprecated(),
     .verbose = TRUE
   ) {
+    assert_gpu()
+
     S7::S7_dispatch()
   }
 )
@@ -359,6 +361,8 @@ find_neighbours_gpu_sc <- S7::new_generic(
     dist_metric = lifecycle::deprecated(),
     .verbose = TRUE
   ) {
+    assert_gpu()
+
     S7::S7_dispatch()
   }
 )
@@ -494,6 +498,8 @@ calculate_pca_gpu_sc <- S7::new_generic(
     seed = 42L,
     .verbose = TRUE
   ) {
+    assert_gpu()
+
     S7::S7_dispatch()
   }
 )
@@ -607,6 +613,8 @@ harmony_v2_gpu_sc <- S7::new_generic(
     seed = 42L,
     .verbose = TRUE
   ) {
+    assert_gpu()
+
     S7::S7_dispatch()
   }
 )
@@ -756,6 +764,8 @@ umap_gpu_sc <- S7::new_generic(
     use_high_precision = NULL,
     .verbose = TRUE
   ) {
+    assert_gpu()
+
     S7::S7_dispatch()
   }
 )
@@ -955,6 +965,8 @@ tsne_gpu_sc <- S7::new_generic(
     use_high_precision = NULL,
     .verbose = TRUE
   ) {
+    assert_gpu()
+
     S7::S7_dispatch()
   }
 )

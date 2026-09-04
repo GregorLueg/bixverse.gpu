@@ -45,6 +45,8 @@ generate_knn_graph_gpu <- function(
   extract_knn = lifecycle::deprecated(),
   .verbose = TRUE
 ) {
+  assert_gpu()
+
   knn_method <- match.arg(knn_method)
 
   if (lifecycle::is_present(extract_knn)) {

@@ -9,6 +9,7 @@
 //! and has no mini-batch path. The distance metric comes from the kNN params, so
 //! the coarsening and the centroid graph agree on the geometry.
 
+use crate::ensure_gpu;
 use bixverse_rs::gpu::sc_gpu::fast_clusters_gpu::{
     fast_louvain_clusters_gpu, fast_louvain_clusters_grid_gpu, FastLouvainParamsGpu,
 };
@@ -82,6 +83,8 @@ fn rs_fast_cluster_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<List> {
+    ensure_gpu()?;
+
     let embd = r_matrix_to_faer_fp32(&embd);
     let n_clusters = n_centroids.unwrap_or(((embd.nrows() as f32).sqrt()) as usize);
     let resolutions = resolutions.r_float_convert();
@@ -177,6 +180,8 @@ fn rs_fast_cluster_grid_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<List> {
+    ensure_gpu()?;
+
     let embd = r_matrix_to_faer_fp32(&embd);
     let n_clusters = n_centroids.unwrap_or(((embd.nrows() as f32).sqrt()) as usize);
     let resolutions = resolutions.r_float_convert();

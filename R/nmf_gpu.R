@@ -100,6 +100,8 @@ nmf_gpu_sc <- S7::new_generic(
     seed = 42L,
     .verbose = TRUE
   ) {
+    assert_gpu()
+
     S7::S7_dispatch()
   }
 )
@@ -267,6 +269,8 @@ stabilised_nmf_gpu_sc <- S7::new_generic(
     seed = 42L,
     .verbose = TRUE
   ) {
+    assert_gpu()
+
     S7::S7_dispatch()
   }
 )
@@ -460,6 +464,8 @@ consensus_nmf_gpu_sc <- S7::new_generic(
     seed = 42L,
     .verbose = TRUE
   ) {
+    assert_gpu()
+
     S7::S7_dispatch()
   }
 )
@@ -667,6 +673,8 @@ nmf_k_sweep_gpu_sc <- S7::new_generic(
     seed = 42L,
     .verbose = TRUE
   ) {
+    assert_gpu()
+
     S7::S7_dispatch()
   }
 )

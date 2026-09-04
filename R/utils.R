@@ -26,6 +26,32 @@ gpu_available <- function() {
   rs_gpu_available()
 }
 
+#' Assert that a GPU is available
+#'
+#' @description
+#' Hard errors when no WGPU adapter can be initialised. Sits at the top of the
+#' user-facing functions so the failure names the function the user called
+#' rather than the `rs_` wrapper underneath. The Rust side carries the same
+#' guard for direct `rs_` calls.
+#'
+#' @returns Invisibly `TRUE`. Called for the error.
+#'
+#' @keywords internal
+assert_gpu <- function() {
+  if (!gpu_available()) {
+    stop(
+      paste(
+        "No usable GPU adapter found. bixverse.gpu needs a working WGPU",
+        "adapter; check your GPU drivers and",
+        "https://burn.dev/books/cubecl/getting-started/installation.html.",
+        "Probe with `gpu_available()`."
+      ),
+      call. = FALSE
+    )
+  }
+  invisible(TRUE)
+}
+
 ## verbosity -------------------------------------------------------------------
 
 #' Helper to parse the verbosity

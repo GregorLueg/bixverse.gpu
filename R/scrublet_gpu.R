@@ -94,6 +94,8 @@ scrublet_gpu_sc <- S7::new_generic(
     return_pairs = FALSE,
     .verbose = TRUE
   ) {
+    assert_gpu()
+
     S7::S7_dispatch()
   }
 )

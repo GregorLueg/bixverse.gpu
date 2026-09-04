@@ -219,6 +219,26 @@ fn rs_gpu_available() -> bool {
     })
 }
 
+/// Hard error when no GPU adapter is present.
+///
+/// The backstop for the R-side `assert_gpu()`: `rs_*` wrappers are exported,
+/// so they are reachable without going through the R user API. Without this
+/// the missing adapter surfaces as a panic out of cubecl rather than an R
+/// condition. Free after the first call, the probe is cached.
+pub(crate) fn ensure_gpu() -> extendr_api::Result<()> {
+    if rs_gpu_available() {
+        Ok(())
+    } else {
+        Err(extendr_api::Error::Other(
+            "no usable GPU adapter found. bixverse.gpu needs a working WGPU \
+             adapter; check your GPU drivers and \
+             https://burn.dev/books/cubecl/getting-started/installation.html. \
+             Probe with `gpu_available()`."
+                .to_string(),
+        ))
+    }
+}
+
 /////////
 // kNN //
 /////////
@@ -262,6 +282,8 @@ fn rs_gpu_knn(
     seed: usize,
     verbose: usize,
 ) -> Result<List, extendr_api::Error> {
+    ensure_gpu()?;
+
     let data = r_matrix_to_faer_fp32(&embd);
     let params = get_params_nn_ann_gpu::<f32>(nn_params)?;
     let device: WgpuDevice = Default::default();
@@ -353,6 +375,8 @@ fn rs_parametric_umap(
     let data = r_matrix_to_faer_fp32(&data);
 
     if use_gpu {
+        ensure_gpu()?;
+
         let device = WgpuDevice::default();
         let (res, model) = parametric_umap_manifold::<GpuBackend>(
             data.as_ref(),
@@ -474,10 +498,13 @@ fn rs_deserialise_parametric_umap(bytes: Vec<u8>) -> Result<Robj, extendr_api::E
     }
     let (tag, payload) = (bytes[0], &bytes[1..]);
     let model = match tag {
-        0 => PUmapModel::Gpu(
-            TrainedUmapModel::from_bytes(payload, WgpuDevice::default())
-                .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
-        ),
+        0 => {
+            ensure_gpu()?;
+            PUmapModel::Gpu(
+                TrainedUmapModel::from_bytes(payload, WgpuDevice::default())
+                    .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
+            )
+        }
         1 => PUmapModel::Cpu(
             TrainedUmapModel::from_bytes(payload, FlexDevice)
                 .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
@@ -527,6 +554,8 @@ fn rs_kmeans_gpu(
     seed: usize,
     verbose: bool,
 ) -> Result<List, extendr_api::Error> {
+    ensure_gpu()?;
+
     let data = r_matrix_to_faer_fp32(&data);
 
     let kmeans_params = KMeansGpuParams::from_r_list(kmeans_params)?;
@@ -572,6 +601,8 @@ fn rs_cor_gpu(
     spearman: bool,
     verbose: bool,
 ) -> Result<RMatrix<f64>, extendr_api::Error> {
+    ensure_gpu()?;
+
     let data = r_matrix_to_faer_fp32(&x);
     let device: WgpuDevice = Default::default();
 
@@ -619,6 +650,8 @@ fn rs_cor_gpu(
 /// @export
 #[extendr]
 fn rs_cov_gpu(x: RMatrix<f64>, verbose: bool) -> Result<RMatrix<f64>, extendr_api::Error> {
+    ensure_gpu()?;
+
     let data = r_matrix_to_faer_fp32(&x);
     let device: WgpuDevice = Default::default();
 
@@ -678,6 +711,8 @@ fn rs_umap_gpu(
     use_high_precision: Nullable<Rbool>,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
+    ensure_gpu()?;
+
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
     let precision = parse_precision(use_high_precision, embd.nrows());
 
@@ -769,6 +804,8 @@ fn rs_umap_from_knn_gpu(
     use_high_precision: Nullable<Rbool>,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
+    ensure_gpu()?;
+
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
     let precision = parse_precision(use_high_precision, embd.nrows());
 
@@ -867,6 +904,8 @@ fn rs_tsne_gpu(
     use_high_precision: Nullable<Rbool>,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
+    ensure_gpu()?;
+
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
     let precision = parse_precision(use_high_precision, embd.nrows());
 
@@ -956,6 +995,8 @@ fn rs_tsne_from_knn_gpu(
     use_high_precision: Nullable<Rbool>,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
+    ensure_gpu()?;
+
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
     let precision = parse_precision(use_high_precision, embd.nrows());
 

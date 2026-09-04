@@ -1,3 +1,4 @@
+use crate::ensure_gpu;
 use bixverse_rs::gpu::sc_gpu::scenic_gpu::{
     run_scenic_grn_gpu, run_scenic_grn_in_memory_gpu, run_scenic_grn_streaming_gpu, ScenicGpuParams,
 };
@@ -97,6 +98,8 @@ fn rs_scenic_grn_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<RArray<f64, 2>> {
+    ensure_gpu()?;
+
     let cell_indices = cell_indices.r_int_convert();
     let gene_indices = gene_indices.r_int_convert();
     let tf_indices = tf_indices.r_int_convert();
@@ -165,6 +168,8 @@ fn rs_scenic_grn_streaming_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<RArray<f64, 2>> {
+    ensure_gpu()?;
+
     let cell_indices = cell_indices.r_int_convert();
     let gene_indices = gene_indices.r_int_convert();
     let tf_indices = tf_indices.r_int_convert();
@@ -231,6 +236,8 @@ fn rs_mc_scenic_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<RArray<f64, 2>> {
+    ensure_gpu()?;
+
     let tf_indices = tf_indices.r_int_convert();
     let sparse: CompressedSparseData2<f64, f64> =
         list_to_sparse_matrix(sparse_data, true).to_extendr()?;

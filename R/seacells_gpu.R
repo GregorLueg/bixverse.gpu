@@ -82,6 +82,8 @@ generate_seacells_gpu_sc <- S7::new_generic(
     seed = 42L,
     .verbose = TRUE
   ) {
+    assert_gpu()
+
     S7::S7_dispatch()
   }
 )

@@ -140,6 +140,8 @@ umap_gpu <- function(
   use_high_precision = NULL,
   .verbose = TRUE
 ) {
+  assert_gpu()
+
   # transformation
   if (is.data.frame(data)) {
     data <- as.matrix(data)

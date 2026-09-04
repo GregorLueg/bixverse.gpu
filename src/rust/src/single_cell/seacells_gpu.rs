@@ -8,6 +8,7 @@
 //! aggregation into meta cell pseudo-bulk is the same CPU reader-based path the
 //! CPU wrapper uses.
 
+use crate::ensure_gpu;
 use bixverse_rs::gpu::sc_gpu::seacells_gpu::seacells_fit_gpu;
 use bixverse_rs::prelude::*;
 use bixverse_rs::single_cell::mc_generation::cell_aggregation_utils::{
@@ -82,6 +83,8 @@ fn rs_seacells_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<List> {
+    ensure_gpu()?;
+
     let start_seacell = Instant::now();
 
     let seacells_params = SEACellsParams::from_r_list(seacells_params)?;

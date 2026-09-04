@@ -18,6 +18,7 @@
 //! CPU single-cell and meta-cell paths, so the result converters are concrete
 //! rather than generic over the float.
 
+use crate::ensure_gpu;
 use bixverse_rs::gpu::methods_gpu::nmf_consensus_gpu::{
     nmf_consensus_run_sparse_gpu, nmf_k_sweep_run_sparse_gpu, nmf_multiple_run_sparse_gpu,
     nmf_single_run_sparse_gpu,
@@ -335,6 +336,8 @@ fn rs_nmf_single_sc_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<List> {
+    ensure_gpu()?;
+
     let gene_indices = gene_indices.r_int_convert();
     let cell_indices = cell_indices.r_int_convert();
     let nmf_hals_opt: HalsOpts<f32> = HalsOpts::from_r_list(nmf_hals_params, seed).to_extendr()?;
@@ -418,6 +421,8 @@ fn rs_nmf_multi_sc_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<List> {
+    ensure_gpu()?;
+
     let gene_indices = gene_indices.r_int_convert();
     let cell_indices = cell_indices.r_int_convert();
     let nmf_hals_opt: HalsOpts<f32> = HalsOpts::from_r_list(nmf_hals_params, seed).to_extendr()?;
@@ -519,6 +524,8 @@ fn rs_nmf_consensus_sc_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<List> {
+    ensure_gpu()?;
+
     let gene_indices = gene_indices.r_int_convert();
     let cell_indices = cell_indices.r_int_convert();
     let nmf_hals_opt: HalsOpts<f32> = HalsOpts::from_r_list(nmf_hals_params, seed).to_extendr()?;
@@ -614,6 +621,8 @@ fn rs_nmf_k_sweep_sc_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<List> {
+    ensure_gpu()?;
+
     let gene_indices = gene_indices.r_int_convert();
     let cell_indices = cell_indices.r_int_convert();
     let k_range = k_range.r_int_convert();
@@ -686,6 +695,8 @@ fn rs_nmf_single_mc_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<List> {
+    ensure_gpu()?;
+
     let sparse: CompressedSparseData2<f64, f64> =
         list_to_sparse_matrix(sparse_data, true).to_extendr()?;
     let sparse = cast_sparse_f32(sparse);
@@ -745,6 +756,8 @@ fn rs_nmf_multi_mc_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<List> {
+    ensure_gpu()?;
+
     let sparse: CompressedSparseData2<f64, f64> =
         list_to_sparse_matrix(sparse_data, true).to_extendr()?;
     let sparse = cast_sparse_f32(sparse);
@@ -813,6 +826,8 @@ fn rs_nmf_consensus_mc_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<List> {
+    ensure_gpu()?;
+
     let sparse: CompressedSparseData2<f64, f64> =
         list_to_sparse_matrix(sparse_data, true).to_extendr()?;
     let sparse = cast_sparse_f32(sparse);
@@ -881,6 +896,8 @@ fn rs_nmf_k_sweep_mc_gpu(
     seed: usize,
     verbose: usize,
 ) -> Result<List> {
+    ensure_gpu()?;
+
     let sparse: CompressedSparseData2<f64, f64> =
         list_to_sparse_matrix(sparse_data, true).to_extendr()?;
     let sparse = cast_sparse_f32(sparse);
