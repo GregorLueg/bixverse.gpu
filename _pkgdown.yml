@@ -122,6 +122,7 @@ reference:
       - k_means_cluster_gpu
       - params_kmeans_gpu
       - generate_knn_graph_gpu
+      - gpu_available
   - title: Rust wrappers
     desc: 
       Everything rusty - only use this if you know what you are doing... Maybe 
@@ -131,6 +132,7 @@ reference:
       - rs_cov_gpu
       - rs_fast_cluster_gpu
       - rs_fast_cluster_grid_gpu
+      - rs_gpu_available
       - rs_harmony_v2_gpu
       - rs_gpu_knn
       - rs_kmeans_gpu

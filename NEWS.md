@@ -2,6 +2,16 @@
 
 ## Features
 
+* Take in substantial improvements on the Rust back-ends. The kNN searches
+  now return Euclidean distances instead of squared Euclidean distances.
+
+## Deprecated
+
+* The previous interface of `generate_cagra_knn_sc()`, 
+  `find_neighbours_cagra_sc()`, `params_sc_cagra()`, `rs_cagra_gpu_knn()`, 
+  `rs_exhaustive_gpu_knn()`, `params_sc_ivf()` has been deprecated. These are
+  now all wired into `generate_gpu_knn_sc()`.
+
 # bixverse.gpu 0.2.8
 
 ## Features
