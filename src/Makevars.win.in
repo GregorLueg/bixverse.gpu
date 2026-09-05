@@ -6,7 +6,7 @@ TARGET = $(if $(CARGO_BUILD_TARGET),$(CARGO_BUILD_TARGET),$(subst 64,x86_64,$(su
 TARGET_DIR = @TARGET_DIR@
 LIBDIR = $(TARGET_DIR)/$(TARGET)/@LIBDIR@
 STATLIB = $(LIBDIR)/libbixverse_gpu.a
-PKG_LIBS = -L"$(LIBDIR)" -lbixverse_gpu -lws2_32 -ladvapi32 -luserenv -lbcrypt -lntdll
+PKG_LIBS = -L"$(LIBDIR)" -lbixverse_gpu @HDF5_LIBS@-lws2_32 -ladvapi32 -luserenv -lbcrypt -lntdll
 
 all: $(SHLIB) rust_clean
 
@@ -37,13 +37,18 @@ $(STATLIB):
 	# Build the project using Cargo with additional flags
 	export CARGO_HOME=@CARGO_HOME@ && \
 	export LIBRARY_PATH="$(LIBRARY_PATH);$(TARGET_DIR)/libgcc_mock" && \
-	@DEV_EXPORTS@RUSTFLAGS="$(RUSTFLAGS) --print=native-static-libs" cargo build @CRAN_FLAGS@ --target=$(TARGET) --lib @PROFILE@ --manifest-path=rust/Cargo.toml --target-dir="$(TARGET_DIR)"
+	@HDF5_EXPORTS@@DEV_EXPORTS@RUSTFLAGS="$(RUSTFLAGS) --print=native-static-libs@HDF5_RUSTFLAGS@@LINKER_RUSTFLAGS@" cargo build @CRAN_FLAGS@ @CARGO_FEATURES@ --target=$(TARGET) --lib @PROFILE@ --manifest-path=rust/Cargo.toml --target-dir="$(TARGET_DIR)"
 
 	# Generate wrappers. The profile, RUSTFLAGS and the dev overrides all have to
 	# match the build above, see Makevars.in.
+	#
+	# LIBRARY_PATH has to be re-exported here. `--lib` builds a staticlib and
+	# never runs the linker, but `--bin document` does, and Rtools' mingw ships
+	# no `libgcc_eh.a` for rustc's `-lgcc_eh` to find.
 	export CARGO_HOME=@CARGO_HOME@ && \
+	export LIBRARY_PATH="$(LIBRARY_PATH);$(TARGET_DIR)/libgcc_mock" && \
 	export PATH="$(PATH):$(HOME)/.cargo/bin" && \
-	@DEV_EXPORTS@RUSTFLAGS="$(RUSTFLAGS) --print=native-static-libs" cargo run @CRAN_FLAGS@ @PROFILE@ --bin document --target $(TARGET) --manifest-path=./rust/Cargo.toml --target-dir "$(TARGET_DIR)"
+	@HDF5_EXPORTS@@DEV_EXPORTS@RUSTFLAGS="$(RUSTFLAGS) --print=native-static-libs@HDF5_RUSTFLAGS@@LINKER_RUSTFLAGS@" cargo run @CRAN_FLAGS@ @CARGO_FEATURES@ @PROFILE@ --bin document --target $(TARGET) --manifest-path=./rust/Cargo.toml --target-dir "$(TARGET_DIR)"
 
 	# Always clean up CARGOTMP
 	rm -Rf $(CARGOTMP);
