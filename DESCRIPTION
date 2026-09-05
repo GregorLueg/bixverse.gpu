@@ -1,5 +1,8 @@
 Package: bixverse.gpu
-Title: GPU-accelerated methods for the bixverse
+Title: 
+    GPU-accelerated methods via cubecl and WGPU for the bixverse with general
+    methods such as k-means and correlations and a lot of methods specific for
+    single cell analysis acceleration.
 Version: 0.3.0
 Authors@R: 
     person(
