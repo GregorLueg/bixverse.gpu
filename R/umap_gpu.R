@@ -109,7 +109,7 @@
 #' @param knn_method Character. (Approximate) Nearest neighbour method to use.
 #' One of `"exhaustive"`, `"ivf"` or `"nndescent"`. These are
 #' GPU-accelerated methods.
-#' @param nn_params_gpu Named list. Nearest neighbour search parameters, see
+#' @param nn_params Named list. Nearest neighbour search parameters, see
 #' [params_nn_gpu()].
 #' @param umap_params Named list. UMAP (GPU) algorithm parameters, see
 #' [params_umap_gpu()].

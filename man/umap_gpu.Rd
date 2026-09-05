@@ -46,6 +46,9 @@ scale at which embedded points will be spread out. Defaults to \code{1.0}.}
 One of \code{"exhaustive"}, \code{"ivf"} or \code{"nndescent"}. These are
 GPU-accelerated methods.}
 
+\item{nn_params}{Named list. Nearest neighbour search parameters, see
+\code{\link[=params_nn_gpu]{params_nn_gpu()}}.}
+
 \item{umap_params}{Named list. UMAP (GPU) algorithm parameters, see
 \code{\link[=params_umap_gpu]{params_umap_gpu()}}.}
 
@@ -55,9 +58,6 @@ GPU-accelerated methods.}
 \code{fp32} vs \code{fp64} usage. The GPU calculations will be forced into \code{fp32}.}
 
 \item{.verbose}{Logical. Controls verbosity. Defaults to \code{TRUE}.}
-
-\item{nn_params_gpu}{Named list. Nearest neighbour search parameters, see
-\code{\link[=params_nn_gpu]{params_nn_gpu()}}.}
 }
 \value{
 A numerical matrix with dimensions samples x n_dim containing
