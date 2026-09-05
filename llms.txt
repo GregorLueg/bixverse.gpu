@@ -1,6 +1,8 @@
 # *bixverse.gpu package*
 
 [![r_package](https://img.shields.io/github/r-package/v/GregorLueg/bixverse.gpu?label=R_package&color=orange)](https://github.com/GregorLueg/bixverse.gpu/blob/main/DESCRIPTION)
+[![bixverse status
+badge](https://gregorlueg.r-universe.dev/bixverse/badges/version)](https://gregorlueg.r-universe.dev/bixverse)
 [![CI](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg)](https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

@@ -69,6 +69,11 @@ umap_gpu(
   `"exhaustive"`, `"ivf"` or `"nndescent"`. These are GPU-accelerated
   methods.
 
+- nn_params:
+
+  Named list. Nearest neighbour search parameters, see
+  [`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md).
+
 - umap_params:
 
   Named list. UMAP (GPU) algorithm parameters, see
@@ -86,11 +91,6 @@ umap_gpu(
 - .verbose:
 
   Logical. Controls verbosity. Defaults to `TRUE`.
-
-- nn_params_gpu:
-
-  Named list. Nearest neighbour search parameters, see
-  [`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md).
 
 ## Value
 
