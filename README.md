@@ -32,16 +32,30 @@ and means it.
 
 ### Installation
 
-You will need Rust on your system to have the package working. An installation
-guide is provided [here](https://www.rust-lang.org/tools/install). There is a
-bunch of further help written [here](https://extendr.github.io/rextendr/index.html)
-by the rextendr guys in terms of Rust set up. (bixverse.gpu as bixverse both
-use rextendr to interface with Rust.) On the GPU side there is nothing extra to
-install beyond working drivers, whatever your OS ships is what WGPU picks up.
-Previously, the CPU-based versions of neural net acceleration where running
-through ndarray and accelerated via OpenBLAS (Linux) or Accelerate (Mac). This
-has been now replaced with the
+On the GPU side there is nothing extra to install beyond working drivers, 
+whatever your OS ships is what WGPU picks up. Previously, the CPU-based versions 
+of neural net acceleration where running through ndarray and accelerated via 
+OpenBLAS (Linux) or Accelerate (Mac). This has been now replaced with the
 [flex](https://github.com/tracel-ai/burn/pull/4761) framework.
+
+The easy route is r-universe. You get a pre-built binary, so no Rust toolchain
+and no compile:
+
+```r
+install.packages(
+  "bixverse",
+  repos = c("https://gregorlueg.r-universe.dev", "https://cloud.r-project.org")
+)
+```
+
+### From source
+
+You will need Rust on your system to install the package from source. An 
+installation guide is provided [here](https://www.rust-lang.org/tools/install). 
+There is a bunch of further help written 
+[here](https://extendr.github.io/rextendr/index.html) by the rextendr guys in 
+terms of Rust set up. (`bixverse.gpu` as `bixverse` both use rextendr to 
+interface  with Rust.) 
 
 #### Setting up Rust
 
