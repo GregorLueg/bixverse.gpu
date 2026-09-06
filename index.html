@@ -95,7 +95,18 @@
 <div class="section level3">
 <h3 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h3>
-<p>You will need Rust on your system to have the package working. An installation guide is provided <a href="https://www.rust-lang.org/tools/install" class="external-link">here</a>. There is a bunch of further help written <a href="https://extendr.github.io/rextendr/index.html" class="external-link">here</a> by the rextendr guys in terms of Rust set up. (bixverse.gpu as bixverse both use rextendr to interface with Rust.) On the GPU side there is nothing extra to install beyond working drivers, whatever your OS ships is what WGPU picks up. Previously, the CPU-based versions of neural net acceleration where running through ndarray and accelerated via OpenBLAS (Linux) or Accelerate (Mac). This has been now replaced with the <a href="https://github.com/tracel-ai/burn/pull/4761" class="external-link">flex</a> framework.</p>
+<p>On the GPU side there is nothing extra to install beyond working drivers, whatever your OS ships is what WGPU picks up. Previously, the CPU-based versions of neural net acceleration where running through ndarray and accelerated via OpenBLAS (Linux) or Accelerate (Mac). This has been now replaced with the <a href="https://github.com/tracel-ai/burn/pull/4761" class="external-link">flex</a> framework.</p>
+<p>The easy route is r-universe. You get a pre-built binary, so no Rust toolchain and no compile:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span></span>
+<span>  <span class="st">"bixverse"</span>,</span>
+<span>  repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://gregorlueg.r-universe.dev"</span>, <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="from-source">From source<a class="anchor" aria-label="anchor" href="#from-source"></a>
+</h3>
+<p>You will need Rust on your system to install the package from source. An installation guide is provided <a href="https://www.rust-lang.org/tools/install" class="external-link">here</a>. There is a bunch of further help written <a href="https://extendr.github.io/rextendr/index.html" class="external-link">here</a> by the rextendr guys in terms of Rust set up. (<code>bixverse.gpu</code> as <code>bixverse</code> both use rextendr to interface with Rust.)</p>
 <div class="section level4">
 <h4 id="setting-up-rust">Setting up Rust<a class="anchor" aria-label="anchor" href="#setting-up-rust"></a>
 </h4>
