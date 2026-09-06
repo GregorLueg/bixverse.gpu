@@ -43,7 +43,7 @@ and no compile:
 
 ```r
 install.packages(
-  "bixverse",
+  "bixverse.gpu",
   repos = c("https://gregorlueg.r-universe.dev", "https://cloud.r-project.org")
 )
 ```
