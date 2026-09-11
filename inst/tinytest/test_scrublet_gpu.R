@@ -511,6 +511,68 @@ expect_true(
   info = "scrublet gpu - IVF index agrees with exhaustive search"
 )
 
+## nndescent on the gpu arm ----------------------------------------------------
+
+# `"nndescent"` is the name used across the package, but the Rust parser only
+# matches `"nndescent_gpu"` and silently falls back to exhaustive on anything
+# else. If this stops holding, the backend below quietly stops being tested.
+expect_equal(
+  current = params_scrublet_gpu(knn = list(knn_method = "nndescent"))[[
+    "knn_method"
+  ]],
+  target = "nndescent_gpu",
+  info = "scrublet gpu - nndescent is translated for the Rust parser"
+)
+
+expect_equal(
+  current = params_scrublet_gpu()[["knn_method"]],
+  target = "exhaustive",
+  info = "scrublet gpu - exhaustive stays the default kNN method"
+)
+
+# NN-descent is a low-k backend: its build degree tracks k, so it is far
+# slower than exhaustive at the k Scrublet normally runs at. Pin k low here,
+# both to keep the test quick and because that is the only regime the method
+# is worth using in.
+nndescent_params <- params_scrublet_gpu(
+  normalisation = list(target_size = 1e4),
+  hvg = list(min_gene_var_pctl = 0.0),
+  no_pcs = no_pcs,
+  expected_doublet_rate = 0.2,
+  sim_doublet_ratio = sim_ratio,
+  n_bins_histogram = 50L,
+  knn = list(knn_method = "nndescent", k = 10L)
+)
+
+nndescent_res <- rs_sc_scrublet_gpu(
+  f_path_gene = f_path_gene,
+  f_path_cell = f_path_cell,
+  cells_to_keep = cells_to_keep,
+  scrublet_params = nndescent_params,
+  seed = 42L,
+  verbose = 0L,
+  streaming = FALSE,
+  return_combined_pca = FALSE,
+  return_pairs = FALSE
+)
+
+expect_true(
+  current = cor(
+    nndescent_res$doublet_scores_obs,
+    rust_res$doublet_scores_obs
+  ) >
+    0.9,
+  info = "scrublet gpu - NN-descent index agrees with exhaustive search"
+)
+
+expect_error(
+  current = params_scrublet_gpu(
+    knn_backend = "cpu",
+    knn = list(graph_k = 30L)
+  ),
+  info = "scrublet gpu - GPU-only kNN keys are rejected on the CPU arm"
+)
+
 # s7 method --------------------------------------------------------------------
 
 obj_res <- scrublet_gpu_sc(

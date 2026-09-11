@@ -20,6 +20,7 @@ pub mod ml;
 pub mod single_cell;
 pub mod utils;
 
+pub use single_cell::bbknn_gpu;
 pub use single_cell::fast_clusters_gpu;
 pub use single_cell::harmony_gpu;
 pub use single_cell::nmf_gpu;
@@ -49,6 +50,7 @@ extendr_module! {
     use scrublet_gpu;
     use seacells_gpu;
     use fast_clusters_gpu;
+    use bbknn_gpu;
     // device
     fn rs_gpu_available;
     // knn

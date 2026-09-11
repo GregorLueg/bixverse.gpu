@@ -911,4 +911,42 @@ rs_fast_cluster_gpu <- function(embd, resolutions, n_centroids, fc_params, snn, 
 #' @keywords internal
 rs_fast_cluster_grid_gpu <- function(embd, resolutions, n_centroids, fc_params, snn, return_kmeans, no_seeds, seed, verbose) .Call(wrap__rs_fast_cluster_grid_gpu, embd, resolutions, n_centroids, fc_params, snn, return_kmeans, no_seeds, seed, verbose)
 
+#' GPU: BBKNN batch correction
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU equivalent of `bixverse::rs_bbknn`, implementing the BBKNN algorithm
+#' from Polański, et al. One nearest neighbour index is built per batch on the
+#' WGPU backend and queried by every cell, so each cell gets
+#' `neighbours_within_batch` neighbours from every batch. The UMAP
+#' connectivity calculations that follow stay on the CPU and are shared with
+#' the CPU implementation.
+#'
+#' @param embd Numerical matrix. The embedding matrix used to generate the
+#' BBKNN results. Usually PCA. Rows represent cells.
+#' @param batch_labels Integer vector. These represent to which batch a given
+#' cell belongs. Needs to be 0-indexed!
+#' @param bbknn_params List. Parameter list, see [params_sc_bbknn_gpu()].
+#' @param seed Integer. Seed for reproducibility purposes.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list of two lists representing the sparse matrix representation
+#' of the distances and the connectivities. Each of them contains
+#' \itemize{
+#'   \item data - The values of the sparse matrix.
+#'   \item indptr - The index pointers. 0-indexed.
+#'   \item indices - The column indices. 0-indexed.
+#'   \item nrow - Number of rows.
+#'   \item ncol - Number of columns.
+#'   \item cs_type - The sparse format, `"csr"` here.
+#' }
+#'
+#' @export
+#'
+#' @references Polański, et al., Bioinformatics, 2020
+#'
+#' @keywords internal
+rs_bbknn_gpu <- function(embd, batch_labels, bbknn_params, seed, verbose) .Call(wrap__rs_bbknn_gpu, embd, batch_labels, bbknn_params, seed, verbose)
+
 # nolint end

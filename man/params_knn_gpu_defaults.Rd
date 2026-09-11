@@ -11,15 +11,40 @@ A named list with the following parameters:
 \itemize{
 \item k - Number of neighbours. \code{0L} hands the choice to Rust, which uses
 \code{sqrt(n_cells) * 0.5} and then adjusts for the simulated doublets.
-\item knn_method - One of \code{"exhaustive"} or \code{"ivf"}.
+\item knn_method - One of \code{"exhaustive"}, \code{"ivf"} or \code{"nndescent"}.
 \item ann_dist - One of \code{"euclidean"} or \code{"cosine"}. Manhattan is not
 supported by the GPU kernels.
 \item n_list - IVF only. Number of clusters. \code{NULL} gives \code{sqrt(n)}.
 \item n_probe - IVF only. Clusters to probe. \code{NULL} gives \code{sqrt(n_list)}.
+\item graph_k - NN-descent only. Node degree of the graph after pruning.
+\code{NULL} gives 30, widened to cover \code{k} when \code{extract_knn} is set.
+\item k_build - NN-descent only. Build degree before pruning. \code{NULL}
+gives \code{max(k, floor(1.5 * k))}.
+\item n_tree - NN-descent only. Trees seeding the descent.
+\item delta - NN-descent only. Termination criterium for the descent.
+\item rho - NN-descent only. Sampling rate for the descent.
+\item refine_knn - NN-descent only. 2-hop refinement sweeps after the
+descent. Buys graph quality at a linear cost. \code{NULL} gives 0.
+\item beam_width - NN-descent only. Beam width when querying. Ignored
+when \code{extract_knn} is set.
+\item max_beam_iters - NN-descent only. Beam search iterations. Ignored
+when \code{extract_knn} is set.
+\item n_entry_points - NN-descent only. Entry points when querying.
+Ignored when \code{extract_knn} is set.
+\item extract_knn - NN-descent only. Hand back the graph the descent
+built instead of beam searching over it.
 }
 }
 \description{
 GPU sibling of \code{\link[bixverse:params_knn_defaults]{bixverse::params_knn_defaults()}}. The GPU
-indices take a much smaller knob set: there is no Annoy, no NN-descent and
-no HNSW on the device, so only the exhaustive and IVF parameters survive.
+indices take a different knob set: there is no Annoy and no HNSW on the
+device, so what survives is exhaustive, IVF and NN-descent.
+}
+\details{
+NN-descent builds a CAGRA graph and, with \code{extract_knn = TRUE},
+hands that graph back rather than beam searching over it. Note that this
+saves the query, not the build: the descent itself dominates, and its build
+degree tracks \code{k}. NN-descent is therefore a low-\code{k} tool on the GPU. Above
+\code{k} of roughly 30 both exhaustive and IVF beat it, and by \code{k = 200} they
+beat it by more than an order of magnitude.
 }

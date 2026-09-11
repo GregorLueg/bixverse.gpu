@@ -542,18 +542,42 @@ params_sc_fast_cluster_gpu <- function(
 #' Default parameters for the GPU nearest neighbour backends
 #'
 #' @description GPU sibling of [bixverse::params_knn_defaults()]. The GPU
-#' indices take a much smaller knob set: there is no Annoy, no NN-descent and
-#' no HNSW on the device, so only the exhaustive and IVF parameters survive.
+#' indices take a different knob set: there is no Annoy and no HNSW on the
+#' device, so what survives is exhaustive, IVF and NN-descent.
+#'
+#' @details NN-descent builds a CAGRA graph and, with `extract_knn = TRUE`,
+#' hands that graph back rather than beam searching over it. Note that this
+#' saves the query, not the build: the descent itself dominates, and its build
+#' degree tracks `k`. NN-descent is therefore a low-`k` tool on the GPU. Above
+#' `k` of roughly 30 both exhaustive and IVF beat it, and by `k = 200` they
+#' beat it by more than an order of magnitude.
 #'
 #' @returns A named list with the following parameters:
 #' \itemize{
 #'   \item k - Number of neighbours. `0L` hands the choice to Rust, which uses
 #'   `sqrt(n_cells) * 0.5` and then adjusts for the simulated doublets.
-#'   \item knn_method - One of `"exhaustive"` or `"ivf"`.
+#'   \item knn_method - One of `"exhaustive"`, `"ivf"` or `"nndescent"`.
 #'   \item ann_dist - One of `"euclidean"` or `"cosine"`. Manhattan is not
 #'   supported by the GPU kernels.
 #'   \item n_list - IVF only. Number of clusters. `NULL` gives `sqrt(n)`.
 #'   \item n_probe - IVF only. Clusters to probe. `NULL` gives `sqrt(n_list)`.
+#'   \item graph_k - NN-descent only. Node degree of the graph after pruning.
+#'   `NULL` gives 30, widened to cover `k` when `extract_knn` is set.
+#'   \item k_build - NN-descent only. Build degree before pruning. `NULL`
+#'   gives `max(k, floor(1.5 * k))`.
+#'   \item n_tree - NN-descent only. Trees seeding the descent.
+#'   \item delta - NN-descent only. Termination criterium for the descent.
+#'   \item rho - NN-descent only. Sampling rate for the descent.
+#'   \item refine_knn - NN-descent only. 2-hop refinement sweeps after the
+#'   descent. Buys graph quality at a linear cost. `NULL` gives 0.
+#'   \item beam_width - NN-descent only. Beam width when querying. Ignored
+#'   when `extract_knn` is set.
+#'   \item max_beam_iters - NN-descent only. Beam search iterations. Ignored
+#'   when `extract_knn` is set.
+#'   \item n_entry_points - NN-descent only. Entry points when querying.
+#'   Ignored when `extract_knn` is set.
+#'   \item extract_knn - NN-descent only. Hand back the graph the descent
+#'   built instead of beam searching over it.
 #' }
 #'
 #' @export
@@ -563,7 +587,17 @@ params_knn_gpu_defaults <- function() {
     knn_method = "exhaustive",
     ann_dist = "euclidean",
     n_list = NULL,
-    n_probe = NULL
+    n_probe = NULL,
+    graph_k = NULL,
+    k_build = NULL,
+    n_tree = NULL,
+    delta = 0.001,
+    rho = NULL,
+    refine_knn = NULL,
+    beam_width = NULL,
+    max_beam_iters = NULL,
+    n_entry_points = NULL,
+    extract_knn = FALSE
   )
 }
 
@@ -602,6 +636,24 @@ params_knn_gpu_defaults <- function() {
 #' [bixverse::params_knn_defaults()] when `knn_backend = "cpu"`. Unknown keys
 #' are an error, not a silent pass-through. Defaults to `list(k = 0L)`, which
 #' asks Rust to pick `k`.
+#'
+#' @details Leave `knn_method` alone unless you have a reason. `"exhaustive"`
+#' is the default and is the right answer for Scrublet on the GPU arm.
+#'
+#' Scrublet queries at a high `k` by construction: the count is taken over an
+#' embedding `(1 + sim_doublet_ratio) * n_cells` rows tall, and `k = 0L` then
+#' scales `k` by the same factor, so a 20k-cell run searches at `k` around
+#' 175. Exhaustive barely notices `k`, since the scan is the cost and `k` only
+#' sizes the top-k selection. NN-descent notices a lot: its build degree
+#' tracks `k`, so the descent does more work per node as `k` climbs. Measured
+#' at 20k cells and 30 PCs, exhaustive took 0.98s against 38.8s for
+#' NN-descent at `k = 200`. NN-descent only came out ahead at `k = 10`.
+#'
+#' `"ivf"` is the one worth trying: it was the quickest of the three across
+#' that sweep and holds a Pearson above 0.99 against exhaustive.
+#'
+#' Recall matters more here than elsewhere. The doublet score is a neighbour
+#' count, so a backend that drops neighbours biases every score downwards.
 #'
 #' @returns A flat named list with all GPU Scrublet parameters.
 #'
@@ -653,6 +705,13 @@ params_scrublet_gpu <- function(
     ))
   }
 
+  knn <- utils::modifyList(knn_defaults, knn, keep.null = TRUE)
+
+  # `"nndescent"` is the package-wide name, Rust only knows `"nndescent_gpu"`
+  if (knn_backend == "gpu") {
+    knn[["knn_method"]] <- .normalise_gpu_knn_method(knn[["knn_method"]])
+  }
+
   params <- list(
     knn_backend = knn_backend,
     normalisation = utils::modifyList(
@@ -671,7 +730,79 @@ params_scrublet_gpu <- function(
     stdev_doublet_rate = stdev_doublet_rate,
     n_bins_hist = n_bins_histogram,
     manual_threshold = manual_threshold,
-    knn = utils::modifyList(knn_defaults, knn, keep.null = TRUE)
+    knn = knn
+  )
+
+  purrr::list_flatten(params, name_spec = "{inner}")
+}
+
+### bbknn GPU ------------------------------------------------------------------
+
+#' Wrapper function for the GPU BBKNN parameters
+#'
+#' @description GPU counterpart to [bixverse::params_sc_bbknn()]. Same BBKNN
+#' knobs, but the kNN block is the GPU one, see [params_knn_gpu_defaults()].
+#'
+#' @details Two keys of the GPU kNN block do nothing here and are rejected
+#' rather than silently ignored. `k` is set by `neighbours_within_batch`, and
+#' `extract_knn` only applies to a self-query, whereas BBKNN builds one index
+#' per batch and queries each with every cell.
+#'
+#' @param neighbours_within_batch Integer. Number of neighbours to consider
+#' per batch. Defaults to `3L`.
+#' @param set_op_mix_ratio Numeric. Mixing ratio between union (1.0) and
+#' intersection (0.0). Defaults to `1.0`.
+#' @param local_connectivity Numeric. UMAP connectivity computation parameter,
+#' how many nearest neighbours of each cell are assumed to be fully connected.
+#' Defaults to `1.0`.
+#' @param trim Optional integer. Trim the neighbours of each cell to these many
+#' top connectivities. May help with population independence and improve the
+#' tidiness of clustering. If `NULL`, it defaults to
+#' `10 * neighbours_within_batch`.
+#' @param knn List. Optional overrides for the kNN block. Validated against
+#' [params_knn_gpu_defaults()] minus `k` and `extract_knn`. Unknown keys are
+#' an error, not a silent pass-through.
+#'
+#' @returns A flat named list with all GPU BBKNN parameters.
+#'
+#' @export
+#'
+#' @references Polański, et al., Bioinformatics, 2020
+params_sc_bbknn_gpu <- function(
+  neighbours_within_batch = 3L,
+  set_op_mix_ratio = 1.0,
+  local_connectivity = 1.0,
+  trim = NULL,
+  knn = list()
+) {
+  # checks
+  checkmate::qassert(neighbours_within_batch, "I1[1,)")
+  checkmate::qassert(set_op_mix_ratio, "N1[0,1]")
+  checkmate::qassert(local_connectivity, "N1")
+  checkmate::qassert(trim, c("0", "I1[1,)"))
+  checkmate::assertList(knn)
+
+  knn_defaults <- params_knn_gpu_defaults()
+  knn_defaults[c("k", "extract_knn")] <- NULL
+
+  unknown_knn <- setdiff(names(knn), names(knn_defaults))
+  if (length(unknown_knn) > 0L) {
+    stop(sprintf(
+      "Unknown kNN parameter(s) for GPU BBKNN: %s. Allowed: %s.",
+      paste(unknown_knn, collapse = ", "),
+      paste(names(knn_defaults), collapse = ", ")
+    ))
+  }
+
+  knn <- utils::modifyList(knn_defaults, knn, keep.null = TRUE)
+  knn[["knn_method"]] <- .normalise_gpu_knn_method(knn[["knn_method"]])
+
+  params <- list(
+    neighbours_within_batch = neighbours_within_batch,
+    set_op_mix_ratio = set_op_mix_ratio,
+    local_connectivity = local_connectivity,
+    trim = trim,
+    knn = knn
   )
 
   purrr::list_flatten(params, name_spec = "{inner}")
