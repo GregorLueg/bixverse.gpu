@@ -101,9 +101,9 @@ checksum = "4b46cbb362ab8752921c97e041f5e366ee6297bd428a31275b9fcf1e380f7299"
 
 [[package]]
 name = "ann-search-rs"
-version = "0.8.3"
+version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcf6a510e2f0f970e8af958b37410f49a5e87342602a5183f17bb6724654f132"
+checksum = "a07cbec2cb92034051d11f04be040e9a82e4d460890ccb1097b45eb4eea2ad18"
 dependencies = [
  "cubecl",
  "cubecl-utils-rs",
@@ -479,9 +479,8 @@ dependencies = [
 
 [[package]]
 name = "bixverse-rs"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83a5c2ad235452b8d42ce8c7ba9e985a15caaed67585226854e5246fb6524cd6"
+version = "0.5.1"
+source = "git+https://github.com/GregorLueg/bixverse-rs?branch=release-0.5.1#49cc69a9c8fee52f26ccf4f29bc79382fc260c46"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -2578,9 +2577,9 @@ checksum = "e1d926b4d407d372f141f93bb444696142c29d32962ccbd3531117cf3aa0bfa9"
 
 [[package]]
 name = "edge-rs"
-version = "0.0.2"
+version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4319f18ec387a50ce6d00230d4947b61c6f682707e7278dca05119b8dc2eaa85"
+checksum = "f0492f67307ef7e7d04824a731175bf2a8898c90bdf39b48372e4c83bae09927"
 dependencies = [
  "faer",
  "faer-traits",
