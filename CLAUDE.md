@@ -90,4 +90,4 @@ Older files may still contain em-dashes from before this rule. Do not go on a re
 
 - The `document` binary in `src/rust/document.rs` is invoked by `Makevars` after the lib build to regenerate wrappers during install. That's why `document.rs` sits alongside `Cargo.toml` and has its own `[[bin]]` entry.
 - `configure` / `configure.win` plus `tools/config.R` and `tools/msrv.R` implement CRAN-friendly Rust detection and the vendored-crate offline build path (`src/rust/vendor.tar.xz`, generated at release time). Don't hand-edit `src/Makevars`, it is generated from `src/Makevars.in`.
-- `bixverse`, `bixverse.plots`, `manifoldsR` are `Remotes:`. Assume they are installed from GitHub in dev environments.
+- `bixverse`, `bixverse.plots`, `manifoldsR` resolve through `Additional_repositories:` (r-universe), not `Remotes:`. Assume they are installed in dev environments.
