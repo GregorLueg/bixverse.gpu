@@ -47,10 +47,3 @@ strip = true
 [[bin]]
 name = "document"
 path = "document.rs"
-
-#########
-# Patch #
-#########
-
-[patch.crates-io]
-manifolds-rs = { path = "/Users/gregorlueg/repos/shared/manifolds-rs" }
