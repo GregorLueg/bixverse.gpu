@@ -34,6 +34,8 @@ navbar:
           href: articles/gpu_nmf.html
         - text: Scrublet with GPU-acceleration
           href: articles/gpu_scrublet.html
+        - text: NEBULA with GPU-acceleration
+          href: articles/gpu_nebula.html
         - text: GPU-accelerated UMAP
           href: articles/gpu_umap.html
         - text: GPU-accelerated t-SNE
@@ -56,6 +58,7 @@ articles:
       - gpu_scenic
       - gpu_nmf
       - gpu_scrublet
+      - gpu_nebula
       - gpu_umap
       - gpu_tsne
       - parametric_umap
@@ -76,6 +79,7 @@ reference:
       - scrublet_gpu_sc
       - fast_cluster_gpu_sc
       - bbknn_gpu_sc
+      - nebula_gpu_sc
       - nmf_gpu_sc
       - stabilised_nmf_gpu_sc
       - consensus_nmf_gpu_sc
@@ -84,6 +88,7 @@ reference:
       - params_sc_fast_cluster_gpu
       - params_scrublet_gpu
       - params_sc_bbknn_gpu
+      - params_nebula_gpu
       - params_knn_gpu_defaults
   - title: GPU-accelerated UMAP
     desc:
@@ -140,6 +145,7 @@ reference:
       - rs_gpu_knn
       - rs_kmeans_gpu
       - rs_mc_scenic_gpu
+      - rs_nebula_sc_gpu
       - rs_nmf_consensus_mc_gpu
       - rs_nmf_consensus_sc_gpu
       - rs_nmf_k_sweep_mc_gpu

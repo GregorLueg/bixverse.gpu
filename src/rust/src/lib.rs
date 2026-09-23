@@ -23,6 +23,7 @@ pub mod utils;
 pub use single_cell::bbknn_gpu;
 pub use single_cell::fast_clusters_gpu;
 pub use single_cell::harmony_gpu;
+pub use single_cell::nebula_gpu;
 pub use single_cell::nmf_gpu;
 pub use single_cell::pca_gpu;
 pub use single_cell::scenic_gpu;
@@ -51,6 +52,7 @@ extendr_module! {
     use seacells_gpu;
     use fast_clusters_gpu;
     use bbknn_gpu;
+    use nebula_gpu;
     // device
     fn rs_gpu_available;
     // knn

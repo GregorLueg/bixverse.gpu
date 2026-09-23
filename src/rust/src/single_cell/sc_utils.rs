@@ -4,13 +4,14 @@
 //! (`single_cell/r_sc_metacells.rs` and `single_cell/utils.rs`) rather than in
 //! `bixverse-rs`, so this crate cannot import them. Keep them in sync with the
 //! CPU originals: a divergence here means the GPU and CPU paths silently
-//! aggregate different cells, or the fast clustering results come back in a
-//! shape the R side does not expect.
+//! aggregate different cells, or the fast clustering and NEBULA results come
+//! back in a shape the R side does not expect.
 
 use bixverse_rs::prelude::*;
 use bixverse_rs::single_cell::sc_analysis::fast_clusters::{
     FastLouvainGridResult, FastLouvainResults,
 };
+use bixverse_rs::single_cell::sc_analysis::nebula::NebulaScRes;
 use extendr_api::*;
 use faer::Mat;
 use std::collections::HashMap;
@@ -420,4 +421,55 @@ pub fn process_fc_louvain_results(results: Vec<FastLouvainGridResult>) -> Result
     ];
 
     Ok(list![memberships = res, stats = stats])
+}
+
+////////////
+// NEBULA //
+////////////
+
+/// Converts the NEBULA results into an R list.
+///
+/// Port of `nebula_res_to_r_list` in the `bixverse` R package's
+/// `single_cell/utils.rs`. `bixverse:::.nebula_res_to_class()` consumes the
+/// list, so the element names have to match the CPU original exactly.
+///
+/// ### Params
+///
+/// * `res` - The per-gene NEBULA fits and Wald test.
+///
+/// ### Returns
+///
+/// A named list with `gene_idx` (0-indexed), the `coefficients` and `se`
+/// matrices of genes x coefficients, both overdispersions, the optional shrunk
+/// cell-level overdispersion, the diagnostics and the Wald test columns.
+pub fn nebula_res_to_r_list(res: NebulaScRes) -> List {
+    let n_kept = res.gene_idx.len();
+    let n_coef = res.n_coef;
+
+    let coefficients =
+        RMatrix::new_matrix(n_kept, n_coef, |r, c| res.coefficients[r * n_coef + c]);
+    let se = RMatrix::new_matrix(n_kept, n_coef, |r, c| res.se[r * n_coef + c]);
+
+    // `Nullable` keeps an absent shrinkage an R `NULL` rather than a zero-length
+    // vector, which would read as "every gene shrank to nothing".
+    let shrunk = match res.cell_overdispersion_shrunk {
+        Some(v) => Nullable::NotNull(v),
+        None => Nullable::Null,
+    };
+
+    list!(
+        gene_idx = res.gene_idx.r_int_convert(),
+        coefficients = coefficients,
+        se = se,
+        subject_overdispersion = res.subject_overdispersion,
+        cell_overdispersion = res.cell_overdispersion,
+        cell_overdispersion_shrunk = shrunk,
+        convergence = res.convergence,
+        sigma_at_bound = res.sigma_at_bound,
+        log_fc = res.log_fc,
+        effect_se = res.effect_se,
+        z = res.z,
+        p_values = res.p_val,
+        fdr = res.fdr
+    )
 }

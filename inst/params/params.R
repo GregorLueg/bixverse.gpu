@@ -731,3 +731,116 @@ spec_knn_gpu_defaults <- param_defaults(
     )
   )
 )
+
+spec_nebula_gpu <- param_spec(
+  name = "nebula_gpu",
+  title = "Wrapper function for parameters for GPU NEBULA",
+  description = paste(
+    "GPU counterpart to [bixverse::params_nebula()]. Same knobs and",
+    "defaults, minus `reml`: the device fit does not implement it.",
+    "Stage two of NEBULA, the per-gene penalised fits, runs in `f32`",
+    "on the device and is finished on the host in `f64`, so the",
+    "estimates sit close to the CPU ones rather than on them."
+  ),
+  references = "He, et al., Commun Biol, 2021",
+  checker = "NebulaGpu",
+  label = "GPU NEBULA params",
+  hint = paste(
+    "The overdispersion bounds and `eps` must be strictly",
+    "positive; `gene_batch_size` must be at least 1."
+  ),
+  extra_ctor = quote({
+    if (min_sigma >= max_sigma) {
+      stop("`min_sigma` needs to be below `max_sigma`.")
+    }
+    if (min_phi >= max_phi) {
+      stop("`min_phi` needs to be below `max_phi`.")
+    }
+  }),
+  extra_check = quote({
+    if (x[["min_sigma"]] >= x[["max_sigma"]]) {
+      return("`min_sigma` in GPU NEBULA params is not below `max_sigma`.")
+    }
+    if (x[["min_phi"]] >= x[["max_phi"]]) {
+      return("`min_phi` in GPU NEBULA params is not below `max_phi`.")
+    }
+  }),
+  fields = list(
+    nebula_method = p_choice(
+      "ln",
+      c("ln", "hl"),
+      doc = paste(
+        "Which variant to run. NEBULA downgrades `\"ln\"` to `\"hl\"`",
+        "below 30 cells per subject, as the R package does."
+      )
+    ),
+    min_sigma = p_dbl(
+      1e-04,
+      range = "(0,)",
+      doc = "Lower bound on the subject-level overdispersion."
+    ),
+    min_phi = p_dbl(
+      1e-04,
+      range = "(0,)",
+      doc = "Lower bound on the cell-level overdispersion."
+    ),
+    max_sigma = p_dbl(
+      10,
+      range = "(0,)",
+      doc = "Upper bound on the subject-level overdispersion."
+    ),
+    max_phi = p_dbl(
+      1000,
+      range = "(0,)",
+      doc = "Upper bound on the cell-level overdispersion."
+    ),
+    cutoff_cell = p_dbl(
+      20,
+      range = "[0,)",
+      doc = paste(
+        "Refit both overdispersions when the product of the cells per",
+        "subject and the estimated `phi` falls below this."
+      )
+    ),
+    kappa = p_dbl(
+      800,
+      range = "[0,)",
+      doc = paste(
+        "Threshold on NEBULA's `kappa_obs` above which the",
+        "subject-level overdispersion from stage one is trusted as",
+        "is."
+      )
+    ),
+    cpc = p_dbl(
+      0.005,
+      range = "[0,)",
+      doc = "Drop a gene whose mean count per cell is at most this."
+    ),
+    mincp = p_int(
+      5L,
+      range = "[0,)",
+      doc = "Drop a gene expressed in fewer than this many cells."
+    ),
+    eps = p_dbl(
+      1e-06,
+      range = "(0,)",
+      doc = "Absolute stopping tolerance for the optimiser."
+    ),
+    gene_batch_size = p_int(
+      1000L,
+      range = "[1,)",
+      doc = paste(
+        "Genes read and fitted per batch. Bounds how much of the",
+        "store is resident at once and changes nothing about the",
+        "answer, since NEBULA is gene-independent."
+      )
+    ),
+    shrink_dispersion = p_lgl(
+      TRUE,
+      doc = paste(
+        "Shrink the cell-level overdispersions towards an empirical",
+        "Bayes prior once the sweep is done."
+      )
+    )
+  )
+)
