@@ -949,4 +949,64 @@ rs_fast_cluster_grid_gpu <- function(embd, resolutions, n_centroids, fc_params, 
 #' @keywords internal
 rs_bbknn_gpu <- function(embd, batch_labels, bbknn_params, seed, verbose) .Call(wrap__rs_bbknn_gpu, embd, batch_labels, bbknn_params, seed, verbose)
 
+#' GPU: fit the NEBULA negative binomial gamma mixed model over single cells
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU equivalent of `bixverse::rs_nebula_sc`. Stage two of NEBULA, the
+#' per-gene penalised fits, is dispatched to the WGPU backend in `f32` and
+#' finished on the host in `f64`. Everything else, including the streaming of
+#' the counts out of the gene-major store in batches, the subject ordering, the
+#' dispersion shrinkage and the Wald test, is the CPU code. REML is not
+#' implemented on the device and is rejected.
+#'
+#' @param f_path_genes String. Path to the `counts_genes.bin` file.
+#' @param f_path_cells String. Path to the `counts_cells.bin` file. Only read
+#' when `offset` is `NULL`, to take the library sizes.
+#' @param cells_to_keep Integer vector. 0-indexed(!) global positions of the
+#' cells to analyse, in any order. Must not hold duplicates.
+#' @param gene_indices Integer vector. 0-indexed(!) positions of the genes to
+#' fit.
+#' @param subject_ids Integer vector. 0-indexed(!) subject label per global
+#' cell. One entry per cell in the store, not per cell in `cells_to_keep`.
+#' @param design Numeric matrix. Predictors of cells x coefficients, rows
+#' aligned to `cells_to_keep` and including an intercept.
+#' @param offset Optional numeric vector. Strictly positive scaling factor per
+#' selected cell, aligned to `cells_to_keep`. `NULL` uses the library sizes.
+#' @param nebula_params Named list. The NEBULA parameters, see
+#' [params_nebula_gpu()], plus either `coef` (a 0-indexed(!) coefficient) or
+#' `contrast` (one weight per coefficient).
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list with the following elements
+#' \itemize{
+#'   \item gene_idx - Integer. 0-indexed positions of the genes that survived
+#'   NEBULA's own expression filter.
+#'   \item coefficients - Numeric matrix of genes x coefficients. The fixed
+#'   effects on the design scale.
+#'   \item se - Numeric matrix of genes x coefficients. The standard errors.
+#'   \item subject_overdispersion - Numeric. NEBULA's `sigma^2`.
+#'   \item cell_overdispersion - Numeric. NEBULA's `phi^-1`.
+#'   \item cell_overdispersion_shrunk - Numeric or `NULL`. The cell-level
+#'   overdispersion after empirical Bayes shrinkage, when it was requested.
+#'   \item convergence - Integer. NEBULA's convergence code. At or below `-20`
+#'   is a likely failure.
+#'   \item sigma_at_bound - Boolean. Whether the subject-level variance
+#'   finished pinned on its lower bound.
+#'   \item log_fc - Numeric. Effect of the tested coefficient or contrast, on
+#'   the natural log scale.
+#'   \item effect_se - Numeric. Standard error of that effect.
+#'   \item z - Numeric. The Wald statistic.
+#'   \item p_values - Numeric. Two-sided p-values.
+#'   \item fdr - Numeric. Benjamini-Hochberg adjusted p-values.
+#' }
+#'
+#' @references He, et al., Commun Biol, 2021
+#'
+#' @export
+#'
+#' @keywords internal
+rs_nebula_sc_gpu <- function(f_path_genes, f_path_cells, cells_to_keep, gene_indices, subject_ids, design, offset, nebula_params, verbose) .Call(wrap__rs_nebula_sc_gpu, f_path_genes, f_path_cells, cells_to_keep, gene_indices, subject_ids, design, offset, nebula_params, verbose)
+
 # nolint end

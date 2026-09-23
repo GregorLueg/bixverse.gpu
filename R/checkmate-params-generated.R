@@ -82,6 +82,101 @@ checkKMeansGpuParams <- function(x) {
 #' @keywords internal
 assertKMeansGpuParams <- checkmate::makeAssertionFunction(checkKMeansGpuParams)
 
+#' Check GPU NEBULA params
+#'
+#' @description Checkmate extension for the output of [params_nebula_gpu()].
+#'
+#' @param x The object to check.
+#'
+#' @returns `TRUE` if the check was successful, otherwise a
+#' checkmate-style error string.
+#'
+#' @keywords internal
+checkNebulaGpuParams <- function(x) {
+  res <- check_list_shape(
+    x,
+    c(
+      "nebula_method",
+      "min_sigma",
+      "min_phi",
+      "max_sigma",
+      "max_phi",
+      "cutoff_cell",
+      "kappa",
+      "cpc",
+      "mincp",
+      "eps",
+      "gene_batch_size",
+      "shrink_dispersion"
+    )
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- apply_qtest_rules(
+    x,
+    list(
+      min_sigma = "N1(0,)",
+      min_phi = "N1(0,)",
+      max_sigma = "N1(0,)",
+      max_phi = "N1(0,)",
+      cutoff_cell = "N1[0,)",
+      kappa = "N1[0,)",
+      cpc = "N1[0,)",
+      mincp = "I1[0,)",
+      eps = "N1(0,)",
+      gene_batch_size = "I1[1,)",
+      shrink_dispersion = "B1"
+    ),
+    label = "GPU NEBULA params",
+    hint = paste(
+      "The overdispersion bounds and `eps` must be strictly positive;",
+      "`gene_batch_size` must be at least 1."
+    )
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- apply_choice_rules(
+    x,
+    list(
+      nebula_method = c("ln", "hl")
+    ),
+    label = "GPU NEBULA params",
+    hint = paste(
+      "The overdispersion bounds and `eps` must be strictly positive;",
+      "`gene_batch_size` must be at least 1."
+    )
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  if (x[["min_sigma"]] >= x[["max_sigma"]]) {
+    return("`min_sigma` in GPU NEBULA params is not below `max_sigma`.")
+  }
+  if (x[["min_phi"]] >= x[["max_phi"]]) {
+    return("`min_phi` in GPU NEBULA params is not below `max_phi`.")
+  }
+
+  return(TRUE)
+}
+
+#' Assert GPU NEBULA params
+#'
+#' @inheritParams checkNebulaGpuParams
+#' @param .var.name Name of the checked object to print in assertions.
+#' @param add Collection to store assertion messages. See
+#' [checkmate::makeAssertCollection()].
+#'
+#' @returns Invisibly returns the checked object if the assertion is
+#' successful.
+#'
+#' @keywords internal
+assertNebulaGpuParams <- checkmate::makeAssertionFunction(checkNebulaGpuParams)
+
 #' Check GPU nearest neighbour params
 #'
 #' @description Checkmate extension for the output of [params_nn_gpu()].
