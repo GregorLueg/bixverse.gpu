@@ -1,0 +1,290 @@
+---
+title: "GPU-accelerated NEBULA"
+date: last-modified
+date-format: YYYY-MM-DD
+vignette: >
+  %\VignetteIndexEntry{GPU-accelerated NEBULA}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: '#>'
+author: "Gregor Lueg"
+---
+
+## Intro
+
+NEBULA fits a negative binomial gamma mixed model per gene, with the donor as
+a random effect. Why you'd want that over a Wilcoxon test is covered in the
+[differential expression vignette](https://gregorlueg.github.io/bixverse/articles/differential_expression.html)
+in `bixverse`. Read that first. This one only asks two questions: does the GPU
+version give you the same answer, and is it faster?
+
+`nebula_gpu_sc()` is a drop-in for `bixverse::nebula_sc()`. Same arguments,
+same `ScNebula` result. Stage two of NEBULA, the per-gene penalised fits, runs
+on the device via [cubecl](https://github.com/tracel-ai/cubecl). Cell ordering,
+gene batching, the dispersion shrinkage and the Wald test are the CPU code.
+
+Two differences are worth knowing about:
+
+- The device fits run in `f32` and the host finishes each one in `f64`. The
+  numbers land close to the CPU ones, not on them.
+- REML is not implemented on the device. `params_nebula_gpu()` is
+  `bixverse::params_nebula()` without the `reml` knob.
+
+```{r}
+#| label: setup
+#| message: false
+#| warning: false
+library(bixverse)
+library(bixverse.gpu)
+library(data.table)
+library(ggplot2)
+library(SingleCellExperiment)
+```
+
+## The data
+
+Same set-up as the CPU vignette: the [Kang, et al.](https://doi.org/10.1038/nbt.4042)
+PBMCs, eight lupus donors, each split into an IFN-β stimulated and a control
+arm. Doublets out, then CD14+ monocytes and their 500 most variable genes.
+
+```{r}
+#| label: load-data
+#| code-fold: true
+#| code-summary: "Load and subset the Kang data (click to expand)"
+sce <- qs2::qs_read(download_kang_pbmc())
+sce <- sce[, sce$multiplets == "singlet" & !is.na(sce$cell)]
+
+dir_kang <- file.path(tempdir(), "kang_gpu")
+dir.create(dir_kang, showWarnings = FALSE, recursive = TRUE)
+
+sc_object <- SingleCells(dir_data = dir_kang)
+sc_object <- load_sce(
+  object = sc_object,
+  sce = sce,
+  sc_qc_param = params_sc_min_quality(
+    min_unique_genes = 200L,
+    min_lib_size = 500L,
+    min_cells = 20L,
+    target_size = 1e4
+  ),
+  .verbose = FALSE
+)
+
+mono <- SingleCellsSubset(
+  sc_object,
+  grouping_column = "cell",
+  group = "CD14+ Monocytes"
+)
+
+mono <- find_hvg_sc(mono, hvg_no = 500L, .verbose = FALSE)
+hvgs <- get_gene_names_from_idx(mono, get_hvg(mono), rust_based = TRUE)
+```
+
+```{r}
+#| label: design
+mono
+```
+
+## The real contrast
+
+Stimulated against control, donor as the random effect. Run both, time both.
+
+```{r}
+#| label: real-cpu
+time_cpu <- system.time(
+  res_cpu <- nebula_sc(
+    object = mono,
+    subject_col = "ind",
+    design = ~stim,
+    genes_to_use = hvgs,
+    .verbose = FALSE
+  )
+)
+```
+
+```{r}
+#| label: real-gpu
+time_gpu <- system.time(
+  res_gpu <- nebula_gpu_sc(
+    object = mono,
+    subject_col = "ind",
+    design = ~stim,
+    genes_to_use = hvgs,
+    .verbose = FALSE
+  )
+)
+```
+
+```{r}
+#| label: real-timing
+data.table(
+  backend = c("CPU", "GPU"),
+  seconds = c(time_cpu[["elapsed"]], time_gpu[["elapsed"]])
+)
+```
+
+### How close are they?
+
+Join the two result tables on the gene and look at the worst absolute gap per
+column. Relative gaps are no use here: a gene with an effect of `1e-3` turns an
+absolute gap in the fourth decimal into a 70% relative one.
+
+```{r}
+#| label: real-diff
+res_both <- merge(
+  res_cpu$results,
+  res_gpu$results,
+  by = "gene_id",
+  suffixes = c("_cpu", "_gpu")
+)
+
+cols <- c(
+  "log_fc",
+  "z",
+  "p_value",
+  "fdr",
+  "subject_overdispersion",
+  "cell_overdispersion"
+)
+
+rbindlist(lapply(cols, \(col) {
+  a <- res_both[[paste0(col, "_cpu")]]
+  b <- res_both[[paste0(col, "_gpu")]]
+  data.table(
+    column = col,
+    max_abs_diff = max(abs(a - b)),
+    pearson = cor(a, b)
+  )
+}))
+```
+
+```{r}
+#| label: real-scatter
+#| fig-width: 8
+#| fig-height: 4
+plot_dt <- rbind(
+  res_both[, .(stat = "log_fc", cpu = log_fc_cpu, gpu = log_fc_gpu)],
+  res_both[, .(stat = "z", cpu = z_cpu, gpu = z_gpu)]
+)
+
+ggplot(plot_dt, aes(x = cpu, y = gpu)) +
+  geom_abline(slope = 1, intercept = 0, colour = "grey60", linetype = 2) +
+  geom_point(size = 0.8, alpha = 0.6) +
+  facet_wrap(~stat, scales = "free") +
+  labs(x = "CPU", y = "GPU") +
+  theme_minimal()
+```
+
+What matters in the end is the calls. Same genes at FDR <= 0.05?
+
+```{r}
+#| label: real-calls
+res_both[, .(
+  genes = .N,
+  sig_cpu = sum(fdr_cpu <= 0.05),
+  sig_gpu = sum(fdr_gpu <= 0.05),
+  sig_both = sum(fdr_cpu <= 0.05 & fdr_gpu <= 0.05),
+  bound_agree = sum(sigma_at_bound_cpu == sigma_at_bound_gpu),
+  convergence_agree = sum(convergence_cpu == convergence_gpu)
+)]
+```
+
+Every CPU call is a GPU call and vice versa. The top of the list, ranked by the
+CPU's `|z|`, side by side:
+
+```{r}
+#| label: real-top
+head(
+  res_both[
+    order(-abs(z_cpu)),
+    .(gene_id, log_fc_cpu, log_fc_gpu, z_cpu, z_gpu)
+  ],
+  8
+)
+```
+
+The interferon response, ISG15, APOBEC3A and CXCL10, identical to the printed
+precision. The one place the two disagree is the convergence code, on a handful
+of genes:
+
+```{r}
+#| label: real-convergence
+res_both[
+  convergence_cpu != convergence_gpu,
+  .(gene_id, convergence_cpu, convergence_gpu, z_cpu, z_gpu, fdr_cpu, fdr_gpu)
+]
+```
+
+The codes swap between `1` and `-10` in both directions. Both sit above the
+`-20` line that marks a likely failure, and `z` and the FDR on these genes
+still agree to five or six significant digits. Nothing here changes a call.
+
+## No contrast at all
+
+The CPU vignette's key check: control cells only, eight donors split four
+against four at random. Any call is a false positive. If the GPU's `f32` fits
+nudged the overdispersions the wrong way, this is where extra calls would show
+up.
+
+```{r}
+#| label: null-setup
+obs_parent <- sc_object[[]]
+donors <- sort(unique(obs_parent$ind))
+group_a <- donors[c(1, 3, 5, 7)]
+
+sc_object[["cell_stim"]] <- paste(obs_parent$cell, obs_parent$stim, sep = "__")
+sc_object[["fake"]] <- ifelse(obs_parent$ind %in% group_a, "a", "b")
+
+mono_ctrl <- SingleCellsSubset(
+  sc_object,
+  grouping_column = "cell_stim",
+  group = "CD14+ Monocytes__ctrl"
+)
+```
+
+```{r}
+#| label: null-run
+null_cpu <- nebula_sc(
+  object = mono_ctrl,
+  subject_col = "ind",
+  design = ~fake,
+  genes_to_use = hvgs,
+  .verbose = FALSE
+)
+
+null_gpu <- nebula_gpu_sc(
+  object = mono_ctrl,
+  subject_col = "ind",
+  design = ~fake,
+  genes_to_use = hvgs,
+  .verbose = FALSE
+)
+
+data.table(
+  backend = c("CPU", "GPU"),
+  false_positives = c(
+    null_cpu$results[fdr <= 0.05, .N],
+    null_gpu$results[fdr <= 0.05, .N]
+  )
+)
+```
+
+## Timing
+
+On this data, `r length(hvgs)` genes over `r res_cpu$params$n_cells` cells,
+the CPU took `r round(time_cpu[["elapsed"]], 1)` s and the GPU
+`r round(time_gpu[["elapsed"]], 1)` s. One run each on an Apple Silicon
+laptop, device set-up included. Across renders of this vignette the order has
+flipped both ways, so call it a wash at this size. The whole sweep is seconds
+either way, and stage one, the batching and the Wald test stay on the CPU in
+both, so the GPU only ever takes over part of the run. Larger cell counts and
+longer gene lists are where stage two grows, but that isn't measured here.
+Benchmark on your own data before committing to the GPU path.
+
+## Where next
+
+REML on the device isn't there yet; use the CPU path if you need it. NEBULA on
+`MetaCells` stays CPU-only for now too.
