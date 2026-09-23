@@ -100,7 +100,7 @@ time_cpu <- system.time(
     subject_col = "ind",
     design = ~stim,
     genes_to_use = hvgs,
-    .verbose = FALSE
+    .verbose = TRUE
   )
 )
 ```
@@ -113,7 +113,7 @@ time_gpu <- system.time(
     subject_col = "ind",
     design = ~stim,
     genes_to_use = hvgs,
-    .verbose = FALSE
+    .verbose = TRUE
   )
 )
 ```
@@ -252,7 +252,7 @@ null_cpu <- nebula_sc(
   subject_col = "ind",
   design = ~fake,
   genes_to_use = hvgs,
-  .verbose = FALSE
+  .verbose = TRUE
 )
 
 null_gpu <- nebula_gpu_sc(
@@ -260,7 +260,7 @@ null_gpu <- nebula_gpu_sc(
   subject_col = "ind",
   design = ~fake,
   genes_to_use = hvgs,
-  .verbose = FALSE
+  .verbose = TRUE
 )
 
 data.table(
