@@ -36,8 +36,8 @@
       "exhaustive"
     )
   )
-  assertNnParamsGpu(nn_params)
-  assertUmapParamsGpu(umap_params)
+  assertNnGpuParams(nn_params)
+  assertUmapGpuParams(umap_params)
   checkmate::qassert(.verbose, c("B1", "I1[0, 2]"))
 
   final_params <- c(nn_params, umap_params)

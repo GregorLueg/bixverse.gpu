@@ -184,7 +184,7 @@ S7::method(fast_cluster_gpu_sc, SingleCellsSubset) <- function(
     S7::S7_inherits(object, bixverse::SingleCells) ||
       S7::S7_inherits(object, bixverse::SingleCellsSubset)
   )
-  assertScFastClusterGpu(fc_params)
+  assertScFastClusterGpuParams(fc_params)
   checkmate::qassert(embd_to_use, "S1")
   checkmate::qassert(no_embd_to_use, c("I1", "0"))
   checkmate::qassert(resolutions, "N+")
