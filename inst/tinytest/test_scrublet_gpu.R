@@ -415,7 +415,7 @@ cpu_knn_params <- params_scrublet_gpu(
   sim_doublet_ratio = sim_ratio,
   n_bins_histogram = 50L,
   knn_backend = "cpu",
-  knn = list(knn_method = "hnsw", k = 0L)
+  knn = list(knn_method = "hnsw", k = 0L, ef_search = 150L)
 )
 
 cpu_knn_res <- rs_sc_scrublet_gpu(
