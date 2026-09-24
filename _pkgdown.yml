@@ -130,6 +130,11 @@ reference:
       - params_kmeans_gpu
       - generate_knn_graph_gpu
       - gpu_available
+  - title: Agent skill
+    desc:
+      Teach your coding agent how to use the package.
+    contents:
+      - install_agent_skill_gpu
   - title: Rust wrappers
     desc: 
       Everything rusty - only use this if you know what you are doing... Maybe 
