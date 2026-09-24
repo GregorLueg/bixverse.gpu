@@ -479,9 +479,9 @@ dependencies = [
 
 [[package]]
 name = "bixverse-rs"
-version = "0.5.3"
+version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f47d6ae91a350c040c2d38f312a402d5305f54ba7c8e4580b083f125f0234795"
+checksum = "02681387bbf7b00ccea00fa201ec567f7331a39b599be98c789f1a507cae0e82"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -2240,9 +2240,9 @@ dependencies = [
 
 [[package]]
 name = "cudarc"
-version = "0.19.9"
+version = "0.19.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "804764d10e844da09765a7b2ca9641a0851523d1702efb0d7299d73e31b86e80"
+checksum = "7359bf1de037ddada72729c3acec9b040f3468400c6e9e740b01ba0cd2e89562"
 dependencies = [
  "libloading 0.9.0",
 ]
@@ -2591,9 +2591,9 @@ checksum = "e1d926b4d407d372f141f93bb444696142c29d32962ccbd3531117cf3aa0bfa9"
 
 [[package]]
 name = "edge-rs"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba6fa9a0ac3a04608a30208214fef0b3fc09650039c6628b4c81b224de243308"
+checksum = "06dc972feaf20a5022552c62166d243e26f843493cec8e136f1a07ef474c3cf9"
 dependencies = [
  "cubecl",
  "cubecl-utils-rs",
@@ -3819,7 +3819,7 @@ dependencies = [
  "hdf5-metno-types",
  "libc",
  "lzf-sys",
- "ndarray 0.16.1",
+ "ndarray 0.17.2",
  "pastey 0.2.3",
 ]
 
@@ -4668,9 +4668,9 @@ checksum = "fc04a4c58212d57930a24bf47d3fa87485264a3a054e9c10e042eb373573ad3c"
 
 [[package]]
 name = "manifolds-rs"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "189363efc432c0cf61e2d8c341e7908c6d0d8cff285b4bf637169308d2a186f4"
+checksum = "c4529bce43264b588da0e38d0b0a00b06dc9fe928e2552ad3844756acdc7f716"
 dependencies = [
  "ann-search-rs",
  "approx",
