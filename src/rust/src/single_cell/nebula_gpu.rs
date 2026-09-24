@@ -6,7 +6,7 @@
 //! Stage two runs in `f32` on the device, so the answers sit close to the CPU
 //! path rather than on it.
 
-use crate::ensure_gpu;
+use crate::ensure_plane_ops;
 use crate::single_cell::sc_utils::nebula_res_to_r_list;
 use bixverse_rs::gpu::sc_gpu::nebula_gpu::run_nebula_gpu;
 use bixverse_rs::prelude::*;
@@ -101,7 +101,7 @@ fn rs_nebula_sc_gpu(
     nebula_params: List,
     verbose: usize,
 ) -> Result<List> {
-    ensure_gpu()?;
+    ensure_plane_ops()?;
 
     let cells_to_keep: Vec<usize> = cells_to_keep.r_int_convert();
     let gene_indices: Vec<usize> = gene_indices.r_int_convert();

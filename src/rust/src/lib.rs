@@ -55,6 +55,7 @@ extendr_module! {
     use nebula_gpu;
     // device
     fn rs_gpu_available;
+    fn rs_gpu_plane_ops;
     // knn
     fn rs_gpu_knn;
     // umap parametric
@@ -238,6 +239,80 @@ pub(crate) fn ensure_gpu() -> extendr_api::Result<()> {
              adapter; check your GPU drivers and \
              https://burn.dev/books/cubecl/getting-started/installation.html. \
              Probe with `gpu_available()`."
+                .to_string(),
+        ))
+    }
+}
+
+mod plane_check {
+    use cubecl::prelude::*;
+    use cubecl_utils_rs::prelude::*;
+
+    /// Writes one plane's width, counted by a plane reduction.
+    #[cube(launch_unchecked)]
+    fn plane_width(out: &mut Tensor<u32>) {
+        let n = plane_sum(1u32);
+        if UNIT_POS_X == 0 {
+            out[0] = n;
+            out[1] = PLANE_DIM;
+        }
+    }
+
+    /// `true` if a plane reduction runs and agrees with the plane width.
+    pub(crate) fn plane_ops_run<R: Runtime>(client: &ComputeClient<R>) -> bool {
+        let limits = GpuLimits::from_client(client);
+        let Ok(out) = GpuTensor::<R, u32>::from_slice(&[0, 0], vec![2], client) else {
+            return false;
+        };
+        unsafe {
+            plane_width::launch_unchecked::<R>(
+                client,
+                CubeCount::Static(1, 1, 1),
+                CubeDim::new_1d(limits.plane_size_max.max(1)),
+                out.into_tensor_arg(),
+            );
+        }
+        match out.read(client) {
+            Ok(got) => got[0] != 0 && got[0] == got[1],
+            Err(_) => false,
+        }
+    }
+}
+
+/// Check whether the GPU adapter runs plane (subgroup) operations
+///
+/// @description
+/// Advertising plane operations is not enough: the paravirtualised GPU of a
+/// macOS VM, as on the macos-15-intel GitHub runners, reports planes of 4 to
+/// 64 lanes but silently drops every dispatch that uses one. This launches a
+/// single plane reduction and checks the answer. The result is cached for the
+/// session.
+///
+/// @returns Boolean. `TRUE` when a GPU adapter is present and a plane
+/// reduction on it returns the plane width.
+#[extendr]
+fn rs_gpu_plane_ops() -> bool {
+    static PLANE_OPS: OnceLock<bool> = OnceLock::new();
+    rs_gpu_available()
+        && *PLANE_OPS.get_or_init(|| {
+            plane_check::plane_ops_run(&WgpuRuntime::client(&WgpuDevice::default()))
+        })
+}
+
+/// Hard error when the GPU adapter does not run plane operations.
+///
+/// For kernels that reduce within a plane, NEBULA so far. On a device that
+/// drops those dispatches they would return whatever their output buffers
+/// held rather than fail.
+pub(crate) fn ensure_plane_ops() -> extendr_api::Result<()> {
+    ensure_gpu()?;
+    if rs_gpu_plane_ops() {
+        Ok(())
+    } else {
+        Err(extendr_api::Error::Other(
+            "this GPU adapter advertises plane (subgroup) operations but does \
+             not run them, as the paravirtualised GPU of a macOS VM does. Use \
+             the CPU version instead."
                 .to_string(),
         ))
     }

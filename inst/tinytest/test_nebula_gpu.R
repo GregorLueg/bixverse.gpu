@@ -4,6 +4,12 @@ if (!gpu_available()) {
   exit_file("no GPU adapter available")
 }
 
+# the NEBULA kernel reduces within a plane; the paravirtualised GPU of the
+# macos-15-intel runners advertises plane operations but never runs them
+if (!bixverse.gpu:::rs_gpu_plane_ops()) {
+  exit_file("GPU adapter does not run plane operations")
+}
+
 library(magrittr)
 library(bixverse)
 

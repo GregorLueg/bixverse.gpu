@@ -525,6 +525,7 @@ dependencies = [
  "bixverse-rs",
  "burn",
  "cubecl",
+ "cubecl-utils-rs",
  "extendr-api",
  "faer",
  "indexmap",
