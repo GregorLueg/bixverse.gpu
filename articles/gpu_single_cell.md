@@ -49,10 +49,16 @@ have sufficient VRAM/unified memory that is…).
   k-means coarsening on the GPU, then centroid kNN, optional sNN and
   Louvain over a resolution grid on the CPU. Only stage one is on the
   device, so the payoff scales with cell count.
+- **GPU BBKNN** via
+  [`bbknn_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/bbknn_gpu_sc.md):
+  batch-balanced kNN, one index per batch queried by every cell on the
+  device. Corrects the graph rather than the embedding, and the win
+  grows with the number of batches.
 
 ``` r
 
 library(bixverse)
+#> Warning: package 'bixverse' was built under R version 4.5.3
 library(bixverse.gpu)
 library(bixverse.plots)
 library(data.table)
@@ -492,13 +498,17 @@ asw_gpu <- calculate_batch_asw_sc(
   embd_to_use = "harmony_gpu",
   batch_column = "exp_id"
 )
-lisi_gpu <- calculate_batch_lisi_sc(sc_object, batch_column = "exp_id")
+lisi_gpu <- calculate_lisi_sc(
+  sc_object,
+  label_column = "exp_id",
+  type = "batch"
+)
 
 kbet_gpu
 #> kBET Scores
 #>   Cells: 5841 | Batches: 2 | Threshold: 0.050
 #>   Rejection rate:      0.2679 (1565 / 5841)
-#>   Mean Chi-Square:     3.0560 (expected under H0: 1)
+#>   Mean Chi-Square:     3.0562 (expected under H0: 1)
 #>   Median Chi-Square:   1.9151
 asw_gpu
 #> Batch Silhouette Width
@@ -506,10 +516,11 @@ asw_gpu
 #>   Mean ASW:    0.0238 (-1 = strong intermixing, 0 = mixed, 1 = separated)
 #>   Median ASW:  0.0456
 lisi_gpu
-#> Batch LISI Scores
-#>   Cells: 5841 | Batches: 2
-#>   Mean LISI:    1.4610 (1 = no mixing, 2 = perfect mixing)
+#> iLISI (batch)
+#>   Cells: 5841 | Labels: 2
+#>   Mean LISI:    1.4609
 #>   Median LISI:  1.4706
+#>   Normalised:   0.4706 (0 = worst, 1 = best)
 ```
 
 Same kNN setup on the CPU Harmony embedding:
@@ -533,7 +544,11 @@ asw_cpu <- calculate_batch_asw_sc(
   embd_to_use = "harmony_v2",
   batch_column = "exp_id"
 )
-lisi_cpu <- calculate_batch_lisi_sc(sc_object, batch_column = "exp_id")
+lisi_cpu <- calculate_lisi_sc(
+  sc_object,
+  label_column = "exp_id",
+  type = "batch"
+)
 
 kbet_cpu
 #> kBET Scores
@@ -547,10 +562,11 @@ asw_cpu
 #>   Mean ASW:    0.0245 (-1 = strong intermixing, 0 = mixed, 1 = separated)
 #>   Median ASW:  0.0452
 lisi_cpu
-#> Batch LISI Scores
-#>   Cells: 5841 | Batches: 2
-#>   Mean LISI:    1.4634 (1 = no mixing, 2 = perfect mixing)
+#> iLISI (batch)
+#>   Cells: 5841 | Labels: 2
+#>   Mean LISI:    1.4634
 #>   Median LISI:  1.4706
+#>   Normalised:   0.4706 (0 = worst, 1 = best)
 ```
 
 Harmony has stochastic elements, so the two embeddings will not be
@@ -667,25 +683,97 @@ embedding_plot_sc(
 
 ![](gpu_single_cell_files/figure-html/tsne%20plot-1.png)
 
+## GPU-accelerated BBKNN
+
+Everything above corrects the embedding and then builds a neighbour
+graph on it. BBKNN ([Polański et al.,
+2020](https://academic.oup.com/bioinformatics/article/36/3/964/5545955))
+takes the other route: leave the embedding alone and fix the graph
+instead. It builds one index per batch, asks every cell for its
+`neighbours_within_batch` nearest neighbours in each, and then runs the
+UMAP connectivity calculations over the union to drop spurious edges.
+Batch mixing falls out of the construction, because every cell is forced
+to have neighbours in every batch.
+
+[`bbknn_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/bbknn_gpu_sc.md)
+puts the per-batch searches on the device. That is the part that scales
+badly on CPU: the work grows as `n_cells * n_batches`, so two batches is
+barely worth it and thirty samples very much is.
+
+Note this overwrites the kNN and the graph on the object, which is why
+it comes last here. The graph weights are the BBKNN connectivities, not
+shared nearest neighbour counts.
+
+``` r
+
+sc_object <- bbknn_gpu_sc(
+  object = sc_object,
+  batch_column = "exp_id",
+  no_neighbours_to_keep = 15L,
+  bbknn_params = params_sc_bbknn_gpu(neighbours_within_batch = 10L)
+)
+#> Warning in .bbknn_gpu(object = object, batch_column = batch_column,
+#> no_neighbours_to_keep = no_neighbours_to_keep, : Prior kNN matrix found. Will
+#> be overwritten.
+#> Running BBKNN algorithm on the GPU.
+#> Generating graph based on BBKNN connectivities. Weights will be based on the connectivities and not shared nearest neighbour calculations.
+
+dim(get_knn_mat(sc_object))
+#> [1] 5841   15
+```
+
+Setting `no_neighbours_to_keep` below the total generated (10 per batch
+across 2 batches, so 20) is what makes the distance filtering do
+anything. Ask for more than that and you get a warning and all of them.
+
+For the metrics, kBET is the wrong tool here. It compares each
+neighbourhood against the global batch proportions, which is precisely
+the quantity BBKNN manipulates by construction, so it will report
+glowing results whether or not anything useful happened. LISI on the
+stored kNN is the honest choice, and ASW needs an embedding that BBKNN
+never produces.
+
+``` r
+
+lisi_bbknn <- calculate_lisi_sc(
+  sc_object,
+  label_column = "exp_id",
+  type = "batch"
+)
+lisi_bbknn
+#> iLISI (batch)
+#>   Cells: 5841 | Labels: 2
+#>   Mean LISI:    1.7999
+#>   Median LISI:  1.8000
+#>   Normalised:   0.8000 (0 = worst, 1 = best)
+```
+
+With two batches, perfect mixing means a LISI of 2 and no mixing means
+1.
+
+The GPU and CPU paths agree exactly when the search is exhaustive, since
+both are exact and recompute their distances against the same embedding.
+The approximate backends (`"ivf"`, `"nndescent"`) break ties differently
+and will not, though they land in the same place.
+
 ## Conclusions
 
 The full GPU path (PCA, Harmony v2, kNN, fast clustering, UMAP with GPU
-Adam optimiser, t-SNE with GPU kNN) plugs into the existing
+Adam optimiser, t-SNE with GPU kNN, BBKNN) plugs into the existing
 `SingleCells` workflow without any glue code. The downstream object
 behaves identically to whatever you would get from the CPU equivalents.
 
-Longer term, the GPU kNN methods are the obvious building block for
-GPU-accelerated versions of methods that lean heavily on kNN graphs:
+Still on CPU and an obvious next candidate:
 
-- **BBKNN**
-  ([paper](https://academic.oup.com/bioinformatics/article/36/3/964/5545955),
-  CPU
-  [implementation](https://gregorlueg.github.io/bixverse/reference/bbknn_sc.html))
 - **fastMNN** ([paper](https://www.nature.com/articles/nbt.4091), CPU
   [implementation](https://gregorlueg.github.io/bixverse/reference/fast_mnn_sc.html))
 
-Doublet detection is another candidate. Another potentially interesting
-area would be GPU-accelerated NMF … ? Basically, watch the space.
+One caveat worth carrying forward on the kNN backends. NN-descent is a
+low-`k` method on the GPU: its build degree tracks `k`, so the descent
+does more work per node as `k` climbs, while the exhaustive scan barely
+notices `k` at all. Past `k` of roughly 30 the exact search wins, and by
+`k = 200` it wins by more than an order of magnitude. Reach for IVF
+instead when brute force gets slow. Watch this space.
 
 ## Clean up
 

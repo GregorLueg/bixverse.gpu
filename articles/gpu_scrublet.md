@@ -78,88 +78,7 @@ sc_object <- load_mtx(
 )
 #>  Loading data directly into memory for CSR to CSC conversion.
 #> Loading observations data from flat file into the DuckDB.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 #> Loading variable data from flat file into the DuckDB.
-#> 
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 
 sc_object
 #> Single cell experiment (Single Cells).
@@ -256,17 +175,51 @@ real choice, and
 exposes it through `knn_backend`.
 
 `"gpu"` with `knn_method = "exhaustive"` is the default. It is exact,
-has no tuning knobs, and is usually the right answer up to a few hundred
-thousand cells. `"ivf"` is approximate, flat in `k`, and only starts
-paying off above that. Recall loss matters more here than it does
-elsewhere, because the doublet score is a neighbour count: drop
-neighbours and you bias every score downwards.
+has no tuning knobs, and is the right answer here. `"ivf"` is
+approximate and was the quickest of the three in our sweep.
+`"nndescent"` is also on offer and you should mostly ignore it, for
+reasons below. Recall loss matters more here than it does elsewhere,
+because the doublet score is a neighbour count: drop neighbours and you
+bias every score downwards.
+
+The thing to understand is that Scrublet searches at a much higher `k`
+than you might expect. The embedding is
+`(1 + sim_doublet_ratio) * n_cells` rows tall, and `k = 0L` scales `k`
+by that same factor, so a 20k-cell run ends up searching at `k` around
+175. That is the regime the backends disagree in. Timings at 20k cells
+and 30 PCs, whole Scrublet run:
+
+| `k` | exhaustive |   ivf | nndescent |
+|----:|-----------:|------:|----------:|
+|  10 |      1.75s | 1.60s |     0.91s |
+|  30 |      3.01s | 0.86s |     3.40s |
+| 100 |      1.10s | 0.60s |    38.24s |
+| 200 |      0.98s | 0.49s |    38.80s |
+
+Exhaustive barely cares about `k`: the scan is the cost and `k` only
+sizes the top-k selection. NN-descent cares enormously, because its
+build degree tracks `k` and the descent then does more work per node. At
+`k = 200` the descent alone burns 26s of a 35s build, while the CAGRA
+optimisation everyone worries about takes 147 microseconds. So
+NN-descent is a low-`k` tool, and Scrublet is not a low-`k` workload.
+Below `k` of about 30 it wins; above that it loses badly.
+
+`extract_knn = TRUE` hands the graph back instead of beam searching it,
+which saves the query but not the build. At `k = 200` it bought 3.4s and
+cost real accuracy: Pearson against exhaustive fell from 0.9931 to
+0.9418. Not a trade worth making at this `k`.
 
 ``` r
 
 params_ivf <- params_scrublet_gpu(
   expected_doublet_rate = 0.12,
   knn = list(knn_method = "ivf", n_list = 512L, n_probe = 32L)
+)
+
+# only sensible if you have also pinned k low
+params_nndescent <- params_scrublet_gpu(
+  expected_doublet_rate = 0.12,
+  knn = list(knn_method = "nndescent", k = 10L)
 )
 
 params_cpu_knn <- params_scrublet_gpu(
@@ -317,8 +270,8 @@ data.table(
 )[, speed_up := round(seconds[1] / seconds, 2)][]
 #>    version seconds speed_up
 #>     <char>   <num>    <num>
-#> 1:     CPU    2.34     1.00
-#> 2:     GPU    0.96     2.44
+#> 1:     CPU    2.25     1.00
+#> 2:     GPU    1.20     1.88
 ```
 
 ## Do the calls agree?
@@ -341,7 +294,7 @@ data.table(
 )
 #>    version precision recall    f1 threshold
 #>     <char>     <num>  <num> <num>     <num>
-#> 1:     CPU     0.667  0.752 0.707    0.2185
+#> 1:     CPU     0.665  0.759 0.709    0.2141
 #> 2:     GPU     0.663  0.750 0.704    0.2174
 ```
 
@@ -371,7 +324,7 @@ cor(
   scrublet_gpu$doublet_scores_obs,
   method = "pearson"
 )
-#> [1] 0.9901312
+#> [1] 0.9901311
 ```
 
 The scores correlate, they do not match. Both paths use a randomised SVD

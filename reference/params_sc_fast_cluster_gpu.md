@@ -5,11 +5,10 @@ GPU counterpart to
 The mini-batch k-means knobs are gone (the GPU k-means is full-batch
 Lloyd's) and the k-means block comes from the GPU parameters instead.
 Two knobs the CPU wrapper never exposed, `same_weight` and
-`multi_level_louvain`, are available here.
-
-The k-means distance is taken from `knn$ann_dist`, so the coarsening and
-the centroid graph agree on the geometry. There is no separate `metric`
-argument, and `"manhattan"` is not supported by the GPU k-means.
+`multi_level_louvain`, are available here. The k-means distance is taken
+from `knn$ann_dist`, so the coarsening and the centroid graph agree on
+the geometry. There is no separate `metric` argument, and `"manhattan"`
+is not supported by the GPU k-means.
 
 ## Usage
 
@@ -33,61 +32,104 @@ params_sc_fast_cluster_gpu(
 
 - k_means_iter:
 
-  Integer. Maximum number of k-means iterations.
+  Integer. Maximum number of k-means iterations. Defaults to `50L`.
 
 - k_means_init:
 
-  Optional character. Initialisation method. One of `"random"`,
+  String or `NULL`. Initialisation method. One of `"random"`,
   `"parallel"` or `"plusplus"`. If `NULL`, picked on the Rust side based
-  on the number of centroids.
+  on the number of centroids. Defaults to `NULL`.
 
 - fixed:
 
   Boolean. Shall k-means run for a fixed number of iterations, without
-  checking for convergence.
+  checking for convergence. Defaults to `TRUE`.
 
 - quantise:
 
   Boolean. Shall the data buffer be held at fp16 on the GPU. Halves the
   buffer and helps when the assignment kernels are memory bound.
+  Defaults to `FALSE`.
 
 - same_weight:
 
   Boolean. If `TRUE`, all kNN edges get weight `1.0`. Otherwise edges
-  with a reverse counterpart are double counted.
+  with a reverse counterpart are double counted. Defaults to `FALSE`.
 
 - full_snn:
 
   Boolean. Shall the full shared nearest neighbour graph be generated,
-  including edges between centroids that are not neighbours.
+  including edges between centroids that are not neighbours. Defaults to
+  `FALSE`.
 
 - pruning:
 
-  Optional numeric. Weights below this threshold are set to 0 when
+  Numeric or `NULL`. Weights below this threshold are set to 0 when
   generating the sNN graph. If `NULL`, defaults to
-  `1 / ceiling(k * 0.8)`.
+  `1 / ceiling(k * 0.8)`. Defaults to `NULL`.
 
 - snn_similarity:
 
-  String. One of `c("jaccard", "rank")`. Jaccard computes the Jaccard
-  index between neighbour sets; rank weights edges by the best combined
-  rank of a shared neighbour. Both are normalised to `[0, 1]`.
+  String. Jaccard computes the Jaccard index between neighbour sets;
+  rank weights edges by the best combined rank of a shared neighbour.
+  Both are normalised to `[0, 1]`. One of `c("jaccard", "rank")`.
+  Defaults to `"jaccard"`.
 
 - louvain_iters:
 
-  Integer. Number of Louvain iterations.
+  Integer. Number of Louvain iterations. Defaults to `10L`.
 
 - multi_level_louvain:
 
-  Boolean. Shall multi-level Louvain be applied.
+  Boolean. Shall multi-level Louvain be applied. Defaults to `TRUE`.
 
 - knn:
 
   List. Optional overrides for the kNN parameters applied to the
   centroids. See
   [`bixverse::params_knn_defaults()`](https://gregorlueg.github.io/bixverse/reference/params_knn_defaults.html)
-  for the available parameters. Defaults to `k = 5L`.
+  for the available parameters. Defaults to `list(k = 5L)`.
 
 ## Value
 
-A named list with the GPU fast clustering parameters.
+A named list with the following elements:
+
+- k_means_iter - Integer. Maximum number of k-means iterations. Defaults
+  to `50L`.
+
+- k_means_init - String or `NULL`. Initialisation method. One of
+  `"random"`, `"parallel"` or `"plusplus"`. If `NULL`, picked on the
+  Rust side based on the number of centroids. Defaults to `NULL`.
+
+- fixed - Boolean. Shall k-means run for a fixed number of iterations,
+  without checking for convergence. Defaults to `TRUE`.
+
+- quantise - Boolean. Shall the data buffer be held at fp16 on the GPU.
+  Halves the buffer and helps when the assignment kernels are memory
+  bound. Defaults to `FALSE`.
+
+- same_weight - Boolean. If `TRUE`, all kNN edges get weight `1.0`.
+  Otherwise edges with a reverse counterpart are double counted.
+  Defaults to `FALSE`.
+
+- full_snn - Boolean. Shall the full shared nearest neighbour graph be
+  generated, including edges between centroids that are not neighbours.
+  Defaults to `FALSE`.
+
+- pruning - Numeric or `NULL`. Weights below this threshold are set to 0
+  when generating the sNN graph. If `NULL`, defaults to
+  `1 / ceiling(k * 0.8)`. Defaults to `NULL`.
+
+- snn_similarity - String. Jaccard computes the Jaccard index between
+  neighbour sets; rank weights edges by the best combined rank of a
+  shared neighbour. Both are normalised to `[0, 1]`. One of
+  `c("jaccard", "rank")`. Defaults to `"jaccard"`.
+
+- louvain_iters - Integer. Number of Louvain iterations. Defaults to
+  `10L`.
+
+- multi_level_louvain - Boolean. Shall multi-level Louvain be applied.
+  Defaults to `TRUE`.
+
+- The elements of the base list, overridden by `knn`, spliced in at this
+  position.

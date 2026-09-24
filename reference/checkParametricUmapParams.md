@@ -1,6 +1,7 @@
-# Check parametric UMAP parameters
+# Check parametric UMAP params
 
-Checkmate extension for checking the parametric UMAP parameters.
+Checkmate extension for the output of
+[`params_parametric_umap()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_parametric_umap.md).
 
 ## Usage
 
@@ -12,8 +13,9 @@ checkParametricUmapParams(x)
 
 - x:
 
-  The list to check.
+  The object to check.
 
 ## Value
 
-`TRUE` if the check was successful, otherwise an error message.
+`TRUE` if the check was successful, otherwise a checkmate-style error
+string.

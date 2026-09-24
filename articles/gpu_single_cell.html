@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,6 +48,7 @@
     <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_nmf.html">NMF with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_scrublet.html">Scrublet with GPU-acceleration</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_nebula.html">NEBULA with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -79,7 +80,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>GPU-accelerated workflows for bixverse single cell</h1>
 
       <p class="author">Gregor Lueg</p>
-      <p class="date">2026-09-06</p>
+      <p class="date">2026-09-24</p>
 
 
       <div class="d-none name"><code></code></div>
@@ -104,10 +105,13 @@
 <strong>GPU kNN</strong> via <code><a href="../reference/find_neighbours_gpu_sc.html">find_neighbours_gpu_sc()</a></code>: <strong>exhaustive</strong> (exact brute force), <strong>IVF</strong> (inverted file index, approximate) and <strong>nndescent</strong>, which prunes an NNDescent graph into a CAGRA index and supports either direct kNN extraction or beam search.</li>
 <li>
 <strong>GPU fast clustering</strong> via <code><a href="../reference/fast_cluster_gpu_sc.html">fast_cluster_gpu_sc()</a></code>: k-means coarsening on the GPU, then centroid kNN, optional sNN and Louvain over a resolution grid on the CPU. Only stage one is on the device, so the payoff scales with cell count.</li>
+<li>
+<strong>GPU BBKNN</strong> via <code><a href="../reference/bbknn_gpu_sc.html">bbknn_gpu_sc()</a></code>: batch-balanced kNN, one index per batch queried by every cell on the device. Corrects the graph rather than the embedding, and the win grows with the number of batches.</li>
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse" class="external-link">bixverse</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: package 'bixverse' was built under R version 4.5.3</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse.gpu/">bixverse.gpu</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse.plots/" class="external-link">bixverse.plots</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span>
@@ -466,13 +470,17 @@
 <span>  embd_to_use <span class="op">=</span> <span class="st">"harmony_gpu"</span>,</span>
 <span>  batch_column <span class="op">=</span> <span class="st">"exp_id"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">lisi_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_batch_lisi_sc.html" class="external-link">calculate_batch_lisi_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, batch_column <span class="op">=</span> <span class="st">"exp_id"</span><span class="op">)</span></span>
+<span><span class="va">lisi_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_lisi_sc.html" class="external-link">calculate_lisi_sc</a></span><span class="op">(</span></span>
+<span>  <span class="va">sc_object</span>,</span>
+<span>  label_column <span class="op">=</span> <span class="st">"exp_id"</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"batch"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">kbet_gpu</span></span>
 <span><span class="co">#&gt; kBET Scores</span></span>
 <span><span class="co">#&gt;   Cells: 5841 | Batches: 2 | Threshold: 0.050</span></span>
 <span><span class="co">#&gt;   Rejection rate:      0.2679 (1565 / 5841)</span></span>
-<span><span class="co">#&gt;   Mean Chi-Square:     3.0560 (expected under H0: 1)</span></span>
+<span><span class="co">#&gt;   Mean Chi-Square:     3.0562 (expected under H0: 1)</span></span>
 <span><span class="co">#&gt;   Median Chi-Square:   1.9151</span></span>
 <span><span class="va">asw_gpu</span></span>
 <span><span class="co">#&gt; Batch Silhouette Width</span></span>
@@ -480,10 +488,11 @@
 <span><span class="co">#&gt;   Mean ASW:    0.0238 (-1 = strong intermixing, 0 = mixed, 1 = separated)</span></span>
 <span><span class="co">#&gt;   Median ASW:  0.0456</span></span>
 <span><span class="va">lisi_gpu</span></span>
-<span><span class="co">#&gt; Batch LISI Scores</span></span>
-<span><span class="co">#&gt;   Cells: 5841 | Batches: 2</span></span>
-<span><span class="co">#&gt;   Mean LISI:    1.4610 (1 = no mixing, 2 = perfect mixing)</span></span>
-<span><span class="co">#&gt;   Median LISI:  1.4706</span></span></code></pre></div>
+<span><span class="co">#&gt; iLISI (batch)</span></span>
+<span><span class="co">#&gt;   Cells: 5841 | Labels: 2</span></span>
+<span><span class="co">#&gt;   Mean LISI:    1.4609</span></span>
+<span><span class="co">#&gt;   Median LISI:  1.4706</span></span>
+<span><span class="co">#&gt;   Normalised:   0.4706 (0 = worst, 1 = best)</span></span></code></pre></div>
 </div>
 <p>Same kNN setup on the CPU Harmony embedding:</p>
 <div class="cell">
@@ -505,7 +514,11 @@
 <span>  embd_to_use <span class="op">=</span> <span class="st">"harmony_v2"</span>,</span>
 <span>  batch_column <span class="op">=</span> <span class="st">"exp_id"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">lisi_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_batch_lisi_sc.html" class="external-link">calculate_batch_lisi_sc</a></span><span class="op">(</span><span class="va">sc_object</span>, batch_column <span class="op">=</span> <span class="st">"exp_id"</span><span class="op">)</span></span>
+<span><span class="va">lisi_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_lisi_sc.html" class="external-link">calculate_lisi_sc</a></span><span class="op">(</span></span>
+<span>  <span class="va">sc_object</span>,</span>
+<span>  label_column <span class="op">=</span> <span class="st">"exp_id"</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"batch"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">kbet_cpu</span></span>
 <span><span class="co">#&gt; kBET Scores</span></span>
@@ -519,10 +532,11 @@
 <span><span class="co">#&gt;   Mean ASW:    0.0245 (-1 = strong intermixing, 0 = mixed, 1 = separated)</span></span>
 <span><span class="co">#&gt;   Median ASW:  0.0452</span></span>
 <span><span class="va">lisi_cpu</span></span>
-<span><span class="co">#&gt; Batch LISI Scores</span></span>
-<span><span class="co">#&gt;   Cells: 5841 | Batches: 2</span></span>
-<span><span class="co">#&gt;   Mean LISI:    1.4634 (1 = no mixing, 2 = perfect mixing)</span></span>
-<span><span class="co">#&gt;   Median LISI:  1.4706</span></span></code></pre></div>
+<span><span class="co">#&gt; iLISI (batch)</span></span>
+<span><span class="co">#&gt;   Cells: 5841 | Labels: 2</span></span>
+<span><span class="co">#&gt;   Mean LISI:    1.4634</span></span>
+<span><span class="co">#&gt;   Median LISI:  1.4706</span></span>
+<span><span class="co">#&gt;   Normalised:   0.4706 (0 = worst, 1 = best)</span></span></code></pre></div>
 </div>
 <p>Harmony has stochastic elements, so the two embeddings will not be identical, but the batch correction quality should be in the same ballpark across the metrics.</p>
 <section class="level3"><h3 id="umap-on-the-gpu-harmony-embedding">UMAP on the GPU Harmony embedding<a class="anchor" aria-label="anchor" href="#umap-on-the-gpu-harmony-embedding"></a>
@@ -624,21 +638,59 @@
 </div>
 </div>
 </div>
-</section></section><section class="level2"><h2 id="conclusions">Conclusions<a class="anchor" aria-label="anchor" href="#conclusions"></a>
+</section></section><section class="level2"><h2 id="gpu-accelerated-bbknn">GPU-accelerated BBKNN<a class="anchor" aria-label="anchor" href="#gpu-accelerated-bbknn"></a>
 </h2>
-<p>The full GPU path (PCA, Harmony v2, kNN, fast clustering, UMAP with GPU Adam optimiser, t-SNE with GPU kNN) plugs into the existing <code>SingleCells</code> workflow without any glue code. The downstream object behaves identically to whatever you would get from the CPU equivalents.</p>
-<p>Longer term, the GPU kNN methods are the obvious building block for GPU-accelerated versions of methods that lean heavily on kNN graphs:</p>
+<p>Everything above corrects the embedding and then builds a neighbour graph on it. BBKNN (<a href="https://academic.oup.com/bioinformatics/article/36/3/964/5545955" class="external-link">Polański et al., 2020</a>) takes the other route: leave the embedding alone and fix the graph instead. It builds one index per batch, asks every cell for its <code>neighbours_within_batch</code> nearest neighbours in each, and then runs the UMAP connectivity calculations over the union to drop spurious edges. Batch mixing falls out of the construction, because every cell is forced to have neighbours in every batch.</p>
+<p><code><a href="../reference/bbknn_gpu_sc.html">bbknn_gpu_sc()</a></code> puts the per-batch searches on the device. That is the part that scales badly on CPU: the work grows as <code>n_cells * n_batches</code>, so two batches is barely worth it and thirty samples very much is.</p>
+<p>Note this overwrites the kNN and the graph on the object, which is why it comes last here. The graph weights are the BBKNN connectivities, not shared nearest neighbour counts.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bbknn_gpu_sc.html">bbknn_gpu_sc</a></span><span class="op">(</span></span>
+<span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
+<span>  batch_column <span class="op">=</span> <span class="st">"exp_id"</span>,</span>
+<span>  no_neighbours_to_keep <span class="op">=</span> <span class="fl">15L</span>,</span>
+<span>  bbknn_params <span class="op">=</span> <span class="fu"><a href="../reference/params_sc_bbknn_gpu.html">params_sc_bbknn_gpu</a></span><span class="op">(</span>neighbours_within_batch <span class="op">=</span> <span class="fl">10L</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning in .bbknn_gpu(object = object, batch_column = batch_column,</span></span>
+<span><span class="co">#&gt; no_neighbours_to_keep = no_neighbours_to_keep, : Prior kNN matrix found. Will</span></span>
+<span><span class="co">#&gt; be overwritten.</span></span>
+<span><span class="co">#&gt; Running BBKNN algorithm on the GPU.</span></span>
+<span><span class="co">#&gt; Generating graph based on BBKNN connectivities. Weights will be based on the connectivities and not shared nearest neighbour calculations.</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/get_knn_mat.html" class="external-link">get_knn_mat</a></span><span class="op">(</span><span class="va">sc_object</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 5841   15</span></span></code></pre></div>
+</div>
+<p>Setting <code>no_neighbours_to_keep</code> below the total generated (10 per batch across 2 batches, so 20) is what makes the distance filtering do anything. Ask for more than that and you get a warning and all of them.</p>
+<p>For the metrics, kBET is the wrong tool here. It compares each neighbourhood against the global batch proportions, which is precisely the quantity BBKNN manipulates by construction, so it will report glowing results whether or not anything useful happened. LISI on the stored kNN is the honest choice, and ASW needs an embedding that BBKNN never produces.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">lisi_bbknn</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/calculate_lisi_sc.html" class="external-link">calculate_lisi_sc</a></span><span class="op">(</span></span>
+<span>  <span class="va">sc_object</span>,</span>
+<span>  label_column <span class="op">=</span> <span class="st">"exp_id"</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"batch"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">lisi_bbknn</span></span>
+<span><span class="co">#&gt; iLISI (batch)</span></span>
+<span><span class="co">#&gt;   Cells: 5841 | Labels: 2</span></span>
+<span><span class="co">#&gt;   Mean LISI:    1.7999</span></span>
+<span><span class="co">#&gt;   Median LISI:  1.8000</span></span>
+<span><span class="co">#&gt;   Normalised:   0.8000 (0 = worst, 1 = best)</span></span></code></pre></div>
+</div>
+<p>With two batches, perfect mixing means a LISI of 2 and no mixing means 1.</p>
+<p>The GPU and CPU paths agree exactly when the search is exhaustive, since both are exact and recompute their distances against the same embedding. The approximate backends (<code>"ivf"</code>, <code>"nndescent"</code>) break ties differently and will not, though they land in the same place.</p>
+</section><section class="level2"><h2 id="conclusions">Conclusions<a class="anchor" aria-label="anchor" href="#conclusions"></a>
+</h2>
+<p>The full GPU path (PCA, Harmony v2, kNN, fast clustering, UMAP with GPU Adam optimiser, t-SNE with GPU kNN, BBKNN) plugs into the existing <code>SingleCells</code> workflow without any glue code. The downstream object behaves identically to whatever you would get from the CPU equivalents.</p>
+<p>Still on CPU and an obvious next candidate:</p>
 <ul>
-<li>
-<strong>BBKNN</strong> (<a href="https://academic.oup.com/bioinformatics/article/36/3/964/5545955" class="external-link">paper</a>, CPU <a href="https://gregorlueg.github.io/bixverse/reference/bbknn_sc.html" class="external-link">implementation</a>)</li>
 <li>
 <strong>fastMNN</strong> (<a href="https://www.nature.com/articles/nbt.4091" class="external-link">paper</a>, CPU <a href="https://gregorlueg.github.io/bixverse/reference/fast_mnn_sc.html" class="external-link">implementation</a>)</li>
 </ul>
-<p>Doublet detection is another candidate. Another potentially interesting area would be GPU-accelerated NMF … ? Basically, watch the space.</p>
+<p>One caveat worth carrying forward on the kNN backends. NN-descent is a low-<code>k</code> method on the GPU: its build degree tracks <code>k</code>, so the descent does more work per node as <code>k</code> climbs, while the exhaustive scan barely notices <code>k</code> at all. Past <code>k</code> of roughly 30 the exact search wins, and by <code>k = 200</code> it wins by more than an order of magnitude. Reach for IVF instead when brute force gets slow. Watch this space.</p>
 </section><section class="level2"><h2 id="clean-up">Clean up<a class="anchor" aria-label="anchor" href="#clean-up"></a>
 </h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">tempdir_gpu</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span>, force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 </section><script id="quarto-html-after-body" type="application/javascript">

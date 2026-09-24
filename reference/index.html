@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,7 @@
     <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_nmf.html">NMF with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_scrublet.html">Scrublet with GPU-acceleration</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_nebula.html">NEBULA with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -116,6 +117,20 @@
 
         <dt>
 
+          <code><a href="bbknn_gpu_sc.html">bbknn_gpu_sc()</a></code>
+
+        </dt>
+        <dd>Run BBKNN on the GPU</dd>
+
+        <dt>
+
+          <code><a href="nebula_gpu_sc.html">nebula_gpu_sc()</a></code>
+
+        </dt>
+        <dd>Run NEBULA on single cells on the GPU</dd>
+
+        <dt>
+
           <code><a href="nmf_gpu_sc.html">nmf_gpu_sc()</a></code>
 
         </dt>
@@ -162,6 +177,20 @@
 
         </dt>
         <dd>Wrapper function for GPU Scrublet doublet detection parameters</dd>
+
+        <dt>
+
+          <code><a href="params_sc_bbknn_gpu.html">params_sc_bbknn_gpu()</a></code>
+
+        </dt>
+        <dd>Wrapper function for the GPU BBKNN parameters</dd>
+
+        <dt>
+
+          <code><a href="params_nebula_gpu.html">params_nebula_gpu()</a></code>
+
+        </dt>
+        <dd>Wrapper function for parameters for GPU NEBULA</dd>
 
         <dt>
 
@@ -318,6 +347,22 @@
         </dt>
         <dd>Is a GPU available</dd>
       </dl></div><div class="section level2">
+      <h2 id="agent-skill">Agent skill<a class="anchor" aria-label="anchor" href="#agent-skill"></a></h2>
+
+      <div class="section-desc"><p>Teach your coding agent how to use the package.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="install_agent_skill_gpu.html">install_agent_skill_gpu()</a></code>
+
+        </dt>
+        <dd>Install the bixverse.gpu agent skill</dd>
+      </dl></div><div class="section level2">
       <h2 id="rust-wrappers">Rust wrappers<a class="anchor" aria-label="anchor" href="#rust-wrappers"></a></h2>
 
       <div class="section-desc"><p>Everything rusty - only use this if you know what you are doing… Maybe useful for your own package? Use with care and read the documentation!</p></div>
@@ -328,6 +373,13 @@
 
 
       <dl><dt>
+
+          <code><a href="rs_bbknn_gpu.html">rs_bbknn_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>GPU: BBKNN batch correction</dd>
+
+        <dt>
 
           <code><a href="rs_cor_gpu.html">rs_cor_gpu()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
@@ -364,6 +416,13 @@
 
         <dt>
 
+          <code><a href="rs_gpu_plane_ops.html">rs_gpu_plane_ops()</a></code>
+
+        </dt>
+        <dd>Check whether the GPU adapter runs plane (subgroup) operations</dd>
+
+        <dt>
+
           <code><a href="rs_harmony_v2_gpu.html">rs_harmony_v2_gpu()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
@@ -389,6 +448,13 @@
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>GPU: SCENIC GRN inference on MetaCells (in-memory sparse)</dd>
+
+        <dt>
+
+          <code><a href="rs_nebula_sc_gpu.html">rs_nebula_sc_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>GPU: fit the NEBULA negative binomial gamma mixed model over single cells</dd>
 
         <dt>
 

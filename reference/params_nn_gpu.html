@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,7 @@
     <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_nmf.html">NMF with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_scrublet.html">Scrublet with GPU-acceleration</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_nebula.html">NEBULA with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -77,60 +78,61 @@
 
 
 <dl><dt id="arg-dist-metric">dist_metric<a class="anchor" aria-label="anchor" href="#arg-dist-metric"></a></dt>
-<dd><p>Character. The distance metric to use. Defaults to
-<code>"euclidean"</code>.</p></dd>
+<dd><p>String. The distance metric to use. One of <code>c("euclidean", "cosine")</code>. Defaults to <code>"euclidean"</code>.</p></dd>
 
 
 <dt id="arg-n-list">n_list<a class="anchor" aria-label="anchor" href="#arg-n-list"></a></dt>
-<dd><p>Optional integer. IVF GPU: Number of clusters to use. If
-<code>NULL</code>, will default to <code>sqrt(n)</code>.</p></dd>
+<dd><p>Integer or <code>NULL</code>. IVF GPU: Number of clusters to use. If
+<code>NULL</code>, will default to <code>sqrt(n)</code>. Defaults to <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-n-probes">n_probes<a class="anchor" aria-label="anchor" href="#arg-n-probes"></a></dt>
-<dd><p>Optional integer. IVF GPU: Number of clusters to probe. If
-<code>NULL</code>, will default to <code>sqrt(n_list)</code>.</p></dd>
+<dd><p>Integer or <code>NULL</code>. IVF GPU: Number of clusters to probe. If
+<code>NULL</code>, will default to <code>sqrt(n_list)</code>. Defaults to <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-node-degree-final">node_degree_final<a class="anchor" aria-label="anchor" href="#arg-node-degree-final"></a></dt>
-<dd><p>Optional integer. Final node degree of the CAGRA
-navigational graph. If <code>NULL</code>, defaults to <code>30</code> on the Rust side.</p></dd>
+<dd><p>Integer or <code>NULL</code>. Final node degree of the CAGRA
+navigational graph. If <code>NULL</code>, defaults to <code>30</code> on the Rust side. Defaults to
+<code>NULL</code>.</p></dd>
 
 
 <dt id="arg-k-build">k_build<a class="anchor" aria-label="anchor" href="#arg-k-build"></a></dt>
-<dd><p>Optional integer. Number of k-neighbours during the
-NNDescent build phase before CAGRA pruning. If <code>NULL</code>, defaults to
-<code>1.5 * node_degree_final</code> on the Rust side. (Cannot be smaller than
-<code>node_degree_final</code>)</p></dd>
+<dd><p>Integer or <code>NULL</code>. Number of k-neighbours during the NNDescent
+build phase before CAGRA pruning. If <code>NULL</code>, defaults to <code>1.5 * node_degree_final</code> on the Rust side. (Cannot be smaller than
+<code>node_degree_final</code>) Defaults to <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-n-tree">n_tree<a class="anchor" aria-label="anchor" href="#arg-n-tree"></a></dt>
-<dd><p>Optional integer. CAGRA GPU: Number of trees for graph build.
-Automatically if <code>NULL</code>.</p></dd>
+<dd><p>Integer or <code>NULL</code>. CAGRA GPU: Number of trees for graph build.
+Automatically if <code>NULL</code>. Defaults to <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-delta">delta<a class="anchor" aria-label="anchor" href="#arg-delta"></a></dt>
-<dd><p>Float. CAGRA GPU: Early termination parameter for NN descent.
+<dd><p>Numeric. CAGRA GPU: Early termination parameter for NN descent.
 Defaults to <code>0.001</code>.</p></dd>
 
 
 <dt id="arg-rho">rho<a class="anchor" aria-label="anchor" href="#arg-rho"></a></dt>
-<dd><p>Optional float. CAGRA GPU: Sample rate parameter for NN descent.
-Defaults to <code>0.5</code> if not provided.</p></dd>
+<dd><p>Numeric or <code>NULL</code>. CAGRA GPU: Sample rate parameter for NN
+descent. Defaults to <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-beam-width">beam_width<a class="anchor" aria-label="anchor" href="#arg-beam-width"></a></dt>
-<dd><p>Optional integer. CAGRA GPU: Beam width for beam search. If
-not provided will be set to <code>max(c(k, node_degree_final, 16L)) * 2</code>.</p></dd>
+<dd><p>Integer or <code>NULL</code>. CAGRA GPU: Beam width for beam search.
+If not provided will be set to <code>max(c(k, node_degree_final, 16L)) * 2</code>.
+Defaults to <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-max-beam-iters">max_beam_iters<a class="anchor" aria-label="anchor" href="#arg-max-beam-iters"></a></dt>
-<dd><p>Optional integer. CAGRA GPU: Maximum number of beam
-search iterations. If not provided, defaults to <code>3 * beam_width</code>.</p></dd>
+<dd><p>Integer or <code>NULL</code>. CAGRA GPU: Maximum number of beam
+search iterations. If not provided, defaults to <code>3 * beam_width</code>. Defaults to
+<code>NULL</code>.</p></dd>
 
 
 <dt id="arg-n-entry-points">n_entry_points<a class="anchor" aria-label="anchor" href="#arg-n-entry-points"></a></dt>
-<dd><p>Optional integer. CAGRA GPU: Number of entry points for
-beam search. If not provided, defaults to <code>8L</code>.</p></dd>
+<dd><p>Integer or <code>NULL</code>. CAGRA GPU: Number of entry points
+for beam search. If not provided, defaults to <code>8L</code>. Defaults to <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-extract-knn">extract_knn<a class="anchor" aria-label="anchor" href="#arg-extract-knn"></a></dt>
@@ -141,8 +143,36 @@ other two searches. Defaults to <code>FALSE</code>.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list with the GPU nearest neighbour parameters.</p>
-    </div>
+    <p>A named list with the following elements:</p><ul><li><p>dist_metric - String. The distance metric to use. One of
+<code>c("euclidean", "cosine")</code>. Defaults to <code>"euclidean"</code>.</p></li>
+<li><p>n_list - Integer or <code>NULL</code>. IVF GPU: Number of clusters to use. If
+<code>NULL</code>, will default to <code>sqrt(n)</code>. Defaults to <code>NULL</code>.</p></li>
+<li><p>n_probes - Integer or <code>NULL</code>. IVF GPU: Number of clusters to probe. If
+<code>NULL</code>, will default to <code>sqrt(n_list)</code>. Defaults to <code>NULL</code>.</p></li>
+<li><p>node_degree_final - Integer or <code>NULL</code>. Final node degree of the CAGRA
+navigational graph. If <code>NULL</code>, defaults to <code>30</code> on the Rust side. Defaults
+to <code>NULL</code>.</p></li>
+<li><p>k_build - Integer or <code>NULL</code>. Number of k-neighbours during the
+NNDescent build phase before CAGRA pruning. If <code>NULL</code>, defaults to <code>1.5 * node_degree_final</code> on the Rust side. (Cannot be smaller than
+<code>node_degree_final</code>) Defaults to <code>NULL</code>.</p></li>
+<li><p>n_tree - Integer or <code>NULL</code>. CAGRA GPU: Number of trees for graph
+build. Automatically if <code>NULL</code>. Defaults to <code>NULL</code>.</p></li>
+<li><p>delta - Numeric. CAGRA GPU: Early termination parameter for NN
+descent. Defaults to <code>0.001</code>.</p></li>
+<li><p>rho - Numeric or <code>NULL</code>. CAGRA GPU: Sample rate parameter for NN
+descent. Defaults to <code>NULL</code>.</p></li>
+<li><p>beam_width - Integer or <code>NULL</code>. CAGRA GPU: Beam width for beam search.
+If not provided will be set to <code>max(c(k, node_degree_final, 16L)) * 2</code>.
+Defaults to <code>NULL</code>.</p></li>
+<li><p>max_beam_iters - Integer or <code>NULL</code>. CAGRA GPU: Maximum number of beam
+search iterations. If not provided, defaults to <code>3 * beam_width</code>. Defaults
+to <code>NULL</code>.</p></li>
+<li><p>n_entry_points - Integer or <code>NULL</code>. CAGRA GPU: Number of entry points
+for beam search. If not provided, defaults to <code>8L</code>. Defaults to <code>NULL</code>.</p></li>
+<li><p>extract_knn - Boolean. CAGRA GPU: Skip the beam search and take the
+graph the NNDescent left it. Faster, slightly lower recall. Ignored by the
+other two searches. Defaults to <code>FALSE</code>.</p></li>
+</ul></div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

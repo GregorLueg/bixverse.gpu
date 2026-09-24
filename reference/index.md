@@ -21,6 +21,10 @@ applications.
   : Doublet detection with Scrublet on the GPU
 - [`fast_cluster_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/fast_cluster_gpu_sc.md)
   : Run fast Louvain clustering on a SingleCells object (GPU)
+- [`bbknn_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/bbknn_gpu_sc.md)
+  : Run BBKNN on the GPU
+- [`nebula_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/nebula_gpu_sc.md)
+  : Run NEBULA on single cells on the GPU
 - [`nmf_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/nmf_gpu_sc.md)
   : Run single-run NMF on the GPU over single cell or meta cell data
 - [`stabilised_nmf_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/stabilised_nmf_gpu_sc.md)
@@ -37,6 +41,10 @@ applications.
   : Default parameters for GPU fast Louvain clustering
 - [`params_scrublet_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_scrublet_gpu.md)
   : Wrapper function for GPU Scrublet doublet detection parameters
+- [`params_sc_bbknn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_bbknn_gpu.md)
+  : Wrapper function for the GPU BBKNN parameters
+- [`params_nebula_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nebula_gpu.md)
+  : Wrapper function for parameters for GPU NEBULA
 - [`params_knn_gpu_defaults()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_knn_gpu_defaults.md)
   : Default parameters for the GPU nearest neighbour backends
 
@@ -101,11 +109,20 @@ can be found here.
 - [`gpu_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/gpu_available.md)
   : Is a GPU available
 
+## Agent skill
+
+Teach your coding agent how to use the package.
+
+- [`install_agent_skill_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/install_agent_skill_gpu.md)
+  : Install the bixverse.gpu agent skill
+
 ## Rust wrappers
 
 Everything rusty - only use this if you know what you are doing… Maybe
 useful for your own package? Use with care and read the documentation!
 
+- [`rs_bbknn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_bbknn_gpu.md)
+  **\[experimental\]** : GPU: BBKNN batch correction
 - [`rs_cor_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_cor_gpu.md)
   **\[experimental\]** : GPU-accelerated correlation calculations
 - [`rs_cov_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_cov_gpu.md)
@@ -117,6 +134,8 @@ useful for your own package? Use with care and read the documentation!
   multiple seeds)
 - [`rs_gpu_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_gpu_available.md)
   : Check whether a usable GPU adapter is present
+- [`rs_gpu_plane_ops()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_gpu_plane_ops.md)
+  : Check whether the GPU adapter runs plane (subgroup) operations
 - [`rs_harmony_v2_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_harmony_v2_gpu.md)
   **\[experimental\]** : Harmony batch correction in Rust (version 2,
   GPU-accelerated)
@@ -127,6 +146,9 @@ useful for your own package? Use with care and read the documentation!
 - [`rs_mc_scenic_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_mc_scenic_gpu.md)
   **\[experimental\]** : GPU: SCENIC GRN inference on MetaCells
   (in-memory sparse)
+- [`rs_nebula_sc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_nebula_sc_gpu.md)
+  **\[experimental\]** : GPU: fit the NEBULA negative binomial gamma
+  mixed model over single cells
 - [`rs_nmf_consensus_mc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_consensus_mc_gpu.md)
   **\[experimental\]** : Run consensus NMF on the GPU over meta cells
 - [`rs_nmf_consensus_sc_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_consensus_sc_gpu.md)

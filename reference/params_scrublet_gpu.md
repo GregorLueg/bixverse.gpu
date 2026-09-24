@@ -90,6 +90,28 @@ params_scrublet_gpu(
 
 A flat named list with all GPU Scrublet parameters.
 
+## Details
+
+Leave `knn_method` alone unless you have a reason. `"exhaustive"` is the
+default and is the right answer for Scrublet on the GPU arm.
+
+Scrublet queries at a high `k` by construction: the count is taken over
+an embedding `(1 + sim_doublet_ratio) * n_cells` rows tall, and `k = 0L`
+then scales `k` by the same factor, so a 20k-cell run searches at `k`
+around 175. Exhaustive barely notices `k`, since the scan is the cost
+and `k` only sizes the top-k selection. NN-descent notices a lot: its
+build degree tracks `k`, so the descent does more work per node as `k`
+climbs. Measured at 20k cells and 30 PCs, exhaustive took 0.98s against
+38.8s for NN-descent at `k = 200`. NN-descent only came out ahead at
+`k = 10`.
+
+`"ivf"` is the one worth trying: it was the quickest of the three across
+that sweep and holds a Pearson above 0.99 against exhaustive.
+
+Recall matters more here than elsewhere. The doublet score is a
+neighbour count, so a backend that drops neighbours biases every score
+downwards.
+
 ## References
 
 Wolock, et al., Cell Syst, 2020

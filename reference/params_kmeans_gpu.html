@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,7 @@
     <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_nmf.html">NMF with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_scrublet.html">Scrublet with GPU-acceleration</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_nebula.html">NEBULA with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -70,34 +71,45 @@
 
 
 <dl><dt id="arg-k-means-iter">k_means_iter<a class="anchor" aria-label="anchor" href="#arg-k-means-iter"></a></dt>
-<dd><p>Integer. Number of k-means iterations.</p></dd>
+<dd><p>Integer. Number of k-means iterations. Defaults to <code>50L</code>.</p></dd>
 
 
 <dt id="arg-k-means-init">k_means_init<a class="anchor" aria-label="anchor" href="#arg-k-means-init"></a></dt>
-<dd><p>Optional character. Initialisation method. One of
-<code>"random"</code>, <code>"parallel"</code>, or <code>"plusplus"</code>. If <code>NULL</code>, determined on the
-Rust side.</p></dd>
+<dd><p>String or <code>NULL</code>. Initialisation method. One of
+<code>"random"</code>, <code>"parallel"</code>, or <code>"plusplus"</code>. If <code>NULL</code>, determined on the Rust
+side. Defaults to <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-metric">metric<a class="anchor" aria-label="anchor" href="#arg-metric"></a></dt>
-<dd><p>String. One of <code>c("euclidean", "cosine")</code>.</p></dd>
+<dd><p>String. The distance metric. One of <code>c("euclidean", "cosine")</code>.
+Defaults to <code>"euclidean"</code>.</p></dd>
 
 
 <dt id="arg-fixed">fixed<a class="anchor" aria-label="anchor" href="#arg-fixed"></a></dt>
-<dd><p>Logical. Shall the algorithm be run for a fixed number of
-iterations, without checking for convergence.</p></dd>
+<dd><p>Boolean. Shall the algorithm be run for a fixed number of
+iterations, without checking for convergence. Defaults to <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-quantise">quantise<a class="anchor" aria-label="anchor" href="#arg-quantise"></a></dt>
-<dd><p>Logical. Whether to quantise data to <code>fp16</code> before
-clustering. This can improve performance in circumstances where it is
-memory bound.</p></dd>
+<dd><p>Boolean. Whether to quantise data to <code>fp16</code> before
+clustering. This can improve performance in circumstances where it is memory
+bound. Defaults to <code>FALSE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list with the parameters.</p>
-    </div>
+    <p>A named list with the following elements:</p><ul><li><p>k_means_iter - Integer. Number of k-means iterations. Defaults to
+<code>50L</code>.</p></li>
+<li><p>k_means_init - String or <code>NULL</code>. Initialisation method. One of
+<code>"random"</code>, <code>"parallel"</code>, or <code>"plusplus"</code>. If <code>NULL</code>, determined on the Rust
+side. Defaults to <code>NULL</code>.</p></li>
+<li><p>metric - String. The distance metric. One of <code>c("euclidean", "cosine")</code>. Defaults to <code>"euclidean"</code>.</p></li>
+<li><p>fixed - Boolean. Shall the algorithm be run for a fixed number of
+iterations, without checking for convergence. Defaults to <code>FALSE</code>.</p></li>
+<li><p>quantise - Boolean. Whether to quantise data to <code>fp16</code> before
+clustering. This can improve performance in circumstances where it is memory
+bound. Defaults to <code>FALSE</code>.</p></li>
+</ul></div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

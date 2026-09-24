@@ -15,7 +15,7 @@ knn_backend."><meta property="og:image" content="https://gregorlueg.github.io/bi
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,7 @@ knn_backend."><meta property="og:image" content="https://gregorlueg.github.io/bi
     <li><a class="dropdown-item" href="../articles/gpu_scenic.html">SCENIC with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_nmf.html">NMF with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_scrublet.html">Scrublet with GPU-acceleration</a></li>
+    <li><a class="dropdown-item" href="../articles/gpu_nebula.html">NEBULA with GPU-acceleration</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_umap.html">GPU-accelerated UMAP</a></li>
     <li><a class="dropdown-item" href="../articles/gpu_tsne.html">GPU-accelerated t-SNE</a></li>
     <li><a class="dropdown-item" href="../articles/parametric_umap.html">Parametric UMAP</a></li>
@@ -146,6 +147,23 @@ asks Rust to pick <code>k</code>.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A flat named list with all GPU Scrublet parameters.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Leave <code>knn_method</code> alone unless you have a reason. <code>"exhaustive"</code>
+is the default and is the right answer for Scrublet on the GPU arm.</p>
+<p>Scrublet queries at a high <code>k</code> by construction: the count is taken over an
+embedding <code>(1 + sim_doublet_ratio) * n_cells</code> rows tall, and <code>k = 0L</code> then
+scales <code>k</code> by the same factor, so a 20k-cell run searches at <code>k</code> around
+175. Exhaustive barely notices <code>k</code>, since the scan is the cost and <code>k</code> only
+sizes the top-k selection. NN-descent notices a lot: its build degree
+tracks <code>k</code>, so the descent does more work per node as <code>k</code> climbs. Measured
+at 20k cells and 30 PCs, exhaustive took 0.98s against 38.8s for
+NN-descent at <code>k = 200</code>. NN-descent only came out ahead at <code>k = 10</code>.</p>
+<p><code>"ivf"</code> is the one worth trying: it was the quickest of the three across
+that sweep and holds a Pearson above 0.99 against exhaustive.</p>
+<p>Recall matters more here than elsewhere. The doublet score is a neighbour
+count, so a backend that drops neighbours biases every score downwards.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

@@ -146,6 +146,8 @@ GPU-accelerated NMF.
 
 GPU-accelerated BBKNN batch correction (single cells)
 
+GPU-accelerated Nebula
+
 **General:**
 
 ~~More vignettes on some of the implemented functions.~~ Got a bit
