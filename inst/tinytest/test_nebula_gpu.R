@@ -90,7 +90,7 @@ cols_to_compare <- c(
 nebula_params <- params_nebula_gpu()
 
 expect_true(
-  current = checkNebulaGpuParams(nebula_params),
+  current = bixverse.gpu:::checkNebulaGpuParams(nebula_params),
   info = "the default GPU NEBULA params pass their own check"
 )
 
@@ -128,7 +128,7 @@ expect_error(
 )
 
 expect_true(
-  current = is.character(checkNebulaGpuParams(
+  current = is.character(bixverse.gpu:::checkNebulaGpuParams(
     utils::modifyList(nebula_params, list(min_sigma = 100))
   )),
   info = "checkNebulaGpuParams catches bounds that cross"
