@@ -68,6 +68,32 @@ parse_verbosity <- function(input) {
   as.integer(sum(input))
 }
 
+## gpu knn methods -------------------------------------------------------------
+
+#' Normalise a GPU kNN method name
+#'
+#' @description
+#' The package says `"nndescent"` everywhere, but the parser on the Rust side
+#' of the single cell GPU kNN only matches `"cagra"`, `"cagra_gpu"` and
+#' `"nndescent_gpu"`. A bare `"nndescent"` is not an error there: it prints a
+#' warning and silently runs exhaustive instead. That is a performance
+#' regression nobody would notice, so translate before crossing over.
+#'
+#' Idempotent, so it is safe to apply both in the parameter wrapper and again
+#' at the call site.
+#'
+#' @param x String. The kNN method name.
+#'
+#' @returns The string Rust understands.
+#'
+#' @keywords internal
+.normalise_gpu_knn_method <- function(x) {
+  # checks
+  checkmate::qassert(x, "S1")
+
+  if (x %in% c("nndescent", "cagra")) "nndescent_gpu" else x
+}
+
 ## cache provenance ------------------------------------------------------------
 
 #' Parents of a GPU manifold embedding (UMAP, t-SNE)

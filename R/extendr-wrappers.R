@@ -17,6 +17,19 @@ NULL
 #' @returns Boolean. `TRUE` when a WGPU adapter could be initialised.
 rs_gpu_available <- function() .Call(wrap__rs_gpu_available)
 
+#' Check whether the GPU adapter runs plane (subgroup) operations
+#'
+#' @description
+#' Advertising plane operations is not enough: the paravirtualised GPU of a
+#' macOS VM, as on the macos-15-intel GitHub runners, reports planes of 4 to
+#' 64 lanes but silently drops every dispatch that uses one. This launches a
+#' single plane reduction and checks the answer. The result is cached for the
+#' session.
+#'
+#' @returns Boolean. `TRUE` when a GPU adapter is present and a plane
+#' reduction on it returns the plane width.
+rs_gpu_plane_ops <- function() .Call(wrap__rs_gpu_plane_ops)
+
 #' Generate a GPU-accelerated kNN graph
 #'
 #' @description
@@ -910,5 +923,103 @@ rs_fast_cluster_gpu <- function(embd, resolutions, n_centroids, fc_params, snn, 
 #'
 #' @keywords internal
 rs_fast_cluster_grid_gpu <- function(embd, resolutions, n_centroids, fc_params, snn, return_kmeans, no_seeds, seed, verbose) .Call(wrap__rs_fast_cluster_grid_gpu, embd, resolutions, n_centroids, fc_params, snn, return_kmeans, no_seeds, seed, verbose)
+
+#' GPU: BBKNN batch correction
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU equivalent of `bixverse::rs_bbknn`, implementing the BBKNN algorithm
+#' from Polański, et al. One nearest neighbour index is built per batch on the
+#' WGPU backend and queried by every cell, so each cell gets
+#' `neighbours_within_batch` neighbours from every batch. The UMAP
+#' connectivity calculations that follow stay on the CPU and are shared with
+#' the CPU implementation.
+#'
+#' @param embd Numerical matrix. The embedding matrix used to generate the
+#' BBKNN results. Usually PCA. Rows represent cells.
+#' @param batch_labels Integer vector. These represent to which batch a given
+#' cell belongs. Needs to be 0-indexed!
+#' @param bbknn_params List. Parameter list, see [params_sc_bbknn_gpu()].
+#' @param seed Integer. Seed for reproducibility purposes.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list of two lists representing the sparse matrix representation
+#' of the distances and the connectivities. Each of them contains
+#' \itemize{
+#'   \item data - The values of the sparse matrix.
+#'   \item indptr - The index pointers. 0-indexed.
+#'   \item indices - The column indices. 0-indexed.
+#'   \item nrow - Number of rows.
+#'   \item ncol - Number of columns.
+#'   \item cs_type - The sparse format, `"csr"` here.
+#' }
+#'
+#' @export
+#'
+#' @references Polański, et al., Bioinformatics, 2020
+#'
+#' @keywords internal
+rs_bbknn_gpu <- function(embd, batch_labels, bbknn_params, seed, verbose) .Call(wrap__rs_bbknn_gpu, embd, batch_labels, bbknn_params, seed, verbose)
+
+#' GPU: fit the NEBULA negative binomial gamma mixed model over single cells
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU equivalent of `bixverse::rs_nebula_sc`. Stage two of NEBULA, the
+#' per-gene penalised fits, is dispatched to the WGPU backend in `f32` and
+#' finished on the host in `f64`. Everything else, including the streaming of
+#' the counts out of the gene-major store in batches, the subject ordering, the
+#' dispersion shrinkage and the Wald test, is the CPU code. REML is not
+#' implemented on the device and is rejected.
+#'
+#' @param f_path_genes String. Path to the `counts_genes.bin` file.
+#' @param f_path_cells String. Path to the `counts_cells.bin` file. Only read
+#' when `offset` is `NULL`, to take the library sizes.
+#' @param cells_to_keep Integer vector. 0-indexed(!) global positions of the
+#' cells to analyse, in any order. Must not hold duplicates.
+#' @param gene_indices Integer vector. 0-indexed(!) positions of the genes to
+#' fit.
+#' @param subject_ids Integer vector. 0-indexed(!) subject label per global
+#' cell. One entry per cell in the store, not per cell in `cells_to_keep`.
+#' @param design Numeric matrix. Predictors of cells x coefficients, rows
+#' aligned to `cells_to_keep` and including an intercept.
+#' @param offset Optional numeric vector. Strictly positive scaling factor per
+#' selected cell, aligned to `cells_to_keep`. `NULL` uses the library sizes.
+#' @param nebula_params Named list. The NEBULA parameters, see
+#' [params_nebula_gpu()], plus either `coef` (a 0-indexed(!) coefficient) or
+#' `contrast` (one weight per coefficient).
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns A list with the following elements
+#' \itemize{
+#'   \item gene_idx - Integer. 0-indexed positions of the genes that survived
+#'   NEBULA's own expression filter.
+#'   \item coefficients - Numeric matrix of genes x coefficients. The fixed
+#'   effects on the design scale.
+#'   \item se - Numeric matrix of genes x coefficients. The standard errors.
+#'   \item subject_overdispersion - Numeric. NEBULA's `sigma^2`.
+#'   \item cell_overdispersion - Numeric. NEBULA's `phi^-1`.
+#'   \item cell_overdispersion_shrunk - Numeric or `NULL`. The cell-level
+#'   overdispersion after empirical Bayes shrinkage, when it was requested.
+#'   \item convergence - Integer. NEBULA's convergence code. At or below `-20`
+#'   is a likely failure.
+#'   \item sigma_at_bound - Boolean. Whether the subject-level variance
+#'   finished pinned on its lower bound.
+#'   \item log_fc - Numeric. Effect of the tested coefficient or contrast, on
+#'   the natural log scale.
+#'   \item effect_se - Numeric. Standard error of that effect.
+#'   \item z - Numeric. The Wald statistic.
+#'   \item p_values - Numeric. Two-sided p-values.
+#'   \item fdr - Numeric. Benjamini-Hochberg adjusted p-values.
+#' }
+#'
+#' @references He, et al., Commun Biol, 2021
+#'
+#' @export
+#'
+#' @keywords internal
+rs_nebula_sc_gpu <- function(f_path_genes, f_path_cells, cells_to_keep, gene_indices, subject_ids, design, offset, nebula_params, verbose) .Call(wrap__rs_nebula_sc_gpu, f_path_genes, f_path_cells, cells_to_keep, gene_indices, subject_ids, design, offset, nebula_params, verbose)
 
 # nolint end

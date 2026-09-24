@@ -180,7 +180,7 @@ S7::method(generate_seacells_gpu_sc, SingleCellsSubset) <- function(
     S7::S7_inherits(object, bixverse::SingleCells) ||
       S7::S7_inherits(object, bixverse::SingleCellsSubset)
   )
-  bixverse:::assertScSeacells(seacell_params)
+  bixverse:::assertScSeacellsParams(seacell_params)
   checkmate::qassert(embd_to_use, "S1")
   checkmate::qassert(no_embd_to_use, c("I1", "0"))
   checkmate::qassert(cells_to_use, c("S+", "0"))

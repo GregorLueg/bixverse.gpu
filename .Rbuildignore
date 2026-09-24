@@ -24,3 +24,4 @@
 ^\.claude$
 ^renovate\.json$
 ^vignettes$
+^data-raw$

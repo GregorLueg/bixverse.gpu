@@ -70,7 +70,7 @@ generate_knn_graph_gpu <- function(
       "nndescent"
     )
   )
-  assertNnParamsGpu(nn_params)
+  assertNnGpuParams(nn_params)
   checkmate::qassert(seed, "I1")
   checkmate::qassert(.verbose, c("B1", "I1[0, 2]"))
 

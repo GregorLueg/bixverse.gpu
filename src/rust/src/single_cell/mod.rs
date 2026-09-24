@@ -1,5 +1,7 @@
+pub mod bbknn_gpu;
 pub mod fast_clusters_gpu;
 pub mod harmony_gpu;
+pub mod nebula_gpu;
 pub mod nmf_gpu;
 pub mod pca_gpu;
 pub mod sc_utils;

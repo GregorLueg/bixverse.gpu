@@ -120,7 +120,8 @@ Current roadmap (subject to change and interest):
 - [x] GPU-accelerated SEACells meta cell generation (both Frank-Wolfe solves).
 - [x] Scrublet with GPU-acceleration.
 - [x] GPU-accelerated NMF.
-- [ ] GPU-accelerated BBKNN batch correction (single cells)
+- [x] GPU-accelerated BBKNN batch correction (single cells)
+- [x] GPU-accelerated Nebula
 
 
 **General:**

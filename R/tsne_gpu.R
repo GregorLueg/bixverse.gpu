@@ -25,8 +25,8 @@
       "ivf"
     )
   )
-  assertNnParamsGpu(nn_params)
-  assertTsneParamsGpu(tsne_params)
+  assertNnGpuParams(nn_params)
+  assertTsneGpuParams(tsne_params)
 
   final_params <- c(nn_params, tsne_params)
   final_params[["knn_method"]] <- knn_method
