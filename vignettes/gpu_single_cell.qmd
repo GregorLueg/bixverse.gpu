@@ -402,7 +402,11 @@ asw_gpu <- calculate_batch_asw_sc(
   embd_to_use = "harmony_gpu",
   batch_column = "exp_id"
 )
-lisi_gpu <- calculate_batch_lisi_sc(sc_object, batch_column = "exp_id")
+lisi_gpu <- calculate_lisi_sc(
+  sc_object,
+  label_column = "exp_id",
+  type = "batch"
+)
 
 kbet_gpu
 asw_gpu
@@ -427,7 +431,11 @@ asw_cpu <- calculate_batch_asw_sc(
   embd_to_use = "harmony_v2",
   batch_column = "exp_id"
 )
-lisi_cpu <- calculate_batch_lisi_sc(sc_object, batch_column = "exp_id")
+lisi_cpu <- calculate_lisi_sc(
+  sc_object,
+  label_column = "exp_id",
+  type = "batch"
+)
 
 kbet_cpu
 asw_cpu
@@ -579,7 +587,11 @@ ASW needs an embedding that BBKNN never produces.
 
 ```{r}
 #| label: bbknn metrics
-lisi_bbknn <- calculate_batch_lisi_sc(sc_object, batch_column = "exp_id")
+lisi_bbknn <- calculate_lisi_sc(
+  sc_object,
+  label_column = "exp_id",
+  type = "batch"
+)
 lisi_bbknn
 ```
 
