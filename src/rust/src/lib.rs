@@ -55,7 +55,6 @@ extendr_module! {
     use nebula_gpu;
     // device
     fn rs_gpu_available;
-    fn rs_gpu_plane_size;
     // knn
     fn rs_gpu_knn;
     // umap parametric
@@ -242,22 +241,6 @@ pub(crate) fn ensure_gpu() -> extendr_api::Result<()> {
                 .to_string(),
         ))
     }
-}
-
-/// Report the plane (subgroup) width range of the GPU adapter
-///
-/// @description
-/// Some kernels, NEBULA in particular, reduce within a plane and need a fixed
-/// width of 32 lanes. Software rasterisers such as lavapipe report 8, and
-/// wave64 AMD hardware can report 64; those kernels refuse to run there.
-///
-/// @returns Integer vector of length 2: the minimum and maximum plane size.
-#[extendr]
-fn rs_gpu_plane_size() -> extendr_api::Result<Vec<i32>> {
-    ensure_gpu()?;
-    let client = WgpuRuntime::client(&WgpuDevice::default());
-    let hw = &client.properties().hardware;
-    Ok(vec![hw.plane_size_min as i32, hw.plane_size_max as i32])
 }
 
 /////////

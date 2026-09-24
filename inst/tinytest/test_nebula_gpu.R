@@ -4,12 +4,6 @@ if (!gpu_available()) {
   exit_file("no GPU adapter available")
 }
 
-# the NEBULA kernel reduces within a plane of exactly 32 lanes; lavapipe on the
-# Linux runners reports 8
-if (!all(bixverse.gpu:::rs_gpu_plane_size() == 32L)) {
-  exit_file("GPU NEBULA needs a plane width of exactly 32")
-}
-
 library(magrittr)
 library(bixverse)
 

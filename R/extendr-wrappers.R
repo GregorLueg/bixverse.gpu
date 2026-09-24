@@ -17,16 +17,6 @@ NULL
 #' @returns Boolean. `TRUE` when a WGPU adapter could be initialised.
 rs_gpu_available <- function() .Call(wrap__rs_gpu_available)
 
-#' Report the plane (subgroup) width range of the GPU adapter
-#'
-#' @description
-#' Some kernels, NEBULA in particular, reduce within a plane and need a fixed
-#' width of 32 lanes. Software rasterisers such as lavapipe report 8, and
-#' wave64 AMD hardware can report 64; those kernels refuse to run there.
-#'
-#' @returns Integer vector of length 2: the minimum and maximum plane size.
-rs_gpu_plane_size <- function() .Call(wrap__rs_gpu_plane_size)
-
 #' Generate a GPU-accelerated kNN graph
 #'
 #' @description
