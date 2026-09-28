@@ -14,7 +14,7 @@ tsne_gpu_sc(
   n_dim = 2L,
   perplexity = 20,
   approx_type = c("bh", "fft"),
-  knn_method = c("nndescent", "exhaustive", "ivf"),
+  knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
   seed = 42L,
@@ -52,7 +52,8 @@ and 50. Defaults to \code{20.0}.}
 (Barnes-Hut) or \code{"fft"}. Defaults to \code{"bh"}. \code{"fft"} is Unix-only.}
 
 \item{knn_method}{String. GPU (approximate) nearest neighbour method. One
-of \code{c("nndescent", "exhaustive", "ivf")}.}
+of \code{c("ivf", "exhaustive", "nndescent")}. Default is \code{"ivf"} here, as it
+deals usually better with the high k in tSNE.}
 
 \item{nn_params}{Named list. GPU kNN parameters, see \code{\link[=params_nn_gpu]{params_nn_gpu()}}.}
 

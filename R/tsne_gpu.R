@@ -65,7 +65,8 @@
 #' @param knn_method Character. GPU-accelerated (approximate) nearest
 #' neighbour method to use. One of `"nndescent"`, `"exhaustive"`, or `"ivf"`.
 #' @param nn_params Named list. Nearest neighbour search parameters, see
-#' [params_nn_gpu()].
+#' [params_nn_gpu()]. tSNE uses higher k usually, hence, `"ivf"`` is the default
+#' here.
 #' @param tsne_params Named list. t-SNE (GPU) algorithm parameters, see
 #' [params_tsne_gpu()].
 #' @param seed Integer. Random seed for reproducibility. Defaults to `42L`.
@@ -84,9 +85,9 @@ tsne_gpu <- function(
   perplexity = 20.0,
   approx_type = c("bh", "fft"),
   knn_method = c(
-    "nndescent",
+    "ivf",
     "exhaustive",
-    "ivf"
+    "nndescent"
   ),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),

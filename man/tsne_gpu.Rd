@@ -10,7 +10,7 @@ tsne_gpu(
   n_dim = 2L,
   perplexity = 20,
   approx_type = c("bh", "fft"),
-  knn_method = c("nndescent", "exhaustive", "ivf"),
+  knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
   seed = 42L,
@@ -42,7 +42,8 @@ Unix systems.}
 neighbour method to use. One of \code{"nndescent"}, \code{"exhaustive"}, or \code{"ivf"}.}
 
 \item{nn_params}{Named list. Nearest neighbour search parameters, see
-\code{\link[=params_nn_gpu]{params_nn_gpu()}}.}
+\code{\link[=params_nn_gpu]{params_nn_gpu()}}. tSNE uses higher k usually, hence, `"ivf"`` is the default
+here.}
 
 \item{tsne_params}{Named list. t-SNE (GPU) algorithm parameters, see
 \code{\link[=params_tsne_gpu]{params_tsne_gpu()}}.}

@@ -928,7 +928,8 @@ S7::method(umap_gpu_sc, SingleCells) <- function(
 #' @param approx_type String. Approximation method. One of `"bh"`
 #' (Barnes-Hut) or `"fft"`. Defaults to `"bh"`. `"fft"` is Unix-only.
 #' @param knn_method String. GPU (approximate) nearest neighbour method. One
-#' of `c("nndescent", "exhaustive", "ivf")`.
+#' of `c("ivf", "exhaustive", "nndescent")`. Default is `"ivf"` here, as it
+#' deals usually better with the high k in tSNE.
 #' @param nn_params Named list. GPU kNN parameters, see [params_nn_gpu()].
 #' @param tsne_params Named list. t-SNE (GPU) parameters, see
 #' [params_tsne_gpu()].
@@ -958,7 +959,7 @@ tsne_gpu_sc <- S7::new_generic(
     n_dim = 2L,
     perplexity = 20.0,
     approx_type = c("bh", "fft"),
-    knn_method = c("nndescent", "exhaustive", "ivf"),
+    knn_method = c("ivf", "exhaustive", "nndescent"),
     nn_params = params_nn_gpu(),
     tsne_params = params_tsne_gpu(),
     seed = 42L,
@@ -986,7 +987,7 @@ S7::method(tsne_gpu_sc, SingleCells) <- function(
   n_dim = 2L,
   perplexity = 20.0,
   approx_type = c("bh", "fft"),
-  knn_method = c("nndescent", "exhaustive", "ivf"),
+  knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
   seed = 42L,
