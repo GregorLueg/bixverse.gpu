@@ -1,3 +1,10 @@
+# bixverse.gpu 0.3.3
+
+## Feature
+
+* Faster GPU-accelerated SVD that also fixed a numerical problem in the same
+  vein via new `bixverse-rs` release.
+
 # bixverse.gpu 0.3.2
 
 ## Feature

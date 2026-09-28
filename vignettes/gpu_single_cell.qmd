@@ -225,8 +225,8 @@ ggplot(
 ```
 
 You might see some slight differences here driven by floating operation 
-differences between CPU and GPU. The overall data structure is however clearly
-captured.
+differences between CPU and GPU and sign shifts. The overall data structure is 
+however clearly captured.
 
 ## GPU-accelerated Harmony v2
 
@@ -421,7 +421,7 @@ sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_v2",
   knn_method = "nndescent",
-  nn_params = params_nn_gpu(extract_knn = FALSE),
+  nn_params = params_nn_gpu(extract_knn = TRUE),
   .verbose = TRUE
 )
 
