@@ -1,5 +1,13 @@
 # Changelog
 
+## bixverse.gpu 0.3.2
+
+### Feature
+
+- Default GPU-accelerated kNN search for tSNE was set to `"ivf"` – due
+  to the usually larger k needed, `"ivf"` scales better than the
+  GPU-accelerated NNDescent approach.
+
 ## bixverse.gpu 0.3.1
 
 ### Features

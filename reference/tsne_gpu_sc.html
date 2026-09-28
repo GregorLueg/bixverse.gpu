@@ -21,7 +21,7 @@ perplexities since the kNN is cheap on GPU."><meta property="og:image" content="
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -88,7 +88,7 @@ perplexities since the kNN is cheap on GPU.</p>
 <span>  n_dim <span class="op">=</span> <span class="fl">2L</span>,</span>
 <span>  perplexity <span class="op">=</span> <span class="fl">20</span>,</span>
 <span>  approx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bh"</span>, <span class="st">"fft"</span><span class="op">)</span>,</span>
-<span>  knn_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nndescent"</span>, <span class="st">"exhaustive"</span>, <span class="st">"ivf"</span><span class="op">)</span>,</span>
+<span>  knn_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ivf"</span>, <span class="st">"exhaustive"</span>, <span class="st">"nndescent"</span><span class="op">)</span>,</span>
 <span>  nn_params <span class="op">=</span> <span class="fu"><a href="params_nn_gpu.html">params_nn_gpu</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  tsne_params <span class="op">=</span> <span class="fu"><a href="params_tsne_gpu.html">params_tsne_gpu</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">42L</span>,</span>
@@ -149,7 +149,8 @@ and 50. Defaults to <code>20.0</code>.</p></dd>
 
 <dt id="arg-knn-method">knn_method<a class="anchor" aria-label="anchor" href="#arg-knn-method"></a></dt>
 <dd><p>String. GPU (approximate) nearest neighbour method. One
-of <code>c("nndescent", "exhaustive", "ivf")</code>.</p></dd>
+of <code>c("ivf", "exhaustive", "nndescent")</code>. Default is <code>"ivf"</code> here, as it
+deals usually better with the high k in tSNE.</p></dd>
 
 
 <dt id="arg-nn-params">nn_params<a class="anchor" aria-label="anchor" href="#arg-nn-params"></a></dt>

@@ -15,7 +15,7 @@ tsne_gpu(
   n_dim = 2L,
   perplexity = 20,
   approx_type = c("bh", "fft"),
-  knn_method = c("nndescent", "exhaustive", "ivf"),
+  knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
   seed = 42L,
@@ -65,6 +65,7 @@ tsne_gpu(
 
   Named list. Nearest neighbour search parameters, see
   [`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md).
+  tSNE uses higher k usually, hence, \`"ivf"“ is the default here.
 
 - tsne_params:
 
