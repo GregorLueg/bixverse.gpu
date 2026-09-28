@@ -58,7 +58,6 @@ have sufficient VRAM/unified memory that is…).
 ``` r
 
 library(bixverse)
-#> Warning: package 'bixverse' was built under R version 4.5.3
 library(bixverse.gpu)
 library(bixverse.plots)
 library(data.table)
@@ -239,8 +238,8 @@ ggplot(
 ![](gpu_single_cell_files/figure-html/cpu%20vs%20gpu%20-%20singular%20values-1.png)
 
 You might see some slight differences here driven by floating operation
-differences between CPU and GPU. The overall data structure is however
-clearly captured.
+differences between CPU and GPU and sign shifts. The overall data
+structure is however clearly captured.
 
 ## GPU-accelerated Harmony v2
 
@@ -397,12 +396,12 @@ One column per resolution, keyed by `cell_idx`:
 head(get_data(fast_cluster_res))
 #>    cell_idx res_2 res_1.5 res_1 res_0.5
 #>       <int> <int>   <int> <int>   <int>
-#> 1:        1     1       1     1       1
-#> 2:        2     3       3     3       3
-#> 3:        3     5       5     5       5
-#> 4:        4     6       0     0       0
-#> 5:        6     5       5     5       5
-#> 6:        7     2       2     2       2
+#> 1:        1     1       2     1       0
+#> 2:        2     6       6     5       4
+#> 3:        3     2       1     2       0
+#> 4:        4     0       0     0       1
+#> 5:        6     2       1     2       0
+#> 6:        7     1       2     1       0
 ```
 
 The grid stats are the interesting bit. `mean_ari` is how stable the
@@ -415,16 +414,16 @@ up with.
 fast_cluster_res$stats
 #>    resolution  mean_ari median_ari mean_conductance median_conductance
 #>         <num>     <num>      <num>            <num>              <num>
-#> 1:        2.0 0.9235639  0.8987854      0.025006620                  0
-#> 2:        1.5 0.9353009  0.9689155      0.014672038                  0
-#> 3:        1.0 0.9293569  0.9689155      0.009172788                  0
-#> 4:        0.5 0.9407509  1.0000000      0.003602102                  0
+#> 1:        2.0 0.7931182  0.7925422      0.055585913         0.03477930
+#> 2:        1.5 0.7918988  0.7973849      0.038292684         0.01803069
+#> 3:        1.0 0.8195730  0.8181327      0.023991520         0.01010260
+#> 4:        0.5 0.9084137  1.0000000      0.005820729         0.00000000
 #>    mean_n_comms
 #>           <num>
-#> 1:         7.24
-#> 2:         6.96
-#> 3:         6.72
-#> 4:         6.32
+#> 1:         8.60
+#> 2:         7.84
+#> 3:         7.16
+#> 4:         6.04
 ```
 
 The k-means centroids and per-cell assignments are there too, if you
@@ -436,7 +435,7 @@ dim(get_centroids_sc(fast_cluster_res))
 #> [1] 76 32
 
 head(get_kmeans_clusters(fast_cluster_res))
-#> [1] 35  3 70 13 66 46
+#> [1] 62 47 36  8  1 63
 ```
 
 Push the memberships onto the object and they behave like any other obs
@@ -476,12 +475,12 @@ head(sc_object)
 #> 6:       1 AAACGCTGACCAGT   774     2161    TRUE 0.03840815 0.4183249   FALSE
 #>    res_2 res_1.5 res_1 res_0.5
 #>    <int>   <int> <int>   <int>
-#> 1:     1       1     1       1
-#> 2:     3       3     3       3
-#> 3:     5       5     5       5
-#> 4:     6       0     0       0
-#> 5:     5       5     5       5
-#> 6:     2       2     2       2
+#> 1:     1       2     1       0
+#> 2:     6       6     5       4
+#> 3:     2       1     2       0
+#> 4:     0       0     0       1
+#> 5:     2       1     2       0
+#> 6:     1       2     1       0
 ```
 
 ## Comparing GPU vs CPU Harmony
@@ -507,20 +506,20 @@ lisi_gpu <- calculate_lisi_sc(
 kbet_gpu
 #> kBET Scores
 #>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.2679 (1565 / 5841)
-#>   Mean Chi-Square:     3.0562 (expected under H0: 1)
-#>   Median Chi-Square:   1.9151
+#>   Rejection rate:      0.1421 (830 / 5841)
+#>   Mean Chi-Square:     2.0701 (expected under H0: 1)
+#>   Median Chi-Square:   0.7374
 asw_gpu
 #> Batch Silhouette Width
 #>   Cells: 5000 | Batches: 2
-#>   Mean ASW:    0.0238 (-1 = strong intermixing, 0 = mixed, 1 = separated)
-#>   Median ASW:  0.0456
+#>   Mean ASW:    0.0212 (-1 = strong intermixing, 0 = mixed, 1 = separated)
+#>   Median ASW:  0.0489
 lisi_gpu
 #> iLISI (batch)
 #>   Cells: 5841 | Labels: 2
-#>   Mean LISI:    1.4609
-#>   Median LISI:  1.4706
-#>   Normalised:   0.4706 (0 = worst, 1 = best)
+#>   Mean LISI:    1.6010
+#>   Median LISI:  1.6423
+#>   Normalised:   0.6423 (0 = worst, 1 = best)
 ```
 
 Same kNN setup on the CPU Harmony embedding:
@@ -531,7 +530,7 @@ sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_v2",
   knn_method = "nndescent",
-  nn_params = params_nn_gpu(extract_knn = FALSE),
+  nn_params = params_nn_gpu(extract_knn = TRUE),
   .verbose = TRUE
 )
 #> Generating GPU kNN data with nndescent method.
@@ -553,20 +552,20 @@ lisi_cpu <- calculate_lisi_sc(
 kbet_cpu
 #> kBET Scores
 #>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.2686 (1569 / 5841)
-#>   Mean Chi-Square:     3.0453 (expected under H0: 1)
-#>   Median Chi-Square:   1.9151
+#>   Rejection rate:      0.1469 (858 / 5841)
+#>   Mean Chi-Square:     2.0891 (expected under H0: 1)
+#>   Median Chi-Square:   1.5425
 asw_cpu
 #> Batch Silhouette Width
 #>   Cells: 5000 | Batches: 2
-#>   Mean ASW:    0.0245 (-1 = strong intermixing, 0 = mixed, 1 = separated)
-#>   Median ASW:  0.0452
+#>   Mean ASW:    0.0207 (-1 = strong intermixing, 0 = mixed, 1 = separated)
+#>   Median ASW:  0.0493
 lisi_cpu
 #> iLISI (batch)
 #>   Cells: 5841 | Labels: 2
-#>   Mean LISI:    1.4634
-#>   Median LISI:  1.4706
-#>   Normalised:   0.4706 (0 = worst, 1 = best)
+#>   Mean LISI:    1.5986
+#>   Median LISI:  1.6423
+#>   Normalised:   0.6423 (0 = worst, 1 = best)
 ```
 
 Harmony has stochastic elements, so the two embeddings will not be

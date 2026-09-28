@@ -130,8 +130,8 @@ data.table(
 )
 #>    backend seconds
 #>     <char>   <num>
-#> 1:     CPU   3.448
-#> 2:     GPU   2.398
+#> 1:     CPU   2.401
+#> 2:     GPU   2.226
 ```
 
 ### How close are they?
@@ -330,8 +330,8 @@ data.table(
 
 ## Timing
 
-On this data, 500 genes over 5355 cells, the CPU took 3.4 s and the GPU
-2.4 s. One run each on an Apple Silicon laptop, device set-up included.
+On this data, 500 genes over 5355 cells, the CPU took 2.4 s and the GPU
+2.2 s. One run each on an Apple Silicon laptop, device set-up included.
 Across renders of this vignette the order has flipped both ways, so call
 it a wash at this size. The whole sweep is seconds either way, and stage
 one, the batching and the Wald test stay on the CPU in both, so the GPU

@@ -91,6 +91,7 @@ sc_object
 #>   KNN generated: FALSE
 #>   SNN generated: FALSE
 #>   MAGIC imputed: none
+#>   Residual model: none
 #>   Stale artefacts: none
 ```
 
@@ -243,7 +244,7 @@ errors rather than being silently ignored:
 
 params_scrublet_gpu(knn = list(m = 32L))
 #> Error in `params_scrublet_gpu()`:
-#> ! Unknown kNN parameter(s) for backend 'gpu': m. Allowed: k, knn_method, ann_dist, n_list, n_probe.
+#> ! Unknown kNN parameter(s) for backend 'gpu': m. Allowed: k, knn_method, ann_dist, n_list, n_probe, graph_k, k_build, n_tree, delta, rho, refine_knn, beam_width, max_beam_iters, n_entry_points, extract_knn.
 ```
 
 ## CPU versus GPU
@@ -270,8 +271,8 @@ data.table(
 )[, speed_up := round(seconds[1] / seconds, 2)][]
 #>    version seconds speed_up
 #>     <char>   <num>    <num>
-#> 1:     CPU    2.25     1.00
-#> 2:     GPU    1.20     1.88
+#> 1:     CPU    1.38     1.00
+#> 2:     GPU    0.99     1.39
 ```
 
 ## Do the calls agree?

@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -151,6 +151,7 @@
 <span><span class="co">#&gt;   KNN generated: FALSE</span></span>
 <span><span class="co">#&gt;   SNN generated: FALSE</span></span>
 <span><span class="co">#&gt;   MAGIC imputed: none</span></span>
+<span><span class="co">#&gt;   Residual model: none</span></span>
 <span><span class="co">#&gt;   Stale artefacts: none</span></span></code></pre></div>
 </details>
 </div>
@@ -286,7 +287,7 @@
 <div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/params_scrublet_gpu.html">params_scrublet_gpu</a></span><span class="op">(</span>knn <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>m <span class="op">=</span> <span class="fl">32L</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Error in `params_scrublet_gpu()`:</span></span>
-<span><span class="co">#&gt; ! Unknown kNN parameter(s) for backend 'gpu': m. Allowed: k, knn_method, ann_dist, n_list, n_probe.</span></span></code></pre></div>
+<span><span class="co">#&gt; ! Unknown kNN parameter(s) for backend 'gpu': m. Allowed: k, knn_method, ann_dist, n_list, n_probe, graph_k, k_build, n_tree, delta, rho, refine_knn, beam_width, max_beam_iters, n_entry_points, extract_knn.</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="cpu-versus-gpu">CPU versus GPU<a class="anchor" aria-label="anchor" href="#cpu-versus-gpu"></a>
 </h2>
@@ -311,8 +312,8 @@
 <span><span class="op">)</span><span class="op">[</span>, <span class="va">speed_up</span> <span class="op">:=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">seconds</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">/</span> <span class="va">seconds</span>, <span class="fl">2</span><span class="op">)</span><span class="op">]</span><span class="op">[</span><span class="op">]</span></span>
 <span><span class="co">#&gt;    version seconds speed_up</span></span>
 <span><span class="co">#&gt;     &lt;char&gt;   &lt;num&gt;    &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:     CPU    2.25     1.00</span></span>
-<span><span class="co">#&gt; 2:     GPU    1.20     1.88</span></span></code></pre></div>
+<span><span class="co">#&gt; 1:     CPU    1.38     1.00</span></span>
+<span><span class="co">#&gt; 2:     GPU    0.99     1.39</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="do-the-calls-agree">Do the calls agree?<a class="anchor" aria-label="anchor" href="#do-the-calls-agree"></a>
 </h2>

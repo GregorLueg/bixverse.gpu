@@ -100,6 +100,7 @@ sc_object
 #>   KNN generated: FALSE
 #>   SNN generated: FALSE
 #>   MAGIC imputed: none
+#>   Residual model: none
 #>   Stale artefacts: none
 ```
 
@@ -331,8 +332,8 @@ data.table(
 )[, speed_up := round(seconds[1] / seconds, 2)][]
 #>    version seconds speed_up
 #>     <char>   <num>    <num>
-#> 1:     CPU   20.56     1.00
-#> 2:     GPU    6.19     3.32
+#> 1:     CPU   20.71     1.00
+#> 2:     GPU    6.12     3.38
 ```
 
 Do the two agree? Not bit for bit, and they cannot: f32 GEMM on the

@@ -216,7 +216,7 @@ t_base <- system.time({
   cor_base <- cor(random_data)
 })
 cat(sprintf("base R cor():   %.2fs\n", t_base[["elapsed"]]))
-#> base R cor():   75.41s
+#> base R cor():   73.79s
 ```
 
 faer-backed CPU (via `bixverse`):
@@ -227,7 +227,7 @@ t_cpu <- system.time({
   cor_cpu <- rs_cor(random_data, spearman = FALSE)
 })
 cat(sprintf("rs_cor() CPU:   %.2fs\n", t_cpu[["elapsed"]]))
-#> rs_cor() CPU:   0.87s
+#> rs_cor() CPU:   0.91s
 ```
 
 And GPU-accelerated:
@@ -238,7 +238,7 @@ t_gpu <- system.time({
   cor_gpu <- rs_cor_gpu(random_data, spearman = FALSE, verbose = FALSE)
 })
 cat(sprintf("rs_cor_gpu():   %.2fs\n", t_gpu[["elapsed"]]))
-#> rs_cor_gpu():   0.57s
+#> rs_cor_gpu():   0.56s
 ```
 
 All three should agree:
@@ -261,13 +261,13 @@ t_cpu_cov <- system.time({
   cov_cpu <- rs_covariance(random_data)
 })
 cat(sprintf("rs_covariance() CPU: %.2fs\n", t_cpu_cov[["elapsed"]]))
-#> rs_covariance() CPU: 0.73s
+#> rs_covariance() CPU: 0.81s
 
 t_gpu_cov <- system.time({
   cov_gpu <- rs_cov_gpu(random_data, verbose = FALSE)
 })
 cat(sprintf("rs_cov_gpu():        %.2fs\n", t_gpu_cov[["elapsed"]]))
-#> rs_cov_gpu():        0.45s
+#> rs_cov_gpu():        0.48s
 
 cat(sprintf("max |cpu - gpu|:     %.2e\n", max(abs(cov_cpu - cov_gpu))))
 #> max |cpu - gpu|:     4.68e-06

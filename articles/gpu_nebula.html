@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -191,8 +191,8 @@
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt;    backend seconds</span></span>
 <span><span class="co">#&gt;     &lt;char&gt;   &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:     CPU   3.448</span></span>
-<span><span class="co">#&gt; 2:     GPU   2.398</span></span></code></pre></div>
+<span><span class="co">#&gt; 1:     CPU   2.401</span></span>
+<span><span class="co">#&gt; 2:     GPU   2.226</span></span></code></pre></div>
 </div>
 <section class="level3"><h3 id="how-close-are-they">How close are they?<a class="anchor" aria-label="anchor" href="#how-close-are-they"></a>
 </h3>
@@ -369,7 +369,7 @@
 </div>
 </section><section class="level2"><h2 id="timing">Timing<a class="anchor" aria-label="anchor" href="#timing"></a>
 </h2>
-<p>On this data, 500 genes over 5355 cells, the CPU took 3.4 s and the GPU 2.4 s. One run each on an Apple Silicon laptop, device set-up included. Across renders of this vignette the order has flipped both ways, so call it a wash at this size. The whole sweep is seconds either way, and stage one, the batching and the Wald test stay on the CPU in both, so the GPU only ever takes over part of the run. Larger cell counts and longer gene lists are where stage two grows, but that isn’t measured here. Benchmark on your own data before committing to the GPU path.</p>
+<p>On this data, 500 genes over 5355 cells, the CPU took 2.4 s and the GPU 2.2 s. One run each on an Apple Silicon laptop, device set-up included. Across renders of this vignette the order has flipped both ways, so call it a wash at this size. The whole sweep is seconds either way, and stage one, the batching and the Wald test stay on the CPU in both, so the GPU only ever takes over part of the run. Larger cell counts and longer gene lists are where stage two grows, but that isn’t measured here. Benchmark on your own data before committing to the GPU path.</p>
 </section><section class="level2"><h2 id="where-next">Where next<a class="anchor" aria-label="anchor" href="#where-next"></a>
 </h2>
 <p>REML on the device isn’t there yet; use the CPU path if you need it. NEBULA on <code>MetaCells</code> stays CPU-only for now too.</p>

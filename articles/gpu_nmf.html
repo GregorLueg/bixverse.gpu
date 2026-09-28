@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -156,6 +156,7 @@
 <span><span class="co">#&gt;   KNN generated: FALSE</span></span>
 <span><span class="co">#&gt;   SNN generated: FALSE</span></span>
 <span><span class="co">#&gt;   MAGIC imputed: none</span></span>
+<span><span class="co">#&gt;   Residual model: none</span></span>
 <span><span class="co">#&gt;   Stale artefacts: none</span></span></code></pre></div>
 </details>
 </div>
@@ -346,8 +347,8 @@
 <span><span class="op">)</span><span class="op">[</span>, <span class="va">speed_up</span> <span class="op">:=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">seconds</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">/</span> <span class="va">seconds</span>, <span class="fl">2</span><span class="op">)</span><span class="op">]</span><span class="op">[</span><span class="op">]</span></span>
 <span><span class="co">#&gt;    version seconds speed_up</span></span>
 <span><span class="co">#&gt;     &lt;char&gt;   &lt;num&gt;    &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:     CPU   20.56     1.00</span></span>
-<span><span class="co">#&gt; 2:     GPU    6.19     3.32</span></span></code></pre></div>
+<span><span class="co">#&gt; 1:     CPU   20.71     1.00</span></span>
+<span><span class="co">#&gt; 2:     GPU    6.12     3.38</span></span></code></pre></div>
 </div>
 <p>Do the two agree? Not bit for bit, and they cannot: f32 GEMM on the device reduces in a different order than the CPU path, and NMF is non-convex, so tiny differences early can send a restart to a different local optimum. What has to match is the answer.</p>
 <div class="cell">

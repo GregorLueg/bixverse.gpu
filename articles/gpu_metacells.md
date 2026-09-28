@@ -67,114 +67,13 @@ sc_object <- SingleCells(dir_data = tempdir_cd34)
 sc_object <- load_h5ad(object = sc_object, h5_path = cd34_path)
 #>  Using light streaming for the CSR to CSC conversion.
 #> Loading observations data from h5ad into the DuckDB.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 #> Loading variables data from h5ad into the DuckDB.
-#> 
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 
 sc_object <- find_hvg_sc(
   object = sc_object,
   hvg_no = 2000L,
   .verbose = FALSE
 )
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 
 sc_object <- calculate_pca_sc(
   object = sc_object,
@@ -219,16 +118,6 @@ gpu_time <- system.time({
     .verbose = TRUE
   )
 })
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 
 mc_gpu
 #> Single cell experiment (Meta Cells).
@@ -255,17 +144,17 @@ the archetype cell indices in `@other_data`.
 head(mc_gpu[[]], 3L)
 #>    meta_cell_idx  meta_cell_id no_originating_cells
 #>            <int>        <char>                <num>
-#> 1:             1 meta_cell_001                   37
-#> 2:             2 meta_cell_002                   20
-#> 3:             3 meta_cell_003                   37
+#> 1:             1 meta_cell_001                   45
+#> 2:             2 meta_cell_002                   67
+#> 3:             3 meta_cell_003                   30
 #>                        original_cell_idx
 #>                                   <list>
-#> 1:  537, 799, 992,1035,1055,1967,...[37]
-#> 2: 2184,2227,2274,2307,2894,3224,...[20]
-#> 3:        38, 69,291,309,475,710,...[37]
+#> 1:    3,  30, 319, 853, 976,1081,...[45]
+#> 2:        72,304,361,393,394,412,...[67]
+#> 3:  242, 523, 638, 731,1180,1189,...[30]
 
 tail(mc_gpu@other_data$rss, 5L)
-#> [1] 132.3253 132.1187 131.7788 131.6325 131.5371
+#> [1] 132.5405 132.0968 131.7991 131.6158 131.4879
 ```
 
 ### Knobs that matter on large data
@@ -305,16 +194,6 @@ cpu_time <- system.time({
     .verbose = TRUE
   )
 })
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> duckdb is storing downloaded extensions and secrets under ~/.duckdb:
-#> ℹ /Users/gregorlueg/.duckdb
-#> This persists across sessions and is shared with the DuckDB CLI and other clients.
-#> ℹ Run duckdb(shared_home = FALSE) to use a temporary directory instead.
-#> ℹ See ?duckdb_storage for details and alternatives.
 
 data.table(
   version = c("CPU", "GPU"),
@@ -322,8 +201,8 @@ data.table(
 )[, speed_up := round(seconds[1] / seconds, 2)][]
 #>    version seconds speed_up
 #>     <char>   <num>    <num>
-#> 1:     CPU    7.42     1.00
-#> 2:     GPU    7.81     0.95
+#> 1:     CPU    6.61     1.00
+#> 2:     GPU    6.06     1.09
 ```
 
 On small data sets the CPU versions tends to be faster. The advantage of
@@ -354,8 +233,8 @@ mc_sizes <- data.table(
 mc_sizes
 #>    version n_meta_cells median_cells final_rss
 #>     <char>        <int>        <num>     <num>
-#> 1:     CPU          250         22.0    131.82
-#> 2:     GPU          250         22.5    131.54
+#> 1:     CPU          250         20.0    131.23
+#> 2:     GPU          250         19.5    131.49
 ```
 
 We can already see a difference here in speed, and this is a small data
