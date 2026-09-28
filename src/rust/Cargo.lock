@@ -479,9 +479,9 @@ dependencies = [
 
 [[package]]
 name = "bixverse-rs"
-version = "0.5.4"
+version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02681387bbf7b00ccea00fa201ec567f7331a39b599be98c789f1a507cae0e82"
+checksum = "db81dfd2070bcc597187ffaebfe4aa0a7109f7fdb4682c54765ddbb72e503f5d"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -519,7 +519,7 @@ dependencies = [
 
 [[package]]
 name = "bixverse_gpu"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "ann-search-rs",
  "bixverse-rs",
@@ -4669,9 +4669,9 @@ checksum = "fc04a4c58212d57930a24bf47d3fa87485264a3a054e9c10e042eb373573ad3c"
 
 [[package]]
 name = "manifolds-rs"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4529bce43264b588da0e38d0b0a00b06dc9fe928e2552ad3844756acdc7f716"
+checksum = "da0652c81367f416f854adc728c783fa6a61fba47616d70ef3c15a929a0bf154"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -5404,15 +5404,6 @@ name = "ordered-float"
 version = "4.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7bb71e1b3fa6ca1c61f383464aaf2bb0e2f8e772a1f01d486832464de363b951"
-dependencies = [
- "num-traits",
-]
-
-[[package]]
-name = "ordered-float"
-version = "5.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c7c9e0d9b23589f26070720bac724174bfec1083e82f7854cdd0267518343c0"
 dependencies = [
  "num-traits",
 ]
@@ -7326,7 +7317,7 @@ dependencies = [
  "nix",
  "num-derive",
  "num-traits",
- "ordered-float 4.6.0",
+ "ordered-float",
  "pest",
  "pest_derive",
  "phf",
@@ -8393,7 +8384,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f2ab60e120fd6eaa68d9567f3226e876684639d22a4219b313ff69ec0ccd5ac"
 dependencies = [
  "log",
- "ordered-float 4.6.0",
+ "ordered-float",
  "strsim",
  "thiserror 1.0.69",
  "wezterm-dynamic-derive",
@@ -8546,7 +8537,7 @@ dependencies = [
  "objc2-metal",
  "objc2-quartz-core",
  "once_cell",
- "ordered-float 5.5.0",
+ "ordered-float",
  "parking_lot",
  "portable-atomic",
  "portable-atomic-util",
