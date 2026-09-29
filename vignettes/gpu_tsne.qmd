@@ -58,7 +58,7 @@ set.seed(42L)
 
 cluster_data <- manifold_synthetic_data(
   type = "clusters",
-  n_samples = 5000L,
+  n_samples = 50000L,
   dim = 32L,
   parameters = params_clusters(n_clusters = 25L)
 )
@@ -186,7 +186,7 @@ tsne_fft_3k <- tsne_gpu(
   data = cluster_data$data,
   perplexity = 15,
   approx_type = "fft_3k",
-  knn_method = "nndescent",
+  knn_method = "ivf",
   tsne_params = params_tsne_gpu(),
   seed = 42L,
   .verbose = TRUE
@@ -230,7 +230,7 @@ timings <- rbindlist(lapply(approx_types, \(approx) {
       data = cluster_data$data,
       perplexity = 15,
       approx_type = approx,
-      knn_method = "nndescent",
+      knn_method = "ivf",
       seed = 42L,
       .verbose = FALSE
     )
@@ -251,7 +251,7 @@ usually where you spend the most time. Cache the kNN once and hand it in.
 knn_precomputed <- generate_knn_graph_gpu(
   data = cluster_data$data,
   k = 90L, # ~ 3 * perplexity for perplexity = 30
-  knn_method = "exhaustive",
+  knn_method = "ivf",
   .verbose = TRUE
 )
 
@@ -287,7 +287,8 @@ optimiser over as well; check the timings above against your own data size
 and hardware before assuming it wins.
 
 `"nndescent"` and `"ivf"` are the kNN workhorses, `"exhaustive"` is for
-ground-truth checks or small data.
+ground-truth checks or small data. Due to usually higher k needed for tSNE, the
+`"ivf"` index is the recommendation.
 
 ## Conclusions
 
