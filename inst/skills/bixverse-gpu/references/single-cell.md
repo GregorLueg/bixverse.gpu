@@ -157,7 +157,8 @@ readable by `bixverse.plots::embedding_plot_sc()`.
   `use_knn = TRUE` if the stored `k` is at least that. At perplexity 30 that
   is `k = 90`, well into the range where `"nndescent"` loses; pick
   `knn_method = "exhaustive"` or `"ivf"`.
-- The t-SNE optimiser runs on the CPU; only the kNN is on the device. UMAP runs
+- With the default `approx_type = "fft_3k_gpu"` the t-SNE optimiser runs on
+  the device; `"bh"`, `"fft"` and `"fft_3k"` optimise on the CPU. UMAP runs
   both kNN and the Adam optimiser on the device.
 - Knobs are in `params_umap_gpu()` / `params_tsne_gpu()`, see
   `matrix-methods.md`.

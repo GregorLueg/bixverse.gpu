@@ -34,7 +34,7 @@ cluster_data_df <- as.data.frame(cluster_data)
 
 ## tsne gpu general ------------------------------------------------------------
 
-### general wrapper (default: BH + nndescent) ----------------------------------
+### general wrapper (default: fft_3k_gpu + ivf) -------------------------------
 
 tsne_gpu_res <- tsne_gpu(
   data = cluster_data,
@@ -51,6 +51,7 @@ expect_true(
   current = checkmate::testMatrix(
     x = tsne_gpu_res,
     mode = "numeric",
+    any.missing = FALSE,
     ncols = 2L,
     nrow = n_samples
   ),
@@ -63,17 +64,99 @@ expect_true(
   info = "tsne gpu correctly separates clusters"
 )
 
-tsne_gpu_res_from_df <- tsne_gpu(
+### high precision is ignored for fft_3k_gpu -----------------------------------
+
+expect_warning(
+  current = tsne_gpu_res_hp <- tsne_gpu(
+    data = cluster_data,
+    perplexity = 15,
+    use_high_precision = TRUE,
+    .verbose = FALSE
+  ),
+  pattern = "use_high_precision",
+  info = "tsne gpu warns that fft_3k_gpu ignores use_high_precision"
+)
+
+tsne_gpu_res_hp_tests <- check_cluster_separation(
+  embd = tsne_gpu_res_hp,
+  cluster_membership = cluster_membership
+)
+
+expect_true(
+  current = mean(tsne_gpu_res_hp_tests$within_dists) <
+    mean(tsne_gpu_res_hp_tests$between_dists),
+  info = "tsne gpu (fft_3k_gpu, fp32 fallback) correctly separates clusters"
+)
+
+### barnes-hut -----------------------------------------------------------------
+
+# fft_3k_gpu is not bitwise reproducible (atomic bucketing), so the input
+# equivalence check runs on the CPU optimiser
+tsne_gpu_bh <- tsne_gpu(
+  data = cluster_data,
+  perplexity = 15,
+  approx_type = "bh",
+  .verbose = FALSE
+)
+
+tsne_gpu_bh_tests <- check_cluster_separation(
+  embd = tsne_gpu_bh,
+  cluster_membership = cluster_membership
+)
+
+expect_true(
+  current = mean(tsne_gpu_bh_tests$within_dists) <
+    mean(tsne_gpu_bh_tests$between_dists),
+  info = "tsne gpu (bh) correctly separates clusters"
+)
+
+tsne_gpu_bh_from_df <- tsne_gpu(
   data = cluster_data_df,
   perplexity = 15,
+  approx_type = "bh",
   .verbose = FALSE
 )
 
 expect_equal(
-  current = tsne_gpu_res,
-  target = tsne_gpu_res_from_df,
+  current = tsne_gpu_bh,
+  target = tsne_gpu_bh_from_df,
   info = "tsne gpu df input matches matrix input"
 )
+
+### cpu fft variants -----------------------------------------------------------
+
+if (.Platform$OS.type == "unix") {
+  for (approx in c("fft", "fft_3k")) {
+    tsne_gpu_fft <- tsne_gpu(
+      data = cluster_data,
+      perplexity = 15,
+      approx_type = approx,
+      .verbose = FALSE
+    )
+
+    expect_true(
+      current = checkmate::testMatrix(
+        x = tsne_gpu_fft,
+        mode = "numeric",
+        any.missing = FALSE,
+        ncols = 2L,
+        nrow = n_samples
+      ),
+      info = sprintf("tsne gpu (%s) correctly returned", approx)
+    )
+
+    tsne_gpu_fft_tests <- check_cluster_separation(
+      embd = tsne_gpu_fft,
+      cluster_membership = cluster_membership
+    )
+
+    expect_true(
+      current = mean(tsne_gpu_fft_tests$within_dists) <
+        mean(tsne_gpu_fft_tests$between_dists),
+      info = sprintf("tsne gpu (%s) correctly separates clusters", approx)
+    )
+  }
+}
 
 ### exhaustive knn method ------------------------------------------------------
 

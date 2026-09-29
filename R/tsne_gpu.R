@@ -40,10 +40,9 @@
 #' Rust-based t-SNE (GPU)
 #'
 #' @description Performs t-SNE dimensionality reduction on the input data.
-#' This function provides a user-friendly interface with input validation
-#' before calling the Rust implementation. Leverages GPU-accelerated kNN
-#' searches. The optimisation itself still runs on the CPU (a GPU optimiser
-#' is on the roadmap).
+#' The kNN search runs on the GPU. With the default `"fft_3k_gpu"` the
+#' optimiser runs on the GPU as well, so the whole embedding stays on the
+#' device; the other approximations optimise on the CPU.
 #'
 #' @details The number of neighbours is derived from `perplexity` on the Rust
 #' side following the usual `3 * perplexity` convention.
@@ -59,9 +58,11 @@
 #' nearest neighbours used in manifold learning. Typical values are between
 #' 5 and 50. Defaults to `20.0`.
 #' @param approx_type Character. Approximation method for computing repulsive
-#' forces. One of `"bh"` for Barnes-Hut or `"fft"` for FFT-accelerated
-#' interpolation. Defaults to `"bh"`. The FFT variant is only available on
-#' Unix systems.
+#' forces. One of `"fft_3k_gpu"` (three-kernel FFT interpolation on the GPU,
+#' the default), `"bh"` for Barnes-Hut, `"fft"` for FFT-accelerated
+#' interpolation or `"fft_3k"` for its three-kernel variant (one forward and
+#' three inverse FFTs per epoch instead of four each). The last three run on
+#' the CPU; `"fft"` and `"fft_3k"` are only available on Unix systems.
 #' @param knn_method Character. GPU-accelerated (approximate) nearest
 #' neighbour method to use. One of `"nndescent"`, `"exhaustive"`, or `"ivf"`.
 #' @param nn_params Named list. Nearest neighbour search parameters, see
@@ -72,6 +73,7 @@
 #' @param seed Integer. Random seed for reproducibility. Defaults to `42L`.
 #' @param use_high_precision Optional boolean. Gives fine-grained control over
 #' `fp32` vs `fp64` usage. The GPU kNN calculations will be forced into `fp32`.
+#' Ignored with a warning for `"fft_3k_gpu"`, which always runs in `fp32`.
 #' @param .verbose Logical. Controls verbosity. Defaults to `TRUE`.
 #'
 #' @return A numerical matrix with dimensions samples x n_dim containing
@@ -83,7 +85,7 @@ tsne_gpu <- function(
   knn = NULL,
   n_dim = 2L,
   perplexity = 20.0,
-  approx_type = c("bh", "fft"),
+  approx_type = c("fft_3k_gpu", "bh", "fft", "fft_3k"),
   knn_method = c(
     "ivf",
     "exhaustive",
@@ -117,15 +119,22 @@ tsne_gpu <- function(
   )
   checkmate::qassert(n_dim, "I1[2,2]")
   checkmate::qassert(perplexity, "N1[1,)")
-  checkmate::assertChoice(approx_type, c("bh", "fft"))
+  checkmate::assertChoice(approx_type, c("fft_3k_gpu", "bh", "fft", "fft_3k"))
   checkmate::qassert(seed, "I1")
   checkmate::qassert(use_high_precision, c("0", "B1"))
   checkmate::qassert(.verbose, c("B1", "I1[0, 2]"))
 
-  # FFT only supported on Unix
-  if (approx_type == "fft" && .Platform$OS.type != "unix") {
+  # CPU FFT needs FFTW, which is only built on Unix
+  if (approx_type %in% c("fft", "fft_3k") && .Platform$OS.type != "unix") {
     stop(
-      "The FFT approximation is not supported on non-Unix systems.",
+      "The CPU FFT approximations are not supported on non-Unix systems. ",
+      "Use `approx_type = \"fft_3k_gpu\"` instead.",
+      call. = FALSE
+    )
+  }
+  if (approx_type == "fft_3k_gpu" && isTRUE(use_high_precision)) {
+    warning(
+      "`use_high_precision` is ignored for \"fft_3k_gpu\", which runs in fp32.",
       call. = FALSE
     )
   }

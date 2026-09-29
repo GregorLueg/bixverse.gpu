@@ -175,16 +175,18 @@ where
 /// Wrapper function into the t-SNE implementation in `manifolds-rs`
 ///
 /// This function wraps around the `manifolds-rs` function and exposes it to
-/// R via another function. It uses under the hood the GPU-accelerated kNN
-/// searches.
+/// R via another function. The kNN search always runs on the GPU; with
+/// `"fft_3k_gpu"` the optimiser does too.
 ///
 /// ### Params
 ///
 /// * `data` - Input data matrix for t-SNE
 /// * `pre_computed_knn` - Optional pre-computed kNN to be used.
 /// * `n_dim` - Number of dimensions to reduce to (typically 2)
-/// * `approximation` - String. One of `"bh"` for the Barnes Hut approximation
-///   or `"fft"` for the Fast Fourier Transformation-accelerated one.
+/// * `approx_type` - String. `"bh"` for Barnes-Hut, `"fft"` for FFT
+///   interpolation, `"fft_3k"` for its three-kernel variant (both need FFTW,
+///   so not on Windows) or `"fft_3k_gpu"` for the three-kernel optimiser on
+///   the GPU.
 /// * `perplexity` - Perplexity parameter (typical: 5-50)
 /// * `tsne_params` - Named R list with all t-SNE parameters
 /// * `seed` - Random seed for reproducibility

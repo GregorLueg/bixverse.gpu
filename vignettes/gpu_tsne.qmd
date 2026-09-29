@@ -16,28 +16,23 @@ author:
 
 ## Intro
 
-`bixverse.gpu` provides a t-SNE wrapper via `tsne_gpu()` where the usually
-time-consuming kNN step runs on the GPU. The optimiser itself (Barnes-Hut
-or FFT-accelerated interpolation) is still on the CPU via the fast Rust
-implementation in
-[manifoldsR](https://gregorlueg.github.io/manifoldsR/articles/tsne.html).
+`bixverse.gpu` provides a t-SNE wrapper via `tsne_gpu()`. The kNN step runs
+on the GPU, and with the default `approx_type = "fft_3k_gpu"` so does the
+optimiser: the embedding stays on the device from the first epoch to the
+last.
 
 If you want the algorithm background (perplexity, exaggeration schedules,
 BH vs FFT, when to reach for t-SNE over UMAP), read the
 [manifoldsR t-SNE vignette](https://gregorlueg.github.io/manifoldsR/articles/tsne.html).
-This vignette only covers what's different here: the kNN runs on the GPU.
+This vignette only covers what's different here.
 
 Current split of work:
 
 - **kNN graph construction**: GPU. Three backends (`"nndescent"`, `"ivf"`,
   `"exhaustive"`).
-- **Affinity computation and gradient descent** (BH or FFT): CPU. Same fast
-  Rust implementation as `manifoldsR::tsne()`. A GPU optimiser is on the
-  roadmap.
-
-For medium-sized data the kNN is usually the dominant cost, so pushing it to
-the GPU is the main win. On very large data the optimiser starts to dominate
-and the GPU advantage narrows until the optimiser also moves over.
+- **Affinities**: CPU.
+- **Gradient descent**: GPU with `"fft_3k_gpu"` (the default). CPU with
+  `"bh"`, `"fft"` or `"fft_3k"`, the same Rust code as `manifoldsR::tsne()`.
 
 ```{r}
 #| label: setup
@@ -63,7 +58,7 @@ set.seed(42L)
 
 cluster_data <- manifold_synthetic_data(
   type = "clusters",
-  n_samples = 5000L,
+  n_samples = 50000L,
   dim = 32L,
   parameters = params_clusters(n_clusters = 25L)
 )
@@ -71,8 +66,8 @@ cluster_data <- manifold_synthetic_data(
 
 ## Running t-SNE on GPU
 
-Default call: NN-descent on GPU for kNN, PCA init, Barnes-Hut optimiser on
-CPU.
+NN-descent on GPU for kNN, PCA init, and the default three-kernel FFT
+optimiser on the GPU.
 
 ```{r}
 #| label: tsne default
@@ -93,7 +88,7 @@ ggplot(plot_df, aes(x = tSNE1, y = tSNE2)) +
   geom_point(aes(colour = cluster), size = 0.5, alpha = 0.5) +
   theme_bw() +
   theme(legend.position = "none") +
-  ggtitle("tsne_gpu, default (NN-descent + BH)")
+  ggtitle("tsne_gpu, NN-descent + fft_3k_gpu")
 ```
 
 Clusters separate cleanly, as expected from t-SNE.
@@ -168,40 +163,83 @@ ggplot(plot_df_exhaustive, aes(x = tSNE1, y = tSNE2)) +
 Structurally the embeddings agree. Differences are within the noise of
 t-SNE's non-deterministic optimisation.
 
-## FFT-accelerated t-SNE
+## Choosing an optimiser
 
-For large data the FFT variant reduces the optimiser cost from `O(N log N)`
-to `O(N)` at the price of a larger constant. Interesting at ≥ 100k samples.
-FFT is Unix-only (FFTW cross-compilation constraint).
+Four options via `approx_type`:
+
+- **`"fft_3k_gpu"`**: the default. FFT-interpolated repulsion with three
+  kernels (`q`, `q^2 dx`, `q^2 dy`), fully on the GPU. Always runs in fp32
+  (f64 kernels don't run on Metal); `use_high_precision = TRUE` is ignored
+  with a warning. Works on Windows, no FFTW needed.
+- **`"bh"`**: Barnes-Hut on the CPU. `O(N log N)`.
+- **`"fft"`**: FFT interpolation on the CPU with the classic four-term
+  expansion. `O(N)` with a larger constant.
+- **`"fft_3k"`**: the CPU twin of `"fft_3k_gpu"`. One forward and three
+  inverse FFTs per epoch instead of four each.
+
+The two CPU FFT variants need FFTW, so they're Unix-only.
 
 ```{r}
-#| label: tsne fft
+#| label: tsne fft 3k cpu
 #| eval: !expr .Platform$OS.type == "unix"
-tsne_fft <- tsne_gpu(
+tsne_fft_3k <- tsne_gpu(
   data = cluster_data$data,
   perplexity = 15,
-  approx_type = "fft",
-  knn_method = "nndescent",
+  approx_type = "fft_3k",
+  knn_method = "ivf",
   tsne_params = params_tsne_gpu(),
   seed = 42L,
   .verbose = TRUE
 )
 
-plot_df_fft <- as.data.table(tsne_fft) |>
+plot_df_fft_3k <- as.data.table(tsne_fft_3k) |>
   setnames(c("tSNE1", "tSNE2"))
-plot_df_fft[, cluster := as.factor(cluster_data$membership)]
+plot_df_fft_3k[, cluster := as.factor(cluster_data$membership)]
 
-ggplot(plot_df_fft, aes(x = tSNE1, y = tSNE2)) +
+ggplot(plot_df_fft_3k, aes(x = tSNE1, y = tSNE2)) +
   geom_point(aes(colour = cluster), size = 0.5, alpha = 0.5) +
   theme_bw() +
   theme(legend.position = "none") +
-  ggtitle("tsne_gpu, FFT")
+  ggtitle("tsne_gpu, fft_3k (CPU optimiser)")
 ```
 
-If you see the FFT embedding relax into a gapless disc rather than distinct
+The GPU optimiser sums inside a grid box in whatever order the atomics land,
+so two runs with the same seed agree in structure but not bit for bit. If
+you need bitwise reproducibility, use one of the CPU optimisers.
+
+If you see an FFT embedding relax into a gapless disc rather than distinct
 cluster islands on very large data, that's the equilibrium at exaggeration
 = 1. Set `late_exag_factor` in `params_tsne_gpu()` to a value between 2 and
 4 to pull the clusters apart. Same caveat as the manifoldsR vignette.
+
+### Timings
+
+Same data, same kNN backend, only the optimiser changes.
+
+```{r}
+#| label: tsne timings
+approx_types <- if (.Platform$OS.type == "unix") {
+  c("fft_3k_gpu", "bh", "fft", "fft_3k")
+} else {
+  c("fft_3k_gpu", "bh")
+}
+
+timings <- rbindlist(lapply(approx_types, \(approx) {
+  secs <- system.time(
+    tsne_gpu(
+      data = cluster_data$data,
+      perplexity = 15,
+      approx_type = approx,
+      knn_method = "ivf",
+      seed = 42L,
+      .verbose = FALSE
+    )
+  )[["elapsed"]]
+  data.table(approx_type = approx, seconds = round(secs, 2))
+}))
+
+timings
+```
 
 ## Using a pre-computed kNN graph
 
@@ -213,7 +251,7 @@ usually where you spend the most time. Cache the kNN once and hand it in.
 knn_precomputed <- generate_knn_graph_gpu(
   data = cluster_data$data,
   k = 90L, # ~ 3 * perplexity for perplexity = 30
-  knn_method = "exhaustive",
+  knn_method = "ivf",
   .verbose = TRUE
 )
 
@@ -243,20 +281,19 @@ Note the kNN needs enough neighbours for the perplexity you're using;
 ## When does the GPU version pay off?
 
 The CPU t-SNE in `manifoldsR` is already fast (Rust, SIMD kNN, FFT
-optimiser on Unix). The GPU version's advantage is entirely in the kNN step,
-so the payoff depends on how much of your wall-clock the kNN eats. Generally
-speaking, if you have a larger data set, hit it with a GPU-accelerated kNN and
-the FFT optimiser. Longer term, the idea is to also implement 2D-FFT that is
-GPU-accelerated, but that is a larger project.
+optimiser on Unix). With a CPU optimiser the GPU only buys you the kNN, so
+the payoff is the kNN share of the wall-clock. `"fft_3k_gpu"` moves the
+optimiser over as well; check the timings above against your own data size
+and hardware before assuming it wins.
 
-The kNN backend matters more here than in UMAP because the optimiser is
-still CPU either way. `"nndescent"` and `"ivf"` are the workhorses,
-`"exhaustive"` is for ground-truth checks or small data.
+`"nndescent"` and `"ivf"` are the kNN workhorses, `"exhaustive"` is for
+ground-truth checks or small data. Due to usually higher k needed for tSNE, the
+`"ivf"` index is the recommendation.
 
 ## Conclusions
 
 Same mental model as CPU t-SNE, same knobs, same caveats (t-SNE is a
 visualisation tool, cluster sizes and inter-cluster distances are not
 meaningful, see the [manifoldsR vignette](https://gregorlueg.github.io/manifoldsR/articles/tsne.html)
-for the details). Current pipeline is hybrid: kNN on GPU, optimiser on CPU.
-Once the optimiser moves to GPU the whole thing runs on device end to end.
+for the details). With `"fft_3k_gpu"` the optimisation runs on the device;
+the affinities are still computed on the CPU.

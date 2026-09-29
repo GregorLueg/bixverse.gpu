@@ -43,14 +43,18 @@ faster. The GPU pulls ahead from tens of thousands up.
 emb <- tsne_gpu(
   data = mat,
   perplexity = 30,
-  approx_type = "bh",                # "fft" is Unix only
+  approx_type = "fft_3k_gpu",        # default; "fft", "fft_3k" are Unix only
   knn_method = "exhaustive",
   tsne_params = params_tsne_gpu()
 )
 ```
 
-Only the kNN runs on the device; the Barnes-Hut or FFT optimiser is the
-`manifoldsR` CPU code. So the win is exactly the kNN share of the run.
+`approx_type`:
+
+- `"fft_3k_gpu"`: default, three-kernel FFT optimiser on the device. Always
+  fp32; `use_high_precision = TRUE` is ignored with a warning.
+- `"bh"`, `"fft"`, `"fft_3k"`: the `manifoldsR` CPU optimisers with a GPU
+  kNN. The win is the kNN share of the run.
 
 - `k` is derived as roughly `3 * perplexity`. A pre-computed `knn =` needs at
   least that many neighbours.
@@ -59,7 +63,8 @@ Only the kNN runs on the device; the Barnes-Hut or FFT optimiser is the
 - FFT on very large data can relax into a gapless disc. Set
   `late_exag_factor` in `params_tsne_gpu()` to 2 to 4.
 - t-SNE is precision sensitive. `use_high_precision = NULL` picks fp64 above
-  100k samples for the CPU optimiser; the GPU kNN is always fp32.
+  100k samples for the CPU optimisers; the GPU kNN and `"fft_3k_gpu"` are
+  always fp32.
 
 ## kNN graphs
 

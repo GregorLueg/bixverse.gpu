@@ -9,7 +9,7 @@ tsne_gpu(
   knn = NULL,
   n_dim = 2L,
   perplexity = 20,
-  approx_type = c("bh", "fft"),
+  approx_type = c("fft_3k_gpu", "bh", "fft", "fft_3k"),
   knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
@@ -34,9 +34,11 @@ nearest neighbours used in manifold learning. Typical values are between
 5 and 50. Defaults to \code{20.0}.}
 
 \item{approx_type}{Character. Approximation method for computing repulsive
-forces. One of \code{"bh"} for Barnes-Hut or \code{"fft"} for FFT-accelerated
-interpolation. Defaults to \code{"bh"}. The FFT variant is only available on
-Unix systems.}
+forces. One of \code{"fft_3k_gpu"} (three-kernel FFT interpolation on the GPU,
+the default), \code{"bh"} for Barnes-Hut, \code{"fft"} for FFT-accelerated
+interpolation or \code{"fft_3k"} for its three-kernel variant (one forward and
+three inverse FFTs per epoch instead of four each). The last three run on
+the CPU; \code{"fft"} and \code{"fft_3k"} are only available on Unix systems.}
 
 \item{knn_method}{Character. GPU-accelerated (approximate) nearest
 neighbour method to use. One of \code{"nndescent"}, \code{"exhaustive"}, or \code{"ivf"}.}
@@ -51,7 +53,8 @@ here.}
 \item{seed}{Integer. Random seed for reproducibility. Defaults to \code{42L}.}
 
 \item{use_high_precision}{Optional boolean. Gives fine-grained control over
-\code{fp32} vs \code{fp64} usage. The GPU kNN calculations will be forced into \code{fp32}.}
+\code{fp32} vs \code{fp64} usage. The GPU kNN calculations will be forced into \code{fp32}.
+Ignored with a warning for \code{"fft_3k_gpu"}, which always runs in \code{fp32}.}
 
 \item{.verbose}{Logical. Controls verbosity. Defaults to \code{TRUE}.}
 }
@@ -61,10 +64,9 @@ the t-SNE embedding.
 }
 \description{
 Performs t-SNE dimensionality reduction on the input data.
-This function provides a user-friendly interface with input validation
-before calling the Rust implementation. Leverages GPU-accelerated kNN
-searches. The optimisation itself still runs on the CPU (a GPU optimiser
-is on the roadmap).
+The kNN search runs on the GPU. With the default \code{"fft_3k_gpu"} the
+optimiser runs on the GPU as well, so the whole embedding stays on the
+device; the other approximations optimise on the CPU.
 }
 \details{
 The number of neighbours is derived from \code{perplexity} on the Rust

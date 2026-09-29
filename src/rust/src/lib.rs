@@ -12,6 +12,7 @@ use extendr_api::prelude::*;
 use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
 use manifolds_rs::prelude::run_ann_search_gpu;
+use manifolds_rs::training::tsne_optimiser::{parse_tsne_optimiser, TsneOpt};
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::OnceLock;
 
@@ -186,6 +187,31 @@ fn parse_precision(use_high_precision: Nullable<Rbool>, n: usize) -> FloatingPoi
         }
     } else {
         auto_precision(n)
+    }
+}
+
+/// Precision for t-SNE, honouring the device optimiser
+///
+/// The GPU optimiser (`"fft_3k_gpu"`) always runs in fp32: f64 kernels do not
+/// run on Metal. Every other optimiser goes through [parse_precision].
+///
+/// ### Params
+///
+/// * `approx_type` - The t-SNE approximation string
+/// * `use_high_precision` - Nullable Rbool, see [parse_precision]
+/// * `n` - Number of samples in the data
+///
+/// ### Returns
+///
+/// The determined [FloatingPointPrecision].
+fn tsne_precision(
+    approx_type: &str,
+    use_high_precision: Nullable<Rbool>,
+    n: usize,
+) -> FloatingPointPrecision {
+    match parse_tsne_optimiser(approx_type) {
+        Some(TsneOpt::Fft3KernelGpu) => FloatingPointPrecision::FP32,
+        _ => parse_precision(use_high_precision, n),
     }
 }
 
@@ -948,23 +974,24 @@ fn rs_umap_from_knn_gpu(
 ///
 /// @description
 /// `r lifecycle::badge("experimental")`
-/// Wraps the tSNE implementation in manifolds-rs. You have two optimiser
-/// options: `"bh"`, which tends to be faster on smaller data sets, and `"fft"`
-/// for large data sets. The kNN search runs on the GPU; the optimiser stays on
-/// the CPU.
+/// Wraps the tSNE implementation in manifolds-rs. The kNN search runs on the
+/// GPU. `"fft_3k_gpu"` runs the optimiser on the GPU as well; `"bh"`, `"fft"`
+/// and `"fft_3k"` keep it on the CPU.
 ///
 /// @param embd Numerical matrix. The data to use to generate the embeddings.
 /// Should be of dimensions samples x features.
 /// @param n_dim Integer. Number of tSNE dimensions to return. Needs to be two,
 /// others are not supported.
 /// @param perplexity Numeric. The tSNE perplexity parameter.
-/// @param approx_type String. One of `c("fft", "bh")`. Which of the two
-/// approximations to use.
+/// @param approx_type String. One of `c("fft_3k_gpu", "bh", "fft", "fft_3k")`.
+/// Which repulsive-force approximation to use. `"fft"` and `"fft_3k"` need
+/// FFTW and are not available on Windows.
 /// @param tsne_params Named list. List that contains all of the key parameters
 /// for the tSNE generation.
 /// @param seed Integer. Seed for reproducibility.
-/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
-/// If `NULL` will use sensible default thresholding.
+/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64`.
+/// If `NULL` will use sensible default thresholding. Ignored for
+/// `"fft_3k_gpu"`, which always runs in `fp32`.
 /// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
 /// for detailed verbosity.
 ///
@@ -986,7 +1013,7 @@ fn rs_tsne_gpu(
     ensure_gpu()?;
 
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
-    let precision = parse_precision(use_high_precision, embd.nrows());
+    let precision = tsne_precision(&approx_type, use_high_precision, embd.nrows());
 
     match precision {
         FloatingPointPrecision::FP64 => {
@@ -1037,9 +1064,9 @@ fn rs_tsne_gpu(
 ///
 /// @description
 /// `r lifecycle::badge("experimental")`
-/// Wraps the tSNE implementation in manifolds-rs. You have two optimiser
-/// options: `"bh"`, which tends to be faster on smaller data sets, and `"fft"`
-/// for large data sets. This version takes a pre-computed kNN graph, please see
+/// Wraps the tSNE implementation in manifolds-rs. `"fft_3k_gpu"` runs the
+/// optimiser on the GPU; `"bh"`, `"fft"` and `"fft_3k"` keep it on the CPU.
+/// This version takes a pre-computed kNN graph, please see
 /// [new_nearest_neighbour()].
 ///
 /// @param embd Numerical matrix. The data to use to generate the embeddings.
@@ -1048,13 +1075,15 @@ fn rs_tsne_gpu(
 /// @param n_dim Integer. Number of tSNE dimensions to return. Needs to be two,
 /// others are not supported.
 /// @param perplexity Numeric. The tSNE perplexity parameter.
-/// @param approx_type String. One of `c("fft", "bh")`. Which of the two
-/// approximations to use.
+/// @param approx_type String. One of `c("fft_3k_gpu", "bh", "fft", "fft_3k")`.
+/// Which repulsive-force approximation to use. `"fft"` and `"fft_3k"` need
+/// FFTW and are not available on Windows.
 /// @param tsne_params Named list. List that contains all of the key parameters
 /// for the tSNE generation.
 /// @param seed Integer. Seed for reproducibility.
-/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
-/// If `NULL` will use sensible default thresholding.
+/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64`.
+/// If `NULL` will use sensible default thresholding. Ignored for
+/// `"fft_3k_gpu"`, which always runs in `fp32`.
 /// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
 /// for detailed verbosity.
 ///
@@ -1077,7 +1106,7 @@ fn rs_tsne_from_knn_gpu(
     ensure_gpu()?;
 
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
-    let precision = parse_precision(use_high_precision, embd.nrows());
+    let precision = tsne_precision(&approx_type, use_high_precision, embd.nrows());
 
     match precision {
         FloatingPointPrecision::FP32 => {

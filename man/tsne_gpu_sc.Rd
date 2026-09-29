@@ -13,7 +13,7 @@ tsne_gpu_sc(
   modality = c("rna", "adt", "wnn"),
   n_dim = 2L,
   perplexity = 20,
-  approx_type = c("bh", "fft"),
+  approx_type = c("fft_3k_gpu", "bh", "fft", "fft_3k"),
   knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
@@ -48,8 +48,10 @@ supported. Defaults to \code{2L}.}
 \item{perplexity}{Numeric. Perplexity parameter. Typical values between 5
 and 50. Defaults to \code{20.0}.}
 
-\item{approx_type}{String. Approximation method. One of \code{"bh"}
-(Barnes-Hut) or \code{"fft"}. Defaults to \code{"bh"}. \code{"fft"} is Unix-only.}
+\item{approx_type}{String. Approximation method. One of \code{"fft_3k_gpu"}
+(three-kernel FFT on the GPU, the default), \code{"bh"} (Barnes-Hut), \code{"fft"} or
+\code{"fft_3k"} (CPU FFT interpolation, four or three kernels). The CPU FFT
+variants are Unix-only. See \code{\link[=tsne_gpu]{tsne_gpu()}}.}
 
 \item{knn_method}{String. GPU (approximate) nearest neighbour method. One
 of \code{c("ivf", "exhaustive", "nndescent")}. Default is \code{"ivf"} here, as it
@@ -63,7 +65,7 @@ deals usually better with the high k in tSNE.}
 \item{seed}{Integer. For reproducibility.}
 
 \item{use_high_precision}{Optional boolean. Fine-grained fp32 vs fp64
-control. GPU kNN is always fp32.}
+control. GPU kNN is always fp32. Ignored for \code{"fft_3k_gpu"}.}
 
 \item{.verbose}{Boolean or integer. Controls verbosity.}
 }
@@ -73,8 +75,8 @@ embedding is missing, returns the object unchanged with a warning.
 }
 \description{
 GPU-accelerated counterpart to \code{\link[bixverse:tsne_sc]{bixverse::tsne_sc()}}. Runs \code{\link[=tsne_gpu]{tsne_gpu()}} on
-an embedding pulled from the object; only the kNN step is GPU-accelerated,
-the optimiser still runs on CPU (a GPU optimiser is on the roadmap).
+an embedding pulled from the object. The kNN runs on the GPU; with the
+default \code{"fft_3k_gpu"} the optimiser does too.
 
 t-SNE derives the number of neighbours from \code{perplexity} on the Rust side
 (the usual \code{3 * perplexity} convention). To avoid a silent mismatch with
