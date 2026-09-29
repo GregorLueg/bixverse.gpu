@@ -40,7 +40,7 @@ GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent/CAGRA, exhaust
 
 ## GPU-accelerated t-SNE
 
-t-SNE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive). Optimiser (BH or FFT) runs on CPU via the Rust implementation in manifoldsR. Also a version for the single cells analysis suite in bixverse.
+t-SNE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive). Optimiser runs on the GPU by default (three-kernel FFT, `"fft_3k_gpu"`) or on the CPU via manifoldsR (BH, FFT, three-kernel FFT). Also a version for the single cells analysis suite in bixverse.
 
 - `tsne_gpu`: Rust-based t-SNE (GPU)
 - `tsne_gpu_sc`: Run t-SNE on a SingleCells object (GPU)

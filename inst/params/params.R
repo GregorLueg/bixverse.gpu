@@ -315,7 +315,7 @@ spec_tsne_gpu <- param_spec(
       range = "[1,)",
       doc = paste(
         "Number of interpolation points per grid cell for FFT",
-        "acceleration."
+        "acceleration (`\"fft\"`, `\"fft_3k\"` and `\"fft_3k_gpu\"`)."
       )
     ),
     init = p_choice(

@@ -899,8 +899,8 @@ S7::method(umap_gpu_sc, SingleCells) <- function(
 #'
 #' @description
 #' GPU-accelerated counterpart to [bixverse::tsne_sc()]. Runs [tsne_gpu()] on
-#' an embedding pulled from the object; only the kNN step is GPU-accelerated,
-#' the optimiser still runs on CPU (a GPU optimiser is on the roadmap).
+#' an embedding pulled from the object. The kNN runs on the GPU; with the
+#' default `"fft_3k_gpu"` the optimiser does too.
 #'
 #' t-SNE derives the number of neighbours from `perplexity` on the Rust side
 #' (the usual `3 * perplexity` convention). To avoid a silent mismatch with
@@ -925,8 +925,10 @@ S7::method(umap_gpu_sc, SingleCells) <- function(
 #' supported. Defaults to `2L`.
 #' @param perplexity Numeric. Perplexity parameter. Typical values between 5
 #' and 50. Defaults to `20.0`.
-#' @param approx_type String. Approximation method. One of `"bh"`
-#' (Barnes-Hut) or `"fft"`. Defaults to `"bh"`. `"fft"` is Unix-only.
+#' @param approx_type String. Approximation method. One of `"fft_3k_gpu"`
+#' (three-kernel FFT on the GPU, the default), `"bh"` (Barnes-Hut), `"fft"` or
+#' `"fft_3k"` (CPU FFT interpolation, four or three kernels). The CPU FFT
+#' variants are Unix-only. See [tsne_gpu()].
 #' @param knn_method String. GPU (approximate) nearest neighbour method. One
 #' of `c("ivf", "exhaustive", "nndescent")`. Default is `"ivf"` here, as it
 #' deals usually better with the high k in tSNE.
@@ -935,7 +937,7 @@ S7::method(umap_gpu_sc, SingleCells) <- function(
 #' [params_tsne_gpu()].
 #' @param seed Integer. For reproducibility.
 #' @param use_high_precision Optional boolean. Fine-grained fp32 vs fp64
-#' control. GPU kNN is always fp32.
+#' control. GPU kNN is always fp32. Ignored for `"fft_3k_gpu"`.
 #' @param .verbose Boolean or integer. Controls verbosity.
 #'
 #' @return The object with a `"tsne"` embedding added. If the requested
@@ -958,7 +960,7 @@ tsne_gpu_sc <- S7::new_generic(
     modality = c("rna", "adt", "wnn"),
     n_dim = 2L,
     perplexity = 20.0,
-    approx_type = c("bh", "fft"),
+    approx_type = c("fft_3k_gpu", "bh", "fft", "fft_3k"),
     knn_method = c("ivf", "exhaustive", "nndescent"),
     nn_params = params_nn_gpu(),
     tsne_params = params_tsne_gpu(),
@@ -986,7 +988,7 @@ S7::method(tsne_gpu_sc, SingleCells) <- function(
   modality = c("rna", "adt", "wnn"),
   n_dim = 2L,
   perplexity = 20.0,
-  approx_type = c("bh", "fft"),
+  approx_type = c("fft_3k_gpu", "bh", "fft", "fft_3k"),
   knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),

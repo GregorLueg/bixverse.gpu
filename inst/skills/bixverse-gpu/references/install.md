@@ -53,9 +53,9 @@ Supported. The HDF5 build used to hit `MAX_PATH`; the cargo target directory
 now lives in `~/.bixverse-gpu-cargo` to stay clear of it. Older answers saying
 Windows does not work predate that.
 
-One gap: FFT t-SNE. FFTW does not build there, so
-`tsne_gpu(approx_type = "fft")` and `tsne_gpu_sc(approx_type = "fft")` error.
-Barnes-Hut (`"bh"`, the default) works everywhere.
+One gap: CPU FFT t-SNE. FFTW does not build there, so `approx_type = "fft"`
+and `"fft_3k"` in `tsne_gpu()` / `tsne_gpu_sc()` error. The default
+`"fft_3k_gpu"` needs no FFTW and works everywhere, as does Barnes-Hut (`"bh"`).
 
 ## CPU training for parametric UMAP
 

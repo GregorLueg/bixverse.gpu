@@ -4669,9 +4669,8 @@ checksum = "fc04a4c58212d57930a24bf47d3fa87485264a3a054e9c10e042eb373573ad3c"
 
 [[package]]
 name = "manifolds-rs"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da0652c81367f416f854adc728c783fa6a61fba47616d70ef3c15a929a0bf154"
+version = "0.5.3"
+source = "git+https://github.com/GregorLueg/manifolds-rs?branch=feat-tsne-fft-3k#5622b0ea1eb27760b5f5e60b66e3e9a83f9510a7"
 dependencies = [
  "ann-search-rs",
  "approx",

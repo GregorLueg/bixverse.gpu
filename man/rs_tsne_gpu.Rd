@@ -24,16 +24,18 @@ others are not supported.}
 
 \item{perplexity}{Numeric. The tSNE perplexity parameter.}
 
-\item{approx_type}{String. One of \code{c("fft", "bh")}. Which of the two
-approximations to use.}
+\item{approx_type}{String. One of \code{c("fft_3k_gpu", "bh", "fft", "fft_3k")}.
+Which repulsive-force approximation to use. \code{"fft"} and \code{"fft_3k"} need
+FFTW and are not available on Windows.}
 
 \item{tsne_params}{Named list. List that contains all of the key parameters
 for the tSNE generation.}
 
 \item{seed}{Integer. Seed for reproducibility.}
 
-\item{use_high_precision}{Optional logical. Controls \code{fp32} vs \code{fp64} for.
-If \code{NULL} will use sensible default thresholding.}
+\item{use_high_precision}{Optional logical. Controls \code{fp32} vs \code{fp64}.
+If \code{NULL} will use sensible default thresholding. Ignored for
+\code{"fft_3k_gpu"}, which always runs in \code{fp32}.}
 
 \item{verbose}{Integer. If \code{0L} -> silent or \code{1L} for normal verbosity; \code{2L}
 for detailed verbosity.}
@@ -43,8 +45,7 @@ The tSNE embeddings.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Wraps the tSNE implementation in manifolds-rs. You have two optimiser
-options: \code{"bh"}, which tends to be faster on smaller data sets, and \code{"fft"}
-for large data sets. The kNN search runs on the GPU; the optimiser stays on
-the CPU.
+Wraps the tSNE implementation in manifolds-rs. The kNN search runs on the
+GPU. \code{"fft_3k_gpu"} runs the optimiser on the GPU as well; \code{"bh"}, \code{"fft"}
+and \code{"fft_3k"} keep it on the CPU.
 }
