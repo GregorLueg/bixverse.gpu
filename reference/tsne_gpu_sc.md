@@ -4,9 +4,8 @@ GPU-accelerated counterpart to
 [`bixverse::tsne_sc()`](https://gregorlueg.github.io/bixverse/reference/tsne_sc.html).
 Runs
 [`tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/tsne_gpu.md)
-on an embedding pulled from the object; only the kNN step is
-GPU-accelerated, the optimiser still runs on CPU (a GPU optimiser is on
-the roadmap).
+on an embedding pulled from the object. The kNN runs on the GPU; with
+the default `"fft_3k_gpu"` the optimiser does too.
 
 t-SNE derives the number of neighbours from `perplexity` on the Rust
 side (the usual `3 * perplexity` convention). To avoid a silent mismatch
@@ -26,7 +25,7 @@ tsne_gpu_sc(
   modality = c("rna", "adt", "wnn"),
   n_dim = 2L,
   perplexity = 20,
-  approx_type = c("bh", "fft"),
+  approx_type = c("fft_3k_gpu", "bh", "fft", "fft_3k"),
   knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
@@ -80,8 +79,11 @@ tsne_gpu_sc(
 
 - approx_type:
 
-  String. Approximation method. One of `"bh"` (Barnes-Hut) or `"fft"`.
-  Defaults to `"bh"`. `"fft"` is Unix-only.
+  String. Approximation method. One of `"fft_3k_gpu"` (three-kernel FFT
+  on the GPU, the default), `"bh"` (Barnes-Hut), `"fft"` or `"fft_3k"`
+  (CPU FFT interpolation, four or three kernels). The CPU FFT variants
+  are Unix-only. See
+  [`tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/tsne_gpu.md).
 
 - knn_method:
 
@@ -106,7 +108,7 @@ tsne_gpu_sc(
 - use_high_precision:
 
   Optional boolean. Fine-grained fp32 vs fp64 control. GPU kNN is always
-  fp32.
+  fp32. Ignored for `"fft_3k_gpu"`.
 
 - .verbose:
 

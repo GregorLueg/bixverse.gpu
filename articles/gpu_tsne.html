@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,7 +80,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>GPU-accelerated t-SNE</h1>
 
       <p class="author">Gregor Lueg</p>
-      <p class="date">2026-09-28</p>
+      <p class="date">2026-09-29</p>
 
 
       <div class="d-none name"><code></code></div>
@@ -93,16 +93,17 @@
 
     <section class="level2"><h2 id="intro">Intro<a class="anchor" aria-label="anchor" href="#intro"></a>
 </h2>
-<p><code>bixverse.gpu</code> provides a t-SNE wrapper via <code><a href="../reference/tsne_gpu.html">tsne_gpu()</a></code> where the usually time-consuming kNN step runs on the GPU. The optimiser itself (Barnes-Hut or FFT-accelerated interpolation) is still on the CPU via the fast Rust implementation in <a href="https://gregorlueg.github.io/manifoldsR/articles/tsne.html" class="external-link">manifoldsR</a>.</p>
-<p>If you want the algorithm background (perplexity, exaggeration schedules, BH vs FFT, when to reach for t-SNE over UMAP), read the <a href="https://gregorlueg.github.io/manifoldsR/articles/tsne.html" class="external-link">manifoldsR t-SNE vignette</a>. This vignette only covers what’s different here: the kNN runs on the GPU.</p>
+<p><code>bixverse.gpu</code> provides a t-SNE wrapper via <code><a href="../reference/tsne_gpu.html">tsne_gpu()</a></code>. The kNN step runs on the GPU, and with the default <code>approx_type = "fft_3k_gpu"</code> so does the optimiser: the embedding stays on the device from the first epoch to the last.</p>
+<p>If you want the algorithm background (perplexity, exaggeration schedules, BH vs FFT, when to reach for t-SNE over UMAP), read the <a href="https://gregorlueg.github.io/manifoldsR/articles/tsne.html" class="external-link">manifoldsR t-SNE vignette</a>. This vignette only covers what’s different here.</p>
 <p>Current split of work:</p>
 <ul>
 <li>
 <strong>kNN graph construction</strong>: GPU. Three backends (<code>"nndescent"</code>, <code>"ivf"</code>, <code>"exhaustive"</code>).</li>
 <li>
-<strong>Affinity computation and gradient descent</strong> (BH or FFT): CPU. Same fast Rust implementation as <code><a href="https://gregorlueg.github.io/manifoldsR/reference/tsne.html" class="external-link">manifoldsR::tsne()</a></code>. A GPU optimiser is on the roadmap.</li>
+<strong>Affinities</strong>: CPU.</li>
+<li>
+<strong>Gradient descent</strong>: GPU with <code>"fft_3k_gpu"</code> (the default). CPU with <code>"bh"</code>, <code>"fft"</code> or <code>"fft_3k"</code>, the same Rust code as <code><a href="https://gregorlueg.github.io/manifoldsR/reference/tsne.html" class="external-link">manifoldsR::tsne()</a></code>.</li>
 </ul>
-<p>For medium-sized data the kNN is usually the dominant cost, so pushing it to the GPU is the main win. On very large data the optimiser starts to dominate and the GPU advantage narrows until the optimiser also moves over.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse.gpu/">bixverse.gpu</a></span><span class="op">)</span></span>
@@ -127,14 +128,14 @@
 <span></span>
 <span><span class="va">cluster_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/manifoldsR/reference/manifold_synthetic_data.html" class="external-link">manifold_synthetic_data</a></span><span class="op">(</span></span>
 <span>  type <span class="op">=</span> <span class="st">"clusters"</span>,</span>
-<span>  n_samples <span class="op">=</span> <span class="fl">5000L</span>,</span>
+<span>  n_samples <span class="op">=</span> <span class="fl">50000L</span>,</span>
 <span>  dim <span class="op">=</span> <span class="fl">32L</span>,</span>
 <span>  parameters <span class="op">=</span> <span class="fu"><a href="https://gregorlueg.github.io/manifoldsR/reference/params_clusters.html" class="external-link">params_clusters</a></span><span class="op">(</span>n_clusters <span class="op">=</span> <span class="fl">25L</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="running-t-sne-on-gpu">Running t-SNE on GPU<a class="anchor" aria-label="anchor" href="#running-t-sne-on-gpu"></a>
 </h2>
-<p>Default call: NN-descent on GPU for kNN, PCA init, Barnes-Hut optimiser on CPU.</p>
+<p>NN-descent on GPU for kNN, PCA init, and the default three-kernel FFT optimiser on the GPU.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tsne_default</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tsne_gpu.html">tsne_gpu</a></span><span class="op">(</span></span>
@@ -154,7 +155,7 @@
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>colour <span class="op">=</span> <span class="va">cluster</span><span class="op">)</span>, size <span class="op">=</span> <span class="fl">0.5</span>, alpha <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"tsne_gpu, default (NN-descent + BH)"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"tsne_gpu, NN-descent + fft_3k_gpu"</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
 <figure><p><img src="gpu_tsne_files/figure-html/tsne%20default-1.png" width="672"></p>
@@ -235,47 +236,92 @@
 </div>
 </div>
 <p>Structurally the embeddings agree. Differences are within the noise of t-SNE’s non-deterministic optimisation.</p>
-</section></section><section class="level2"><h2 id="fft-accelerated-t-sne">FFT-accelerated t-SNE<a class="anchor" aria-label="anchor" href="#fft-accelerated-t-sne"></a>
+</section></section><section class="level2"><h2 id="choosing-an-optimiser">Choosing an optimiser<a class="anchor" aria-label="anchor" href="#choosing-an-optimiser"></a>
 </h2>
-<p>For large data the FFT variant reduces the optimiser cost from <code>O(N log N)</code> to <code>O(N)</code> at the price of a larger constant. Interesting at ≥ 100k samples. FFT is Unix-only (FFTW cross-compilation constraint).</p>
+<p>Four options via <code>approx_type</code>:</p>
+<ul>
+<li>
+<strong><code>"fft_3k_gpu"</code></strong>: the default. FFT-interpolated repulsion with three kernels (<code>q</code>, <code>q^2 dx</code>, <code>q^2 dy</code>), fully on the GPU. Always runs in fp32 (f64 kernels don’t run on Metal); <code>use_high_precision = TRUE</code> is ignored with a warning. Works on Windows, no FFTW needed.</li>
+<li>
+<strong><code>"bh"</code></strong>: Barnes-Hut on the CPU. <code>O(N log N)</code>.</li>
+<li>
+<strong><code>"fft"</code></strong>: FFT interpolation on the CPU with the classic four-term expansion. <code>O(N)</code> with a larger constant.</li>
+<li>
+<strong><code>"fft_3k"</code></strong>: the CPU twin of <code>"fft_3k_gpu"</code>. One forward and three inverse FFTs per epoch instead of four each.</li>
+</ul>
+<p>The two CPU FFT variants need FFTW, so they’re Unix-only.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">tsne_fft</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tsne_gpu.html">tsne_gpu</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">tsne_fft_3k</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tsne_gpu.html">tsne_gpu</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">cluster_data</span><span class="op">$</span><span class="va">data</span>,</span>
 <span>  perplexity <span class="op">=</span> <span class="fl">15</span>,</span>
-<span>  approx_type <span class="op">=</span> <span class="st">"fft"</span>,</span>
-<span>  knn_method <span class="op">=</span> <span class="st">"nndescent"</span>,</span>
+<span>  approx_type <span class="op">=</span> <span class="st">"fft_3k"</span>,</span>
+<span>  knn_method <span class="op">=</span> <span class="st">"ivf"</span>,</span>
 <span>  tsne_params <span class="op">=</span> <span class="fu"><a href="../reference/params_tsne_gpu.html">params_tsne_gpu</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">42L</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">plot_df_fft</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/as.data.table.html" class="external-link">as.data.table</a></span><span class="op">(</span><span class="va">tsne_fft</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="va">plot_df_fft_3k</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/as.data.table.html" class="external-link">as.data.table</a></span><span class="op">(</span><span class="va">tsne_fft_3k</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/setattr.html" class="external-link">setnames</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"tSNE1"</span>, <span class="st">"tSNE2"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">plot_df_fft</span><span class="op">[</span>, <span class="va">cluster</span> <span class="op">:=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">cluster_data</span><span class="op">$</span><span class="va">membership</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">plot_df_fft_3k</span><span class="op">[</span>, <span class="va">cluster</span> <span class="op">:=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">cluster_data</span><span class="op">$</span><span class="va">membership</span><span class="op">)</span><span class="op">]</span></span>
 <span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">plot_df_fft</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">tSNE1</span>, y <span class="op">=</span> <span class="va">tSNE2</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">plot_df_fft_3k</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">tSNE1</span>, y <span class="op">=</span> <span class="va">tSNE2</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>colour <span class="op">=</span> <span class="va">cluster</span><span class="op">)</span>, size <span class="op">=</span> <span class="fl">0.5</span>, alpha <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"tsne_gpu, FFT"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"tsne_gpu, fft_3k (CPU optimiser)"</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
-<figure><p><img src="gpu_tsne_files/figure-html/tsne%20fft-1.png" width="672"></p>
+<figure><p><img src="gpu_tsne_files/figure-html/tsne%20fft%203k%20cpu-1.png" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>If you see the FFT embedding relax into a gapless disc rather than distinct cluster islands on very large data, that’s the equilibrium at exaggeration = 1. Set <code>late_exag_factor</code> in <code><a href="../reference/params_tsne_gpu.html">params_tsne_gpu()</a></code> to a value between 2 and 4 to pull the clusters apart. Same caveat as the manifoldsR vignette.</p>
-</section><section class="level2"><h2 id="using-a-pre-computed-knn-graph">Using a pre-computed kNN graph<a class="anchor" aria-label="anchor" href="#using-a-pre-computed-knn-graph"></a>
+<p>The GPU optimiser sums inside a grid box in whatever order the atomics land, so two runs with the same seed agree in structure but not bit for bit. If you need bitwise reproducibility, use one of the CPU optimisers.</p>
+<p>If you see an FFT embedding relax into a gapless disc rather than distinct cluster islands on very large data, that’s the equilibrium at exaggeration = 1. Set <code>late_exag_factor</code> in <code><a href="../reference/params_tsne_gpu.html">params_tsne_gpu()</a></code> to a value between 2 and 4 to pull the clusters apart. Same caveat as the manifoldsR vignette.</p>
+<section class="level3"><h3 id="timings">Timings<a class="anchor" aria-label="anchor" href="#timings"></a>
+</h3>
+<p>Same data, same kNN backend, only the optimiser changes.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">approx_types</span> <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="va">.Platform</span><span class="op">$</span><span class="va">OS.type</span> <span class="op">==</span> <span class="st">"unix"</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fft_3k_gpu"</span>, <span class="st">"bh"</span>, <span class="st">"fft"</span>, <span class="st">"fft_3k"</span><span class="op">)</span></span>
+<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fft_3k_gpu"</span>, <span class="st">"bh"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="va">timings</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/rbindlist.html" class="external-link">rbindlist</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">approx_types</span>, \<span class="op">(</span><span class="va">approx</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">secs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="../reference/tsne_gpu.html">tsne_gpu</a></span><span class="op">(</span></span>
+<span>      data <span class="op">=</span> <span class="va">cluster_data</span><span class="op">$</span><span class="va">data</span>,</span>
+<span>      perplexity <span class="op">=</span> <span class="fl">15</span>,</span>
+<span>      approx_type <span class="op">=</span> <span class="va">approx</span>,</span>
+<span>      knn_method <span class="op">=</span> <span class="st">"ivf"</span>,</span>
+<span>      seed <span class="op">=</span> <span class="fl">42L</span>,</span>
+<span>      .verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>approx_type <span class="op">=</span> <span class="va">approx</span>, seconds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">secs</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">timings</span></span>
+<span><span class="co">#&gt;    approx_type seconds</span></span>
+<span><span class="co">#&gt;         &lt;char&gt;   &lt;num&gt;</span></span>
+<span><span class="co">#&gt; 1:  fft_3k_gpu    2.35</span></span>
+<span><span class="co">#&gt; 2:          bh   17.90</span></span>
+<span><span class="co">#&gt; 3:         fft    5.62</span></span>
+<span><span class="co">#&gt; 4:      fft_3k    4.30</span></span></code></pre></div>
+</div>
+</section></section><section class="level2"><h2 id="using-a-pre-computed-knn-graph">Using a pre-computed kNN graph<a class="anchor" aria-label="anchor" href="#using-a-pre-computed-knn-graph"></a>
 </h2>
 <p>Sweeping t-SNE hyperparameters (perplexity, learning rate, exaggeration) is usually where you spend the most time. Cache the kNN once and hand it in.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">knn_precomputed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_knn_graph_gpu.html">generate_knn_graph_gpu</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">cluster_data</span><span class="op">$</span><span class="va">data</span>,</span>
 <span>  k <span class="op">=</span> <span class="fl">90L</span>, <span class="co"># ~ 3 * perplexity for perplexity = 30</span></span>
-<span>  knn_method <span class="op">=</span> <span class="st">"exhaustive"</span>,</span>
+<span>  knn_method <span class="op">=</span> <span class="st">"ivf"</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -308,11 +354,11 @@
 <p>Note the kNN needs enough neighbours for the perplexity you’re using; <code>k ≈ 3 * perplexity</code> is the usual rule.</p>
 </section><section class="level2"><h2 id="when-does-the-gpu-version-pay-off">When does the GPU version pay off?<a class="anchor" aria-label="anchor" href="#when-does-the-gpu-version-pay-off"></a>
 </h2>
-<p>The CPU t-SNE in <code>manifoldsR</code> is already fast (Rust, SIMD kNN, FFT optimiser on Unix). The GPU version’s advantage is entirely in the kNN step, so the payoff depends on how much of your wall-clock the kNN eats. Generally speaking, if you have a larger data set, hit it with a GPU-accelerated kNN and the FFT optimiser. Longer term, the idea is to also implement 2D-FFT that is GPU-accelerated, but that is a larger project.</p>
-<p>The kNN backend matters more here than in UMAP because the optimiser is still CPU either way. <code>"nndescent"</code> and <code>"ivf"</code> are the workhorses, <code>"exhaustive"</code> is for ground-truth checks or small data.</p>
+<p>The CPU t-SNE in <code>manifoldsR</code> is already fast (Rust, SIMD kNN, FFT optimiser on Unix). With a CPU optimiser the GPU only buys you the kNN, so the payoff is the kNN share of the wall-clock. <code>"fft_3k_gpu"</code> moves the optimiser over as well; check the timings above against your own data size and hardware before assuming it wins.</p>
+<p><code>"nndescent"</code> and <code>"ivf"</code> are the kNN workhorses, <code>"exhaustive"</code> is for ground-truth checks or small data. Due to usually higher k needed for tSNE, the <code>"ivf"</code> index is the recommendation.</p>
 </section><section class="level2"><h2 id="conclusions">Conclusions<a class="anchor" aria-label="anchor" href="#conclusions"></a>
 </h2>
-<p>Same mental model as CPU t-SNE, same knobs, same caveats (t-SNE is a visualisation tool, cluster sizes and inter-cluster distances are not meaningful, see the <a href="https://gregorlueg.github.io/manifoldsR/articles/tsne.html" class="external-link">manifoldsR vignette</a> for the details). Current pipeline is hybrid: kNN on GPU, optimiser on CPU. Once the optimiser moves to GPU the whole thing runs on device end to end.</p>
+<p>Same mental model as CPU t-SNE, same knobs, same caveats (t-SNE is a visualisation tool, cluster sizes and inter-cluster distances are not meaningful, see the <a href="https://gregorlueg.github.io/manifoldsR/articles/tsne.html" class="external-link">manifoldsR vignette</a> for the details). With <code>"fft_3k_gpu"</code> the optimisation runs on the device; the affinities are still computed on the CPU.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

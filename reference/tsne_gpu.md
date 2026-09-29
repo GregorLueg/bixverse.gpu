@@ -1,10 +1,9 @@
 # Rust-based t-SNE (GPU)
 
-Performs t-SNE dimensionality reduction on the input data. This function
-provides a user-friendly interface with input validation before calling
-the Rust implementation. Leverages GPU-accelerated kNN searches. The
-optimisation itself still runs on the CPU (a GPU optimiser is on the
-roadmap).
+Performs t-SNE dimensionality reduction on the input data. The kNN
+search runs on the GPU. With the default `"fft_3k_gpu"` the optimiser
+runs on the GPU as well, so the whole embedding stays on the device; the
+other approximations optimise on the CPU.
 
 ## Usage
 
@@ -14,7 +13,7 @@ tsne_gpu(
   knn = NULL,
   n_dim = 2L,
   perplexity = 20,
-  approx_type = c("bh", "fft"),
+  approx_type = c("fft_3k_gpu", "bh", "fft", "fft_3k"),
   knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
@@ -53,8 +52,12 @@ tsne_gpu(
 - approx_type:
 
   Character. Approximation method for computing repulsive forces. One of
-  `"bh"` for Barnes-Hut or `"fft"` for FFT-accelerated interpolation.
-  Defaults to `"bh"`. The FFT variant is only available on Unix systems.
+  `"fft_3k_gpu"` (three-kernel FFT interpolation on the GPU, the
+  default), `"bh"` for Barnes-Hut, `"fft"` for FFT-accelerated
+  interpolation or `"fft_3k"` for its three-kernel variant (one forward
+  and three inverse FFTs per epoch instead of four each). The last three
+  run on the CPU; `"fft"` and `"fft_3k"` are only available on Unix
+  systems.
 
 - knn_method:
 
@@ -79,7 +82,8 @@ tsne_gpu(
 - use_high_precision:
 
   Optional boolean. Gives fine-grained control over `fp32` vs `fp64`
-  usage. The GPU kNN calculations will be forced into `fp32`.
+  usage. The GPU kNN calculations will be forced into `fp32`. Ignored
+  with a warning for `"fft_3k_gpu"`, which always runs in `fp32`.
 
 - .verbose:
 

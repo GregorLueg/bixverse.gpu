@@ -1,5 +1,12 @@
 # Changelog
 
+## bixverse.gpu 0.3.4
+
+### Feature
+
+- GPU-accelerated FFT 3-kernel optimisation for tSNE wired in and the
+  CPU version of the same optimiser.
+
 ## bixverse.gpu 0.3.3
 
 ### Feature

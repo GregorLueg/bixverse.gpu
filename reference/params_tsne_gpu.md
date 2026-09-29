@@ -52,7 +52,8 @@ params_tsne_gpu(
 - n_interp_points:
 
   Integer. Number of interpolation points per grid cell for FFT
-  acceleration. Defaults to `3L`.
+  acceleration (`"fft"`, `"fft_3k"` and `"fft_3k_gpu"`). Defaults to
+  `3L`.
 
 - init:
 
@@ -89,7 +90,8 @@ A named list with the following elements:
   accuracy at the cost of speed. Defaults to `0.5`.
 
 - n_interp_points - Integer. Number of interpolation points per grid
-  cell for FFT acceleration. Defaults to `3L`.
+  cell for FFT acceleration (`"fft"`, `"fft_3k"` and `"fft_3k_gpu"`).
+  Defaults to `3L`.
 
 - init - String. Embedding initialisation method. One of
   `c("pca", "spectral", "random")`. Defaults to `"pca"`.

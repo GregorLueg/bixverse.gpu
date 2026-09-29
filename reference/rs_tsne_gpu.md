@@ -1,9 +1,8 @@
 # tSNE implementation
 
-**\[experimental\]** Wraps the tSNE implementation in manifolds-rs. You
-have two optimiser options: `"bh"`, which tends to be faster on smaller
-data sets, and `"fft"` for large data sets. The kNN search runs on the
-GPU; the optimiser stays on the CPU.
+**\[experimental\]** Wraps the tSNE implementation in manifolds-rs. The
+kNN search runs on the GPU. `"fft_3k_gpu"` runs the optimiser on the GPU
+as well; `"bh"`, `"fft"` and `"fft_3k"` keep it on the CPU.
 
 ## Usage
 
@@ -38,8 +37,9 @@ rs_tsne_gpu(
 
 - approx_type:
 
-  String. One of `c("fft", "bh")`. Which of the two approximations to
-  use.
+  String. One of `c("fft_3k_gpu", "bh", "fft", "fft_3k")`. Which
+  repulsive-force approximation to use. `"fft"` and `"fft_3k"` need FFTW
+  and are not available on Windows.
 
 - tsne_params:
 
@@ -52,8 +52,9 @@ rs_tsne_gpu(
 
 - use_high_precision:
 
-  Optional logical. Controls `fp32` vs `fp64` for. If `NULL` will use
-  sensible default thresholding.
+  Optional logical. Controls `fp32` vs `fp64`. If `NULL` will use
+  sensible default thresholding. Ignored for `"fft_3k_gpu"`, which
+  always runs in `fp32`.
 
 - verbose:
 
