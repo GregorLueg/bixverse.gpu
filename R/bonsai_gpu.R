@@ -6,7 +6,8 @@
 #   bixverse's own `.bonsai_sc_run()`, so the result is the same `BonsaiTree`
 #   S3 object as `bixverse::bonsai_sc()` and its print, plot and relayout
 #   methods work unchanged.
-# - Only `SingleCells` gets a method, as for `bixverse::bonsai_sc()`.
+# - `SingleCells` and `MetaCells` get a method, as for `bixverse::bonsai_sc()`;
+#   the metacells go through `.bonsai_mc_run()` with their in-memory counts.
 # ------------------------------------------------------------------------------
 
 # bonsai (gpu) -----------------------------------------------------------------
@@ -24,7 +25,7 @@
 #' the resolution of Sanity's variance grid rather than bit for bit, and a gene
 #' sitting right at the signal-to-noise threshold can end up on the other side.
 #'
-#' @param object `SingleCells` class.
+#' @param object `SingleCells` or `MetaCells` class.
 #' @param hvg Optional integer. Restrict the candidate genes to these. Please
 #' provide 1-indexed genes here! If `NULL`, every gene in the object is a
 #' candidate.
@@ -75,6 +76,31 @@ S7::method(bonsai_gpu_sc, SingleCells) <- function(
     hvg = hvg,
     bonsai_params = bonsai_params,
     runner = rs_sc_bonsai_gpu,
+    .verbose = .verbose
+  )
+}
+
+## MetaCells -------------------------------------------------------------------
+
+#' @method bonsai_gpu_sc MetaCells
+#'
+#' @export
+#'
+#' @import bixverse
+S7::method(bonsai_gpu_sc, MetaCells) <- function(
+  object,
+  hvg = NULL,
+  bonsai_params = bixverse::params_sc_bonsai(),
+  .verbose = TRUE
+) {
+  # checks
+  checkmate::assertTRUE(S7::S7_inherits(object, bixverse::MetaCells))
+
+  bixverse:::.bonsai_mc_run(
+    object = object,
+    hvg = hvg,
+    bonsai_params = bonsai_params,
+    runner = rs_mc_bonsai_gpu,
     .verbose = .verbose
   )
 }

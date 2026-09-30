@@ -12,7 +12,7 @@ bonsai_gpu_sc(
 )
 }
 \arguments{
-\item{object}{\code{SingleCells} class.}
+\item{object}{\code{SingleCells} or \code{MetaCells} class.}
 
 \item{hvg}{Optional integer. Restrict the candidate genes to these. Please
 provide 1-indexed genes here! If \code{NULL}, every gene in the object is a

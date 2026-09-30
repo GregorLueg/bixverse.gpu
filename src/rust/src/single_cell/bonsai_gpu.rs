@@ -1,12 +1,14 @@
 //! Bonsai with Sanity on the GPU.
 //!
-//! Mirrors `bixverse::rs_sc_bonsai` argument for argument. Only Sanity moves to
+//! Mirrors `bixverse::rs_sc_bonsai` and `bixverse::rs_mc_bonsai` argument for
+//! argument. Only Sanity moves to
 //! the device, gene chunk by gene chunk, with the same keep test as the CPU
 //! path; the tree search and the layout stay on the CPU. The returned list is
 //! the one `bixverse::new_bonsai_tree()` builds its class from.
 
 use crate::ensure_gpu;
-use bixverse_rs::gpu::sc_gpu::sanity_bonsai_gpu::sanity_bonsai_sc_gpu;
+use crate::single_cell::scenic_gpu::cast_sparse_u32_f32;
+use bixverse_rs::gpu::sc_gpu::sanity_bonsai_gpu::{sanity_bonsai_mc_gpu, sanity_bonsai_sc_gpu};
 use bixverse_rs::prelude::*;
 use bixverse_rs::single_cell::sc_analysis::bonsai::BonsaiScParams;
 use bixverse_rs::single_cell::sc_r_wrappers::bonsai_sc_to_r_list;
@@ -23,6 +25,7 @@ extendr_module! {
     mod bonsai_gpu;
     // functions
     fn rs_sc_bonsai_gpu;
+    fn rs_mc_bonsai_gpu;
 }
 
 ////////////
@@ -83,6 +86,64 @@ fn rs_sc_bonsai_gpu(
         &gene_reader,
         &cell_reader,
         &cell_indices,
+        &gene_indices,
+        &params,
+        device.clone(),
+        verbosity,
+    )
+    .to_extendr()?;
+
+    // force VRAM memory clean up to avoid memory leaks
+    let client = WgpuRuntime::client(&device);
+    client.memory_cleanup();
+
+    Ok(bonsai_sc_to_r_list(res))
+}
+
+/// GPU: Bonsai tree from metacell counts
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// GPU equivalent of `bixverse::rs_mc_bonsai`. Sanity runs on the WGPU backend
+/// over the metacells' aggregated raw counts, the tree search and the layout
+/// on the CPU. Every metacell is a leaf.
+///
+/// @param sparse_data List. The raw metacell counts, see
+/// `bixverse::mc_counts_to_list()` with `assay = "raw"`.
+/// @param gene_indices Integer. The candidate genes. (0-indexed!)
+/// @param bonsai_params List. Parameter list, see
+/// `bixverse::params_sc_bonsai()`.
+/// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+/// detailed verbosity.
+///
+/// @returns The same list as `bixverse::rs_mc_bonsai()`.
+///
+/// @export
+///
+/// @references de Groot, et al., Nat Biotechnol, 2026; Breda, et al., Nat
+/// Biotechnol, 2021.
+///
+/// @keywords internal
+#[extendr]
+fn rs_mc_bonsai_gpu(
+    sparse_data: List,
+    gene_indices: Vec<i32>,
+    bonsai_params: List,
+    verbose: usize,
+) -> Result<List> {
+    ensure_gpu()?;
+
+    let verbosity = parse_verbosity_level(verbose);
+    let gene_indices = gene_indices.r_int_convert();
+    let params = BonsaiScParams::from_r_list(bonsai_params)?;
+    let sparse: CompressedSparseData2<f64, f64> =
+        list_to_sparse_matrix(sparse_data, false).to_extendr()?;
+    let counts = cast_sparse_u32_f32(sparse);
+
+    let device: WgpuDevice = Default::default();
+
+    let res = sanity_bonsai_mc_gpu::<WgpuRuntime>(
+        &counts,
         &gene_indices,
         &params,
         device.clone(),

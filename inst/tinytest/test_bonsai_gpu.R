@@ -73,6 +73,38 @@ expect_true(
   info = "bonsai gpu: plots like the CPU tree"
 )
 
+## metacells -------------------------------------------------------------------
+
+sc_object <- find_hvg_sc(sc_object, hvg_no = 30L, .verbose = FALSE)
+sc_object <- calculate_pca_sc(sc_object, no_pcs = 10L, .verbose = FALSE)
+sc_object <- find_neighbours_sc(sc_object, .verbose = FALSE)
+mc_object <- generate_bt_meta_cells_sc(
+  sc_object,
+  sc_meta_cell_params = params_sc_bt_metacells(target_no_metacells = 100L),
+  .verbose = FALSE
+)
+
+tree_mc_gpu <- bonsai_gpu_sc(mc_object, .verbose = FALSE)
+tree_mc_cpu <- bonsai_sc(mc_object, .verbose = FALSE)
+
+expect_equal(
+  tree_mc_gpu$nodes[(is_leaf)]$cell_id,
+  mc_object[[]]$meta_cell_id,
+  info = "bonsai gpu mc: one leaf per metacell"
+)
+
+expect_equal(
+  sum(is.na(tree_mc_gpu$nodes$parent)),
+  1L,
+  info = "bonsai gpu mc: exactly one root"
+)
+
+expect_equal(
+  sort(tree_mc_gpu$genes_used),
+  sort(tree_mc_cpu$genes_used),
+  info = "bonsai gpu mc: same genes as the CPU run on this fixture"
+)
+
 ## clean up --------------------------------------------------------------------
 
 unlink(test_temp_dir, recursive = TRUE, force = TRUE)
