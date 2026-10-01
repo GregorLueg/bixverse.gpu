@@ -122,6 +122,7 @@ Current roadmap (subject to change and interest):
 - [x] GPU-accelerated NMF.
 - [x] GPU-accelerated BBKNN batch correction (single cells)
 - [x] GPU-accelerated Nebula
+- [x] Sanity-processing with GPU acceleration before Bonsai.
 
 
 **General:**
