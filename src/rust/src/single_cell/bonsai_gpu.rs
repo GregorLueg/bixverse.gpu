@@ -6,7 +6,7 @@
 //! path; the tree search and the layout stay on the CPU. The returned list is
 //! the one `bixverse::new_bonsai_tree()` builds its class from.
 
-use crate::ensure_gpu;
+use crate::ensure_plane_ops;
 use crate::single_cell::scenic_gpu::cast_sparse_u32_f32;
 use bixverse_rs::gpu::sc_gpu::sanity_bonsai_gpu::{sanity_bonsai_mc_gpu, sanity_bonsai_sc_gpu};
 use bixverse_rs::prelude::*;
@@ -70,7 +70,7 @@ fn rs_sc_bonsai_gpu(
     bonsai_params: List,
     verbose: usize,
 ) -> Result<List> {
-    ensure_gpu()?;
+    ensure_plane_ops()?;
 
     let verbosity = parse_verbosity_level(verbose);
     let cell_indices = cell_indices.r_int_convert();
@@ -131,7 +131,7 @@ fn rs_mc_bonsai_gpu(
     bonsai_params: List,
     verbose: usize,
 ) -> Result<List> {
-    ensure_gpu()?;
+    ensure_plane_ops()?;
 
     let verbosity = parse_verbosity_level(verbose);
     let gene_indices = gene_indices.r_int_convert();

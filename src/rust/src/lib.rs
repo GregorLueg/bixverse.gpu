@@ -329,7 +329,7 @@ fn rs_gpu_plane_ops() -> bool {
 
 /// Hard error when the GPU adapter does not run plane operations.
 ///
-/// For kernels that reduce within a plane, NEBULA so far. On a device that
+/// For kernels that reduce within a plane: NEBULA and Sanity. On a device that
 /// drops those dispatches they would return whatever their output buffers
 /// held rather than fail.
 pub(crate) fn ensure_plane_ops() -> extendr_api::Result<()> {
