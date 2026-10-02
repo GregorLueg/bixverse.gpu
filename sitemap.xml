@@ -32,6 +32,7 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertUmapGpuParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assert_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/bbknn_gpu_sc.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/bonsai_gpu_sc.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/calculate_pca_gpu_sc.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkKMeansGpuParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkNebulaGpuParams.html</loc></url>
@@ -110,6 +111,7 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_harmony_v2_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_ivf_gpu_knn.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_kmeans_gpu.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_mc_bonsai_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_mc_scenic_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_nebula_sc_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_consensus_mc_gpu.html</loc></url>
@@ -122,6 +124,7 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_single_sc_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_parametric_umap.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_parametric_umap_predict.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_sc_bonsai_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_sc_pca_sparse_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_sc_scrublet_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_scenic_grn_gpu.html</loc></url>

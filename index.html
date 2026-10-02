@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -84,34 +84,101 @@
 </div>
 <p><a href="https://github.com/GregorLueg/bixverse.gpu/blob/main/DESCRIPTION" class="external-link"><img src="https://img.shields.io/github/r-package/v/GregorLueg/bixverse.gpu?label=R_package&amp;color=orange" alt="r_package"></a> <a href="https://gregorlueg.r-universe.dev/bixverse.gpu" class="external-link"><img src="https://gregorlueg.r-universe.dev/bixverse.gpu/badges/version" alt="bixverse status badge"></a> <a href="https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml" class="external-link"><img src="https://github.com/GregorLueg/bixverse.gpu/actions/workflows/R-cmd-check.yml/badge.svg" alt="CI"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a> <a href="https://gregorlueg.github.io/bixverse.gpu/"><img src="https://img.shields.io/badge/pkgdown-website-1b5e9f?logo=github" alt="pkgdown"></a> <a href="https://extendr.github.io/extendr/extendr_api/" class="external-link"><img src="https://img.shields.io/badge/extendr-%5E0.9.0-276DC2" alt="extendr"></a> <a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></p>
 <div class="section level2">
-<h2 id="intro">Intro<a class="anchor" aria-label="anchor" href="#intro"></a>
+<h2 id="what-this-is">What this is<a class="anchor" aria-label="anchor" href="#what-this-is"></a>
 </h2>
-<p>GPU-accelerated algorithms via the WGPU backend on cubecl. All you need is a GPU that WGPU can talk to: Metal on macOS, Vulkan on Linux, DX12 or Vulkan on Windows. No CUDA, no vendor lock-in, no separate GPU toolchain to install. Check with <code><a href="reference/gpu_available.html">gpu_available()</a></code> after installing; if that returns <code>TRUE</code>, everything in the package will run. If it returns <code>FALSE</code>, your drivers are the problem, and the <a href="https://burn.dev/books/cubecl/getting-started/installation.html" class="external-link">cubecl book</a> covers the set up per platform.</p>
-<p>The package is designed to support the <a href="https://github.com/GregorLueg/bixverse" class="external-link">bixverse package</a>. Additionally, also provides some neural net-based versions of embedding methods for <a href="https://github.com/GregorLueg/manifoldsR" class="external-link">manifoldsR</a> + a GPU-accelerated version of the Adam optimiser for UMAP.</p>
-<p>Heads up: the package is being refactored at the moment, so the R-facing API can shift between versions. <code>lifecycle: experimental</code> covers the whole surface and means it.</p>
+<p>GPU-accelerated methods for <a href="https://github.com/GregorLueg/bixverse" class="external-link">bixverse</a> and <a href="https://github.com/GregorLueg/manifoldsR" class="external-link">manifoldsR</a>, written in Rust on <a href="https://github.com/tracel-ai/cubecl" class="external-link">cubecl</a>/<a href="https://burn.dev" class="external-link">Burn</a> with the WGPU backend. All you need is a GPU that WGPU can talk to: Metal on macOS, Vulkan on Linux, DX12 or Vulkan on Windows. No CUDA, no vendor lock-in, no separate GPU toolchain to install.</p>
+<p>Check with <code><a href="reference/gpu_available.html">gpu_available()</a></code> after installing. If that returns <code>TRUE</code>, you’re good to go. If it returns <code>FALSE</code>, your drivers are the problem, and the <a href="https://burn.dev/books/cubecl/getting-started/installation.html" class="external-link">cubecl book</a> covers the set up per platform.</p>
+<p>This is <strong>not</strong> a stand-alone package. Most functions take a <code>bixverse</code> <code>SingleCells</code> or <code>MetaCells</code> object and slot into the same workflow as their CPU counterparts. If you only want the GPU kNN searches or a parametric UMAP, the <code>rs_</code> functions and <code><a href="reference/parametric_umap.html">parametric_umap()</a></code> work on plain matrices.</p>
+<p>Heads up: the R-facing API can still shift between versions. <code>lifecycle: experimental</code> covers the whole surface and means it.</p>
 </div>
 <div class="section level2">
-<h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
+<h2 id="whats-in-it">What’s in it<a class="anchor" aria-label="anchor" href="#whats-in-it"></a>
 </h2>
-<div class="section level3">
-<h3 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
-</h3>
-<p>On the GPU side there is nothing extra to install beyond working drivers, whatever your OS ships is what WGPU picks up. Previously, the CPU-based versions of neural net acceleration where running through ndarray and accelerated via OpenBLAS (Linux) or Accelerate (Mac). This has been now replaced with the <a href="https://github.com/tracel-ai/burn/pull/4761" class="external-link">flex</a> framework.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr>
+<th>Domain</th>
+<th>What’s in there</th>
+<th>Read more</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Single cell core</td>
+<td>Sparse randomised PCA, kNN graphs (CAGRA, IVF, exhaustive), Harmony, BBKNN, fast clustering</td>
+<td><a href="https://gregorlueg.github.io/bixverse.gpu/articles/gpu_single_cell.html">single cell</a></td>
+</tr>
+<tr>
+<td>Meta cells</td>
+<td>SEACells, both Frank-Wolfe solves on the GPU</td>
+<td><a href="https://gregorlueg.github.io/bixverse.gpu/articles/gpu_metacells.html">SEACells</a></td>
+</tr>
+<tr>
+<td>Regulons</td>
+<td>SCENIC with ExtraTrees and random forest learners on the GPU. grnboost2 stays on the CPU, it does not gain much</td>
+<td><a href="https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scenic.html">SCENIC</a></td>
+</tr>
+<tr>
+<td>QC and DGE</td>
+<td>Scrublet doublet detection, NEBULA mixed models</td>
+<td>
+<a href="https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scrublet.html">Scrublet</a>, <a href="https://gregorlueg.github.io/bixverse.gpu/articles/gpu_nebula.html">NEBULA</a>
+</td>
+</tr>
+<tr>
+<td>Factorisation</td>
+<td>NMF, stabilised and consensus NMF, k sweeps</td>
+<td><a href="https://gregorlueg.github.io/bixverse.gpu/articles/gpu_nmf.html">NMF</a></td>
+</tr>
+<tr>
+<td>Trees</td>
+<td>Bonsai, with Sanity running on the GPU; tree search and layout stay on the CPU</td>
+<td><code><a href="reference/bonsai_gpu_sc.html">?bonsai_gpu_sc</a></code></td>
+</tr>
+<tr>
+<td>Embeddings</td>
+<td>UMAP, tSNE (Barnes-Hut and FFT), parametric UMAP with GPU and CPU backends</td>
+<td>
+<a href="https://gregorlueg.github.io/bixverse.gpu/articles/gpu_umap.html">UMAP</a>, <a href="https://gregorlueg.github.io/bixverse.gpu/articles/gpu_tsne.html">tSNE</a>, <a href="https://gregorlueg.github.io/bixverse.gpu/articles/parametric_umap.html">parametric UMAP</a>
+</td>
+</tr>
+<tr>
+<td>General</td>
+<td>k-means, Pearson and Spearman correlations, covariance</td>
+<td><a href="https://gregorlueg.github.io/bixverse.gpu/articles/other_gpu.html">other methods</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
+<h2 id="the-bixverse-ecosystem">The “bixverse ecosystem”<a class="anchor" aria-label="anchor" href="#the-bixverse-ecosystem"></a>
+</h2>
+<ul>
+<li>
+<a href="https://github.com/GregorLueg/bixverse" class="external-link">bixverse</a> is the parent package. Single cell, bulk, gene set enrichment, ontologies, graphs. Everything here plugs into its classes.</li>
+<li>
+<a href="https://github.com/GregorLueg/bixverse.plots" class="external-link">bixverse.plots</a> for plotting, with a large number of single cell helpers.</li>
+<li>
+<a href="https://github.com/GregorLueg/manifoldsR" class="external-link">manifoldsR</a> for manifold learning. The GPU UMAP, tSNE and parametric UMAP here sit next to its CPU versions.</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
+<p>On the GPU side there is nothing extra to install beyond working drivers; whatever your OS ships is what WGPU picks up. The CPU path of the neural net methods used to go through ndarray with OpenBLAS (Linux) or Accelerate (Mac). It now runs on Burn’s <a href="https://github.com/tracel-ai/burn/pull/4761" class="external-link">flex</a> backend, so no BLAS set up either.</p>
 <p>The easy route is r-universe. You get a pre-built binary, so no Rust toolchain and no compile:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span></span>
 <span>  <span class="st">"bixverse.gpu"</span>,</span>
 <span>  repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://gregorlueg.r-universe.dev"</span>, <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-</div>
 <div class="section level3">
 <h3 id="from-source">From source<a class="anchor" aria-label="anchor" href="#from-source"></a>
 </h3>
-<p>You will need Rust on your system to install the package from source. An installation guide is provided <a href="https://www.rust-lang.org/tools/install" class="external-link">here</a>. There is a bunch of further help written <a href="https://extendr.github.io/rextendr/index.html" class="external-link">here</a> by the rextendr guys in terms of Rust set up. (<code>bixverse.gpu</code> as <code>bixverse</code> both use rextendr to interface with Rust.)</p>
-<div class="section level4">
-<h4 id="setting-up-rust">Setting up Rust<a class="anchor" aria-label="anchor" href="#setting-up-rust"></a>
-</h4>
-<p>Steps for installation:</p>
+<p>Building from source needs Rust on your system. Install guide <a href="https://www.rust-lang.org/tools/install" class="external-link">here</a>, and the rextendr guys have written a lot of further help on the Rust set up <a href="https://extendr.github.io/rextendr/index.html" class="external-link">here</a>.</p>
 <ol style="list-style-type: decimal">
 <li>In the terminal, install <a href="https://www.rust-lang.org/tools/install" class="external-link">Rust</a>
 </li>
@@ -122,47 +189,54 @@
 </ol>
 <pre><code><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"rextendr"</span><span class="op">)</span></span></code></pre>
 <ol start="3" style="list-style-type: decimal">
-<li>Finally install bixverse.gpu:</li>
+<li>Install bixverse.gpu. Keep the r-universe repo in the list: <code>bixverse</code> and <code>manifoldsR</code> live there, not on CRAN.</li>
 </ol>
-<pre><code><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"https://github.com/GregorLueg/bixverse.gpu"</span><span class="op">)</span></span></code></pre>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://gregorlueg.r-universe.dev"</span>, <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"repos"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"https://github.com/GregorLueg/bixverse.gpu"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="section level4">
-<h4 id="windows-support">Windows support<a class="anchor" aria-label="anchor" href="#windows-support"></a>
-</h4>
+<div class="section level3">
+<h3 id="windows">Windows<a class="anchor" aria-label="anchor" href="#windows"></a>
+</h3>
 <p>Windows works. WGPU was never the problem there, DX12 and Vulkan are both well covered, and the h5 dependency (for reading h5ad files) turned out to be a dull <code>MAX_PATH</code> issue rather than a cross-compile one: <code>R CMD INSTALL</code> builds in a deep temp directory, and the HDF5 CMake build pushed object paths past the 260 character limit. The build now puts the cargo target directory in <code>~/.bixverse-gpu-cargo</code>, which stays clear of it. Same fix as in <a href="https://github.com/GregorLueg/bixverse" class="external-link">bixverse</a>.</p>
 <p>One thing is still missing on Windows: the FFT-accelerated tSNE. FFTW does not come along for the ride, so <code>tsne_gpu(approx_type = "fft")</code> errors there. Barnes-Hut (<code>approx_type = "bh"</code>, the default) works everywhere.</p>
 </div>
-</div>
 <div class="section level3">
-<h3 id="how-to-use-the-package">How to use the package.<a class="anchor" aria-label="anchor" href="#how-to-use-the-package"></a>
+<h3 id="older-intel-macs">Older Intel Macs<a class="anchor" aria-label="anchor" href="#older-intel-macs"></a>
 </h3>
-<p>The package website can be found <a href="https://gregorlueg.github.io/bixverse.gpu/">here</a>. This package is <strong>not</strong> a stand-alone package, but designed to support the <code>bixverse</code> with GPU-accelerated methods. If you are however interesting in just using the GPU-accelerated kNN searches, feel free to use the respective <code>rs_</code> functions for that. Or if you want to train a neural network for UMAP, the package also provides what you need.</p>
+<p>Likely not a good time. A Mac without a native GPU that Metal can drive properly, such as a macOS VM with a paravirtualised GPU, may advertise subgroup (plane) operations and then silently drop every kernel that uses them. The macos-15-intel GitHub runners do exactly that. NEBULA and Bonsai check for this and refuse to run; other methods pass CI on those runners, but treat results on such a machine with suspicion and compare against the CPU version in <code>bixverse</code>.</p>
 </div>
-<div class="section level3">
-<h3 id="roadmap">Roadmap:<a class="anchor" aria-label="anchor" href="#roadmap"></a>
-</h3>
-<p>Current roadmap (subject to change and interest):</p>
-<p><strong>GPU-related things:</strong></p>
+</div>
+<div class="section level2">
+<h2 id="where-to-start">Where to start<a class="anchor" aria-label="anchor" href="#where-to-start"></a>
+</h2>
+<p>The <a href="https://gregorlueg.github.io/bixverse.gpu/">package website</a> is the main entry point. The <a href="https://gregorlueg.github.io/bixverse.gpu/articles/gpu_single_cell.html">single cell article</a> is the obvious first stop: it runs the standard workflow with the GPU versions swapped in. What changed in each release: <a href="https://gregorlueg.github.io/bixverse.gpu/news/index.html">the changelog</a>.</p>
+<p>Working with an LLM coding agent? <code><a href="reference/install_agent_skill_gpu.html">install_agent_skill_gpu()</a></code> drops a skill into your agent set up so it stops guessing at the API.</p>
+</div>
+<div class="section level2">
+<h2 id="roadmap">Roadmap<a class="anchor" aria-label="anchor" href="#roadmap"></a>
+</h2>
+<p><strong>Implemented</strong></p>
 <ul class="task-list">
 <li><label><input type="checkbox" checked>GPU-based kNN graph generation (for single cells)</label></li>
 <li><label><input type="checkbox" checked>k-means clustering on GPU</label></li>
 <li><label><input type="checkbox" checked>Sparse, randomised SVD for single cells</label></li>
-<li><label><input type="checkbox" checked>GPU-accelerated Harmony batch correction (single cells)</label></li>
+<li><label><input type="checkbox" checked>GPU-accelerated Harmony and BBKNN batch correction (single cells)</label></li>
 <li><label><input type="checkbox" checked>GPU-accelerated correlations (Spearman and Pearson)</label></li>
-<li><label><input type="checkbox" checked>GPU-accelerate UMAP embedding generation.</label></li>
-<li><label><input type="checkbox" checked>SCENIC has now working GPU acceleration for ExtraTrees and the RF learner. The grnboost2 version does not make too much sense and is left on the CPU.</label></li>
-<li><label><input type="checkbox" checked>GPU-accelerated SEACells meta cell generation (both Frank-Wolfe solves).</label></li>
-<li><label><input type="checkbox" checked>Scrublet with GPU-acceleration.</label></li>
-<li><label><input type="checkbox" checked>GPU-accelerated NMF.</label></li>
-<li><label><input type="checkbox" checked>GPU-accelerated BBKNN batch correction (single cells)</label></li>
-<li><label><input type="checkbox" checked>GPU-accelerated Nebula</label></li>
+<li><label><input type="checkbox" checked>GPU-accelerated UMAP and tSNE embedding generation</label></li>
+<li><label><input type="checkbox" checked>SCENIC with GPU-accelerated ExtraTrees and random forest learners</label></li>
+<li><label><input type="checkbox" checked>GPU-accelerated SEACells meta cell generation</label></li>
+<li><label><input type="checkbox" checked>Scrublet with GPU acceleration</label></li>
+<li><label><input type="checkbox" checked>GPU-accelerated NMF</label></li>
+<li><label><input type="checkbox" checked>GPU-accelerated NEBULA</label></li>
+<li><label><input type="checkbox" checked>Sanity processing with GPU acceleration before Bonsai</label></li>
 </ul>
-<p><strong>General:</strong></p>
+<p><strong>General</strong></p>
 <ul class="task-list">
 <li><label><input type="checkbox" checked><del>More vignettes on some of the implemented functions.</del> Got a bit better.</label></li>
 </ul>
-<p>If you have some other ideas, please feel free to make an issue.</p>
-</div>
+<p>If you have some other ideas, please feel free to open an issue.</p>
+<p><em>Last update to the read-me: 02.10.2026</em></p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="license">

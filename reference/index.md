@@ -35,6 +35,8 @@ applications.
 - [`nmf_k_sweep_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/nmf_k_sweep_gpu_sc.md)
   : Sweep k for consensus NMF on the GPU over single cell or meta cell
   data
+- [`bonsai_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/bonsai_gpu_sc.md)
+  : Build a Bonsai tree over the cells, Sanity on the GPU
 - [`params_sc_harmony_v2_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_harmony_v2_gpu.md)
   : Default parameters for Harmony v2 GPU batch correction
 - [`params_sc_fast_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_fast_cluster_gpu.md)

@@ -1,5 +1,15 @@
 # Changelog
 
+## bixverse.gpu 0.3.5
+
+### Features
+
+- GPU-accelerated
+  [Sanity](https://www.nature.com/articles/s41587-026-03220-2) wired in
+  via [sanity-sc-rs](https://crates.io/crates/sanity-sc-rs). This gives
+  you the GPU-accelerated equivalent of
+  [`bonsai_sc()`](https://gregorlueg.github.io/bixverse/reference/bonsai_sc.html):[`bonsai_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/bonsai_gpu_sc.md).
+
 ## bixverse.gpu 0.3.4
 
 ### Feature
