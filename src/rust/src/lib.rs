@@ -22,6 +22,7 @@ pub mod single_cell;
 pub mod utils;
 
 pub use single_cell::bbknn_gpu;
+pub use single_cell::bonsai_gpu;
 pub use single_cell::fast_clusters_gpu;
 pub use single_cell::harmony_gpu;
 pub use single_cell::nebula_gpu;
@@ -50,6 +51,7 @@ extendr_module! {
     use nmf_gpu;
     use scenic_gpu;
     use scrublet_gpu;
+    use bonsai_gpu;
     use seacells_gpu;
     use fast_clusters_gpu;
     use bbknn_gpu;
@@ -327,7 +329,7 @@ fn rs_gpu_plane_ops() -> bool {
 
 /// Hard error when the GPU adapter does not run plane operations.
 ///
-/// For kernels that reduce within a plane, NEBULA so far. On a device that
+/// For kernels that reduce within a plane: NEBULA and Sanity. On a device that
 /// drops those dispatches they would return whatever their output buffers
 /// held rather than fail.
 pub(crate) fn ensure_plane_ops() -> extendr_api::Result<()> {

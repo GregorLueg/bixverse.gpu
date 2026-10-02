@@ -34,7 +34,7 @@ fn create_gpu_scenic_params(wave_byte_budget: f64) -> ScenicGpuParams {
 
 /// Cast the R-native `<f64, f64>` sparse layout into `<u32, f32>` as required
 /// by the GPU in-memory driver.
-fn cast_sparse_u32_f32(
+pub(crate) fn cast_sparse_u32_f32(
     sparse_mat: CompressedSparseData2<f64, f64>,
 ) -> CompressedSparseData2<u32, f32> {
     let data_cast: Vec<u32> = sparse_mat.data.iter().map(|&x| x as u32).collect();

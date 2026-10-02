@@ -819,6 +819,63 @@ rs_mc_scenic_gpu <- function(sparse_data, tf_indices, scenic_params, wave_byte_b
 #' @keywords internal
 rs_sc_scrublet_gpu <- function(f_path_gene, f_path_cell, cells_to_keep, scrublet_params, seed, verbose, streaming, return_combined_pca, return_pairs) .Call(wrap__rs_sc_scrublet_gpu, f_path_gene, f_path_cell, cells_to_keep, scrublet_params, seed, verbose, streaming, return_combined_pca, return_pairs)
 
+#' GPU: Bonsai tree from single cell counts
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU equivalent of `bixverse::rs_sc_bonsai`. Sanity runs on the WGPU
+#' backend, streamed over chunks of genes and keeping only the ones that pass
+#' Bonsai's ingest filters. The tree search and the layout run on the CPU.
+#'
+#' @param f_path_gene String. Path to the `counts_genes.bin` file.
+#' @param f_path_cell String. Path to the `counts_cells.bin` file. Supplies the
+#' library sizes.
+#' @param cell_indices Integer. The cell indices to use. (0-indexed!) Sets the
+#' leaf order.
+#' @param gene_indices Integer. The candidate genes. (0-indexed!)
+#' @param bonsai_params List. Parameter list, see
+#' `bixverse::params_sc_bonsai()`.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns The same list as `bixverse::rs_sc_bonsai()`: `parent` (0-indexed,
+#' `-1` for the root), `branch`, `x`, `y`, `n_leaves`, `loglik`, `steps`,
+#' `timings` and `genes_used` (0-indexed).
+#'
+#' @export
+#'
+#' @references de Groot, et al., Nat Biotechnol, 2026; Breda, et al., Nat
+#' Biotechnol, 2021.
+#'
+#' @keywords internal
+rs_sc_bonsai_gpu <- function(f_path_gene, f_path_cell, cell_indices, gene_indices, bonsai_params, verbose) .Call(wrap__rs_sc_bonsai_gpu, f_path_gene, f_path_cell, cell_indices, gene_indices, bonsai_params, verbose)
+
+#' GPU: Bonsai tree from metacell counts
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU equivalent of `bixverse::rs_mc_bonsai`. Sanity runs on the WGPU backend
+#' over the metacells' aggregated raw counts, the tree search and the layout
+#' on the CPU. Every metacell is a leaf.
+#'
+#' @param sparse_data List. The raw metacell counts, see
+#' `bixverse::mc_counts_to_list()` with `assay = "raw"`.
+#' @param gene_indices Integer. The candidate genes. (0-indexed!)
+#' @param bonsai_params List. Parameter list, see
+#' `bixverse::params_sc_bonsai()`.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @returns The same list as `bixverse::rs_mc_bonsai()`.
+#'
+#' @export
+#'
+#' @references de Groot, et al., Nat Biotechnol, 2026; Breda, et al., Nat
+#' Biotechnol, 2021.
+#'
+#' @keywords internal
+rs_mc_bonsai_gpu <- function(sparse_data, gene_indices, bonsai_params, verbose) .Call(wrap__rs_mc_bonsai_gpu, sparse_data, gene_indices, bonsai_params, verbose)
+
 #' GPU: SEACells meta cell generation
 #'
 #' @description
