@@ -6,7 +6,6 @@
   [qdtsne](https://github.com/libscran/qdtsne) wired into `tsne_gpu()` and
   `tsne_gpu_sc()` via `approx_type = "bh_qd"`. Tree depth is set with
   `max_depth` in `params_tsne_gpu()`. Runs on the CPU, like `"bh"`.
-* Bumped `manifolds-rs` to 0.6.0 and `ann-search-rs` to 0.9.3.
 
 # bixverse.gpu 0.3.5
 
