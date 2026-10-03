@@ -13,7 +13,7 @@ tsne_gpu_sc(
   modality = c("rna", "adt", "wnn"),
   n_dim = 2L,
   perplexity = 20,
-  approx_type = c("fft_3k_gpu", "bh", "fft", "fft_3k"),
+  approx_type = c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k"),
   knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
@@ -49,9 +49,10 @@ supported. Defaults to \code{2L}.}
 and 50. Defaults to \code{20.0}.}
 
 \item{approx_type}{String. Approximation method. One of \code{"fft_3k_gpu"}
-(three-kernel FFT on the GPU, the default), \code{"bh"} (Barnes-Hut), \code{"fft"} or
-\code{"fft_3k"} (CPU FFT interpolation, four or three kernels). The CPU FFT
-variants are Unix-only. See \code{\link[=tsne_gpu]{tsne_gpu()}}.}
+(three-kernel FFT on the GPU, the default), \code{"bh"} (Barnes-Hut), \code{"bh_qd"}
+(quick-and-dirty Barnes-Hut, depth-capped tree), \code{"fft"} or \code{"fft_3k"} (CPU
+FFT interpolation, four or three kernels). The CPU FFT variants are
+Unix-only. See \code{\link[=tsne_gpu]{tsne_gpu()}}.}
 
 \item{knn_method}{String. GPU (approximate) nearest neighbour method. One
 of \code{c("ivf", "exhaustive", "nndescent")}. Default is \code{"ivf"} here, as it

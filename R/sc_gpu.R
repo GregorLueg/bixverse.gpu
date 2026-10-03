@@ -926,9 +926,10 @@ S7::method(umap_gpu_sc, SingleCells) <- function(
 #' @param perplexity Numeric. Perplexity parameter. Typical values between 5
 #' and 50. Defaults to `20.0`.
 #' @param approx_type String. Approximation method. One of `"fft_3k_gpu"`
-#' (three-kernel FFT on the GPU, the default), `"bh"` (Barnes-Hut), `"fft"` or
-#' `"fft_3k"` (CPU FFT interpolation, four or three kernels). The CPU FFT
-#' variants are Unix-only. See [tsne_gpu()].
+#' (three-kernel FFT on the GPU, the default), `"bh"` (Barnes-Hut), `"bh_qd"`
+#' (quick-and-dirty Barnes-Hut, depth-capped tree), `"fft"` or `"fft_3k"` (CPU
+#' FFT interpolation, four or three kernels). The CPU FFT variants are
+#' Unix-only. See [tsne_gpu()].
 #' @param knn_method String. GPU (approximate) nearest neighbour method. One
 #' of `c("ivf", "exhaustive", "nndescent")`. Default is `"ivf"` here, as it
 #' deals usually better with the high k in tSNE.
@@ -960,7 +961,7 @@ tsne_gpu_sc <- S7::new_generic(
     modality = c("rna", "adt", "wnn"),
     n_dim = 2L,
     perplexity = 20.0,
-    approx_type = c("fft_3k_gpu", "bh", "fft", "fft_3k"),
+    approx_type = c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k"),
     knn_method = c("ivf", "exhaustive", "nndescent"),
     nn_params = params_nn_gpu(),
     tsne_params = params_tsne_gpu(),
@@ -988,7 +989,7 @@ S7::method(tsne_gpu_sc, SingleCells) <- function(
   modality = c("rna", "adt", "wnn"),
   n_dim = 2L,
   perplexity = 20.0,
-  approx_type = c("fft_3k_gpu", "bh", "fft", "fft_3k"),
+  approx_type = c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k"),
   knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),

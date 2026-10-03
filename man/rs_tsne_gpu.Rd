@@ -24,9 +24,11 @@ others are not supported.}
 
 \item{perplexity}{Numeric. The tSNE perplexity parameter.}
 
-\item{approx_type}{String. One of \code{c("fft_3k_gpu", "bh", "fft", "fft_3k")}.
-Which repulsive-force approximation to use. \code{"fft"} and \code{"fft_3k"} need
-FFTW and are not available on Windows.}
+\item{approx_type}{String. One of
+\code{c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")}. Which repulsive-force
+approximation to use; \code{"bh_qd"} is the depth-capped quick-and-dirty
+Barnes-Hut. \code{"fft"} and \code{"fft_3k"} need FFTW and are not available on
+Windows.}
 
 \item{tsne_params}{Named list. List that contains all of the key parameters
 for the tSNE generation.}
@@ -46,6 +48,6 @@ The tSNE embeddings.
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Wraps the tSNE implementation in manifolds-rs. The kNN search runs on the
-GPU. \code{"fft_3k_gpu"} runs the optimiser on the GPU as well; \code{"bh"}, \code{"fft"}
-and \code{"fft_3k"} keep it on the CPU.
+GPU. \code{"fft_3k_gpu"} runs the optimiser on the GPU as well; \code{"bh"},
+\code{"bh_qd"}, \code{"fft"} and \code{"fft_3k"} keep it on the CPU.
 }

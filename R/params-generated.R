@@ -760,6 +760,9 @@ params_sc_harmony_v2_gpu <- function(
 #' @param n_interp_points Integer. Number of interpolation points per grid cell
 #' for FFT acceleration (`"fft"`, `"fft_3k"` and `"fft_3k_gpu"`). Defaults to
 #' `3L`.
+#' @param max_depth Integer. Maximum Barnes-Hut tree depth for the
+#' quick-and-dirty optimiser (`"bh_qd"`). Smaller is faster and coarser; qdtsne
+#' recommends `7` to `10`. No effect on the other optimisers. Defaults to `7L`.
 #' @param init String. Embedding initialisation method. One of `c("pca",
 #' "spectral", "random")`. Defaults to `"pca"`.
 #' @param randomised Boolean. Use randomised SVD for PCA initialisation.
@@ -784,6 +787,9 @@ params_sc_harmony_v2_gpu <- function(
 #'  \item n_interp_points - Integer. Number of interpolation points per grid
 #'  cell for FFT acceleration (`"fft"`, `"fft_3k"` and `"fft_3k_gpu"`). Defaults
 #'  to `3L`.
+#'  \item max_depth - Integer. Maximum Barnes-Hut tree depth for the
+#'  quick-and-dirty optimiser (`"bh_qd"`). Smaller is faster and coarser; qdtsne
+#'  recommends `7` to `10`. No effect on the other optimisers. Defaults to `7L`.
 #'  \item init - String. Embedding initialisation method. One of `c("pca",
 #'  "spectral", "random")`. Defaults to `"pca"`.
 #'  \item randomised - Boolean. Use randomised SVD for PCA initialisation.
@@ -801,6 +807,7 @@ params_tsne_gpu <- function(
   late_exag_factor = NULL,
   theta = 0.5,
   n_interp_points = 3L,
+  max_depth = 7L,
   init = c("pca", "spectral", "random"),
   randomised = TRUE
 ) {
@@ -814,6 +821,7 @@ params_tsne_gpu <- function(
   checkmate::qassert(late_exag_factor, c("N1", "0"))
   checkmate::qassert(theta, "N1[0,1]")
   checkmate::qassert(n_interp_points, "I1[1,)")
+  checkmate::qassert(max_depth, "I1[1,)")
   checkmate::assertChoice(init, c("pca", "spectral", "random"))
   checkmate::qassert(randomised, "B1")
 
@@ -826,6 +834,7 @@ params_tsne_gpu <- function(
     late_exag_factor = late_exag_factor,
     theta = theta,
     n_interp_points = n_interp_points,
+    max_depth = max_depth,
     init = init,
     randomised = randomised
   )
