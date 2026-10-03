@@ -123,6 +123,48 @@ expect_equal(
   info = "tsne gpu df input matches matrix input"
 )
 
+### quick-and-dirty barnes-hut -------------------------------------------------
+
+tsne_gpu_bh_qd <- tsne_gpu(
+  data = cluster_data,
+  perplexity = 15,
+  approx_type = "bh_qd",
+  .verbose = FALSE
+)
+
+expect_true(
+  current = checkmate::testMatrix(
+    x = tsne_gpu_bh_qd,
+    mode = "numeric",
+    any.missing = FALSE,
+    ncols = 2L,
+    nrow = n_samples
+  ),
+  info = "tsne gpu (bh_qd) correctly returned"
+)
+
+tsne_gpu_bh_qd_tests <- check_cluster_separation(
+  embd = tsne_gpu_bh_qd,
+  cluster_membership = cluster_membership
+)
+
+expect_true(
+  current = mean(tsne_gpu_bh_qd_tests$within_dists) <
+    mean(tsne_gpu_bh_qd_tests$between_dists),
+  info = "tsne gpu (bh_qd) correctly separates clusters"
+)
+
+expect_equal(
+  current = tsne_gpu(
+    data = cluster_data,
+    perplexity = 15,
+    approx_type = "bh_qd",
+    .verbose = FALSE
+  ),
+  target = tsne_gpu_bh_qd,
+  info = "tsne gpu (bh_qd) is deterministic for a fixed seed"
+)
+
 ### cpu fft variants -----------------------------------------------------------
 
 if (.Platform$OS.type == "unix") {
@@ -215,6 +257,26 @@ expect_true(
   info = "tsne gpu from pre-computed kNN correctly separates clusters"
 )
 
+tsne_gpu_bh_qd_knn <- tsne_gpu(
+  data = cluster_data,
+  knn = precomputed_knn,
+  perplexity = 15,
+  approx_type = "bh_qd",
+  tsne_params = params_tsne_gpu(max_depth = 5L),
+  .verbose = FALSE
+)
+
+tsne_gpu_bh_qd_knn_tests <- check_cluster_separation(
+  embd = tsne_gpu_bh_qd_knn,
+  cluster_membership = cluster_membership
+)
+
+expect_true(
+  current = mean(tsne_gpu_bh_qd_knn_tests$within_dists) <
+    mean(tsne_gpu_bh_qd_knn_tests$between_dists),
+  info = "tsne gpu bh_qd with max_depth = 5 from pre-computed kNN separates clusters"
+)
+
 ## .prepare_tsne_params_gpu ----------------------------------------------------
 
 ### parameter composition ------------------------------------------------------
@@ -273,6 +335,12 @@ expect_equal(
   current = prep_defaults$early_exag_iter,
   target = 250L,
   info = "default early_exag_iter is 250"
+)
+
+expect_equal(
+  current = prep_defaults$max_depth,
+  target = 7L,
+  info = "default max_depth is 7"
 )
 
 expect_equal(

@@ -85,6 +85,11 @@ where
         .and_then(|v| v.as_integer())
         .unwrap_or(3) as usize;
 
+    let max_depth = optim_params
+        .get("max_depth")
+        .and_then(|v| v.as_integer())
+        .unwrap_or(7) as usize;
+
     Ok(TsneOptimParams {
         n_epochs,
         lr,
@@ -93,6 +98,7 @@ where
         late_exag_factor,
         theta,
         n_interp_points,
+        max_depth,
     })
 }
 

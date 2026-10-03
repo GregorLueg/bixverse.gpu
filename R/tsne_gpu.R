@@ -59,9 +59,11 @@
 #' 5 and 50. Defaults to `20.0`.
 #' @param approx_type Character. Approximation method for computing repulsive
 #' forces. One of `"fft_3k_gpu"` (three-kernel FFT interpolation on the GPU,
-#' the default), `"bh"` for Barnes-Hut, `"fft"` for FFT-accelerated
+#' the default), `"bh"` for Barnes-Hut, `"bh_qd"` for the quick-and-dirty
+#' Barnes-Hut of qdtsne (tree depth capped at `max_depth` in
+#' [params_tsne_gpu()], faster and coarser), `"fft"` for FFT-accelerated
 #' interpolation or `"fft_3k"` for its three-kernel variant (one forward and
-#' three inverse FFTs per epoch instead of four each). The last three run on
+#' three inverse FFTs per epoch instead of four each). The last four run on
 #' the CPU; `"fft"` and `"fft_3k"` are only available on Unix systems.
 #' @param knn_method Character. GPU-accelerated (approximate) nearest
 #' neighbour method to use. One of `"nndescent"`, `"exhaustive"`, or `"ivf"`.
@@ -85,7 +87,7 @@ tsne_gpu <- function(
   knn = NULL,
   n_dim = 2L,
   perplexity = 20.0,
-  approx_type = c("fft_3k_gpu", "bh", "fft", "fft_3k"),
+  approx_type = c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k"),
   knn_method = c(
     "ivf",
     "exhaustive",
@@ -119,7 +121,10 @@ tsne_gpu <- function(
   )
   checkmate::qassert(n_dim, "I1[2,2]")
   checkmate::qassert(perplexity, "N1[1,)")
-  checkmate::assertChoice(approx_type, c("fft_3k_gpu", "bh", "fft", "fft_3k"))
+  checkmate::assertChoice(
+    approx_type,
+    c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")
+  )
   checkmate::qassert(seed, "I1")
   checkmate::qassert(use_high_precision, c("0", "B1"))
   checkmate::qassert(.verbose, c("B1", "I1[0, 2]"))

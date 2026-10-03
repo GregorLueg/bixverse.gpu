@@ -256,17 +256,19 @@ rs_umap_from_knn_gpu <- function(embd, knn_data, n_dim, min_dist, spread, k, uma
 #' @description
 #' `r lifecycle::badge("experimental")`
 #' Wraps the tSNE implementation in manifolds-rs. The kNN search runs on the
-#' GPU. `"fft_3k_gpu"` runs the optimiser on the GPU as well; `"bh"`, `"fft"`
-#' and `"fft_3k"` keep it on the CPU.
+#' GPU. `"fft_3k_gpu"` runs the optimiser on the GPU as well; `"bh"`,
+#' `"bh_qd"`, `"fft"` and `"fft_3k"` keep it on the CPU.
 #'
 #' @param embd Numerical matrix. The data to use to generate the embeddings.
 #' Should be of dimensions samples x features.
 #' @param n_dim Integer. Number of tSNE dimensions to return. Needs to be two,
 #' others are not supported.
 #' @param perplexity Numeric. The tSNE perplexity parameter.
-#' @param approx_type String. One of `c("fft_3k_gpu", "bh", "fft", "fft_3k")`.
-#' Which repulsive-force approximation to use. `"fft"` and `"fft_3k"` need
-#' FFTW and are not available on Windows.
+#' @param approx_type String. One of
+#' `c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")`. Which repulsive-force
+#' approximation to use; `"bh_qd"` is the depth-capped quick-and-dirty
+#' Barnes-Hut. `"fft"` and `"fft_3k"` need FFTW and are not available on
+#' Windows.
 #' @param tsne_params Named list. List that contains all of the key parameters
 #' for the tSNE generation.
 #' @param seed Integer. Seed for reproducibility.
@@ -286,7 +288,8 @@ rs_tsne_gpu <- function(embd, n_dim, perplexity, approx_type, tsne_params, seed,
 #' @description
 #' `r lifecycle::badge("experimental")`
 #' Wraps the tSNE implementation in manifolds-rs. `"fft_3k_gpu"` runs the
-#' optimiser on the GPU; `"bh"`, `"fft"` and `"fft_3k"` keep it on the CPU.
+#' optimiser on the GPU; `"bh"`, `"bh_qd"`, `"fft"` and `"fft_3k"` keep it on
+#' the CPU.
 #' This version takes a pre-computed kNN graph, please see
 #' [new_nearest_neighbour()].
 #'
@@ -296,9 +299,11 @@ rs_tsne_gpu <- function(embd, n_dim, perplexity, approx_type, tsne_params, seed,
 #' @param n_dim Integer. Number of tSNE dimensions to return. Needs to be two,
 #' others are not supported.
 #' @param perplexity Numeric. The tSNE perplexity parameter.
-#' @param approx_type String. One of `c("fft_3k_gpu", "bh", "fft", "fft_3k")`.
-#' Which repulsive-force approximation to use. `"fft"` and `"fft_3k"` need
-#' FFTW and are not available on Windows.
+#' @param approx_type String. One of
+#' `c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")`. Which repulsive-force
+#' approximation to use; `"bh_qd"` is the depth-capped quick-and-dirty
+#' Barnes-Hut. `"fft"` and `"fft_3k"` need FFTW and are not available on
+#' Windows.
 #' @param tsne_params Named list. List that contains all of the key parameters
 #' for the tSNE generation.
 #' @param seed Integer. Seed for reproducibility.

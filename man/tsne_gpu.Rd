@@ -9,7 +9,7 @@ tsne_gpu(
   knn = NULL,
   n_dim = 2L,
   perplexity = 20,
-  approx_type = c("fft_3k_gpu", "bh", "fft", "fft_3k"),
+  approx_type = c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k"),
   knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
@@ -35,9 +35,11 @@ nearest neighbours used in manifold learning. Typical values are between
 
 \item{approx_type}{Character. Approximation method for computing repulsive
 forces. One of \code{"fft_3k_gpu"} (three-kernel FFT interpolation on the GPU,
-the default), \code{"bh"} for Barnes-Hut, \code{"fft"} for FFT-accelerated
+the default), \code{"bh"} for Barnes-Hut, \code{"bh_qd"} for the quick-and-dirty
+Barnes-Hut of qdtsne (tree depth capped at \code{max_depth} in
+\code{\link[=params_tsne_gpu]{params_tsne_gpu()}}, faster and coarser), \code{"fft"} for FFT-accelerated
 interpolation or \code{"fft_3k"} for its three-kernel variant (one forward and
-three inverse FFTs per epoch instead of four each). The last three run on
+three inverse FFTs per epoch instead of four each). The last four run on
 the CPU; \code{"fft"} and \code{"fft_3k"} are only available on Unix systems.}
 
 \item{knn_method}{Character. GPU-accelerated (approximate) nearest
