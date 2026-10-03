@@ -25,7 +25,7 @@ tsne_gpu_sc(
   modality = c("rna", "adt", "wnn"),
   n_dim = 2L,
   perplexity = 20,
-  approx_type = c("fft_3k_gpu", "bh", "fft", "fft_3k"),
+  approx_type = c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k"),
   knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
@@ -80,7 +80,8 @@ tsne_gpu_sc(
 - approx_type:
 
   String. Approximation method. One of `"fft_3k_gpu"` (three-kernel FFT
-  on the GPU, the default), `"bh"` (Barnes-Hut), `"fft"` or `"fft_3k"`
+  on the GPU, the default), `"bh"` (Barnes-Hut), `"bh_qd"`
+  (quick-and-dirty Barnes-Hut, depth-capped tree), `"fft"` or `"fft_3k"`
   (CPU FFT interpolation, four or three kernels). The CPU FFT variants
   are Unix-only. See
   [`tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/tsne_gpu.md).

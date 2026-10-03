@@ -20,13 +20,14 @@ Current split of work:
   `"ivf"`, `"exhaustive"`).
 - **Affinities**: CPU.
 - **Gradient descent**: GPU with `"fft_3k_gpu"` (the default). CPU with
-  `"bh"`, `"fft"` or `"fft_3k"`, the same Rust code as
+  `"bh"`, `"bh_qd"`, `"fft"` or `"fft_3k"`, the same Rust code as
   [`manifoldsR::tsne()`](https://gregorlueg.github.io/manifoldsR/reference/tsne.html).
 
 ``` r
 
 library(bixverse.gpu)
 library(manifoldsR)
+#> Warning: package 'manifoldsR' was built under R version 4.5.3
 library(data.table)
 #> Warning: package 'data.table' was built under R version 4.5.2
 library(ggplot2)
@@ -163,13 +164,21 @@ t-SNE’s non-deterministic optimisation.
 
 ## Choosing an optimiser
 
-Four options via `approx_type`:
+Five options via `approx_type`:
 
 - **`"fft_3k_gpu"`**: the default. FFT-interpolated repulsion with three
   kernels (`q`, `q^2 dx`, `q^2 dy`), fully on the GPU. Always runs in
   fp32 (f64 kernels don’t run on Metal); `use_high_precision = TRUE` is
   ignored with a warning. Works on Windows, no FFTW needed.
 - **`"bh"`**: Barnes-Hut on the CPU. `O(N log N)`.
+- **`"bh_qd"`**: the quick-and-dirty Barnes-Hut from
+  [qdtsne](https://github.com/libscran/qdtsne), on the CPU. Tree depth
+  capped at `max_depth` in
+  [`params_tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_tsne_gpu.md)
+  (default `7L`), repulsion computed once per leaf from its centre of
+  mass. Coarser repulsive forces, faster than `"bh"`. Works on every
+  platform. qdtsne recommends `max_depth` between 7 and
+  10. 
 - **`"fft"`**: FFT interpolation on the CPU with the classic four-term
   expansion. `O(N)` with a larger constant.
 - **`"fft_3k"`**: the CPU twin of `"fft_3k_gpu"`. One forward and three
@@ -220,9 +229,9 @@ Same data, same kNN backend, only the optimiser changes.
 ``` r
 
 approx_types <- if (.Platform$OS.type == "unix") {
-  c("fft_3k_gpu", "bh", "fft", "fft_3k")
+  c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")
 } else {
-  c("fft_3k_gpu", "bh")
+  c("fft_3k_gpu", "bh", "bh_qd")
 }
 
 timings <- rbindlist(lapply(approx_types, \(approx) {
@@ -242,10 +251,11 @@ timings <- rbindlist(lapply(approx_types, \(approx) {
 timings
 #>    approx_type seconds
 #>         <char>   <num>
-#> 1:  fft_3k_gpu    2.35
-#> 2:          bh   17.90
-#> 3:         fft    5.62
-#> 4:      fft_3k    4.30
+#> 1:  fft_3k_gpu    2.34
+#> 2:          bh   18.06
+#> 3:       bh_qd    3.58
+#> 4:         fft    5.63
+#> 5:      fft_3k    4.05
 ```
 
 ## Using a pre-computed kNN graph

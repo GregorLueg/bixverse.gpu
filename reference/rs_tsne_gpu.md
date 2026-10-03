@@ -2,7 +2,7 @@
 
 **\[experimental\]** Wraps the tSNE implementation in manifolds-rs. The
 kNN search runs on the GPU. `"fft_3k_gpu"` runs the optimiser on the GPU
-as well; `"bh"`, `"fft"` and `"fft_3k"` keep it on the CPU.
+as well; `"bh"`, `"bh_qd"`, `"fft"` and `"fft_3k"` keep it on the CPU.
 
 ## Usage
 
@@ -37,9 +37,10 @@ rs_tsne_gpu(
 
 - approx_type:
 
-  String. One of `c("fft_3k_gpu", "bh", "fft", "fft_3k")`. Which
-  repulsive-force approximation to use. `"fft"` and `"fft_3k"` need FFTW
-  and are not available on Windows.
+  String. One of `c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")`.
+  Which repulsive-force approximation to use; `"bh_qd"` is the
+  depth-capped quick-and-dirty Barnes-Hut. `"fft"` and `"fft_3k"` need
+  FFTW and are not available on Windows.
 
 - tsne_params:
 

@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,7 +80,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>GPU-accelerated t-SNE</h1>
 
       <p class="author">Gregor Lueg</p>
-      <p class="date">2026-10-02</p>
+      <p class="date">2026-10-03</p>
 
 
       <div class="d-none name"><code></code></div>
@@ -102,12 +102,13 @@
 <li>
 <strong>Affinities</strong>: CPU.</li>
 <li>
-<strong>Gradient descent</strong>: GPU with <code>"fft_3k_gpu"</code> (the default). CPU with <code>"bh"</code>, <code>"fft"</code> or <code>"fft_3k"</code>, the same Rust code as <code><a href="https://gregorlueg.github.io/manifoldsR/reference/tsne.html" class="external-link">manifoldsR::tsne()</a></code>.</li>
+<strong>Gradient descent</strong>: GPU with <code>"fft_3k_gpu"</code> (the default). CPU with <code>"bh"</code>, <code>"bh_qd"</code>, <code>"fft"</code> or <code>"fft_3k"</code>, the same Rust code as <code><a href="https://gregorlueg.github.io/manifoldsR/reference/tsne.html" class="external-link">manifoldsR::tsne()</a></code>.</li>
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse.gpu/">bixverse.gpu</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/manifoldsR/" class="external-link">manifoldsR</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: package 'manifoldsR' was built under R version 4.5.3</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: package 'data.table' was built under R version 4.5.2</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
@@ -238,12 +239,17 @@
 <p>Structurally the embeddings agree. Differences are within the noise of t-SNE’s non-deterministic optimisation.</p>
 </section></section><section class="level2"><h2 id="choosing-an-optimiser">Choosing an optimiser<a class="anchor" aria-label="anchor" href="#choosing-an-optimiser"></a>
 </h2>
-<p>Four options via <code>approx_type</code>:</p>
+<p>Five options via <code>approx_type</code>:</p>
 <ul>
 <li>
 <strong><code>"fft_3k_gpu"</code></strong>: the default. FFT-interpolated repulsion with three kernels (<code>q</code>, <code>q^2 dx</code>, <code>q^2 dy</code>), fully on the GPU. Always runs in fp32 (f64 kernels don’t run on Metal); <code>use_high_precision = TRUE</code> is ignored with a warning. Works on Windows, no FFTW needed.</li>
 <li>
 <strong><code>"bh"</code></strong>: Barnes-Hut on the CPU. <code>O(N log N)</code>.</li>
+<li>
+<strong><code>"bh_qd"</code></strong>: the quick-and-dirty Barnes-Hut from <a href="https://github.com/libscran/qdtsne" class="external-link">qdtsne</a>, on the CPU. Tree depth capped at <code>max_depth</code> in <code><a href="../reference/params_tsne_gpu.html">params_tsne_gpu()</a></code> (default <code>7L</code>), repulsion computed once per leaf from its centre of mass. Coarser repulsive forces, faster than <code>"bh"</code>. Works on every platform. qdtsne recommends <code>max_depth</code> between 7 and
+<ol start="10" type="1"><li>
+</li></ol>
+</li>
 <li>
 <strong><code>"fft"</code></strong>: FFT interpolation on the CPU with the classic four-term expansion. <code>O(N)</code> with a larger constant.</li>
 <li>
@@ -286,9 +292,9 @@
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">approx_types</span> <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="va">.Platform</span><span class="op">$</span><span class="va">OS.type</span> <span class="op">==</span> <span class="st">"unix"</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fft_3k_gpu"</span>, <span class="st">"bh"</span>, <span class="st">"fft"</span>, <span class="st">"fft_3k"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fft_3k_gpu"</span>, <span class="st">"bh"</span>, <span class="st">"bh_qd"</span>, <span class="st">"fft"</span>, <span class="st">"fft_3k"</span><span class="op">)</span></span>
 <span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fft_3k_gpu"</span>, <span class="st">"bh"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fft_3k_gpu"</span>, <span class="st">"bh"</span>, <span class="st">"bh_qd"</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="va">timings</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/rbindlist.html" class="external-link">rbindlist</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">approx_types</span>, \<span class="op">(</span><span class="va">approx</span><span class="op">)</span> <span class="op">{</span></span>
@@ -308,10 +314,11 @@
 <span><span class="va">timings</span></span>
 <span><span class="co">#&gt;    approx_type seconds</span></span>
 <span><span class="co">#&gt;         &lt;char&gt;   &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:  fft_3k_gpu    2.35</span></span>
-<span><span class="co">#&gt; 2:          bh   17.90</span></span>
-<span><span class="co">#&gt; 3:         fft    5.62</span></span>
-<span><span class="co">#&gt; 4:      fft_3k    4.30</span></span></code></pre></div>
+<span><span class="co">#&gt; 1:  fft_3k_gpu    2.34</span></span>
+<span><span class="co">#&gt; 2:          bh   18.06</span></span>
+<span><span class="co">#&gt; 3:       bh_qd    3.58</span></span>
+<span><span class="co">#&gt; 4:         fft    5.63</span></span>
+<span><span class="co">#&gt; 5:      fft_3k    4.05</span></span></code></pre></div>
 </div>
 </section></section><section class="level2"><h2 id="using-a-pre-computed-knn-graph">Using a pre-computed kNN graph<a class="anchor" aria-label="anchor" href="#using-a-pre-computed-knn-graph"></a>
 </h2>

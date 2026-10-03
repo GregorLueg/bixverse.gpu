@@ -13,7 +13,7 @@ tsne_gpu(
   knn = NULL,
   n_dim = 2L,
   perplexity = 20,
-  approx_type = c("fft_3k_gpu", "bh", "fft", "fft_3k"),
+  approx_type = c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k"),
   knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
@@ -53,11 +53,13 @@ tsne_gpu(
 
   Character. Approximation method for computing repulsive forces. One of
   `"fft_3k_gpu"` (three-kernel FFT interpolation on the GPU, the
-  default), `"bh"` for Barnes-Hut, `"fft"` for FFT-accelerated
-  interpolation or `"fft_3k"` for its three-kernel variant (one forward
-  and three inverse FFTs per epoch instead of four each). The last three
-  run on the CPU; `"fft"` and `"fft_3k"` are only available on Unix
-  systems.
+  default), `"bh"` for Barnes-Hut, `"bh_qd"` for the quick-and-dirty
+  Barnes-Hut of qdtsne (tree depth capped at `max_depth` in
+  [`params_tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_tsne_gpu.md),
+  faster and coarser), `"fft"` for FFT-accelerated interpolation or
+  `"fft_3k"` for its three-kernel variant (one forward and three inverse
+  FFTs per epoch instead of four each). The last four run on the CPU;
+  `"fft"` and `"fft_3k"` are only available on Unix systems.
 
 - knn_method:
 

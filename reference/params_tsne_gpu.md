@@ -13,6 +13,7 @@ params_tsne_gpu(
   late_exag_factor = NULL,
   theta = 0.5,
   n_interp_points = 3L,
+  max_depth = 7L,
   init = c("pca", "spectral", "random"),
   randomised = TRUE
 )
@@ -55,6 +56,13 @@ params_tsne_gpu(
   acceleration (`"fft"`, `"fft_3k"` and `"fft_3k_gpu"`). Defaults to
   `3L`.
 
+- max_depth:
+
+  Integer. Maximum Barnes-Hut tree depth for the quick-and-dirty
+  optimiser (`"bh_qd"`). Smaller is faster and coarser; qdtsne
+  recommends `7` to `10`. No effect on the other optimisers. Defaults to
+  `7L`.
+
 - init:
 
   String. Embedding initialisation method. One of
@@ -92,6 +100,11 @@ A named list with the following elements:
 - n_interp_points - Integer. Number of interpolation points per grid
   cell for FFT acceleration (`"fft"`, `"fft_3k"` and `"fft_3k_gpu"`).
   Defaults to `3L`.
+
+- max_depth - Integer. Maximum Barnes-Hut tree depth for the
+  quick-and-dirty optimiser (`"bh_qd"`). Smaller is faster and coarser;
+  qdtsne recommends `7` to `10`. No effect on the other optimisers.
+  Defaults to `7L`.
 
 - init - String. Embedding initialisation method. One of
   `c("pca", "spectral", "random")`. Defaults to `"pca"`.

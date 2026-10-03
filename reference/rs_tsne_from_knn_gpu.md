@@ -1,8 +1,8 @@
 # tSNE implementation from a pre-computed kNN graph
 
 **\[experimental\]** Wraps the tSNE implementation in manifolds-rs.
-`"fft_3k_gpu"` runs the optimiser on the GPU; `"bh"`, `"fft"` and
-`"fft_3k"` keep it on the CPU. This version takes a pre-computed kNN
+`"fft_3k_gpu"` runs the optimiser on the GPU; `"bh"`, `"bh_qd"`, `"fft"`
+and `"fft_3k"` keep it on the CPU. This version takes a pre-computed kNN
 graph, please see
 [`new_nearest_neighbour()`](https://gregorlueg.github.io/manifoldsR/reference/new_nearest_neighbour.html).
 
@@ -44,9 +44,10 @@ rs_tsne_from_knn_gpu(
 
 - approx_type:
 
-  String. One of `c("fft_3k_gpu", "bh", "fft", "fft_3k")`. Which
-  repulsive-force approximation to use. `"fft"` and `"fft_3k"` need FFTW
-  and are not available on Windows.
+  String. One of `c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")`.
+  Which repulsive-force approximation to use; `"bh_qd"` is the
+  depth-capped quick-and-dirty Barnes-Hut. `"fft"` and `"fft_3k"` need
+  FFTW and are not available on Windows.
 
 - tsne_params:
 

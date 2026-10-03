@@ -1,5 +1,18 @@
 # Changelog
 
+## bixverse.gpu 0.3.6
+
+### Features
+
+- Quick-and-dirty Barnes-Hut tSNE optimiser from
+  [qdtsne](https://github.com/libscran/qdtsne) wired into
+  [`tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/tsne_gpu.md)
+  and
+  [`tsne_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/tsne_gpu_sc.md)
+  via `approx_type = "bh_qd"`. Tree depth is set with `max_depth` in
+  [`params_tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_tsne_gpu.md).
+  Runs on the CPU, like `"bh"`.
+
 ## bixverse.gpu 0.3.5
 
 ### Features
