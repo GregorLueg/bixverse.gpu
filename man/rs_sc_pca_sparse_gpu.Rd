@@ -24,7 +24,7 @@ you wish to use the PFlogPF transformation.}
 \item{no_pcs}{Integer. Number of PCs to calculate.}
 
 \item{pca_params}{Named list. Contains the parameters to use for this PCA
-run. (Randomised will ignore, as gpu only supports randomised.)}
+run. \code{svd_solver} is ignored, the GPU path is always randomised.}
 
 \item{cell_indices}{Integer. The cell indices to use. (0-indexed!)}
 
@@ -51,10 +51,8 @@ SVD).
 Helper function that will calculate sparse PCA without scaling the data.
 This has the advantage that you avoid creating a large dense matrix due
 to scaling; however, it has the disadvantage that the first PC will be
-heavily influenced by average expression. If random_svd is set to \code{FALSE},
-Lanczos iterations will be used to solve the SVD; if random_svd is set
-to \code{TRUE}, the randomised version will be used with multiplication of the
-initial sparse matrix with a much smaller random dense matrix, avoiding
-holding a large dense matrix in memory.
+heavily influenced by average expression. The SVD is always randomised:
+the sparse matrix is multiplied with a much smaller random dense matrix,
+avoiding holding a large dense matrix in memory.
 }
 \keyword{internal}
