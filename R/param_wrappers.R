@@ -210,3 +210,68 @@ params_sc_bbknn_gpu <- function(
 
   purrr::list_flatten(params, name_spec = "{inner}")
 }
+
+### fastMNN GPU ----------------------------------------------------------------
+
+#' Wrapper function for the GPU fastMNN parameters
+#'
+#' @description GPU counterpart to [bixverse::params_sc_fastmnn()]. Same
+#' fastMNN knobs minus the PCA ones, since the GPU path corrects the PCA
+#' already stored in the object. The kNN block is the GPU one, see
+#' [params_knn_gpu_defaults()], with `k` and `ann_dist` defaulting to the CPU
+#' values.
+#'
+#' @details `extract_knn` is rejected rather than silently ignored: every
+#' search in fastMNN is a cross-query between two sets of cells, and
+#' extraction only applies to a self-query. `k = 0L` is rejected as well,
+#' since fastMNN has no data-driven fallback for it.
+#'
+#' @param ndist Numeric. Number of median distances for the tricube kernel
+#' bandwidth. Defaults to `3`.
+#' @param cos_norm Boolean. Apply cosine normalisation before computing
+#' distances. Defaults to `TRUE`.
+#' @param knn List. Optional overrides for the kNN block. Validated against
+#' [params_knn_gpu_defaults()] minus `extract_knn`. Unknown keys are an
+#' error, not a silent pass-through. Defaults to `k = 20L` and
+#' `ann_dist = "cosine"`.
+#'
+#' @returns A flat named list with all GPU fastMNN parameters.
+#'
+#' @export
+#'
+#' @references Haghverdi, et al., Nat Biotechnol, 2018
+params_sc_fastmnn_gpu <- function(
+  ndist = 3,
+  cos_norm = TRUE,
+  knn = list()
+) {
+  # checks
+  checkmate::qassert(ndist, "N1(0,)")
+  checkmate::qassert(cos_norm, "B1")
+  checkmate::assertList(knn)
+
+  knn_defaults <- params_knn_gpu_defaults()
+  knn_defaults[["extract_knn"]] <- NULL
+  knn_defaults[["k"]] <- 20L
+  knn_defaults[["ann_dist"]] <- "cosine"
+
+  unknown_knn <- setdiff(names(knn), names(knn_defaults))
+  if (length(unknown_knn) > 0L) {
+    stop(sprintf(
+      "Unknown kNN parameter(s) for GPU fastMNN: %s. Allowed: %s.",
+      paste(unknown_knn, collapse = ", "),
+      paste(names(knn_defaults), collapse = ", ")
+    ))
+  }
+
+  knn <- utils::modifyList(knn_defaults, knn, keep.null = TRUE)
+  knn[["knn_method"]] <- .normalise_gpu_knn_method(knn[["knn_method"]])
+
+  params <- list(
+    ndist = ndist,
+    cos_norm = cos_norm,
+    knn = knn
+  )
+
+  purrr::list_flatten(params, name_spec = "{inner}")
+}

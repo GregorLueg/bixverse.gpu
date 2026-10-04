@@ -1027,6 +1027,30 @@ rs_fast_cluster_grid_gpu <- function(embd, resolutions, n_centroids, fc_params, 
 #' @keywords internal
 rs_bbknn_gpu <- function(embd, batch_labels, bbknn_params, seed, verbose) .Call(wrap__rs_bbknn_gpu, embd, batch_labels, bbknn_params, seed, verbose)
 
+#' GPU: fastMNN batch correction
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU equivalent of `bixverse::rs_mnn`, implementing the fast mutual nearest
+#' neighbour correction from Haghverdi, et al. The MNN searches and the
+#' tricube neighbour search run on the WGPU backend; everything else is
+#' shared with the CPU implementation.
+#'
+#' @param embd Numerical matrix. The embedding to correct, usually PCA. Rows
+#' represent cells.
+#' @param batch_labels Integer vector. These represent to which batch a given
+#' cell belongs. Needs to be 0-indexed!
+#' @param fastmnn_params List. Parameter list, see [params_sc_fastmnn_gpu()].
+#' @param seed Integer. Seed for reproducibility purposes.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @return The batch-corrected embedding, cells x dimensions, in the input
+#' cell order.
+#'
+#' @export
+rs_fast_mnn_gpu <- function(embd, batch_labels, fastmnn_params, seed, verbose) .Call(wrap__rs_fast_mnn_gpu, embd, batch_labels, fastmnn_params, seed, verbose)
+
 #' GPU: fit the NEBULA negative binomial gamma mixed model over single cells
 #'
 #' @description

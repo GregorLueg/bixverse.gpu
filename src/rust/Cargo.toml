@@ -51,3 +51,7 @@ strip = true
 [[bin]]
 name = "document"
 path = "document.rs"
+
+# LOCAL TEST ONLY: remove before merge
+[patch.crates-io]
+bixverse-rs = { path = "/Users/gregorlueg/repos/shared/bixverse-rs/.claude/worktrees/swirling-swinging-dawn" }
