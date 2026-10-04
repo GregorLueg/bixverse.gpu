@@ -61,8 +61,8 @@ A flat named list with all GPU Scrublet parameters.
 \description{
 GPU counterpart to \code{\link[bixverse:params_scrublet]{bixverse::params_scrublet()}}. Two
 differences from the CPU list. The \code{pca} sub-list is gone: the GPU SVD is
-always randomised, so \code{random_svd} and \code{sparse} have nothing to switch and
-\code{no_pcs} is a plain argument. And the kNN block is backend dependent, see
+always randomised, so \code{svd_solver} has nothing to switch and \code{no_pcs} is a
+plain argument. And the kNN block is backend dependent, see
 \code{knn_backend}.
 }
 \details{
@@ -74,11 +74,8 @@ embedding \code{(1 + sim_doublet_ratio) * n_cells} rows tall, and \code{k = 0L} 
 scales \code{k} by the same factor, so a 20k-cell run searches at \code{k} around
 175. Exhaustive barely notices \code{k}, since the scan is the cost and \code{k} only
 sizes the top-k selection. NN-descent notices a lot: its build degree
-tracks \code{k}, so the descent does more work per node as \code{k} climbs. Measured
-at 20k cells and 30 PCs, exhaustive took 0.98s against 38.8s for
-NN-descent at \code{k = 200}. NN-descent only came out ahead at \code{k = 10}.
-
-\code{"ivf"} is the one worth trying: it was the quickest of the three across
+tracks \code{k}, so the descent does more work per node as \code{k} climbs.  \code{"ivf"} is
+the one worth trying: it was the quickest of the three across
 that sweep and holds a Pearson above 0.99 against exhaustive.
 
 Recall matters more here than elsewhere. The doublet score is a neighbour

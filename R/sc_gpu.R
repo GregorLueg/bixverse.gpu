@@ -473,12 +473,12 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
 #' @param no_pcs Integer. Number of PCs to calculate.
 #' @param pca_params Named list. Controls the parameters to be used for the
 #' PCA calculation which is single cell-specific, see [params_sc_pca()].
+#' `svd_solver` is ignored: the GPU path is always randomised.
 #' @param hvg Optional integer. If you want to provide your own HVG genes.
 #' Otherwise, the function will default to what is found in
 #' [bixverse::get_hvg()]. Please provide 1-indexed genes here! If you provide
 #' these, the internal HVG will be overwritten.
-#' @param seed Integer. Controls reproducibility. Only relevant if
-#' `randomised_svd = TRUE`.
+#' @param seed Integer. Seed for the randomised SVD.
 #' @param .verbose Boolean or integer. Controls verbosity and returns run times.
 #' `FALSE` -> quiet, `TRUE` or `1L` -> normal verbosity, `2L` -> detailed
 #' verbosity.
@@ -518,6 +518,7 @@ S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
 ) {
   checkmate::assertClass(object, "bixverse::SingleCells")
   checkmate::qassert(no_pcs, "I1")
+  bixverse:::assertScPcaParams(pca_params)
   checkmate::qassert(hvg, c("I+", "0"))
   checkmate::qassert(seed, "I1")
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))

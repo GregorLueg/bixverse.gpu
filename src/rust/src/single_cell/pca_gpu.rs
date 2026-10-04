@@ -28,18 +28,16 @@ extendr_module! {
 /// Helper function that will calculate sparse PCA without scaling the data.
 /// This has the advantage that you avoid creating a large dense matrix due
 /// to scaling; however, it has the disadvantage that the first PC will be
-/// heavily influenced by average expression. If random_svd is set to `FALSE`,
-/// Lanczos iterations will be used to solve the SVD; if random_svd is set
-/// to `TRUE`, the randomised version will be used with multiplication of the
-/// initial sparse matrix with a much smaller random dense matrix, avoiding
-/// holding a large dense matrix in memory.
+/// heavily influenced by average expression. The SVD is always randomised:
+/// the sparse matrix is multiplied with a much smaller random dense matrix,
+/// avoiding holding a large dense matrix in memory.
 ///
 /// @param f_path_gene String. Path to the `counts_genes.bin` file.
 /// @param f_path_cell String. Path to the `counts_cells.bin` file. Used if
 /// you wish to use the PFlogPF transformation.
 /// @param no_pcs Integer. Number of PCs to calculate.
 /// @param pca_params Named list. Contains the parameters to use for this PCA
-/// run. (Randomised will ignore, as gpu only supports randomised.)
+/// run. `svd_solver` is ignored, the GPU path is always randomised.
 /// @param cell_indices Integer. The cell indices to use. (0-indexed!)
 /// @param gene_indices Integer. The gene indices to use. (0-indexed!)
 /// @param seed Integer. Random seed for the randomised SVD.
