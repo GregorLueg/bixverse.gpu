@@ -337,3 +337,71 @@ checkScBbknnGpu <- function(x) {
 #'
 #' @keywords internal
 assertScBbknnGpu <- checkmate::makeAssertionFunction(checkScBbknnGpu)
+
+## fastmnn gpu -----------------------------------------------------------------
+
+#' Check GPU fastMNN parameters
+#'
+#' @description Checkmate extension for checking the GPU fastMNN parameters.
+#'
+#' @param x The list to check/assert.
+#'
+#' @return \code{TRUE} if the check was successful, otherwise an error message.
+#'
+#' @keywords internal
+checkScFastmnnGpu <- function(x) {
+  res <- checkmate::checkList(x)
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- checkmate::checkNames(
+    names(x),
+    must.include = c("ndist", "cos_norm", "k", "knn_method", "ann_dist")
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  # k = 0L is legal in the shared GPU block, but fastMNN has no fallback for it
+  rules <- list(
+    "ndist" = "N1(0,)",
+    "cos_norm" = "B1",
+    "k" = "I1[1,)"
+  )
+
+  res <- purrr::imap_lgl(x, \(elem, name) {
+    if (name %in% names(rules)) checkmate::qtest(elem, rules[[name]]) else TRUE
+  })
+  if (!isTRUE(all(res))) {
+    broken_elem <- names(res)[which(!res)][1]
+    return(sprintf(
+      paste(
+        "The element `%s` in the GPU fastMNN parameters is incorrect.",
+        "ndist must be a positive numeric; cos_norm must be a boolean;",
+        "k must be an integer >= 1.",
+        "See ?params_sc_fastmnn_gpu."
+      ),
+      broken_elem
+    ))
+  }
+
+  knn_keys <- c("k", .BBKNN_GPU_KNN_KEYS)
+  .check_gpu_knn_block(x[names(x) %in% knn_keys], knn_keys)
+}
+
+#' Assert GPU fastMNN parameters
+#'
+#' @description Checkmate extension for asserting the GPU fastMNN parameters.
+#'
+#' @inheritParams checkScFastmnnGpu
+#'
+#' @param .var.name Name of the checked object to print in assertions. Defaults
+#' to the heuristic implemented in checkmate.
+#' @param add Collection to store assertion messages. See
+#' [checkmate::makeAssertionFunction()].
+#'
+#' @return Invisibly returns the checked object if the assertion is successful.
+#'
+#' @keywords internal
+assertScFastmnnGpu <- checkmate::makeAssertionFunction(checkScFastmnnGpu)
