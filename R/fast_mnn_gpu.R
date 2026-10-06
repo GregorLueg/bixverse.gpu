@@ -159,7 +159,7 @@ S7::method(fast_mnn_gpu_sc, SingleCellsSubset) <- function(
     embd <- embd[, 1:to_take, drop = FALSE]
   }
 
-  batch_index <- as.integer(factor(unlist(object[[batch_column]]))) - 1L
+  batch_index <- as.integer(factor(object[[batch_column]][[1]])) - 1L
   checkmate::assertTRUE(length(batch_index) == nrow(embd))
 
   # Rust errors on a single batch; returning the object matches bbknn_gpu_sc()

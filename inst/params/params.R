@@ -448,7 +448,7 @@ spec_sc_harmony_v2_gpu <- param_spec(
       )
     ),
     k_means_iter = p_int(
-      30L,
+      10L,
       range = "[1,)",
       doc = paste(
         "Maximum number of k-means iterations for the initial",

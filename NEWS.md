@@ -1,3 +1,20 @@
+# bixverse.gpu 0.4.0
+
+## Features
+
+* Improved speed across various methods:
+  - GPU-accelerated kNN searches
+  - Harmony (version 2) accelerated on the GPU
+  - Randomised SVD
+* GPU-accelerated fastMNN wired in. This option only provides the kNN searches
+  themselves; if you need the PCA, you need to generate it yourself via 
+  batch-aware HVG + PCA.
+
+## Fixes
+
+* The GPU-accelerated Harmony version could converge wrongly after one 
+  iteration for some data sets. This has been fixed via a dampening factor.
+
 # bixverse.gpu 0.3.6
 
 ## Features
