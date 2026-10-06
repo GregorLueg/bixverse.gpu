@@ -284,7 +284,7 @@ S7::method(bbknn_gpu_sc, SingleCellsSubset) <- function(
   checkmate::qassert(no_neighbours_to_keep, "I1[1,)")
   checkmate::assertChoice(embd_to_use, c("pca"))
   checkmate::qassert(no_embd_to_use, c("I1", "0"))
-  assertScBbknnGpu(bbknn_params)
+  assertScBbknnGpuParams(bbknn_params)
   checkmate::qassert(seed, "I1")
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
@@ -337,6 +337,11 @@ S7::method(bbknn_gpu_sc, SingleCellsSubset) <- function(
   if (.verbose) {
     message("Running BBKNN algorithm on the GPU.")
   }
+
+  # `"nndescent"` is the package-wide name, Rust only knows `"nndescent_gpu"`
+  bbknn_params[["knn_method"]] <- .normalise_gpu_knn_method(
+    bbknn_params[["knn_method"]]
+  )
 
   bbknn_res <- rs_bbknn_gpu(
     embd = embd,
@@ -540,7 +545,7 @@ S7::method(fast_mnn_gpu_sc, SingleCellsSubset) <- function(
   )
   checkmate::qassert(batch_column, "S1")
   checkmate::qassert(no_embd_to_use, c("I1[1,)", "0"))
-  assertScFastmnnGpu(fastmnn_params)
+  assertScFastmnnGpuParams(fastmnn_params)
   checkmate::qassert(seed, "I1")
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
@@ -571,6 +576,11 @@ S7::method(fast_mnn_gpu_sc, SingleCellsSubset) <- function(
   if (.verbose) {
     message("Running fastMNN on the GPU.")
   }
+
+  # `"nndescent"` is the package-wide name, Rust only knows `"nndescent_gpu"`
+  fastmnn_params[["knn_method"]] <- .normalise_gpu_knn_method(
+    fastmnn_params[["knn_method"]]
+  )
 
   mnn_embd <- rs_fast_mnn_gpu(
     embd = embd,

@@ -644,6 +644,7 @@ spec_knn_gpu_defaults <- param_defaults(
   fields = list(
     k = p_int(
       15L,
+      range = "[0,)",
       doc = paste(
         "Number of neighbours. `0L` hands the choice to Rust, which uses",
         "`sqrt(n_cells) * 0.5` and then adjusts for the simulated doublets."
@@ -661,16 +662,19 @@ spec_knn_gpu_defaults <- param_defaults(
     ),
     n_list = p_int(
       NULL,
+      range = "[1,)",
       null_ok = TRUE,
       doc = "IVF only. Number of clusters. `NULL` gives `sqrt(n)`."
     ),
     n_probe = p_int(
       NULL,
+      range = "[1,)",
       null_ok = TRUE,
       doc = "IVF only. Clusters to probe. `NULL` gives `sqrt(n_list)`."
     ),
     graph_k = p_int(
       NULL,
+      range = "[1,)",
       null_ok = TRUE,
       doc = paste(
         "NN-descent only. Node degree of the graph after pruning. `NULL`",
@@ -679,6 +683,7 @@ spec_knn_gpu_defaults <- param_defaults(
     ),
     k_build = p_int(
       NULL,
+      range = "[1,)",
       null_ok = TRUE,
       doc = paste(
         "NN-descent only. Build degree before pruning. `NULL` gives",
@@ -687,6 +692,7 @@ spec_knn_gpu_defaults <- param_defaults(
     ),
     n_tree = p_int(
       NULL,
+      range = "[1,)",
       null_ok = TRUE,
       doc = "NN-descent only. Trees seeding the descent."
     ),
@@ -701,6 +707,7 @@ spec_knn_gpu_defaults <- param_defaults(
     ),
     refine_knn = p_int(
       NULL,
+      range = "[0,)",
       null_ok = TRUE,
       doc = paste(
         "NN-descent only. 2-hop refinement sweeps after the descent. Buys",
@@ -709,6 +716,7 @@ spec_knn_gpu_defaults <- param_defaults(
     ),
     beam_width = p_int(
       NULL,
+      range = "[1,)",
       null_ok = TRUE,
       doc = paste(
         "NN-descent only. Beam width when querying. Ignored when",
@@ -717,6 +725,7 @@ spec_knn_gpu_defaults <- param_defaults(
     ),
     max_beam_iters = p_int(
       NULL,
+      range = "[1,)",
       null_ok = TRUE,
       doc = paste(
         "NN-descent only. Beam search iterations. Ignored when",
@@ -725,6 +734,7 @@ spec_knn_gpu_defaults <- param_defaults(
     ),
     n_entry_points = p_int(
       NULL,
+      range = "[1,)",
       null_ok = TRUE,
       doc = paste(
         "NN-descent only. Entry points when querying. Ignored when",
@@ -850,6 +860,105 @@ spec_nebula_gpu <- param_spec(
         "Shrink the cell-level overdispersions towards an empirical",
         "Bayes prior once the sweep is done."
       )
+    )
+  )
+)
+
+spec_sc_bbknn_gpu <- param_spec(
+  name = "sc_bbknn_gpu",
+  title = "Wrapper function for the GPU BBKNN parameters",
+  description = paste(
+    "GPU counterpart to [bixverse::params_sc_bbknn()]. Same BBKNN knobs, but",
+    "the kNN block is the GPU one, see [params_knn_gpu_defaults()]."
+  ),
+  details = paste(
+    "Two keys of the GPU kNN block do nothing here and are rejected rather",
+    "than silently ignored. `k` is set by `neighbours_within_batch`, and",
+    "`extract_knn` only applies to a self-query, whereas BBKNN builds one",
+    "index per batch and queries each with every cell."
+  ),
+  references = "Polański, et al., Bioinformatics, 2020",
+  checker = "ScBbknnGpu",
+  label = "GPU BBKNN params",
+  hint = "See ?params_sc_bbknn_gpu.",
+  fields = list(
+    neighbours_within_batch = p_int(
+      3L,
+      range = "[1,)",
+      doc = "Number of neighbours to consider per batch."
+    ),
+    set_op_mix_ratio = p_dbl(
+      1,
+      range = "[0,1]",
+      doc = "Mixing ratio between union (1.0) and intersection (0.0)."
+    ),
+    local_connectivity = p_dbl(
+      1,
+      doc = paste(
+        "UMAP connectivity computation parameter, how many nearest",
+        "neighbours of each cell are assumed to be fully connected."
+      )
+    ),
+    trim = p_int(
+      NULL,
+      range = "[1,)",
+      null_ok = TRUE,
+      doc = paste(
+        "Trim the neighbours of each cell to these many top connectivities.",
+        "May help with population independence and improve the tidiness of",
+        "clustering. If `NULL`, it defaults to `10 * neighbours_within_batch`."
+      )
+    ),
+    knn = p_merge(
+      "knn_gpu_defaults",
+      drop = c("k", "extract_knn"),
+      strict = TRUE,
+      doc = "Optional overrides for the kNN block."
+    )
+  )
+)
+
+spec_sc_fastmnn_gpu <- param_spec(
+  name = "sc_fastmnn_gpu",
+  title = "Wrapper function for the GPU fastMNN parameters",
+  description = paste(
+    "GPU counterpart to [bixverse::params_sc_fastmnn()]. Same fastMNN knobs",
+    "minus the PCA ones, since the GPU path corrects the PCA already stored",
+    "in the object. The kNN block is the GPU one, see",
+    "[params_knn_gpu_defaults()], with `k` and `ann_dist` defaulting to the",
+    "CPU values."
+  ),
+  details = paste(
+    "`extract_knn` is rejected rather than silently ignored: every search in",
+    "fastMNN is a cross-query between two sets of cells, and extraction only",
+    "applies to a self-query. `k = 0L` is rejected as well, since fastMNN has",
+    "no data-driven fallback for it."
+  ),
+  references = "Haghverdi, et al., Nat Biotechnol, 2018",
+  checker = "ScFastmnnGpu",
+  label = "GPU fastMNN params",
+  hint = "See ?params_sc_fastmnn_gpu.",
+  extra_check = quote(
+    if (x[["k"]] < 1L) {
+      return("`k` in GPU fastMNN params must be at least 1.")
+    }
+  ),
+  fields = list(
+    ndist = p_dbl(
+      3,
+      range = "(0,)",
+      doc = "Number of median distances for the tricube kernel bandwidth."
+    ),
+    cos_norm = p_lgl(
+      TRUE,
+      doc = "Apply cosine normalisation before computing distances."
+    ),
+    knn = p_merge(
+      "knn_gpu_defaults",
+      overrides = list(k = 20L, ann_dist = "cosine"),
+      drop = "extract_knn",
+      strict = TRUE,
+      doc = "Optional overrides for the kNN block."
     )
   )
 )

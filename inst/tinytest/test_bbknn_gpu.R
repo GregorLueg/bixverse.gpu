@@ -105,12 +105,12 @@ expect_equal(
   current = params_sc_bbknn_gpu(knn = list(knn_method = "nndescent"))[[
     "knn_method"
   ]],
-  target = "nndescent_gpu",
-  info = "bbknn gpu - nndescent is translated for the Rust parser"
+  target = "nndescent",
+  info = "bbknn gpu - nndescent is kept, the method translates it for Rust"
 )
 
 expect_error(
-  current = assertScBbknnGpu(list(neighbours_within_batch = 0L)),
+  current = assertScBbknnGpuParams(list(neighbours_within_batch = 0L)),
   info = "bbknn gpu - the assertion rejects a malformed parameter list"
 )
 
@@ -146,7 +146,10 @@ for (slot in c("distances", "connectivities")) {
   expect_equal(
     current = length(csr$indptr),
     target = n_cells_kept + 1L,
-    info = sprintf("bbknn gpu - %s indptr has one entry per cell plus one", slot)
+    info = sprintf(
+      "bbknn gpu - %s indptr has one entry per cell plus one",
+      slot
+    )
   )
 }
 

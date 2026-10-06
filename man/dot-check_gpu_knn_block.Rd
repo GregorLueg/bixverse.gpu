@@ -15,9 +15,8 @@
 \code{TRUE} if the check was successful, otherwise an error message.
 }
 \description{
-Shared validation for the flat GPU kNN block, used by both the
-GPU Scrublet and the GPU BBKNN parameters. They take the same keys bar \code{k}
-and \code{extract_knn}, which BBKNN ignores, hence \code{required} rather than a
-fixed name set.
+Validation for the flat GPU kNN block of the GPU Scrublet
+parameters, whose block depends on \code{knn_backend} and so cannot come from
+devforge.
 }
 \keyword{internal}
