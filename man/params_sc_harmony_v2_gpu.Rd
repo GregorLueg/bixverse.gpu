@@ -19,7 +19,7 @@ params_sc_harmony_v2_gpu(
   batch_proportion_cutoff = 1e-05,
   use_dynamic_lambda = FALSE,
   csr_cube_count = 256L,
-  k_means_iter = 30L,
+  k_means_iter = 10L,
   k_means_init = NULL,
   fixed = FALSE,
   quantise = FALSE
@@ -73,7 +73,7 @@ building the level-CSR index on the GPU. Adjust for your hardware if needed.
 Defaults to \code{256L}.}
 
 \item{k_means_iter}{Integer. Maximum number of k-means iterations for the
-initial centroid computation. Defaults to \code{30L}.}
+initial centroid computation. Defaults to \code{10L}.}
 
 \item{k_means_init}{String or \code{NULL}. Initialisation strategy for k-means.
 Defaults to \code{NULL}.}
@@ -122,7 +122,7 @@ to \code{FALSE}.
 building the level-CSR index on the GPU. Adjust for your hardware if needed.
 Defaults to \code{256L}.
 \item k_means_iter - Integer. Maximum number of k-means iterations for the
-initial centroid computation. Defaults to \code{30L}.
+initial centroid computation. Defaults to \code{10L}.
 \item k_means_init - String or \code{NULL}. Initialisation strategy for k-means.
 Defaults to \code{NULL}.
 \item fixed - Boolean. If \code{TRUE}, centroids are fixed after initialisation.

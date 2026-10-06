@@ -656,7 +656,7 @@ S7::method(harmony_v2_gpu_sc, SingleCells) <- function(
     pca_data <- get_pca_factors(object, modality = modality)
   }
 
-  batch_indices <- unlist(object[[batch_column]])
+  batch_indices <- object[[batch_column]][[1]]
   batch_factor <- factor(batch_indices)
   batch_indices <- as.integer(batch_factor) - 1L
 

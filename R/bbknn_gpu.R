@@ -192,7 +192,7 @@ S7::method(bbknn_gpu_sc, SingleCellsSubset) <- function(
     embd <- embd[, 1:to_take]
   }
 
-  batch_index <- as.integer(factor(unlist(object[[batch_column]]))) - 1L
+  batch_index <- as.integer(factor(object[[batch_column]][[1]])) - 1L
 
   # Rust errors on a single batch, the CPU method returns the object as is.
   # Catch it here so both paths behave the same.
