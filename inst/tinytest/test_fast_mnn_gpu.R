@@ -98,12 +98,12 @@ expect_equal(
   current = params_sc_fastmnn_gpu(knn = list(knn_method = "nndescent"))[[
     "knn_method"
   ]],
-  target = "nndescent_gpu",
-  info = "fastmnn gpu - nndescent is translated for the Rust parser"
+  target = "nndescent",
+  info = "fastmnn gpu - nndescent is kept, the method translates it for Rust"
 )
 
 expect_error(
-  current = assertScFastmnnGpu(params_sc_fastmnn_gpu(knn = list(k = 0L))),
+  current = assertScFastmnnGpuParams(params_sc_fastmnn_gpu(knn = list(k = 0L))),
   info = "fastmnn gpu - k = 0 is rejected, fastMNN has no fallback for it"
 )
 

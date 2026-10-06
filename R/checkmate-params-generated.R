@@ -330,6 +330,100 @@ assertParametricUmapParams <- checkmate::makeAssertionFunction(
   checkParametricUmapParams
 )
 
+#' Check GPU BBKNN params
+#'
+#' @description Checkmate extension for the output of [params_sc_bbknn_gpu()].
+#'
+#' @param x The object to check.
+#'
+#' @returns `TRUE` if the check was successful, otherwise a
+#' checkmate-style error string.
+#'
+#' @keywords internal
+checkScBbknnGpuParams <- function(x) {
+  res <- check_list_shape(
+    x,
+    c(
+      "neighbours_within_batch",
+      "set_op_mix_ratio",
+      "local_connectivity",
+      "trim",
+      "knn_method",
+      "ann_dist",
+      "n_list",
+      "n_probe",
+      "graph_k",
+      "k_build",
+      "n_tree",
+      "delta",
+      "rho",
+      "refine_knn",
+      "beam_width",
+      "max_beam_iters",
+      "n_entry_points"
+    )
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- apply_qtest_rules(
+    x,
+    list(
+      neighbours_within_batch = "I1[1,)",
+      set_op_mix_ratio = "N1[0,1]",
+      local_connectivity = "N1",
+      trim = c("I1[1,)", "0"),
+      n_list = c("I1[1,)", "0"),
+      n_probe = c("I1[1,)", "0"),
+      graph_k = c("I1[1,)", "0"),
+      k_build = c("I1[1,)", "0"),
+      n_tree = c("I1[1,)", "0"),
+      delta = "N1",
+      rho = c("N1", "0"),
+      refine_knn = c("I1[0,)", "0"),
+      beam_width = c("I1[1,)", "0"),
+      max_beam_iters = c("I1[1,)", "0"),
+      n_entry_points = c("I1[1,)", "0")
+    ),
+    label = "GPU BBKNN params",
+    hint = "See ?params_sc_bbknn_gpu."
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- apply_choice_rules(
+    x,
+    list(
+      knn_method = c("exhaustive", "ivf", "nndescent"),
+      ann_dist = c("euclidean", "cosine")
+    ),
+    label = "GPU BBKNN params",
+    hint = "See ?params_sc_bbknn_gpu."
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  return(TRUE)
+}
+
+#' Assert GPU BBKNN params
+#'
+#' @inheritParams checkScBbknnGpuParams
+#' @param .var.name Name of the checked object to print in assertions.
+#' @param add Collection to store assertion messages. See
+#' [checkmate::makeAssertCollection()].
+#'
+#' @returns Invisibly returns the checked object if the assertion is
+#' successful.
+#'
+#' @keywords internal
+assertScBbknnGpuParams <- checkmate::makeAssertionFunction(
+  checkScBbknnGpuParams
+)
+
 #' Check GPU fast clustering params
 #'
 #' @description Checkmate extension for the output of
@@ -456,6 +550,102 @@ checkScFastClusterGpuParams <- function(x) {
 #' @keywords internal
 assertScFastClusterGpuParams <- checkmate::makeAssertionFunction(
   checkScFastClusterGpuParams
+)
+
+#' Check GPU fastMNN params
+#'
+#' @description Checkmate extension for the output of [params_sc_fastmnn_gpu()].
+#'
+#' @param x The object to check.
+#'
+#' @returns `TRUE` if the check was successful, otherwise a
+#' checkmate-style error string.
+#'
+#' @keywords internal
+checkScFastmnnGpuParams <- function(x) {
+  res <- check_list_shape(
+    x,
+    c(
+      "ndist",
+      "cos_norm",
+      "k",
+      "knn_method",
+      "ann_dist",
+      "n_list",
+      "n_probe",
+      "graph_k",
+      "k_build",
+      "n_tree",
+      "delta",
+      "rho",
+      "refine_knn",
+      "beam_width",
+      "max_beam_iters",
+      "n_entry_points"
+    )
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- apply_qtest_rules(
+    x,
+    list(
+      ndist = "N1(0,)",
+      cos_norm = "B1",
+      k = "I1[0,)",
+      n_list = c("I1[1,)", "0"),
+      n_probe = c("I1[1,)", "0"),
+      graph_k = c("I1[1,)", "0"),
+      k_build = c("I1[1,)", "0"),
+      n_tree = c("I1[1,)", "0"),
+      delta = "N1",
+      rho = c("N1", "0"),
+      refine_knn = c("I1[0,)", "0"),
+      beam_width = c("I1[1,)", "0"),
+      max_beam_iters = c("I1[1,)", "0"),
+      n_entry_points = c("I1[1,)", "0")
+    ),
+    label = "GPU fastMNN params",
+    hint = "See ?params_sc_fastmnn_gpu."
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- apply_choice_rules(
+    x,
+    list(
+      knn_method = c("exhaustive", "ivf", "nndescent"),
+      ann_dist = c("euclidean", "cosine")
+    ),
+    label = "GPU fastMNN params",
+    hint = "See ?params_sc_fastmnn_gpu."
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  if (x[["k"]] < 1L) {
+    return("`k` in GPU fastMNN params must be at least 1.")
+  }
+
+  return(TRUE)
+}
+
+#' Assert GPU fastMNN params
+#'
+#' @inheritParams checkScFastmnnGpuParams
+#' @param .var.name Name of the checked object to print in assertions.
+#' @param add Collection to store assertion messages. See
+#' [checkmate::makeAssertCollection()].
+#'
+#' @returns Invisibly returns the checked object if the assertion is
+#' successful.
+#'
+#' @keywords internal
+assertScFastmnnGpuParams <- checkmate::makeAssertionFunction(
+  checkScFastmnnGpuParams
 )
 
 #' Check Harmony v2 GPU params
