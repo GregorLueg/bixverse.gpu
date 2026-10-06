@@ -1,10 +1,6 @@
 # ------------------------------------------------------------------------------
-# GPU-accelerated single cell workflows:
-# - GPU-accelerated kNN searches (exhaustive, IVF, CAGRA) behind one generic
-# - GPU-accelerated sparse, randomised SVD. Leverages GPU-accelerated math
-#   multiplications to accelerate that part.
-# - GPU-accelerated version of Harmony (version 2 with Arrowhead)
-# - GPU-accelerated UMAP (kNN + Adam optimiser) and t-SNE (kNN only)
+# GPU-accelerated single cell processing: kNN searches, sparse randomised PCA,
+# fast Louvain clustering and Scrublet doublet detection.
 # ------------------------------------------------------------------------------
 
 # knn searches -----------------------------------------------------------------
@@ -578,39 +574,77 @@ S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
   return(object)
 }
 
-# gpu harmony ------------------------------------------------------------------
 
-#' Run Harmony v2 (GPU)
+# ------------------------------------------------------------------------------
+# GPU-accelerated fast Louvain clustering:
+# - Wraps `rs_fast_cluster_gpu` and `rs_fast_cluster_grid_gpu`.
+# - Returns the same `SingleCellFastClusters` S3 object as the CPU
+#   `bixverse::fast_cluster_sc()`, so all its getters and `add_sc_new_obs()`
+#   work unchanged.
+# - bixverse dispatches on its internal `ScOrScSubset` union. That union is not
+#   exported, so the two exported classes get a method each and both delegate to
+#   `.fast_cluster_gpu()`.
+# ------------------------------------------------------------------------------
+
+# fast clustering (gpu) --------------------------------------------------------
+
+#' Run fast Louvain clustering on a SingleCells object (GPU)
 #'
 #' @description
-#' A GPU-accelerated version of Harmony v2 by Patikas et al., 2026,
-#' implemented in Rust. Performs batch correction on PCA embeddings and stores
-#' the result as a `"harmony_gpu"` embedding in the object. Only a single
-#' batch covariate is supported on the GPU path.
+#' GPU counterpart of [bixverse::fast_cluster_sc()]. Runs k-means on the chosen
+#' embedding, builds a kNN graph on the centroids, applies Louvain clustering
+#' and propagates the memberships back to the cells. Optionally runs a grid over
+#' multiple seeds and returns stability statistics.
 #'
-#' @param object `SingleCells` class.
-#' @param batch_column String. Column name in the object containing the batch
-#' labels.
-#' @param modality String. One of `c("rna", "adt")`. You can only use `"adt"`
-#' on `SingleCellsMultiModal` class.
-#' @param harmony_params List. Output of [params_sc_harmony_v2_gpu()].
-#' @param seed Integer. For reproducibility.
+#' Only the k-means coarsening runs on the WGPU backend. The centroid kNN, the
+#' optional sNN pass and the Louvain runs stay on the CPU, so the speedup tracks
+#' how much of the run k-means owns. That share grows with the cell count and
+#' with `n_centroids`. There is no `km_type` argument: the GPU k-means is
+#' full-batch Lloyd's and has no mini-batch path.
+#'
+#' @param object `SingleCells` or `SingleCellsSubset` class from `bixverse`.
+#' @param embd_to_use String. Embedding name. Defaults to `"pca"`.
+#' @param no_embd_to_use Optional integer. Number of dimensions to keep.
+#' @param resolutions Numeric vector. Louvain resolutions.
+#' @param n_centroids Optional integer. Number of k-means centroids. Defaults
+#' to `sqrt(n_cells)` Rust-side if `NULL`. Clamped to `n_cells - 1`.
+#' @param fc_params List. Output of [params_sc_fast_cluster_gpu()].
+#' @param snn Boolean. Convert the centroid kNN to an sNN graph.
+#' @param return_kmeans Boolean. Return the k-means assignments and centroids.
+#' @param grid_search Boolean. Run the multi-seed grid version.
+#' @param no_seeds Integer. Number of seeds to vary Louvain over. Must be at
+#' least 2. Only used when `grid_search = TRUE`.
+#' @param seed Integer. Seed for reproducibility.
 #' @param .verbose Boolean or integer. Controls verbosity and returns run times.
 #' `FALSE` -> quiet, `TRUE` or `1L` -> normal verbosity, `2L` -> detailed
 #' verbosity.
 #'
-#' @return The object with a `"harmony_gpu"` embedding added. If no PCA
-#' embeddings are found, returns the object unchanged with a warning.
+#' @returns `SingleCellFastClusters` S3 object with:
+#' \describe{
+#'   \item{memberships}{data.table with `cell_idx` and one column per
+#'   resolution (`res_<value>`).}
+#'   \item{stats}{data.table of grid statistics, or `NULL`.}
+#'   \item{k_means_cluster}{Integer vector of k-means assignments, or `NULL`.}
+#'   \item{centroids}{Numeric matrix of centroids, or `NULL`.}
+#'   \item{resolutions}{Resolutions used.}
+#' }
+#' with `cell_indices` stored as an attribute (0-indexed).
 #'
 #' @export
-harmony_v2_gpu_sc <- S7::new_generic(
-  name = "harmony_v2_gpu_sc",
+fast_cluster_gpu_sc <- S7::new_generic(
+  name = "fast_cluster_gpu_sc",
   dispatch_args = "object",
   fun = function(
     object,
-    batch_column,
-    modality = c("rna", "adt"),
-    harmony_params = params_sc_harmony_v2_gpu(),
+    embd_to_use = "pca",
+    no_embd_to_use = NULL,
+    resolutions = c(2.0, 1.0, 0.5),
+    n_centroids = NULL,
+    fc_params = params_sc_fast_cluster_gpu(),
+    snn = TRUE,
+    return_kmeans = FALSE,
+    grid_search = FALSE,
+    no_seeds = 10L,
     seed = 42L,
     .verbose = TRUE
   ) {
@@ -620,354 +654,284 @@ harmony_v2_gpu_sc <- S7::new_generic(
   }
 )
 
-#' @method harmony_v2_gpu_sc SingleCells
+## SingleCells -----------------------------------------------------------------
+
+#' @method fast_cluster_gpu_sc SingleCells
 #'
 #' @export
-S7::method(harmony_v2_gpu_sc, SingleCells) <- function(
+#'
+#' @import bixverse
+S7::method(fast_cluster_gpu_sc, SingleCells) <- function(
   object,
-  batch_column,
-  modality = c("rna", "adt"),
-  harmony_params = params_sc_harmony_v2_gpu(),
+  embd_to_use = "pca",
+  no_embd_to_use = NULL,
+  resolutions = c(2.0, 1.0, 0.5),
+  n_centroids = NULL,
+  fc_params = params_sc_fast_cluster_gpu(),
+  snn = TRUE,
+  return_kmeans = FALSE,
+  grid_search = FALSE,
+  no_seeds = 10L,
   seed = 42L,
   .verbose = TRUE
 ) {
-  modality <- match.arg(modality)
-
-  checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
-  checkmate::qassert(batch_column, "S1")
-  assertScHarmonyV2GpuParams(harmony_params)
-  checkmate::qassert(seed, "I1")
-  checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
-
-  if (modality != "rna" && !S7::S7_inherits(object, SingleCellsMultiModal)) {
-    stop(sprintf(
-      "modality = '%s' is only supported for SingleCellsMultiModal.",
-      modality
-    ))
-  }
-
-  # hard tier: the corrected embedding is written back onto the object
-  assert_sc_state(object, artefacts = "pca", modality = modality)
-
-  if (is.null(get_pca_factors(object, modality = modality))) {
-    warning("No PCA embeddings found in the object. Returning class as is")
-    return(object)
-  } else {
-    pca_data <- get_pca_factors(object, modality = modality)
-  }
-
-  batch_indices <- object[[batch_column]][[1]]
-  batch_factor <- factor(batch_indices)
-  batch_indices <- as.integer(batch_factor) - 1L
-
-  checkmate::assertTRUE(length(batch_indices) == nrow(pca_data))
-
-  if (is.null(harmony_params$k)) {
-    harmony_params$k <- as.integer(min(round(nrow(pca_data) / 30), 100L))
-    if (.verbose) {
-      message(sprintf(
-        " Auto-determined number of Harmony clusters: %d",
-        harmony_params$k
-      ))
-    }
-  }
-
-  harmony_embd <- rs_harmony_v2_gpu(
-    pca = pca_data,
-    harmony_params = harmony_params,
-    batch_labels = list(batch_indices),
+  .fast_cluster_gpu(
+    object = object,
+    embd_to_use = embd_to_use,
+    no_embd_to_use = no_embd_to_use,
+    resolutions = resolutions,
+    n_centroids = n_centroids,
+    fc_params = fc_params,
+    snn = snn,
+    return_kmeans = return_kmeans,
+    grid_search = grid_search,
+    no_seeds = no_seeds,
     seed = seed,
-    verbose = bixverse:::parse_verbosity(.verbose)
+    .verbose = .verbose
   )
-
-  colnames(harmony_embd) <- sprintf("harmony_gpu_%s", 1:ncol(harmony_embd))
-
-  object <- set_embedding(
-    x = object,
-    embd = harmony_embd,
-    name = "harmony_gpu",
-    modality = modality,
-    from = "pca"
-  )
-
-  return(object)
 }
 
-# gpu umap ---------------------------------------------------------------------
+## SingleCellsSubset -----------------------------------------------------------
 
-#' Run UMAP on a SingleCells object (GPU)
-#'
-#' @description
-#' GPU-accelerated counterpart to [bixverse::umap_sc()]. Pulls an embedding
-#' (defaulting to PCA) off the object, runs [umap_gpu()] on it (GPU kNN plus
-#' GPU Adam optimiser by default), and writes the resulting embedding back
-#' into `sc_cache$other_embeddings[[slot_name]]`.
-#'
-#' When `use_knn = TRUE` (the default), the kNN graph already stored on the
-#' object is reused via [bixverse::sc_knn_to_nearest_neighbours()]. Otherwise
-#' a fresh GPU kNN is built from the chosen embedding.
-#'
-#' @param object `SingleCells` (or `SingleCellsMultiModal`) class.
-#' @param use_knn Boolean. Use the kNN graph found in the object. Defaults to
-#' `TRUE`. Only reused if the modality lines up; otherwise a fresh GPU kNN is
-#' generated.
-#' @param embd_to_use String. The embedding to use for UMAP. Must be available
-#' in the object for the chosen modality.
-#' @param slot_name String. The name of this embedding within the object.
-#' Defaults to `"umap"`.
-#' @param no_embd_to_use Optional integer. Number of embedding dimensions to
-#' use. If `NULL`, all will be used.
-#' @param modality String. On which modality to run UMAP. One of
-#' `c("rna", "adt", "wnn")`. The two latter options are only available on
-#' `SingleCellsMultiModal`.
-#' @param n_dim Integer. Number of UMAP dimensions. Defaults to `2L`.
-#' @param k Integer. Number of nearest neighbours. Defaults to `15L`.
-#' @param min_dist Numeric. Minimum distance between embedded points. Defaults
-#' to `0.5`.
-#' @param spread Numeric. Effective scale of embedded points. Defaults to
-#' `1.0`.
-#' @param knn_method String. GPU (approximate) nearest neighbour method. One
-#' of `c("nndescent", "exhaustive", "ivf")`.
-#' @param nn_params Named list. GPU kNN parameters, see [params_nn_gpu()].
-#' @param umap_params Named list. UMAP (GPU) parameters, see
-#' [params_umap_gpu()].
-#' @param seed Integer. For reproducibility.
-#' @param use_high_precision Optional boolean. Fine-grained fp32 vs fp64
-#' control for the optimiser. GPU kNN is always fp32.
-#' @param .verbose Boolean or integer. Controls verbosity.
-#'
-#' @return The object with a `"umap"` embedding added. If the requested
-#' embedding is missing, returns the object unchanged with a warning.
-#'
-#' @seealso [umap_gpu()], [bixverse::umap_sc()], [tsne_gpu_sc()]
+#' @method fast_cluster_gpu_sc SingleCellsSubset
 #'
 #' @export
 #'
 #' @import bixverse
-umap_gpu_sc <- S7::new_generic(
-  name = "umap_gpu_sc",
-  dispatch_args = "object",
-  fun = function(
-    object,
-    use_knn = TRUE,
-    embd_to_use = "pca",
-    slot_name = "umap",
-    no_embd_to_use = NULL,
-    modality = c("rna", "adt", "wnn"),
-    n_dim = 2L,
-    k = 15L,
-    min_dist = 0.5,
-    spread = 1.0,
-    knn_method = c("nndescent", "exhaustive", "ivf"),
-    nn_params = params_nn_gpu(),
-    umap_params = params_umap_gpu(),
-    seed = 42L,
-    use_high_precision = NULL,
-    .verbose = TRUE
-  ) {
-    assert_gpu()
-
-    S7::S7_dispatch()
-  }
-)
-
-#' @method umap_gpu_sc SingleCells
-#'
-#' @export
-#'
-#' @import bixverse
-S7::method(umap_gpu_sc, SingleCells) <- function(
+S7::method(fast_cluster_gpu_sc, SingleCellsSubset) <- function(
   object,
-  use_knn = TRUE,
   embd_to_use = "pca",
-  slot_name = "umap",
   no_embd_to_use = NULL,
-  modality = c("rna", "adt", "wnn"),
-  n_dim = 2L,
-  k = 15L,
-  min_dist = 0.5,
-  spread = 1.0,
-  knn_method = c("nndescent", "exhaustive", "ivf"),
-  nn_params = params_nn_gpu(),
-  umap_params = params_umap_gpu(),
+  resolutions = c(2.0, 1.0, 0.5),
+  n_centroids = NULL,
+  fc_params = params_sc_fast_cluster_gpu(),
+  snn = TRUE,
+  return_kmeans = FALSE,
+  grid_search = FALSE,
+  no_seeds = 10L,
   seed = 42L,
-  use_high_precision = NULL,
   .verbose = TRUE
 ) {
-  modality <- match.arg(modality)
-  knn_method <- match.arg(knn_method)
+  .fast_cluster_gpu(
+    object = object,
+    embd_to_use = embd_to_use,
+    no_embd_to_use = no_embd_to_use,
+    resolutions = resolutions,
+    n_centroids = n_centroids,
+    fc_params = fc_params,
+    snn = snn,
+    return_kmeans = return_kmeans,
+    grid_search = grid_search,
+    no_seeds = no_seeds,
+    seed = seed,
+    .verbose = .verbose
+  )
+}
 
-  checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
-  checkmate::qassert(use_knn, "B1")
+## implementation --------------------------------------------------------------
+
+#' Shared implementation of the GPU fast Louvain clustering
+#'
+#' @description
+#' Body behind both `fast_cluster_gpu_sc()` methods. Pulls the embedding off the
+#' object, hands it to [rs_fast_cluster_gpu()] or [rs_fast_cluster_grid_gpu()]
+#' and wraps the result into a `SingleCellFastClusters` S3 object.
+#'
+#' @inheritParams fast_cluster_gpu_sc
+#'
+#' @returns A `SingleCellFastClusters` S3 object.
+#'
+#' @keywords internal
+.fast_cluster_gpu <- function(
+  object,
+  embd_to_use,
+  no_embd_to_use,
+  resolutions,
+  n_centroids,
+  fc_params,
+  snn,
+  return_kmeans,
+  grid_search,
+  no_seeds,
+  seed,
+  .verbose
+) {
+  # checks
+  checkmate::assertTRUE(
+    S7::S7_inherits(object, bixverse::SingleCells) ||
+      S7::S7_inherits(object, bixverse::SingleCellsSubset)
+  )
+  assertScFastClusterGpuParams(fc_params)
   checkmate::qassert(embd_to_use, "S1")
-  checkmate::qassert(slot_name, "S1")
   checkmate::qassert(no_embd_to_use, c("I1", "0"))
-  checkmate::qassert(n_dim, "I1[1,)")
-  checkmate::qassert(k, "I1[2,)")
-  checkmate::qassert(min_dist, "N1[0,)")
-  checkmate::qassert(spread, "N1[0,)")
-  assertNnGpuParams(nn_params)
-  assertUmapGpuParams(umap_params)
+  checkmate::qassert(resolutions, "N+")
+  checkmate::qassert(n_centroids, c("I1", "0"))
+  checkmate::qassert(snn, "B1")
+  checkmate::qassert(return_kmeans, "B1")
+  checkmate::qassert(grid_search, "B1")
+  # the grid needs at least two seeds to produce an ARI at all
+  checkmate::qassert(no_seeds, if (grid_search) "I1[2,)" else "I1")
   checkmate::qassert(seed, "I1")
-  checkmate::qassert(use_high_precision, c("0", "B1"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
-  if (modality != "rna" && !S7::S7_inherits(object, SingleCellsMultiModal)) {
-    stop(sprintf(
-      "modality = '%s' is only supported for SingleCellsMultiModal.",
-      modality
-    ))
+  # function body
+  if (!embd_to_use %in% bixverse::get_available_embeddings(object)) {
+    stop(sprintf("Embedding '%s' was not found.", embd_to_use))
   }
 
-  cache_modality <- if (modality == "wnn") "rna" else modality
+  embd <- bixverse::get_embedding(x = object, embd_name = embd_to_use)
 
-  # embedding
-  available <- get_available_embeddings(object, modality = cache_modality)
-  if (!(embd_to_use %in% available)) {
-    warning(sprintf(
-      "Embedding '%s' not found on the object. Returning object as is.",
-      embd_to_use
-    ))
-    return(object)
-  }
-
-  # hard tier: the manifold is written back onto the object, and it is read
-  # from `cache_modality` while the kNN comes from `modality`
-  assert_sc_state(object, artefacts = embd_to_use, modality = cache_modality)
-  if (modality == "wnn" || use_knn) {
-    assert_sc_state(object, artefacts = "knn", modality = modality)
-  }
-  embd <- get_embedding(
-    x = object,
-    embd_name = embd_to_use,
-    modality = cache_modality
-  )
   if (!is.null(no_embd_to_use)) {
     to_take <- min(c(no_embd_to_use, ncol(embd)))
     embd <- embd[, 1:to_take]
   }
 
-  # knn
-  knn <- if (modality == "wnn") {
-    bixverse:::.get_manifoldsr_knn_from_wnn(x = object)
-  } else if (use_knn) {
-    bixverse:::.get_manifoldsr_knn(x = object, modality = modality)
-  } else {
-    NULL
-  }
+  cells_to_use <- bixverse::get_cells_to_keep(object)
 
-  if (.verbose) {
-    message("Running GPU UMAP.")
-  }
-
-  umap_embd <- umap_gpu(
-    data = embd,
-    knn = knn,
-    n_dim = n_dim,
-    k = k,
-    min_dist = min_dist,
-    spread = spread,
-    knn_method = knn_method,
-    nn_params = nn_params,
-    umap_params = umap_params,
-    seed = seed,
-    use_high_precision = use_high_precision,
-    .verbose = .verbose
-  )
-
-  rownames(umap_embd) <- rownames(embd)
-  colnames(umap_embd) <- sprintf("umap_%s", seq_len(ncol(umap_embd)))
-
-  object <- set_embedding(
-    x = object,
-    embd = umap_embd,
-    name = slot_name,
-    modality = modality,
-    from = .manifold_from_gpu(
-      embd_to_use = embd_to_use,
-      cache_modality = cache_modality,
-      modality = modality,
-      has_knn = !is.null(knn)
+  if (grid_search) {
+    res <- rs_fast_cluster_grid_gpu(
+      embd = embd,
+      resolutions = resolutions,
+      n_centroids = n_centroids,
+      fc_params = fc_params,
+      snn = snn,
+      return_kmeans = return_kmeans,
+      no_seeds = no_seeds,
+      seed = seed,
+      verbose = parse_verbosity(.verbose)
     )
+    memberships <- res$membership$memberships
+    stats <- data.table::as.data.table(res$membership$stats)
+    data.table::set(stats, j = "resolution", value = resolutions)
+    data.table::setcolorder(stats, "resolution")
+  } else {
+    res <- rs_fast_cluster_gpu(
+      embd = embd,
+      resolutions = resolutions,
+      n_centroids = n_centroids,
+      fc_params = fc_params,
+      snn = snn,
+      return_kmeans = return_kmeans,
+      seed = seed,
+      verbose = parse_verbosity(.verbose)
+    )
+    memberships <- res$membership
+    stats <- NULL
+  }
+
+  # cell_idx is 1-indexed ORIGINAL positions; matches obs_table$cell_idx
+  names(memberships) <- paste0("res_", resolutions)
+  membership_dt <- data.table::as.data.table(
+    c(list(cell_idx = cells_to_use + 1L), memberships)
   )
 
-  return(object)
+  structure(
+    list(
+      memberships = membership_dt,
+      stats = stats,
+      k_means_cluster = res$k_means_cluster,
+      centroids = res$centroids,
+      resolutions = resolutions
+    ),
+    cell_indices = cells_to_use,
+    class = "SingleCellFastClusters"
+  )
 }
 
-# gpu tsne ---------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# GPU-accelerated Scrublet:
+# - Wraps `rs_sc_scrublet_gpu`.
+# - Returns the same `ScrubletRes` S3 object as the CPU
+#   `bixverse::scrublet_sc()`, so its print, plot, get_data and
+#   call_doublets_manual methods work unchanged.
+# - Full parity with the CPU method, `group_by` included, by reusing bixverse's
+#   grouping internals rather than keeping a second copy of the cell-count
+#   thresholds and the result reordering.
+# - Only `SingleCells` gets a method. `bixverse::scrublet_sc()` has no
+#   `SingleCellsSubset` method either, so adding one would be a superset.
+# ------------------------------------------------------------------------------
 
-#' Run t-SNE on a SingleCells object (GPU)
+# scrublet (gpu) ---------------------------------------------------------------
+
+#' Doublet detection with Scrublet on the GPU
 #'
-#' @description
-#' GPU-accelerated counterpart to [bixverse::tsne_sc()]. Runs [tsne_gpu()] on
-#' an embedding pulled from the object. The kNN runs on the GPU; with the
-#' default `"fft_3k_gpu"` the optimiser does too.
+#' @description GPU counterpart of [bixverse::scrublet_sc()]. Three stages run
+#' on the WGPU backend: the randomised sparse SVD of the observed cells, the
+#' projection of the simulated doublets into that PC space, and the kNN over
+#' the combined embedding. HVG selection, doublet simulation, the kNN
+#' classifier and the Otsu threshold stay on the CPU, so the speedup tracks how
+#' much of the run the SVD and the kNN own. That share grows with cell count:
+#' the combined embedding is `(1 + sim_doublet_ratio) * n_cells` rows tall and
+#' an exhaustive kNN over it is quadratic.
 #'
-#' t-SNE derives the number of neighbours from `perplexity` on the Rust side
-#' (the usual `3 * perplexity` convention). To avoid a silent mismatch with
-#' the cached kNN, `use_knn` defaults to `FALSE`: every call generates a
-#' fresh GPU kNN sized to the requested perplexity. Handy for sweeping
-#' perplexities since the kNN is cheap on GPU.
+#' @details Scores do not match the CPU bit for bit. The SVD is randomised on
+#' both sides but draws a different sketch, and the GPU indices break neighbour
+#' ties differently. Expect a correlation around 0.99 rather than equality, and
+#' a handful of borderline calls to flip because Otsu's threshold is a step
+#' function of the histogram bins.
 #'
-#' @param object `SingleCells` (or `SingleCellsMultiModal`) class.
-#' @param use_knn Boolean. Defaults to `FALSE`. Set to `TRUE` to reuse the
-#' cached kNN; only sensible when the stored `k` is at least
-#' `3 * perplexity`.
-#' @param embd_to_use String. The embedding to use for t-SNE. Must be
-#' available in the object for the chosen modality.
-#' @param slot_name String. The name of this embedding within the object.
-#' Defaults to `"tsne"`.
-#' @param no_embd_to_use Optional integer. Number of embedding dimensions to
-#' use. If `NULL`, all will be used.
-#' @param modality String. On which modality to run t-SNE. One of
-#' `c("rna", "adt", "wnn")`. The two latter options are only available on
-#' `SingleCellsMultiModal`.
-#' @param n_dim Integer. Number of t-SNE dimensions. Currently only `2L` is
-#' supported. Defaults to `2L`.
-#' @param perplexity Numeric. Perplexity parameter. Typical values between 5
-#' and 50. Defaults to `20.0`.
-#' @param approx_type String. Approximation method. One of `"fft_3k_gpu"`
-#' (three-kernel FFT on the GPU, the default), `"bh"` (Barnes-Hut), `"bh_qd"`
-#' (quick-and-dirty Barnes-Hut, depth-capped tree), `"fft"` or `"fft_3k"` (CPU
-#' FFT interpolation, four or three kernels). The CPU FFT variants are
-#' Unix-only. See [tsne_gpu()].
-#' @param knn_method String. GPU (approximate) nearest neighbour method. One
-#' of `c("ivf", "exhaustive", "nndescent")`. Default is `"ivf"` here, as it
-#' deals usually better with the high k in tSNE.
-#' @param nn_params Named list. GPU kNN parameters, see [params_nn_gpu()].
-#' @param tsne_params Named list. t-SNE (GPU) parameters, see
-#' [params_tsne_gpu()].
-#' @param seed Integer. For reproducibility.
-#' @param use_high_precision Optional boolean. Fine-grained fp32 vs fp64
-#' control. GPU kNN is always fp32. Ignored for `"fft_3k_gpu"`.
-#' @param .verbose Boolean or integer. Controls verbosity.
+#' @param object `SingleCells` class from `bixverse`.
+#' @param scrublet_params List. Output of [params_scrublet_gpu()].
+#' @param seed Integer. Random seed.
+#' @param streaming Optional boolean. Shall the counts be streamed during HVG
+#' selection. If `NULL`, resolved from the cell count.
+#' @param cells_to_use Optional character vector. Names of the cells to run on.
+#' The returned object covers exactly these cells.
+#' @param group_by Optional string. Column in the obs table to run the method
+#' per level of, typically a sample identifier.
+#' @param return_combined_pca Boolean. Shall the combined PCA of observed cells
+#' and simulated doublets be returned.
+#' @param return_pairs Boolean. Shall the parent indices of the simulated
+#' doublets be returned.
+#' @param .verbose Boolean or integer. Controls verbosity and returns run
+#' times. `FALSE` -> quiet, `TRUE` or `1L` -> normal verbosity, `2L` ->
+#' detailed verbosity.
 #'
-#' @return The object with a `"tsne"` embedding added. If the requested
-#' embedding is missing, returns the object unchanged with a warning.
-#'
-#' @seealso [tsne_gpu()], [bixverse::tsne_sc()], [umap_gpu_sc()]
+#' @returns A `ScrubletRes` S3 object, identical in shape to the CPU one, with
+#' the following items:
+#' \itemize{
+#'   \item predicted_doublets - Boolean vector indicating which observed cells
+#'   were predicted as doublets (TRUE = doublet, FALSE = singlet).
+#'   \item doublet_scores_obs - Numerical vector with the likelihood of being
+#'   a doublet for the observed cells.
+#'   \item doublet_scores_sim - Numerical vector with the likelihood of being
+#'   a doublet for the simulated cells.
+#'   \item doublet_errors_obs - Numerical vector with the standard errors of
+#'   the scores for the observed cells.
+#'   \item z_scores - Z-scores for the observed cells. Represents:
+#'   `score - threshold / error`.
+#'   \item threshold - Used threshold.
+#'   \item detected_doublet_rate - Fraction of cells that are called as
+#'   doublet.
+#'   \item detectable_doublet_fraction - Fraction of simulated doublets with
+#'   scores above the threshold.
+#'   \item overall_doublet_rate - Estimated overall doublet rate.
+#'   \item pca - Optional PCA embeddings across the original cells and
+#'   simulated doublets.
+#'   \item pair_1 - Optional index of the parent cell 1 of the simulated
+#'   doublets.
+#'   \item pair_2 - Optional index of the parent cell 2 of the simulated
+#'   doublets.
+#' }
+#' The 0-indexed cell indices are attached as the `cell_indices` attribute.
+#' Grouped runs additionally carry `grouped` and `group_by_col` attributes and
+#' a `cell_groups` element.
 #'
 #' @export
 #'
-#' @import bixverse
-tsne_gpu_sc <- S7::new_generic(
-  name = "tsne_gpu_sc",
+#' @references Wolock, et al., Cell Syst, 2020
+scrublet_gpu_sc <- S7::new_generic(
+  name = "scrublet_gpu_sc",
   dispatch_args = "object",
   fun = function(
     object,
-    use_knn = FALSE,
-    embd_to_use = "pca",
-    slot_name = "tsne",
-    no_embd_to_use = NULL,
-    modality = c("rna", "adt", "wnn"),
-    n_dim = 2L,
-    perplexity = 20.0,
-    approx_type = c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k"),
-    knn_method = c("ivf", "exhaustive", "nndescent"),
-    nn_params = params_nn_gpu(),
-    tsne_params = params_tsne_gpu(),
+    scrublet_params = params_scrublet_gpu(),
     seed = 42L,
-    use_high_precision = NULL,
+    streaming = NULL,
+    cells_to_use = NULL,
+    group_by = NULL,
+    return_combined_pca = FALSE,
+    return_pairs = FALSE,
     .verbose = TRUE
   ) {
     assert_gpu()
@@ -976,122 +940,137 @@ tsne_gpu_sc <- S7::new_generic(
   }
 )
 
-#' @method tsne_gpu_sc SingleCells
+## SingleCells -----------------------------------------------------------------
+
+#' @method scrublet_gpu_sc SingleCells
 #'
 #' @export
 #'
 #' @import bixverse
-S7::method(tsne_gpu_sc, SingleCells) <- function(
+S7::method(scrublet_gpu_sc, SingleCells) <- function(
   object,
-  use_knn = FALSE,
-  embd_to_use = "pca",
-  slot_name = "tsne",
-  no_embd_to_use = NULL,
-  modality = c("rna", "adt", "wnn"),
-  n_dim = 2L,
-  perplexity = 20.0,
-  approx_type = c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k"),
-  knn_method = c("ivf", "exhaustive", "nndescent"),
-  nn_params = params_nn_gpu(),
-  tsne_params = params_tsne_gpu(),
+  scrublet_params = params_scrublet_gpu(),
   seed = 42L,
-  use_high_precision = NULL,
+  streaming = NULL,
+  cells_to_use = NULL,
+  group_by = NULL,
+  return_combined_pca = FALSE,
+  return_pairs = FALSE,
   .verbose = TRUE
 ) {
-  modality <- match.arg(modality)
-  approx_type <- match.arg(approx_type)
-  knn_method <- match.arg(knn_method)
-
-  checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
-  checkmate::qassert(use_knn, "B1")
-  checkmate::qassert(embd_to_use, "S1")
-  checkmate::qassert(slot_name, "S1")
-  checkmate::qassert(no_embd_to_use, c("I1", "0"))
-  checkmate::qassert(n_dim, "I1[2,2]")
-  checkmate::qassert(perplexity, "N1[1,)")
-  assertNnGpuParams(nn_params)
-  assertTsneGpuParams(tsne_params)
+  # checks
+  checkmate::assertTRUE(S7::S7_inherits(object, bixverse::SingleCells))
+  assertScrubletGpu(scrublet_params)
   checkmate::qassert(seed, "I1")
-  checkmate::qassert(use_high_precision, c("0", "B1"))
+  checkmate::qassert(streaming, c("B1", "0"))
+  checkmate::qassert(cells_to_use, c("S+", "0"))
+  checkmate::qassert(group_by, c("S1", "0"))
+  checkmate::qassert(return_combined_pca, "B1")
+  checkmate::qassert(return_pairs, "B1")
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
-  if (modality != "rna" && !S7::S7_inherits(object, SingleCellsMultiModal)) {
-    stop(sprintf(
-      "modality = '%s' is only supported for SingleCellsMultiModal.",
-      modality
-    ))
-  }
-
-  cache_modality <- if (modality == "wnn") "rna" else modality
-
-  # embedding
-  available <- get_available_embeddings(object, modality = cache_modality)
-  if (!(embd_to_use %in% available)) {
-    warning(sprintf(
-      "Embedding '%s' not found on the object. Returning object as is.",
-      embd_to_use
-    ))
-    return(object)
-  }
-
-  # hard tier: the manifold is written back onto the object, and it is read
-  # from `cache_modality` while the kNN comes from `modality`
-  assert_sc_state(object, artefacts = embd_to_use, modality = cache_modality)
-  if (modality == "wnn" || use_knn) {
-    assert_sc_state(object, artefacts = "knn", modality = modality)
-  }
-  embd <- get_embedding(
-    x = object,
-    embd_name = embd_to_use,
-    modality = cache_modality
-  )
-  if (!is.null(no_embd_to_use)) {
-    to_take <- min(c(no_embd_to_use, ncol(embd)))
-    embd <- embd[, 1:to_take]
-  }
-
-  # knn - default is regenerate on GPU so perplexity drives k
-  knn <- if (modality == "wnn") {
-    bixverse:::.get_manifoldsr_knn_from_wnn(x = object)
-  } else if (use_knn) {
-    bixverse:::.get_manifoldsr_knn(x = object, modality = modality)
+  # function body
+  cells_to_use <- if (!is.null(cells_to_use)) {
+    bixverse::get_cell_indices(
+      object,
+      cell_ids = cells_to_use,
+      rust_index = TRUE
+    )
   } else {
-    NULL
+    bixverse::get_cells_to_keep(object)
   }
 
-  if (.verbose) {
-    message("Running GPU t-SNE.")
+  if (is.null(group_by)) {
+    return(.scrublet_gpu_run(
+      object = object,
+      cells_to_use = cells_to_use,
+      scrublet_params = scrublet_params,
+      seed = seed,
+      streaming = streaming,
+      return_combined_pca = return_combined_pca,
+      return_pairs = return_pairs,
+      .verbose = .verbose
+    ))
   }
 
-  tsne_embd <- tsne_gpu(
-    data = embd,
-    knn = knn,
-    n_dim = n_dim,
-    perplexity = perplexity,
-    approx_type = approx_type,
-    knn_method = knn_method,
-    nn_params = nn_params,
-    tsne_params = tsne_params,
-    seed = seed,
-    use_high_precision = use_high_precision,
+  # the grouping machinery is bixverse's. Reimplementing it here would mean two
+  # copies of the group size thresholds and of the reordering in
+  # `.concat_scrublet`, kept in step by hand.
+  bixverse:::.assert_group_by(object, group_by)
+  groups <- bixverse:::.split_cells_by_group(object, group_by, cells_to_use)
+  bixverse:::.validate_group_sizes(groups)
+
+  group_results <- bixverse:::.run_per_group(
+    groups = groups,
+    per_group_fn = function(cells, name, inner_v) {
+      .scrublet_gpu_run(
+        object = object,
+        cells_to_use = cells,
+        scrublet_params = scrublet_params,
+        seed = seed,
+        streaming = streaming,
+        return_combined_pca = return_combined_pca,
+        return_pairs = return_pairs,
+        .verbose = inner_v
+      )
+    },
+    .verbose = .verbose,
+    label = "Running Scrublet (GPU) per group"
+  )
+
+  bixverse:::.concat_scrublet(
+    group_results,
+    group_by,
+    return_combined_pca,
+    return_pairs
+  )
+}
+
+## implementation --------------------------------------------------------------
+
+#' Run GPU Scrublet on a set of cells
+#'
+#' @description GPU sibling of `bixverse:::.scrublet_run()`. Resolves
+#' streaming, calls [rs_sc_scrublet_gpu()] and stamps the result with the
+#' `ScrubletRes` class plus the `cell_indices` attribute that every downstream
+#' method reads.
+#'
+#' @inheritParams scrublet_gpu_sc
+#'
+#' @param cells_to_use Integer vector of 0-indexed cell indices.
+#'
+#' @returns A `ScrubletRes` S3 object.
+#'
+#' @keywords internal
+.scrublet_gpu_run <- function(
+  object,
+  cells_to_use,
+  scrublet_params,
+  seed,
+  streaming,
+  return_combined_pca,
+  return_pairs,
+  .verbose
+) {
+  streaming <- bixverse:::auto_streaming(
+    n_cells = length(cells_to_use),
+    streaming = streaming,
     .verbose = .verbose
   )
 
-  rownames(tsne_embd) <- rownames(embd)
-  colnames(tsne_embd) <- sprintf("tsne_%s", seq_len(ncol(tsne_embd)))
-
-  object <- set_embedding(
-    x = object,
-    embd = tsne_embd,
-    name = slot_name,
-    modality = modality,
-    from = .manifold_from_gpu(
-      embd_to_use = embd_to_use,
-      cache_modality = cache_modality,
-      modality = modality,
-      has_knn = !is.null(knn)
-    )
+  scrublet_res <- rs_sc_scrublet_gpu(
+    f_path_gene = bixverse:::get_rust_count_gene_f_path(object),
+    f_path_cell = bixverse:::get_rust_count_cell_f_path(object),
+    cells_to_keep = cells_to_use,
+    scrublet_params = scrublet_params,
+    seed = seed,
+    verbose = parse_verbosity(.verbose),
+    streaming = streaming,
+    return_combined_pca = return_combined_pca,
+    return_pairs = return_pairs
   )
 
-  return(object)
+  attr(scrublet_res, "cell_indices") <- cells_to_use
+  class(scrublet_res) <- "ScrubletRes"
+  scrublet_res
 }
