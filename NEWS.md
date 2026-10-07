@@ -15,6 +15,8 @@
   N_OVERSAMPLING 20 (instead of 100) and increased iterations from 2 to 4. 
   Across various benchmarks and synthetic data sets, the quality of the trailing 
   PCs has improved with the new thresholds while being faster.
+* The GPU-accelerated NEBULA has now a parameter that enables that a minimum of 
+  samples similar to the CPU-based version.
 
 ## Fixes
 

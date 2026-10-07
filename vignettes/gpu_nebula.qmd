@@ -241,6 +241,26 @@ res_gpu_cells <- nebula_gpu_sc(
 all.equal(res_gpu$results, res_gpu_cells$results)
 ```
 
+### Genes carried by one donor
+
+Same option as on the CPU: `min_subjects` drops genes that fewer than that many
+donors express on their own, since `cpc` and `mincp` pool every cell. `0`, the
+default, is off.
+
+```{r}
+#| label: real-gpu-min-subjects
+res_gpu_min <- nebula_gpu_sc(
+  object = mono,
+  subject_col = "ind",
+  design = ~stim,
+  genes_to_use = hvgs,
+  nebula_params = params_nebula_gpu(min_subjects = 6L),
+  .verbose = FALSE
+)
+
+c(default = nrow(res_gpu$results), min_subjects = nrow(res_gpu_min$results))
+```
+
 ## No contrast at all
 
 The CPU vignette's key check: control cells only, eight donors split four
