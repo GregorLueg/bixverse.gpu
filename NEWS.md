@@ -6,9 +6,11 @@
   - GPU-accelerated kNN searches
   - Harmony (version 2) accelerated on the GPU
   - Randomised SVD
-* GPU-accelerated fastMNN wired in. This option only provides the kNN searches
-  themselves; if you need the PCA, you need to generate it yourself via 
-  batch-aware HVG + PCA.
+* GPU-accelerated fastMNN wired in via `fast_mnn_gpu_sc()`. Only the neighbour
+  searches run on the device. Unlike `bixverse::fast_mnn_sc()`, it does **not**
+  regenerate the PCA on batch-aware HVGs: it corrects the PCA already in the
+  object. For the batch-aware flavour run `find_hvg_batch_aware_sc()` and
+  `calculate_pca_gpu_sc()` first. See the single cell vignette.
 
 ## Fixes
 
