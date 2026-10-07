@@ -165,6 +165,11 @@ params_knn_gpu_defaults <- function() {
 #' Defaults to `0.005`.
 #' @param mincp Integer. Drop a gene expressed in fewer than this many cells.
 #' Defaults to `5L`.
+#' @param min_subjects Integer. Drop a gene that fewer than this many subjects
+#' express, a subject expressing it when its own mean count per cell is above
+#' `cpc`. `cpc` and `mincp` pool every cell, so one subject can carry a gene
+#' through on its own. `0` switches the check off, as in the `nebula` package.
+#' Defaults to `0L`.
 #' @param eps Numeric. Absolute stopping tolerance for the optimiser. Defaults
 #' to `1e-06`.
 #' @param gene_batch_size Integer. Genes read and fitted per batch. Bounds how
@@ -196,6 +201,11 @@ params_knn_gpu_defaults <- function() {
 #'  Defaults to `0.005`.
 #'  \item mincp - Integer. Drop a gene expressed in fewer than this many cells.
 #'  Defaults to `5L`.
+#'  \item min_subjects - Integer. Drop a gene that fewer than this many subjects
+#'  express, a subject expressing it when its own mean count per cell is above
+#'  `cpc`. `cpc` and `mincp` pool every cell, so one subject can carry a gene
+#'  through on its own. `0` switches the check off, as in the `nebula` package.
+#'  Defaults to `0L`.
 #'  \item eps - Numeric. Absolute stopping tolerance for the optimiser. Defaults
 #'  to `1e-06`.
 #'  \item gene_batch_size - Integer. Genes read and fitted per batch. Bounds how
@@ -218,6 +228,7 @@ params_nebula_gpu <- function(
   kappa = 800.0,
   cpc = 0.005,
   mincp = 5L,
+  min_subjects = 0L,
   eps = 1e-06,
   gene_batch_size = 1000L,
   shrink_dispersion = TRUE
@@ -234,6 +245,7 @@ params_nebula_gpu <- function(
   checkmate::qassert(kappa, "N1[0,)")
   checkmate::qassert(cpc, "N1[0,)")
   checkmate::qassert(mincp, "I1[0,)")
+  checkmate::qassert(min_subjects, "I1[0,)")
   checkmate::qassert(eps, "N1(0,)")
   checkmate::qassert(gene_batch_size, "I1[1,)")
   checkmate::qassert(shrink_dispersion, "B1")
@@ -256,6 +268,7 @@ params_nebula_gpu <- function(
     kappa = kappa,
     cpc = cpc,
     mincp = mincp,
+    min_subjects = min_subjects,
     eps = eps,
     gene_batch_size = gene_batch_size,
     shrink_dispersion = shrink_dispersion

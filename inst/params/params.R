@@ -840,6 +840,17 @@ spec_nebula_gpu <- param_spec(
       range = "[0,)",
       doc = "Drop a gene expressed in fewer than this many cells."
     ),
+    min_subjects = p_int(
+      0L,
+      range = "[0,)",
+      doc = paste(
+        "Drop a gene that fewer than this many subjects express, a subject",
+        "expressing it when its own mean count per cell is above `cpc`.",
+        "`cpc` and `mincp` pool every cell, so one subject can carry a gene",
+        "through on its own. `0` switches the check off, as in the `nebula`",
+        "package."
+      )
+    ),
     eps = p_dbl(
       1e-06,
       range = "(0,)",

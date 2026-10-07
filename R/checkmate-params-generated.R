@@ -105,6 +105,7 @@ checkNebulaGpuParams <- function(x) {
       "kappa",
       "cpc",
       "mincp",
+      "min_subjects",
       "eps",
       "gene_batch_size",
       "shrink_dispersion"
@@ -125,6 +126,7 @@ checkNebulaGpuParams <- function(x) {
       kappa = "N1[0,)",
       cpc = "N1[0,)",
       mincp = "I1[0,)",
+      min_subjects = "I1[0,)",
       eps = "N1(0,)",
       gene_batch_size = "I1[1,)",
       shrink_dispersion = "B1"

@@ -13,7 +13,7 @@ apply_qtest_rules(x, rules, label, hint = NULL)
 patterns passed to \code{qtest}).}
 
 \item{label}{Short human-readable label used in the error message
-(e.g. \code{"GSEA params"}).}
+(e.g. \code{"optimiser params"}).}
 
 \item{hint}{Optional string appended to the error message to describe the
 expected types/ranges. Defaults to \code{NULL} (no hint).}
