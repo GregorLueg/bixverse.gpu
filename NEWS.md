@@ -11,6 +11,10 @@
   regenerate the PCA on batch-aware HVGs: it corrects the PCA already in the
   object. For the batch-aware flavour run `find_hvg_batch_aware_sc()` and
   `calculate_pca_gpu_sc()` first. See the single cell vignette.
+* The GPU-accelerated randomised SVD for single cell are is now using 
+  N_OVERSAMPLING 20 (instead of 100) and increased iterations from 2 to 4. 
+  Across various benchmarks and synthetic data sets, the quality of the trailing 
+  PCs has improved with the new thresholds while being faster.
 
 ## Fixes
 
