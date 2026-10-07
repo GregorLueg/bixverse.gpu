@@ -36,6 +36,9 @@
 #' Mutually exclusive with `coef`.
 #' @param genes_to_use Optional character vector. The genes to fit. Defaults to
 #' every gene in the object, which is usually too many.
+#' @param cells_to_use Optional character vector. Names of the cells to fit,
+#' e.g. one cell type or one condition. Defaults to every cell that passed
+#' quality control. Cells that cannot be matched are dropped with a warning.
 #' @param offset Optional numeric vector. Strictly positive scaling factor per
 #' cell, aligned to the cells that survive the design. Defaults to `NULL`,
 #' which uses the library sizes.
@@ -50,6 +53,8 @@
 #'   \item kappa - Numeric. When to trust the stage-one subject overdispersion.
 #'   \item cpc - Numeric. Minimum mean count per cell for a gene to be tested.
 #'   \item mincp - Integer. Minimum number of cells expressing a gene.
+#'   \item min_subjects - Integer. Minimum number of subjects whose own mean
+#'   count per cell clears `cpc`. `0` switches the check off.
 #'   \item eps - Numeric. Optimiser stopping tolerance.
 #'   \item gene_batch_size - Integer. Genes read and fitted per batch.
 #'   \item shrink_dispersion - Boolean. Empirical Bayes shrinkage of the
@@ -81,6 +86,7 @@ nebula_gpu_sc <- S7::new_generic(
     coef = NULL,
     contrast = NULL,
     genes_to_use = NULL,
+    cells_to_use = NULL,
     offset = NULL,
     nebula_params = params_nebula_gpu(),
     .verbose = TRUE
@@ -100,6 +106,7 @@ S7::method(nebula_gpu_sc, SingleCells) <- function(
   coef = NULL,
   contrast = NULL,
   genes_to_use = NULL,
+  cells_to_use = NULL,
   offset = NULL,
   nebula_params = params_nebula_gpu(),
   .verbose = TRUE
@@ -111,6 +118,7 @@ S7::method(nebula_gpu_sc, SingleCells) <- function(
     coef = coef,
     contrast = contrast,
     genes_to_use = genes_to_use,
+    cells_to_use = cells_to_use,
     offset = offset,
     nebula_params = nebula_params,
     .verbose = .verbose
@@ -126,6 +134,7 @@ S7::method(nebula_gpu_sc, SingleCellsSubset) <- function(
   coef = NULL,
   contrast = NULL,
   genes_to_use = NULL,
+  cells_to_use = NULL,
   offset = NULL,
   nebula_params = params_nebula_gpu(),
   .verbose = TRUE
@@ -137,6 +146,7 @@ S7::method(nebula_gpu_sc, SingleCellsSubset) <- function(
     coef = coef,
     contrast = contrast,
     genes_to_use = genes_to_use,
+    cells_to_use = cells_to_use,
     offset = offset,
     nebula_params = nebula_params,
     .verbose = .verbose
@@ -163,6 +173,7 @@ S7::method(nebula_gpu_sc, SingleCellsSubset) <- function(
   coef,
   contrast,
   genes_to_use,
+  cells_to_use,
   offset,
   nebula_params,
   .verbose
@@ -175,15 +186,24 @@ S7::method(nebula_gpu_sc, SingleCellsSubset) <- function(
   checkmate::qassert(subject_col, "S1")
   checkmate::assertFormula(design)
   checkmate::qassert(genes_to_use, c("0", "S+"))
+  checkmate::qassert(cells_to_use, c("0", "S+"))
   checkmate::qassert(offset, c("0", "N+"))
   assertNebulaGpuParams(nebula_params)
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   obs <- bixverse::get_sc_obs(
     object,
-    cols = unique(c("cell_idx", subject_col, all.vars(design))),
+    cols = unique(c("cell_idx", "cell_id", subject_col, all.vars(design))),
     filtered = TRUE
   )
+
+  if (!is.null(cells_to_use)) {
+    obs <- bixverse:::.nebula_select_rows(
+      obs,
+      id_col = "cell_id",
+      ids = cells_to_use
+    )
+  }
 
   inputs <- bixverse:::.nebula_design(
     obs = obs,

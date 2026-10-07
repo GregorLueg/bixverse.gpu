@@ -161,7 +161,7 @@ expect_true(
 )
 
 expect_false(
-  current = any(c("random_svd", "sparse") %in% names(gpu_params)),
+  current = "svd_solver" %in% names(gpu_params),
   info = "params_scrublet_gpu - drops the CPU-only PCA knobs"
 )
 

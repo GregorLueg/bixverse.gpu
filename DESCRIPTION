@@ -3,7 +3,7 @@ Title:
     GPU-accelerated methods via cubecl and WGPU for the bixverse with general
     methods such as k-means and correlations and a lot of methods specific for
     single cell analysis acceleration.
-Version: 0.3.6
+Version: 0.4.0
 Authors@R: 
     person(
         given = "Gregor", 
@@ -27,7 +27,7 @@ Suggests:
     quarto,
     tinytest
 Imports: 
-    bixverse (>= 0.5.5),
+    bixverse (>= 0.6.0),
     checkmate,
     data.table,
     igraph,

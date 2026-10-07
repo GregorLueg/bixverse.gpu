@@ -13,7 +13,7 @@ apply_choice_rules(x, rules, label, hint = NULL)
 allowed choices.}
 
 \item{label}{Short human-readable label used in the error message
-(e.g. \code{"MELD params"}).}
+(e.g. \code{"solver params"}).}
 
 \item{hint}{Optional string appended to the error message. Defaults to
 \code{NULL} (no hint).}

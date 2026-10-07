@@ -14,6 +14,7 @@ params_nebula_gpu(
   kappa = 800,
   cpc = 0.005,
   mincp = 5L,
+  min_subjects = 0L,
   eps = 1e-06,
   gene_batch_size = 1000L,
   shrink_dispersion = TRUE
@@ -49,6 +50,12 @@ Defaults to \code{0.005}.}
 \item{mincp}{Integer. Drop a gene expressed in fewer than this many cells.
 Defaults to \code{5L}.}
 
+\item{min_subjects}{Integer. Drop a gene that fewer than this many subjects
+express, a subject expressing it when its own mean count per cell is above
+\code{cpc}. \code{cpc} and \code{mincp} pool every cell, so one subject can carry a gene
+through on its own. \code{0} switches the check off, as in the \code{nebula} package.
+Defaults to \code{0L}.}
+
 \item{eps}{Numeric. Absolute stopping tolerance for the optimiser. Defaults
 to \code{1e-06}.}
 
@@ -82,6 +89,11 @@ subject-level overdispersion from stage one is trusted as is. Defaults to
 Defaults to \code{0.005}.
 \item mincp - Integer. Drop a gene expressed in fewer than this many cells.
 Defaults to \code{5L}.
+\item min_subjects - Integer. Drop a gene that fewer than this many subjects
+express, a subject expressing it when its own mean count per cell is above
+\code{cpc}. \code{cpc} and \code{mincp} pool every cell, so one subject can carry a gene
+through on its own. \code{0} switches the check off, as in the \code{nebula} package.
+Defaults to \code{0L}.
 \item eps - Numeric. Absolute stopping tolerance for the optimiser. Defaults
 to \code{1e-06}.
 \item gene_batch_size - Integer. Genes read and fitted per batch. Bounds how

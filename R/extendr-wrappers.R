@@ -325,18 +325,16 @@ rs_tsne_from_knn_gpu <- function(embd, knn_data, n_dim, perplexity, approx_type,
 #' Helper function that will calculate sparse PCA without scaling the data.
 #' This has the advantage that you avoid creating a large dense matrix due
 #' to scaling; however, it has the disadvantage that the first PC will be
-#' heavily influenced by average expression. If random_svd is set to `FALSE`,
-#' Lanczos iterations will be used to solve the SVD; if random_svd is set
-#' to `TRUE`, the randomised version will be used with multiplication of the
-#' initial sparse matrix with a much smaller random dense matrix, avoiding
-#' holding a large dense matrix in memory.
+#' heavily influenced by average expression. The SVD is always randomised:
+#' the sparse matrix is multiplied with a much smaller random dense matrix,
+#' avoiding holding a large dense matrix in memory.
 #'
 #' @param f_path_gene String. Path to the `counts_genes.bin` file.
 #' @param f_path_cell String. Path to the `counts_cells.bin` file. Used if
 #' you wish to use the PFlogPF transformation.
 #' @param no_pcs Integer. Number of PCs to calculate.
 #' @param pca_params Named list. Contains the parameters to use for this PCA
-#' run. (Randomised will ignore, as gpu only supports randomised.)
+#' run. `svd_solver` is ignored, the GPU path is always randomised.
 #' @param cell_indices Integer. The cell indices to use. (0-indexed!)
 #' @param gene_indices Integer. The gene indices to use. (0-indexed!)
 #' @param seed Integer. Random seed for the randomised SVD.
@@ -1026,6 +1024,30 @@ rs_fast_cluster_grid_gpu <- function(embd, resolutions, n_centroids, fc_params, 
 #'
 #' @keywords internal
 rs_bbknn_gpu <- function(embd, batch_labels, bbknn_params, seed, verbose) .Call(wrap__rs_bbknn_gpu, embd, batch_labels, bbknn_params, seed, verbose)
+
+#' GPU: fastMNN batch correction
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU equivalent of `bixverse::rs_mnn`, implementing the fast mutual nearest
+#' neighbour correction from Haghverdi, et al. The MNN searches and the
+#' tricube neighbour search run on the WGPU backend; everything else is
+#' shared with the CPU implementation.
+#'
+#' @param embd Numerical matrix. The embedding to correct, usually PCA. Rows
+#' represent cells.
+#' @param batch_labels Integer vector. These represent to which batch a given
+#' cell belongs. Needs to be 0-indexed!
+#' @param fastmnn_params List. Parameter list, see [params_sc_fastmnn_gpu()].
+#' @param seed Integer. Seed for reproducibility purposes.
+#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
+#' detailed verbosity.
+#'
+#' @return The batch-corrected embedding, cells x dimensions, in the input
+#' cell order.
+#'
+#' @export
+rs_fast_mnn_gpu <- function(embd, batch_labels, fastmnn_params, seed, verbose) .Call(wrap__rs_fast_mnn_gpu, embd, batch_labels, fastmnn_params, seed, verbose)
 
 #' GPU: fit the NEBULA negative binomial gamma mixed model over single cells
 #'

@@ -165,6 +165,11 @@ params_knn_gpu_defaults <- function() {
 #' Defaults to `0.005`.
 #' @param mincp Integer. Drop a gene expressed in fewer than this many cells.
 #' Defaults to `5L`.
+#' @param min_subjects Integer. Drop a gene that fewer than this many subjects
+#' express, a subject expressing it when its own mean count per cell is above
+#' `cpc`. `cpc` and `mincp` pool every cell, so one subject can carry a gene
+#' through on its own. `0` switches the check off, as in the `nebula` package.
+#' Defaults to `0L`.
 #' @param eps Numeric. Absolute stopping tolerance for the optimiser. Defaults
 #' to `1e-06`.
 #' @param gene_batch_size Integer. Genes read and fitted per batch. Bounds how
@@ -196,6 +201,11 @@ params_knn_gpu_defaults <- function() {
 #'  Defaults to `0.005`.
 #'  \item mincp - Integer. Drop a gene expressed in fewer than this many cells.
 #'  Defaults to `5L`.
+#'  \item min_subjects - Integer. Drop a gene that fewer than this many subjects
+#'  express, a subject expressing it when its own mean count per cell is above
+#'  `cpc`. `cpc` and `mincp` pool every cell, so one subject can carry a gene
+#'  through on its own. `0` switches the check off, as in the `nebula` package.
+#'  Defaults to `0L`.
 #'  \item eps - Numeric. Absolute stopping tolerance for the optimiser. Defaults
 #'  to `1e-06`.
 #'  \item gene_batch_size - Integer. Genes read and fitted per batch. Bounds how
@@ -218,6 +228,7 @@ params_nebula_gpu <- function(
   kappa = 800.0,
   cpc = 0.005,
   mincp = 5L,
+  min_subjects = 0L,
   eps = 1e-06,
   gene_batch_size = 1000L,
   shrink_dispersion = TRUE
@@ -234,6 +245,7 @@ params_nebula_gpu <- function(
   checkmate::qassert(kappa, "N1[0,)")
   checkmate::qassert(cpc, "N1[0,)")
   checkmate::qassert(mincp, "I1[0,)")
+  checkmate::qassert(min_subjects, "I1[0,)")
   checkmate::qassert(eps, "N1(0,)")
   checkmate::qassert(gene_batch_size, "I1[1,)")
   checkmate::qassert(shrink_dispersion, "B1")
@@ -256,6 +268,7 @@ params_nebula_gpu <- function(
     kappa = kappa,
     cpc = cpc,
     mincp = mincp,
+    min_subjects = min_subjects,
     eps = eps,
     gene_batch_size = gene_batch_size,
     shrink_dispersion = shrink_dispersion
@@ -457,6 +470,83 @@ params_parametric_umap <- function(
   )
 }
 
+#' Wrapper function for the GPU BBKNN parameters
+#'
+#' @description GPU counterpart to [bixverse::params_sc_bbknn()]. Same BBKNN
+#' knobs, but the kNN block is the GPU one, see [params_knn_gpu_defaults()].
+#'
+#' @details
+#' Two keys of the GPU kNN block do nothing here and are rejected rather than
+#' silently ignored. `k` is set by `neighbours_within_batch`, and `extract_knn`
+#' only applies to a self-query, whereas BBKNN builds one index per batch and
+#' queries each with every cell.
+#'
+#' @param neighbours_within_batch Integer. Number of neighbours to consider per
+#' batch. Defaults to `3L`.
+#' @param set_op_mix_ratio Numeric. Mixing ratio between union (1.0) and
+#' intersection (0.0). Defaults to `1.0`.
+#' @param local_connectivity Numeric. UMAP connectivity computation parameter,
+#' how many nearest neighbours of each cell are assumed to be fully connected.
+#' Defaults to `1.0`.
+#' @param trim Integer or `NULL`. Trim the neighbours of each cell to these many
+#' top connectivities. May help with population independence and improve the
+#' tidiness of clustering. If `NULL`, it defaults to `10 *
+#' neighbours_within_batch`. Defaults to `NULL`.
+#' @param knn List. Optional overrides for the kNN block. See
+#' [params_knn_gpu_defaults()] for the available elements. Without `k`,
+#' `extract_knn`. Unknown elements are an error. Defaults to `list()`.
+#'
+#' @returns A named list with the following elements:
+#' \itemize{
+#'  \item neighbours_within_batch - Integer. Number of neighbours to consider
+#'  per batch. Defaults to `3L`.
+#'  \item set_op_mix_ratio - Numeric. Mixing ratio between union (1.0) and
+#'  intersection (0.0). Defaults to `1.0`.
+#'  \item local_connectivity - Numeric. UMAP connectivity computation parameter,
+#'  how many nearest neighbours of each cell are assumed to be fully connected.
+#'  Defaults to `1.0`.
+#'  \item trim - Integer or `NULL`. Trim the neighbours of each cell to these
+#'  many top connectivities. May help with population independence and improve
+#'  the tidiness of clustering. If `NULL`, it defaults to `10 *
+#'  neighbours_within_batch`. Defaults to `NULL`.
+#'  \item The elements of [params_knn_gpu_defaults()], overridden by `knn`,
+#'  spliced in at this position.
+#' }
+#'
+#' @references Polański, et al., Bioinformatics, 2020
+#'
+#' @export
+params_sc_bbknn_gpu <- function(
+  neighbours_within_batch = 3L,
+  set_op_mix_ratio = 1.0,
+  local_connectivity = 1.0,
+  trim = NULL,
+  knn = list()
+) {
+  # Checks
+  checkmate::qassert(neighbours_within_batch, "I1[1,)")
+  checkmate::qassert(set_op_mix_ratio, "N1[0,1]")
+  checkmate::qassert(local_connectivity, "N1")
+  checkmate::qassert(trim, c("I1[1,)", "0"))
+
+  # Merge
+  knn_base <- params_knn_gpu_defaults()
+  knn_base[c("k", "extract_knn")] <- NULL
+  checkmate::assertSubset(names(knn), names(knn_base))
+  knn <- utils::modifyList(knn_base, knn, keep.null = TRUE)
+
+  # Return
+  c(
+    list(
+      neighbours_within_batch = neighbours_within_batch,
+      set_op_mix_ratio = set_op_mix_ratio,
+      local_connectivity = local_connectivity,
+      trim = trim
+    ),
+    knn
+  )
+}
+
 #' Default parameters for GPU fast Louvain clustering
 #'
 #' @description GPU counterpart to [bixverse::params_sc_fast_cluster()]. The
@@ -588,6 +678,73 @@ params_sc_fast_cluster_gpu <- function(
   )
 }
 
+#' Wrapper function for the GPU fastMNN parameters
+#'
+#' @description GPU counterpart to [bixverse::params_sc_fastmnn()]. Same fastMNN
+#' knobs minus the PCA ones, since the GPU path corrects the PCA already stored
+#' in the object. The kNN block is the GPU one, see [params_knn_gpu_defaults()],
+#' with `k` and `ann_dist` defaulting to the CPU values.
+#'
+#' @details
+#' `extract_knn` is rejected rather than silently ignored: every search in
+#' fastMNN is a cross-query between two sets of cells, and extraction only
+#' applies to a self-query. `k = 0L` is rejected as well, since fastMNN has no
+#' data-driven fallback for it.
+#'
+#' @param ndist Numeric. Number of median distances for the tricube kernel
+#' bandwidth. Defaults to `3.0`.
+#' @param cos_norm Boolean. Apply cosine normalisation before computing
+#' distances. Defaults to `TRUE`.
+#' @param knn List. Optional overrides for the kNN block. See
+#' [params_knn_gpu_defaults()] for the available elements. Without
+#' `extract_knn`. Unknown elements are an error. Defaults to `list()`.
+#'
+#' @returns A named list with the following elements:
+#' \itemize{
+#'  \item ndist - Numeric. Number of median distances for the tricube kernel
+#'  bandwidth. Defaults to `3.0`.
+#'  \item cos_norm - Boolean. Apply cosine normalisation before computing
+#'  distances. Defaults to `TRUE`.
+#'  \item The elements of [params_knn_gpu_defaults()], overridden by `knn`,
+#'  spliced in at this position.
+#' }
+#'
+#' @references Haghverdi, et al., Nat Biotechnol, 2018
+#'
+#' @export
+params_sc_fastmnn_gpu <- function(
+  ndist = 3.0,
+  cos_norm = TRUE,
+  knn = list()
+) {
+  # Checks
+  checkmate::qassert(ndist, "N1(0,)")
+  checkmate::qassert(cos_norm, "B1")
+
+  # Merge
+  knn_base <- params_knn_gpu_defaults()
+  knn_base["extract_knn"] <- NULL
+  checkmate::assertSubset(names(knn), names(knn_base))
+  knn <- utils::modifyList(
+    knn_base,
+    utils::modifyList(
+      list(k = 20L, ann_dist = "cosine"),
+      knn,
+      keep.null = TRUE
+    ),
+    keep.null = TRUE
+  )
+
+  # Return
+  c(
+    list(
+      ndist = ndist,
+      cos_norm = cos_norm
+    ),
+    knn
+  )
+}
+
 #' Default parameters for Harmony v2 GPU batch correction
 #'
 #' @param k Integer or `NULL`. Number of clusters for k-means clustering. If not
@@ -623,7 +780,7 @@ params_sc_fast_cluster_gpu <- function(
 #' building the level-CSR index on the GPU. Adjust for your hardware if needed.
 #' Defaults to `256L`.
 #' @param k_means_iter Integer. Maximum number of k-means iterations for the
-#' initial centroid computation. Defaults to `30L`.
+#' initial centroid computation. Defaults to `10L`.
 #' @param k_means_init String or `NULL`. Initialisation strategy for k-means.
 #' Defaults to `NULL`.
 #' @param fixed Boolean. If `TRUE`, centroids are fixed after initialisation.
@@ -669,7 +826,7 @@ params_sc_fast_cluster_gpu <- function(
 #'  building the level-CSR index on the GPU. Adjust for your hardware if needed.
 #'  Defaults to `256L`.
 #'  \item k_means_iter - Integer. Maximum number of k-means iterations for the
-#'  initial centroid computation. Defaults to `30L`.
+#'  initial centroid computation. Defaults to `10L`.
 #'  \item k_means_init - String or `NULL`. Initialisation strategy for k-means.
 #'  Defaults to `NULL`.
 #'  \item fixed - Boolean. If `TRUE`, centroids are fixed after initialisation.
@@ -694,7 +851,7 @@ params_sc_harmony_v2_gpu <- function(
   batch_proportion_cutoff = 1e-05,
   use_dynamic_lambda = FALSE,
   csr_cube_count = 256L,
-  k_means_iter = 30L,
+  k_means_iter = 10L,
   k_means_init = NULL,
   fixed = FALSE,
   quantise = FALSE
