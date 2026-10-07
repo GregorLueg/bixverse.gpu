@@ -49,7 +49,7 @@ check_list_shape <- function(x, required_names, strict = FALSE) {
 #' @param rules Named list mapping field name to a qtest pattern (or vector of
 #' patterns passed to `qtest`).
 #' @param label Short human-readable label used in the error message
-#' (e.g. `"optimiser params"`).
+#' (e.g. `"GSEA params"`).
 #' @param hint Optional string appended to the error message to describe the
 #' expected types/ranges. Defaults to `NULL` (no hint).
 #'
@@ -87,7 +87,7 @@ apply_qtest_rules <- function(x, rules, label, hint = NULL) {
 #' @param rules Named list mapping field name to the character vector of
 #' allowed choices.
 #' @param label Short human-readable label used in the error message
-#' (e.g. `"solver params"`).
+#' (e.g. `"MELD params"`).
 #' @param hint Optional string appended to the error message. Defaults to
 #' `NULL` (no hint).
 #'
