@@ -19,7 +19,8 @@ This vignette walks through a GPU-accelerated single cell workflow on the
 two-batch PBMC data set (pbmc3k + pbmc4k) used in the
 [batch correction vignette](https://gregorlueg.github.io/bixverse/articles/single_cell_batch_correction.html).
 The point is to demonstrate how `bixverse.gpu` can drop into the heavier steps
-of a standard pipeline: PCA, Harmony v2 batch correction, and the kNN search.
+of a standard pipeline: PCA, batch correction (Harmony v2, fastMNN, BBKNN), and
+the kNN search.
 Two batches give us a natural reason to run all three in sequence: PCA
 generates the embedding, Harmony corrects it, and the kNN methods build the
 neighbour graph for downstream clustering. If none of this single cell stuff
@@ -56,6 +57,9 @@ outweigh the speedup, but the larger the data, the more these methods pay off
 - **GPU BBKNN** via `bbknn_gpu_sc()`: batch-balanced kNN, one index per batch
   queried by every cell on the device. Corrects the graph rather than the
   embedding, and the win grows with the number of batches.
+- **GPU fastMNN** via `fast_mnn_gpu_sc()`: mutual nearest neighbour correction
+  with the neighbour searches on the device. Unlike the CPU version it does not
+  recompute the PCA; it corrects the one already in the object.
 
 ```{r}
 #| label: setup
@@ -544,6 +548,107 @@ embedding_plot_sc(
   )
 ```
 
+## GPU-accelerated fastMNN
+
+fastMNN ([Haghverdi et al., 2018](https://www.nature.com/articles/nbt.4091))
+merges the batches one after the other. Mutual nearest neighbours between the
+merged block and the next batch give correction vectors, those get smoothed
+with a tricube kernel and applied to every cell of that batch.
+`fast_mnn_gpu_sc()` moves the neighbour searches to the device: both MNN
+directions plus the tricube search, so three index builds per merge. Pairing
+and the correction itself are shared with the CPU code. On two batches and ~6k
+cells there is nothing to win: the GPU merge took 0.18s here against 0.05s on
+the CPU. The payoff needs more cells and more batches.
+
+::: {.callout-important}
+`fast_mnn_gpu_sc()` does **not** regenerate the PCA on batch-aware HVGs.
+`bixverse::fast_mnn_sc()` takes the batch-aware HVGs and recomputes the PCA
+inside the call. The GPU version corrects whatever PCA sits in the object, as
+is. Want the batch-aware flavour? Run `find_hvg_batch_aware_sc()` and
+`calculate_pca_gpu_sc()` first, as below.
+:::
+
+Mind the indexing: `find_hvg_batch_aware_sc()` hands back 0-indexed genes,
+`calculate_pca_gpu_sc()` wants 1-indexed ones. This also replaces the PCA (and
+the HVGs) on the object. The Harmony embeddings above are already computed, so
+nothing breaks, but BBKNN below will run on the batch-aware PCA.
+
+```{r}
+#| label: batch aware pca gpu
+batch_aware_hvg <- find_hvg_batch_aware_sc(
+  object = sc_object,
+  batch_column = "exp_id"
+)
+
+sc_object <- calculate_pca_gpu_sc(
+  object = sc_object,
+  no_pcs = 32L,
+  hvg = batch_aware_hvg$hvg_gene_idx + 1L
+)
+```
+
+With the PCA in place, the correction itself. The corrected embedding lands in
+the object as `"mnn_gpu"`.
+
+```{r}
+#| label: fastmnn gpu
+sc_object <- fast_mnn_gpu_sc(
+  object = sc_object,
+  batch_column = "exp_id",
+  fastmnn_params = params_sc_fastmnn_gpu()
+)
+```
+
+The default search is `"exhaustive"`, which is exact. Run the CPU version on the
+same PCA (`use_precomputed_pca = TRUE`) and the two should agree up to floating
+point noise, since the CPU default `"kmknn"` is exact too. Swap in `"ivf"` or
+`"nndescent"` via `params_sc_fastmnn_gpu(knn = list(knn_method = ...))` once the
+data gets big, and accept that the results drift a bit.
+
+```{r}
+#| label: fastmnn cpu
+sc_object <- fast_mnn_sc(
+  object = sc_object,
+  batch_column = "exp_id",
+  batch_hvg_genes = batch_aware_hvg$hvg_gene_idx,
+  use_precomputed_pca = TRUE
+)
+
+mnn_cpu <- get_embedding(sc_object, "mnn")
+mnn_gpu <- get_embedding(sc_object, "mnn_gpu")
+
+diag(cor(mnn_cpu[, 1:5], mnn_gpu[, 1:5]))
+```
+
+Same batch metrics as for Harmony, on a kNN over the corrected embedding:
+
+```{r}
+#| label: fastmnn gpu metrics
+sc_object <- find_neighbours_gpu_sc(
+  object = sc_object,
+  embd_to_use = "mnn_gpu",
+  knn_method = "nndescent",
+  nn_params = params_nn_gpu(extract_knn = FALSE),
+  .verbose = TRUE
+)
+
+kbet_mnn <- calculate_kbet_sc(sc_object, batch_column = "exp_id")
+asw_mnn <- calculate_batch_asw_sc(
+  sc_object,
+  embd_to_use = "mnn_gpu",
+  batch_column = "exp_id"
+)
+lisi_mnn <- calculate_lisi_sc(
+  sc_object,
+  label_column = "exp_id",
+  type = "batch"
+)
+
+kbet_mnn
+asw_mnn
+lisi_mnn
+```
+
 ## GPU-accelerated BBKNN
 
 Everything above corrects the embedding and then builds a neighbour graph on
@@ -604,15 +709,10 @@ not, though they land in the same place.
 
 ## Conclusions
 
-The full GPU path (PCA, Harmony v2, kNN, fast clustering, UMAP with GPU Adam
-optimiser, t-SNE with GPU kNN, BBKNN) plugs into the existing `SingleCells`
-workflow without any glue code. The downstream object behaves identically to
-whatever you would get from the CPU equivalents.
-
-Still on CPU and an obvious next candidate:
-
-- **fastMNN** ([paper](https://www.nature.com/articles/nbt.4091),
-  CPU [implementation](https://gregorlueg.github.io/bixverse/reference/fast_mnn_sc.html))
+The full GPU path (PCA, Harmony v2, fastMNN, BBKNN, kNN, fast clustering,
+UMAP with GPU Adam optimiser, t-SNE with GPU kNN) plugs into the existing
+`SingleCells` workflow without any glue code. The downstream object behaves
+identically to whatever you would get from the CPU equivalents.
 
 One caveat worth carrying forward on the kNN backends. NN-descent is a low-`k`
 method on the GPU: its build degree tracks `k`, so the descent does more work
