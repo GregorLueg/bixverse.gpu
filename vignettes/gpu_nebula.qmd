@@ -222,6 +222,25 @@ The codes swap between `1` and `-10` in both directions. Both sit above the
 `-20` line that marks a likely failure, and `z` and the FDR on these genes
 still agree to five or six significant digits. Nothing here changes a call.
 
+### Selecting cells without a subset
+
+As on the CPU, `cells_to_use` restricts the fit to named cells of the full
+object, no `SingleCellsSubset` needed. Same cells, same fit:
+
+```{r}
+#| label: real-gpu-cells-to-use
+res_gpu_cells <- nebula_gpu_sc(
+  object = sc_object,
+  subject_col = "ind",
+  design = ~stim,
+  genes_to_use = hvgs,
+  cells_to_use = mono[[]]$cell_id,
+  .verbose = FALSE
+)
+
+all.equal(res_gpu$results, res_gpu_cells$results)
+```
+
 ## No contrast at all
 
 The CPU vignette's key check: control cells only, eight donors split four

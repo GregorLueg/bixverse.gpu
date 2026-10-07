@@ -1,6 +1,0 @@
-*.html
-*.R
-*_files
-
-/.quarto/
-_freeze/*/libs/
