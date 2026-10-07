@@ -20,7 +20,7 @@ params_sc_harmony_v2_gpu(
   batch_proportion_cutoff = 1e-05,
   use_dynamic_lambda = FALSE,
   csr_cube_count = 256L,
-  k_means_iter = 30L,
+  k_means_iter = 10L,
   k_means_init = NULL,
   fixed = FALSE,
   quantise = FALSE
@@ -106,7 +106,7 @@ params_sc_harmony_v2_gpu(
 - k_means_iter:
 
   Integer. Maximum number of k-means iterations for the initial centroid
-  computation. Defaults to `30L`.
+  computation. Defaults to `10L`.
 
 - k_means_init:
 
@@ -177,7 +177,7 @@ A named list with the following elements:
   needed. Defaults to `256L`.
 
 - k_means_iter - Integer. Maximum number of k-means iterations for the
-  initial centroid computation. Defaults to `30L`.
+  initial centroid computation. Defaults to `10L`.
 
 - k_means_init - String or `NULL`. Initialisation strategy for k-means.
   Defaults to `NULL`.

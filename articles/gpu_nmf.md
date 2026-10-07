@@ -72,7 +72,7 @@ tempdir_cd34 <- tempdir()
 sc_object <- SingleCells(dir_data = tempdir_cd34)
 
 sc_object <- load_h5ad(object = sc_object, h5_path = cd34_path)
-#>  Using light streaming for the CSR to CSC conversion.
+#>  Converting the cell-based data into the gene-based format.
 #> Loading observations data from h5ad into the DuckDB.
 #> Loading variables data from h5ad into the DuckDB.
 
@@ -332,8 +332,8 @@ data.table(
 )[, speed_up := round(seconds[1] / seconds, 2)][]
 #>    version seconds speed_up
 #>     <char>   <num>    <num>
-#> 1:     CPU   20.71     1.00
-#> 2:     GPU    6.12     3.38
+#> 1:     CPU   17.06     1.00
+#> 2:     GPU    6.22     2.74
 ```
 
 Do the two agree? Not bit for bit, and they cannot: f32 GEMM on the

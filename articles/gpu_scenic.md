@@ -308,17 +308,17 @@ tf_gene_dt[, gene_symbol := ensembl_to_symbol[gene]]
 head(tf_gene_dt[order(-importance)], 5L)
 #>                 tf            gene importance pairwise_cor cor_sign tf_symbol
 #>             <char>          <char>      <num>        <num>    <int>    <char>
-#> 1: ENSG00000139187 ENSG00000113088  0.2567620    0.2404412        1     KLRG1
-#> 2: ENSG00000171223 ENSG00000120129  0.2535830    0.3103159        1      JUNB
-#> 3: ENSG00000139187 ENSG00000161570  0.2012684    0.3501375        1     KLRG1
-#> 4: ENSG00000138795 ENSG00000166681  0.2005688    0.2045439        1      LEF1
-#> 5: ENSG00000221869 ENSG00000115828  0.1988880    0.2856549        1     CEBPD
+#> 1: ENSG00000171223 ENSG00000120129  0.2464994    0.3103159        1      JUNB
+#> 2: ENSG00000269404 ENSG00000168081  0.2212982    0.2799395        1      SPIB
+#> 3: ENSG00000139187 ENSG00000113088  0.2000381    0.2404412        1     KLRG1
+#> 4: ENSG00000066336 ENSG00000172243  0.1999177    0.3463677        1      SPI1
+#> 5: ENSG00000221869 ENSG00000115828  0.1944687    0.2856549        1     CEBPD
 #>    gene_symbol
 #>         <char>
-#> 1:        GZMK
-#> 2:       DUSP1
-#> 3:        CCL5
-#> 4:     NGFRAP1
+#> 1:       DUSP1
+#> 2:        PNOC
+#> 3:        GZMK
+#> 4:      CLEC7A
 #> 5:        QPCT
 ```
 

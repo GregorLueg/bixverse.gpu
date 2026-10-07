@@ -1,5 +1,37 @@
 # Changelog
 
+## bixverse.gpu 0.4.0
+
+### Features
+
+- Improved speed across various methods:
+  - GPU-accelerated kNN searches
+  - Harmony (version 2) accelerated on the GPU
+  - Randomised SVD
+- GPU-accelerated fastMNN wired in via
+  [`fast_mnn_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/fast_mnn_gpu_sc.md).
+  Only the neighbour searches run on the device. Unlike
+  [`bixverse::fast_mnn_sc()`](https://gregorlueg.github.io/bixverse/reference/fast_mnn_sc.html),
+  it does **not** regenerate the PCA on batch-aware HVGs: it corrects
+  the PCA already in the object. For the batch-aware flavour run
+  [`find_hvg_batch_aware_sc()`](https://gregorlueg.github.io/bixverse/reference/find_hvg_batch_aware_sc.html)
+  and
+  [`calculate_pca_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/calculate_pca_gpu_sc.md)
+  first. See the single cell vignette.
+- The GPU-accelerated randomised SVD for single cell are is now using
+  N_OVERSAMPLING 20 (instead of 100) and increased iterations from 2
+  to 4. Across various benchmarks and synthetic data sets, the quality
+  of the trailing PCs has improved with the new thresholds while being
+  faster.
+- The GPU-accelerated NEBULA has now a parameter that enables that a
+  minimum of samples similar to the CPU-based version.
+
+### Fixes
+
+- The GPU-accelerated Harmony version could converge wrongly after one
+  iteration for some data sets. This has been fixed via a dampening
+  factor.
+
 ## bixverse.gpu 0.3.6
 
 ### Features

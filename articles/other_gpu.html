@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,7 +80,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Other GPU-accelerated methods</h1>
 
       <p class="author">Gregor Lueg</p>
-      <p class="date">2026-10-03</p>
+      <p class="date">2026-10-07</p>
 
 
       <div class="d-none name"><code></code></div>
@@ -100,6 +100,7 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse" class="external-link">bixverse</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/bixverse.gpu/">bixverse.gpu</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gregorlueg.github.io/manifoldsR/" class="external-link">manifoldsR</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: package 'manifoldsR' was built under R version 4.5.3</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: package 'data.table' was built under R version 4.5.2</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
@@ -240,7 +241,7 @@
 <span>  <span class="va">cor_base</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">random_data</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"base R cor():   %.2fs\n"</span>, <span class="va">t_base</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; base R cor():   73.79s</span></span></code></pre></div>
+<span><span class="co">#&gt; base R cor():   96.11s</span></span></code></pre></div>
 </div>
 <p>faer-backed CPU (via <code>bixverse</code>):</p>
 <div class="cell">
@@ -249,7 +250,7 @@
 <span>  <span class="va">cor_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/rs_cor.html" class="external-link">rs_cor</a></span><span class="op">(</span><span class="va">random_data</span>, spearman <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"rs_cor() CPU:   %.2fs\n"</span>, <span class="va">t_cpu</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; rs_cor() CPU:   0.91s</span></span></code></pre></div>
+<span><span class="co">#&gt; rs_cor() CPU:   0.53s</span></span></code></pre></div>
 </div>
 <p>And GPU-accelerated:</p>
 <div class="cell">
@@ -258,7 +259,7 @@
 <span>  <span class="va">cor_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rs_cor_gpu.html">rs_cor_gpu</a></span><span class="op">(</span><span class="va">random_data</span>, spearman <span class="op">=</span> <span class="cn">FALSE</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"rs_cor_gpu():   %.2fs\n"</span>, <span class="va">t_gpu</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; rs_cor_gpu():   0.56s</span></span></code></pre></div>
+<span><span class="co">#&gt; rs_cor_gpu():   0.54s</span></span></code></pre></div>
 </div>
 <p>All three should agree:</p>
 <div class="cell">
@@ -276,13 +277,13 @@
 <span>  <span class="va">cov_cpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/rs_covariance.html" class="external-link">rs_covariance</a></span><span class="op">(</span><span class="va">random_data</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"rs_covariance() CPU: %.2fs\n"</span>, <span class="va">t_cpu_cov</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; rs_covariance() CPU: 0.81s</span></span>
+<span><span class="co">#&gt; rs_covariance() CPU: 0.50s</span></span>
 <span></span>
 <span><span class="va">t_gpu_cov</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">cov_gpu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rs_cov_gpu.html">rs_cov_gpu</a></span><span class="op">(</span><span class="va">random_data</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"rs_cov_gpu():        %.2fs\n"</span>, <span class="va">t_gpu_cov</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; rs_cov_gpu():        0.48s</span></span>
+<span><span class="co">#&gt; rs_cov_gpu():        0.46s</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"max |cpu - gpu|:     %.2e\n"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">cov_cpu</span> <span class="op">-</span> <span class="va">cov_gpu</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; max |cpu - gpu|:     4.68e-06</span></span></code></pre></div>

@@ -3,9 +3,9 @@
 GPU counterpart to
 [`bixverse::params_scrublet()`](https://gregorlueg.github.io/bixverse/reference/params_scrublet.html).
 Two differences from the CPU list. The `pca` sub-list is gone: the GPU
-SVD is always randomised, so `random_svd` and `sparse` have nothing to
-switch and `no_pcs` is a plain argument. And the kNN block is backend
-dependent, see `knn_backend`.
+SVD is always randomised, so `svd_solver` has nothing to switch and
+`no_pcs` is a plain argument. And the kNN block is backend dependent,
+see `knn_backend`.
 
 ## Usage
 
@@ -101,12 +101,9 @@ then scales `k` by the same factor, so a 20k-cell run searches at `k`
 around 175. Exhaustive barely notices `k`, since the scan is the cost
 and `k` only sizes the top-k selection. NN-descent notices a lot: its
 build degree tracks `k`, so the descent does more work per node as `k`
-climbs. Measured at 20k cells and 30 PCs, exhaustive took 0.98s against
-38.8s for NN-descent at `k = 200`. NN-descent only came out ahead at
-`k = 10`.
-
-`"ivf"` is the one worth trying: it was the quickest of the three across
-that sweep and holds a Pearson above 0.99 against exhaustive.
+climbs. `"ivf"` is the one worth trying: it was the quickest of the
+three across that sweep and holds a Pearson above 0.99 against
+exhaustive.
 
 Recall matters more here than elsewhere. The doublet score is a
 neighbour count, so a backend that drops neighbours biases every score

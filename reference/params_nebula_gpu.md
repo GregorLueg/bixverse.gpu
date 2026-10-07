@@ -20,6 +20,7 @@ params_nebula_gpu(
   kappa = 800,
   cpc = 0.005,
   mincp = 5L,
+  min_subjects = 0L,
   eps = 1e-06,
   gene_batch_size = 1000L,
   shrink_dispersion = TRUE
@@ -75,6 +76,14 @@ params_nebula_gpu(
   Integer. Drop a gene expressed in fewer than this many cells. Defaults
   to `5L`.
 
+- min_subjects:
+
+  Integer. Drop a gene that fewer than this many subjects express, a
+  subject expressing it when its own mean count per cell is above `cpc`.
+  `cpc` and `mincp` pool every cell, so one subject can carry a gene
+  through on its own. `0` switches the check off, as in the `nebula`
+  package. Defaults to `0L`.
+
 - eps:
 
   Numeric. Absolute stopping tolerance for the optimiser. Defaults to
@@ -124,6 +133,12 @@ A named list with the following elements:
 
 - mincp - Integer. Drop a gene expressed in fewer than this many cells.
   Defaults to `5L`.
+
+- min_subjects - Integer. Drop a gene that fewer than this many subjects
+  express, a subject expressing it when its own mean count per cell is
+  above `cpc`. `cpc` and `mincp` pool every cell, so one subject can
+  carry a gene through on its own. `0` switches the check off, as in the
+  `nebula` package. Defaults to `0L`.
 
 - eps - Numeric. Absolute stopping tolerance for the optimiser. Defaults
   to `1e-06`.

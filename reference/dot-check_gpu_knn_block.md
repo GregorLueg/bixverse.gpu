@@ -1,9 +1,7 @@
 # Check a GPU kNN parameter block
 
-Shared validation for the flat GPU kNN block, used by both the GPU
-Scrublet and the GPU BBKNN parameters. They take the same keys bar `k`
-and `extract_knn`, which BBKNN ignores, hence `required` rather than a
-fixed name set.
+Validation for the flat GPU kNN block of the GPU Scrublet parameters,
+whose block depends on `knn_backend` and so cannot come from devforge.
 
 ## Usage
 

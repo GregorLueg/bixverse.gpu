@@ -36,21 +36,41 @@ params_sc_bbknn_gpu(
 
 - trim:
 
-  Optional integer. Trim the neighbours of each cell to these many top
+  Integer or `NULL`. Trim the neighbours of each cell to these many top
   connectivities. May help with population independence and improve the
   tidiness of clustering. If `NULL`, it defaults to
-  `10 * neighbours_within_batch`.
+  `10 * neighbours_within_batch`. Defaults to `NULL`.
 
 - knn:
 
-  List. Optional overrides for the kNN block. Validated against
+  List. Optional overrides for the kNN block. See
   [`params_knn_gpu_defaults()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_knn_gpu_defaults.md)
-  minus `k` and `extract_knn`. Unknown keys are an error, not a silent
-  pass-through.
+  for the available elements. Without `k`, `extract_knn`. Unknown
+  elements are an error. Defaults to
+  [`list()`](https://rdrr.io/r/base/list.html).
 
 ## Value
 
-A flat named list with all GPU BBKNN parameters.
+A named list with the following elements:
+
+- neighbours_within_batch - Integer. Number of neighbours to consider
+  per batch. Defaults to `3L`.
+
+- set_op_mix_ratio - Numeric. Mixing ratio between union (1.0) and
+  intersection (0.0). Defaults to `1.0`.
+
+- local_connectivity - Numeric. UMAP connectivity computation parameter,
+  how many nearest neighbours of each cell are assumed to be fully
+  connected. Defaults to `1.0`.
+
+- trim - Integer or `NULL`. Trim the neighbours of each cell to these
+  many top connectivities. May help with population independence and
+  improve the tidiness of clustering. If `NULL`, it defaults to
+  `10 * neighbours_within_batch`. Defaults to `NULL`.
+
+- The elements of
+  [`params_knn_gpu_defaults()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_knn_gpu_defaults.md),
+  overridden by `knn`, spliced in at this position.
 
 ## Details
 

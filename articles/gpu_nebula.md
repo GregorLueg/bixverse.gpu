@@ -130,8 +130,8 @@ data.table(
 )
 #>    backend seconds
 #>     <char>   <num>
-#> 1:     CPU   2.401
-#> 2:     GPU   2.226
+#> 1:     CPU   2.843
+#> 2:     GPU   2.622
 ```
 
 ### How close are they?
@@ -274,6 +274,48 @@ the `-20` line that marks a likely failure, and `z` and the FDR on these
 genes still agree to five or six significant digits. Nothing here
 changes a call.
 
+### Selecting cells without a subset
+
+As on the CPU, `cells_to_use` restricts the fit to named cells of the
+full object, no `SingleCellsSubset` needed. Same cells, same fit:
+
+``` r
+
+res_gpu_cells <- nebula_gpu_sc(
+  object = sc_object,
+  subject_col = "ind",
+  design = ~stim,
+  genes_to_use = hvgs,
+  cells_to_use = mono[[]]$cell_id,
+  .verbose = FALSE
+)
+
+all.equal(res_gpu$results, res_gpu_cells$results)
+#> [1] TRUE
+```
+
+### Genes carried by one donor
+
+Same option as on the CPU: `min_subjects` drops genes that fewer than
+that many donors express on their own, since `cpc` and `mincp` pool
+every cell. `0`, the default, is off.
+
+``` r
+
+res_gpu_min <- nebula_gpu_sc(
+  object = mono,
+  subject_col = "ind",
+  design = ~stim,
+  genes_to_use = hvgs,
+  nebula_params = params_nebula_gpu(min_subjects = 6L),
+  .verbose = FALSE
+)
+
+c(default = nrow(res_gpu$results), min_subjects = nrow(res_gpu_min$results))
+#>      default min_subjects 
+#>          429          364
+```
+
 ## No contrast at all
 
 The CPU vignette’s key check: control cells only, eight donors split
@@ -330,8 +372,8 @@ data.table(
 
 ## Timing
 
-On this data, 500 genes over 5355 cells, the CPU took 2.4 s and the GPU
-2.2 s. One run each on an Apple Silicon laptop, device set-up included.
+On this data, 500 genes over 5355 cells, the CPU took 2.8 s and the GPU
+2.6 s. One run each on an Apple Silicon laptop, device set-up included.
 Across renders of this vignette the order has flipped both ways, so call
 it a wash at this size. The whole sweep is seconds either way, and stage
 one, the batching and the Wald test stay on the CPU in both, so the GPU

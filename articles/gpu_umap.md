@@ -32,6 +32,7 @@ manifolds). Both caveats apply here; only the compute path is different.
 
 library(bixverse.gpu)
 library(manifoldsR)
+#> Warning: package 'manifoldsR' was built under R version 4.5.3
 library(data.table)
 #> Warning: package 'data.table' was built under R version 4.5.2
 library(ggplot2)

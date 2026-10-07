@@ -7,12 +7,12 @@ the two-batch PBMC data set (pbmc3k + pbmc4k) used in the [batch
 correction
 vignette](https://gregorlueg.github.io/bixverse/articles/single_cell_batch_correction.html).
 The point is to demonstrate how `bixverse.gpu` can drop into the heavier
-steps of a standard pipeline: PCA, Harmony v2 batch correction, and the
-kNN search. Two batches give us a natural reason to run all three in
-sequence: PCA generates the embedding, Harmony corrects it, and the kNN
-methods build the neighbour graph for downstream clustering. If none of
-this single cell stuff makes sense in the `bixverse` framework, please
-read
+steps of a standard pipeline: PCA, batch correction (Harmony v2,
+fastMNN, BBKNN), and the kNN search. Two batches give us a natural
+reason to run all three in sequence: PCA generates the embedding,
+Harmony corrects it, and the kNN methods build the neighbour graph for
+downstream clustering. If none of this single cell stuff makes sense in
+the `bixverse` framework, please read
 [this](https://gregorlueg.github.io/bixverse/articles/thinking_single_cell.html)
 first.
 
@@ -54,6 +54,11 @@ have sufficient VRAM/unified memory that is…).
   batch-balanced kNN, one index per batch queried by every cell on the
   device. Corrects the graph rather than the embedding, and the win
   grows with the number of batches.
+- **GPU fastMNN** via
+  [`fast_mnn_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/fast_mnn_gpu_sc.md):
+  mutual nearest neighbour correction with the neighbour searches on the
+  device. Unlike the CPU version it does not recompute the PCA; it
+  corrects the one already in the object.
 
 ``` r
 
@@ -100,7 +105,7 @@ sc_object <- load_multi_h5ad(
   prescan_result = h5_tasks,
   .verbose = TRUE
 )
-#>  Using light streaming for the CSR to CSC conversion.
+#>  Converting the cell-based data into the gene-based format.
 #> Loading observation data from h5ad files into DuckDB.
 #> Loading variable data into DuckDB.
 ```
@@ -396,12 +401,12 @@ One column per resolution, keyed by `cell_idx`:
 head(get_data(fast_cluster_res))
 #>    cell_idx res_2 res_1.5 res_1 res_0.5
 #>       <int> <int>   <int> <int>   <int>
-#> 1:        1     1       2     1       0
-#> 2:        2     6       6     5       4
-#> 3:        3     2       1     2       0
-#> 4:        4     0       0     0       1
-#> 5:        6     2       1     2       0
-#> 6:        7     1       2     1       0
+#> 1:        1     5       1     0       0
+#> 2:        2     6       4     5       4
+#> 3:        3     1       1     0       0
+#> 4:        4     0       2     1       1
+#> 5:        6     1       1     0       0
+#> 6:        7     5       1     0       0
 ```
 
 The grid stats are the interesting bit. `mean_ari` is how stable the
@@ -414,16 +419,16 @@ up with.
 fast_cluster_res$stats
 #>    resolution  mean_ari median_ari mean_conductance median_conductance
 #>         <num>     <num>      <num>            <num>              <num>
-#> 1:        2.0 0.7931182  0.7925422      0.055585913         0.03477930
-#> 2:        1.5 0.7918988  0.7973849      0.038292684         0.01803069
-#> 3:        1.0 0.8195730  0.8181327      0.023991520         0.01010260
-#> 4:        0.5 0.9084137  1.0000000      0.005820729         0.00000000
+#> 1:        2.0 0.7857122  0.7831587       0.05734177         0.03315862
+#> 2:        1.5 0.7788464  0.7865978       0.04600120         0.02561712
+#> 3:        1.0 0.8163453  0.8264194       0.02511092         0.01912772
+#> 4:        0.5 0.8243054  0.8115990       0.01312273         0.01405819
 #>    mean_n_comms
 #>           <num>
-#> 1:         8.60
-#> 2:         7.84
-#> 3:         7.16
-#> 4:         6.04
+#> 1:         7.96
+#> 2:         7.40
+#> 3:         6.44
+#> 4:         5.72
 ```
 
 The k-means centroids and per-cell assignments are there too, if you
@@ -435,7 +440,7 @@ dim(get_centroids_sc(fast_cluster_res))
 #> [1] 76 32
 
 head(get_kmeans_clusters(fast_cluster_res))
-#> [1] 62 47 36  8  1 63
+#> [1] 69 41 40 27 30 32
 ```
 
 Push the memberships onto the object and they behave like any other obs
@@ -475,12 +480,12 @@ head(sc_object)
 #> 6:       1 AAACGCTGACCAGT   774     2161    TRUE 0.03840815 0.4183249   FALSE
 #>    res_2 res_1.5 res_1 res_0.5
 #>    <int>   <int> <int>   <int>
-#> 1:     1       2     1       0
-#> 2:     6       6     5       4
-#> 3:     2       1     2       0
-#> 4:     0       0     0       1
-#> 5:     2       1     2       0
-#> 6:     1       2     1       0
+#> 1:     5       1     0       0
+#> 2:     6       4     5       4
+#> 3:     1       1     0       0
+#> 4:     0       2     1       1
+#> 5:     1       1     0       0
+#> 6:     5       1     0       0
 ```
 
 ## Comparing GPU vs CPU Harmony
@@ -506,18 +511,18 @@ lisi_gpu <- calculate_lisi_sc(
 kbet_gpu
 #> kBET Scores
 #>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.1421 (830 / 5841)
-#>   Mean Chi-Square:     2.0701 (expected under H0: 1)
+#>   Rejection rate:      0.1498 (875 / 5841)
+#>   Mean Chi-Square:     2.1533 (expected under H0: 1)
 #>   Median Chi-Square:   0.7374
 asw_gpu
 #> Batch Silhouette Width
 #>   Cells: 5000 | Batches: 2
-#>   Mean ASW:    0.0212 (-1 = strong intermixing, 0 = mixed, 1 = separated)
-#>   Median ASW:  0.0489
+#>   Mean ASW:    0.0240 (-1 = strong intermixing, 0 = mixed, 1 = separated)
+#>   Median ASW:  0.0423
 lisi_gpu
 #> iLISI (batch)
 #>   Cells: 5841 | Labels: 2
-#>   Mean LISI:    1.6010
+#>   Mean LISI:    1.6005
 #>   Median LISI:  1.6423
 #>   Normalised:   0.6423 (0 = worst, 1 = best)
 ```
@@ -552,18 +557,18 @@ lisi_cpu <- calculate_lisi_sc(
 kbet_cpu
 #> kBET Scores
 #>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.1469 (858 / 5841)
-#>   Mean Chi-Square:     2.0891 (expected under H0: 1)
-#>   Median Chi-Square:   1.5425
+#>   Rejection rate:      0.2190 (1279 / 5841)
+#>   Mean Chi-Square:     2.6428 (expected under H0: 1)
+#>   Median Chi-Square:   1.9151
 asw_cpu
 #> Batch Silhouette Width
 #>   Cells: 5000 | Batches: 2
-#>   Mean ASW:    0.0207 (-1 = strong intermixing, 0 = mixed, 1 = separated)
-#>   Median ASW:  0.0493
+#>   Mean ASW:    0.0253 (-1 = strong intermixing, 0 = mixed, 1 = separated)
+#>   Median ASW:  0.0511
 lisi_cpu
 #> iLISI (batch)
 #>   Cells: 5841 | Labels: 2
-#>   Mean LISI:    1.5986
+#>   Mean LISI:    1.5677
 #>   Median LISI:  1.6423
 #>   Normalised:   0.6423 (0 = worst, 1 = best)
 ```
@@ -682,6 +687,141 @@ embedding_plot_sc(
 
 ![](gpu_single_cell_files/figure-html/tsne%20plot-1.png)
 
+## GPU-accelerated fastMNN
+
+fastMNN ([Haghverdi et al.,
+2018](https://www.nature.com/articles/nbt.4091)) merges the batches one
+after the other. Mutual nearest neighbours between the merged block and
+the next batch give correction vectors, those get smoothed with a
+tricube kernel and applied to every cell of that batch.
+[`fast_mnn_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/fast_mnn_gpu_sc.md)
+moves the neighbour searches to the device: both MNN directions plus the
+tricube search, so three index builds per merge. Pairing and the
+correction itself are shared with the CPU code. On two batches and ~6k
+cells there is nothing to win: the GPU merge took 0.18s here against
+0.05s on the CPU. The payoff needs more cells and more batches.
+
+> **Important**
+>
+> [`fast_mnn_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/fast_mnn_gpu_sc.md)
+> does **not** regenerate the PCA on batch-aware HVGs.
+> [`bixverse::fast_mnn_sc()`](https://gregorlueg.github.io/bixverse/reference/fast_mnn_sc.html)
+> takes the batch-aware HVGs and recomputes the PCA inside the call. The
+> GPU version corrects whatever PCA sits in the object, as is. Want the
+> batch-aware flavour? Run
+> [`find_hvg_batch_aware_sc()`](https://gregorlueg.github.io/bixverse/reference/find_hvg_batch_aware_sc.html)
+> and
+> [`calculate_pca_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/calculate_pca_gpu_sc.md)
+> first, as below.
+
+Mind the indexing:
+[`find_hvg_batch_aware_sc()`](https://gregorlueg.github.io/bixverse/reference/find_hvg_batch_aware_sc.html)
+hands back 0-indexed genes,
+[`calculate_pca_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/calculate_pca_gpu_sc.md)
+wants 1-indexed ones. This also replaces the PCA (and the HVGs) on the
+object. The Harmony embeddings above are already computed, so nothing
+breaks, but BBKNN below will run on the batch-aware PCA.
+
+``` r
+
+batch_aware_hvg <- find_hvg_batch_aware_sc(
+  object = sc_object,
+  batch_column = "exp_id"
+)
+
+sc_object <- calculate_pca_gpu_sc(
+  object = sc_object,
+  no_pcs = 32L,
+  hvg = batch_aware_hvg$hvg_gene_idx + 1L
+)
+#> HVGs provided. Will use these ones and set the internal HVG to the provided genes.
+#> Using GPU-accelerated, randomised sparse SVD data with 3496 HVG.
+```
+
+With the PCA in place, the correction itself. The corrected embedding
+lands in the object as `"mnn_gpu"`.
+
+``` r
+
+sc_object <- fast_mnn_gpu_sc(
+  object = sc_object,
+  batch_column = "exp_id",
+  fastmnn_params = params_sc_fastmnn_gpu()
+)
+#> Running fastMNN on the GPU.
+```
+
+The default search is `"exhaustive"`, which is exact. Run the CPU
+version on the same PCA (`use_precomputed_pca = TRUE`) and the two
+should agree up to floating point noise, since the CPU default `"kmknn"`
+is exact too. Swap in `"ivf"` or `"nndescent"` via
+`params_sc_fastmnn_gpu(knn = list(knn_method = ...))` once the data gets
+big, and accept that the results drift a bit.
+
+``` r
+
+sc_object <- fast_mnn_sc(
+  object = sc_object,
+  batch_column = "exp_id",
+  batch_hvg_genes = batch_aware_hvg$hvg_gene_idx,
+  use_precomputed_pca = TRUE
+)
+#> Using pre-computed PCA found in the object
+
+mnn_cpu <- get_embedding(sc_object, "mnn")
+mnn_gpu <- get_embedding(sc_object, "mnn_gpu")
+
+diag(cor(mnn_cpu[, 1:5], mnn_gpu[, 1:5]))
+#> [1] 1 1 1 1 1
+```
+
+Same batch metrics as for Harmony, on a kNN over the corrected
+embedding:
+
+``` r
+
+sc_object <- find_neighbours_gpu_sc(
+  object = sc_object,
+  embd_to_use = "mnn_gpu",
+  knn_method = "nndescent",
+  nn_params = params_nn_gpu(extract_knn = FALSE),
+  .verbose = TRUE
+)
+#> Generating GPU kNN data with nndescent method.
+#> Generating sNN graph (full: TRUE).
+#> Transforming sNN data to igraph.
+
+kbet_mnn <- calculate_kbet_sc(sc_object, batch_column = "exp_id")
+asw_mnn <- calculate_batch_asw_sc(
+  sc_object,
+  embd_to_use = "mnn_gpu",
+  batch_column = "exp_id"
+)
+lisi_mnn <- calculate_lisi_sc(
+  sc_object,
+  label_column = "exp_id",
+  type = "batch"
+)
+
+kbet_mnn
+#> kBET Scores
+#>   Cells: 5841 | Batches: 2 | Threshold: 0.050
+#>   Rejection rate:      0.3383 (1976 / 5841)
+#>   Mean Chi-Square:     3.5202 (expected under H0: 1)
+#>   Median Chi-Square:   3.6444
+asw_mnn
+#> Batch Silhouette Width
+#>   Cells: 5000 | Batches: 2
+#>   Mean ASW:    0.0190 (-1 = strong intermixing, 0 = mixed, 1 = separated)
+#>   Median ASW:  0.0417
+lisi_mnn
+#> iLISI (batch)
+#>   Cells: 5841 | Labels: 2
+#>   Mean LISI:    1.4467
+#>   Median LISI:  1.4706
+#>   Normalised:   0.4706 (0 = worst, 1 = best)
+```
+
 ## GPU-accelerated BBKNN
 
 Everything above corrects the embedding and then builds a neighbour
@@ -757,15 +897,11 @@ and will not, though they land in the same place.
 
 ## Conclusions
 
-The full GPU path (PCA, Harmony v2, kNN, fast clustering, UMAP with GPU
-Adam optimiser, t-SNE with GPU kNN, BBKNN) plugs into the existing
-`SingleCells` workflow without any glue code. The downstream object
-behaves identically to whatever you would get from the CPU equivalents.
-
-Still on CPU and an obvious next candidate:
-
-- **fastMNN** ([paper](https://www.nature.com/articles/nbt.4091), CPU
-  [implementation](https://gregorlueg.github.io/bixverse/reference/fast_mnn_sc.html))
+The full GPU path (PCA, Harmony v2, fastMNN, BBKNN, kNN, fast
+clustering, UMAP with GPU Adam optimiser, t-SNE with GPU kNN) plugs into
+the existing `SingleCells` workflow without any glue code. The
+downstream object behaves identically to whatever you would get from the
+CPU equivalents.
 
 One caveat worth carrying forward on the kNN backends. NN-descent is a
 low-`k` method on the GPU: its build degree tracks `k`, so the descent

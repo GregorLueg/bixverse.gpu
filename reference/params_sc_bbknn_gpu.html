@@ -9,7 +9,7 @@ knobs, but the kNN block is the GPU one, see params_knn_gpu_defaults()."><meta p
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,8 +74,8 @@ knobs, but the kNN block is the GPU one, see <code><a href="params_knn_gpu_defau
 
 
 <dl><dt id="arg-neighbours-within-batch">neighbours_within_batch<a class="anchor" aria-label="anchor" href="#arg-neighbours-within-batch"></a></dt>
-<dd><p>Integer. Number of neighbours to consider
-per batch. Defaults to <code>3L</code>.</p></dd>
+<dd><p>Integer. Number of neighbours to consider per
+batch. Defaults to <code>3L</code>.</p></dd>
 
 
 <dt id="arg-set-op-mix-ratio">set_op_mix_ratio<a class="anchor" aria-label="anchor" href="#arg-set-op-mix-ratio"></a></dt>
@@ -90,28 +90,38 @@ Defaults to <code>1.0</code>.</p></dd>
 
 
 <dt id="arg-trim">trim<a class="anchor" aria-label="anchor" href="#arg-trim"></a></dt>
-<dd><p>Optional integer. Trim the neighbours of each cell to these many
+<dd><p>Integer or <code>NULL</code>. Trim the neighbours of each cell to these many
 top connectivities. May help with population independence and improve the
-tidiness of clustering. If <code>NULL</code>, it defaults to
-<code>10 * neighbours_within_batch</code>.</p></dd>
+tidiness of clustering. If <code>NULL</code>, it defaults to <code>10 * neighbours_within_batch</code>. Defaults to <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-knn">knn<a class="anchor" aria-label="anchor" href="#arg-knn"></a></dt>
-<dd><p>List. Optional overrides for the kNN block. Validated against
-<code><a href="params_knn_gpu_defaults.html">params_knn_gpu_defaults()</a></code> minus <code>k</code> and <code>extract_knn</code>. Unknown keys are
-an error, not a silent pass-through.</p></dd>
+<dd><p>List. Optional overrides for the kNN block. See
+<code><a href="params_knn_gpu_defaults.html">params_knn_gpu_defaults()</a></code> for the available elements. Without <code>k</code>,
+<code>extract_knn</code>. Unknown elements are an error. Defaults to <code><a href="https://rdrr.io/r/base/list.html" class="external-link">list()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A flat named list with all GPU BBKNN parameters.</p>
-    </div>
+    <p>A named list with the following elements:</p><ul><li><p>neighbours_within_batch - Integer. Number of neighbours to consider
+per batch. Defaults to <code>3L</code>.</p></li>
+<li><p>set_op_mix_ratio - Numeric. Mixing ratio between union (1.0) and
+intersection (0.0). Defaults to <code>1.0</code>.</p></li>
+<li><p>local_connectivity - Numeric. UMAP connectivity computation parameter,
+how many nearest neighbours of each cell are assumed to be fully connected.
+Defaults to <code>1.0</code>.</p></li>
+<li><p>trim - Integer or <code>NULL</code>. Trim the neighbours of each cell to these
+many top connectivities. May help with population independence and improve
+the tidiness of clustering. If <code>NULL</code>, it defaults to <code>10 * neighbours_within_batch</code>. Defaults to <code>NULL</code>.</p></li>
+<li><p>The elements of <code><a href="params_knn_gpu_defaults.html">params_knn_gpu_defaults()</a></code>, overridden by <code>knn</code>,
+spliced in at this position.</p></li>
+</ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Two keys of the GPU kNN block do nothing here and are rejected
-rather than silently ignored. <code>k</code> is set by <code>neighbours_within_batch</code>, and
-<code>extract_knn</code> only applies to a self-query, whereas BBKNN builds one index
-per batch and queries each with every cell.</p>
+    <p>Two keys of the GPU kNN block do nothing here and are rejected rather than
+silently ignored. <code>k</code> is set by <code>neighbours_within_batch</code>, and <code>extract_knn</code>
+only applies to a self-query, whereas BBKNN builds one index per batch and
+queries each with every cell.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

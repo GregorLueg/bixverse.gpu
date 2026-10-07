@@ -33,6 +33,7 @@ calculate_pca_gpu_sc(
   Named list. Controls the parameters to be used for the PCA calculation
   which is single cell-specific, see
   [`params_sc_pca()`](https://gregorlueg.github.io/bixverse/reference/params_sc_pca.html).
+  `svd_solver` is ignored: the GPU path is always randomised.
 
 - hvg:
 
@@ -44,8 +45,7 @@ calculate_pca_gpu_sc(
 
 - seed:
 
-  Integer. Controls reproducibility. Only relevant if
-  `randomised_svd = TRUE`.
+  Integer. Seed for the randomised SVD.
 
 - .verbose:
 

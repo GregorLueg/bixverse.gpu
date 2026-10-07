@@ -3,10 +3,8 @@
 **\[experimental\]** Helper function that will calculate sparse PCA
 without scaling the data. This has the advantage that you avoid creating
 a large dense matrix due to scaling; however, it has the disadvantage
-that the first PC will be heavily influenced by average expression. If
-random_svd is set to `FALSE`, Lanczos iterations will be used to solve
-the SVD; if random_svd is set to `TRUE`, the randomised version will be
-used with multiplication of the initial sparse matrix with a much
+that the first PC will be heavily influenced by average expression. The
+SVD is always randomised: the sparse matrix is multiplied with a much
 smaller random dense matrix, avoiding holding a large dense matrix in
 memory.
 
@@ -43,7 +41,7 @@ rs_sc_pca_sparse_gpu(
 - pca_params:
 
   Named list. Contains the parameters to use for this PCA run.
-  (Randomised will ignore, as gpu only supports randomised.)
+  `svd_solver` is ignored, the GPU path is always randomised.
 
 - cell_indices:
 

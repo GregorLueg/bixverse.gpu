@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,6 +50,24 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.0" id="bixversegpu-040">bixverse.gpu 0.4.0<a class="anchor" aria-label="anchor" href="#bixversegpu-040"></a></h2>
+<div class="section level3">
+<h3 id="features-0-4-0">Features<a class="anchor" aria-label="anchor" href="#features-0-4-0"></a></h3>
+<ul><li>Improved speed across various methods:
+<ul><li>GPU-accelerated kNN searches</li>
+<li>Harmony (version 2) accelerated on the GPU</li>
+<li>Randomised SVD</li>
+</ul></li>
+<li>GPU-accelerated fastMNN wired in via <code><a href="../reference/fast_mnn_gpu_sc.html">fast_mnn_gpu_sc()</a></code>. Only the neighbour searches run on the device. Unlike <code><a href="https://gregorlueg.github.io/bixverse/reference/fast_mnn_sc.html" class="external-link">bixverse::fast_mnn_sc()</a></code>, it does <strong>not</strong> regenerate the PCA on batch-aware HVGs: it corrects the PCA already in the object. For the batch-aware flavour run <code><a href="https://gregorlueg.github.io/bixverse/reference/find_hvg_batch_aware_sc.html" class="external-link">find_hvg_batch_aware_sc()</a></code> and <code><a href="../reference/calculate_pca_gpu_sc.html">calculate_pca_gpu_sc()</a></code> first. See the single cell vignette.</li>
+<li>The GPU-accelerated randomised SVD for single cell are is now using N_OVERSAMPLING 20 (instead of 100) and increased iterations from 2 to 4. Across various benchmarks and synthetic data sets, the quality of the trailing PCs has improved with the new thresholds while being faster.</li>
+<li>The GPU-accelerated NEBULA has now a parameter that enables that a minimum of samples similar to the CPU-based version.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixes-0-4-0">Fixes<a class="anchor" aria-label="anchor" href="#fixes-0-4-0"></a></h3>
+<ul><li>The GPU-accelerated Harmony version could converge wrongly after one iteration for some data sets. This has been fixed via a dampening factor.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.6" id="bixversegpu-036">bixverse.gpu 0.3.6<a class="anchor" aria-label="anchor" href="#bixversegpu-036"></a></h2>
 <div class="section level3">

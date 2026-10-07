@@ -26,7 +26,7 @@ apply_choice_rules(x, rules, label, hint = NULL)
 - label:
 
   Short human-readable label used in the error message (e.g.
-  `"MELD params"`).
+  `"solver params"`).
 
 - hint:
 

@@ -15,7 +15,7 @@ rather than on them."><meta property="og:image" content="https://gregorlueg.gith
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -79,6 +79,7 @@ rather than on them.</p>
 <span>  kappa <span class="op">=</span> <span class="fl">800</span>,</span>
 <span>  cpc <span class="op">=</span> <span class="fl">0.005</span>,</span>
 <span>  mincp <span class="op">=</span> <span class="fl">5L</span>,</span>
+<span>  min_subjects <span class="op">=</span> <span class="fl">0L</span>,</span>
 <span>  eps <span class="op">=</span> <span class="fl">1e-06</span>,</span>
 <span>  gene_batch_size <span class="op">=</span> <span class="fl">1000L</span>,</span>
 <span>  shrink_dispersion <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -136,6 +137,14 @@ Defaults to <code>0.005</code>.</p></dd>
 Defaults to <code>5L</code>.</p></dd>
 
 
+<dt id="arg-min-subjects">min_subjects<a class="anchor" aria-label="anchor" href="#arg-min-subjects"></a></dt>
+<dd><p>Integer. Drop a gene that fewer than this many subjects
+express, a subject expressing it when its own mean count per cell is above
+<code>cpc</code>. <code>cpc</code> and <code>mincp</code> pool every cell, so one subject can carry a gene
+through on its own. <code>0</code> switches the check off, as in the <code>nebula</code> package.
+Defaults to <code>0L</code>.</p></dd>
+
+
 <dt id="arg-eps">eps<a class="anchor" aria-label="anchor" href="#arg-eps"></a></dt>
 <dd><p>Numeric. Absolute stopping tolerance for the optimiser. Defaults
 to <code>1e-06</code>.</p></dd>
@@ -174,6 +183,11 @@ subject-level overdispersion from stage one is trusted as is. Defaults to
 Defaults to <code>0.005</code>.</p></li>
 <li><p>mincp - Integer. Drop a gene expressed in fewer than this many cells.
 Defaults to <code>5L</code>.</p></li>
+<li><p>min_subjects - Integer. Drop a gene that fewer than this many subjects
+express, a subject expressing it when its own mean count per cell is above
+<code>cpc</code>. <code>cpc</code> and <code>mincp</code> pool every cell, so one subject can carry a gene
+through on its own. <code>0</code> switches the check off, as in the <code>nebula</code> package.
+Defaults to <code>0L</code>.</p></li>
 <li><p>eps - Numeric. Absolute stopping tolerance for the optimiser. Defaults
 to <code>1e-06</code>.</p></li>
 <li><p>gene_batch_size - Integer. Genes read and fitted per batch. Bounds how

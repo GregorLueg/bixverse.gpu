@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,7 +72,7 @@
 <span>  batch_proportion_cutoff <span class="op">=</span> <span class="fl">1e-05</span>,</span>
 <span>  use_dynamic_lambda <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  csr_cube_count <span class="op">=</span> <span class="fl">256L</span>,</span>
-<span>  k_means_iter <span class="op">=</span> <span class="fl">30L</span>,</span>
+<span>  k_means_iter <span class="op">=</span> <span class="fl">10L</span>,</span>
 <span>  k_means_init <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fixed <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  quantise <span class="op">=</span> <span class="cn">FALSE</span></span>
@@ -159,7 +159,7 @@ Defaults to <code>256L</code>.</p></dd>
 
 <dt id="arg-k-means-iter">k_means_iter<a class="anchor" aria-label="anchor" href="#arg-k-means-iter"></a></dt>
 <dd><p>Integer. Maximum number of k-means iterations for the
-initial centroid computation. Defaults to <code>30L</code>.</p></dd>
+initial centroid computation. Defaults to <code>10L</code>.</p></dd>
 
 
 <dt id="arg-k-means-init">k_means_init<a class="anchor" aria-label="anchor" href="#arg-k-means-init"></a></dt>
@@ -214,7 +214,7 @@ to <code>FALSE</code>.</p></li>
 building the level-CSR index on the GPU. Adjust for your hardware if needed.
 Defaults to <code>256L</code>.</p></li>
 <li><p>k_means_iter - Integer. Maximum number of k-means iterations for the
-initial centroid computation. Defaults to <code>30L</code>.</p></li>
+initial centroid computation. Defaults to <code>10L</code>.</p></li>
 <li><p>k_means_init - String or <code>NULL</code>. Initialisation strategy for k-means.
 Defaults to <code>NULL</code>.</p></li>
 <li><p>fixed - Boolean. If <code>TRUE</code>, centroids are fixed after initialisation.

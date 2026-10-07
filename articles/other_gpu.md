@@ -17,6 +17,7 @@ dependencies.
 library(bixverse)
 library(bixverse.gpu)
 library(manifoldsR)
+#> Warning: package 'manifoldsR' was built under R version 4.5.3
 library(data.table)
 #> Warning: package 'data.table' was built under R version 4.5.2
 library(ggplot2)
@@ -216,7 +217,7 @@ t_base <- system.time({
   cor_base <- cor(random_data)
 })
 cat(sprintf("base R cor():   %.2fs\n", t_base[["elapsed"]]))
-#> base R cor():   73.79s
+#> base R cor():   96.11s
 ```
 
 faer-backed CPU (via `bixverse`):
@@ -227,7 +228,7 @@ t_cpu <- system.time({
   cor_cpu <- rs_cor(random_data, spearman = FALSE)
 })
 cat(sprintf("rs_cor() CPU:   %.2fs\n", t_cpu[["elapsed"]]))
-#> rs_cor() CPU:   0.91s
+#> rs_cor() CPU:   0.53s
 ```
 
 And GPU-accelerated:
@@ -238,7 +239,7 @@ t_gpu <- system.time({
   cor_gpu <- rs_cor_gpu(random_data, spearman = FALSE, verbose = FALSE)
 })
 cat(sprintf("rs_cor_gpu():   %.2fs\n", t_gpu[["elapsed"]]))
-#> rs_cor_gpu():   0.56s
+#> rs_cor_gpu():   0.54s
 ```
 
 All three should agree:
@@ -261,13 +262,13 @@ t_cpu_cov <- system.time({
   cov_cpu <- rs_covariance(random_data)
 })
 cat(sprintf("rs_covariance() CPU: %.2fs\n", t_cpu_cov[["elapsed"]]))
-#> rs_covariance() CPU: 0.81s
+#> rs_covariance() CPU: 0.50s
 
 t_gpu_cov <- system.time({
   cov_gpu <- rs_cov_gpu(random_data, verbose = FALSE)
 })
 cat(sprintf("rs_cov_gpu():        %.2fs\n", t_gpu_cov[["elapsed"]]))
-#> rs_cov_gpu():        0.48s
+#> rs_cov_gpu():        0.46s
 
 cat(sprintf("max |cpu - gpu|:     %.2e\n", max(abs(cov_cpu - cov_gpu))))
 #> max |cpu - gpu|:     4.68e-06

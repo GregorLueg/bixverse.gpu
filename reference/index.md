@@ -23,6 +23,8 @@ applications.
   : Run fast Louvain clustering on a SingleCells object (GPU)
 - [`bbknn_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/bbknn_gpu_sc.md)
   : Run BBKNN on the GPU
+- [`fast_mnn_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/fast_mnn_gpu_sc.md)
+  : Run fastMNN on the GPU
 - [`nebula_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/nebula_gpu_sc.md)
   : Run NEBULA on single cells on the GPU
 - [`nmf_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/nmf_gpu_sc.md)
@@ -45,6 +47,8 @@ applications.
   : Wrapper function for GPU Scrublet doublet detection parameters
 - [`params_sc_bbknn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_bbknn_gpu.md)
   : Wrapper function for the GPU BBKNN parameters
+- [`params_sc_fastmnn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_fastmnn_gpu.md)
+  : Wrapper function for the GPU fastMNN parameters
 - [`params_nebula_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nebula_gpu.md)
   : Wrapper function for parameters for GPU NEBULA
 - [`params_knn_gpu_defaults()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_knn_gpu_defaults.md)
@@ -125,6 +129,8 @@ useful for your own package? Use with care and read the documentation!
 
 - [`rs_bbknn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_bbknn_gpu.md)
   **\[experimental\]** : GPU: BBKNN batch correction
+- [`rs_fast_mnn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_fast_mnn_gpu.md)
+  **\[experimental\]** : GPU: fastMNN batch correction
 - [`rs_cor_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_cor_gpu.md)
   **\[experimental\]** : GPU-accelerated correlation calculations
 - [`rs_cov_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_cov_gpu.md)

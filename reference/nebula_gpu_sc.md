@@ -22,6 +22,7 @@ nebula_gpu_sc(
   coef = NULL,
   contrast = NULL,
   genes_to_use = NULL,
+  cells_to_use = NULL,
   offset = NULL,
   nebula_params = params_nebula_gpu(),
   .verbose = TRUE
@@ -60,6 +61,12 @@ nebula_gpu_sc(
   Optional character vector. The genes to fit. Defaults to every gene in
   the object, which is usually too many.
 
+- cells_to_use:
+
+  Optional character vector. Names of the cells to fit, e.g. one cell
+  type or one condition. Defaults to every cell that passed quality
+  control. Cells that cannot be matched are dropped with a warning.
+
 - offset:
 
   Optional numeric vector. Strictly positive scaling factor per cell,
@@ -86,6 +93,9 @@ nebula_gpu_sc(
   - cpc - Numeric. Minimum mean count per cell for a gene to be tested.
 
   - mincp - Integer. Minimum number of cells expressing a gene.
+
+  - min_subjects - Integer. Minimum number of subjects whose own mean
+    count per cell clears `cpc`. `0` switches the check off.
 
   - eps - Numeric. Optimiser stopping tolerance.
 

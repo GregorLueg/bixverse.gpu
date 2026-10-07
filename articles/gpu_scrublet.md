@@ -76,7 +76,13 @@ sc_object <- load_mtx(
   sc_mtx_io_param = mtx_io_params,
   streaming = 0L
 )
-#>  Loading data directly into memory for CSR to CSC conversion.
+#> Warning: The `streaming` argument(s) of the count loaders was deprecated in bixverse
+#> 0.5.4.
+#> ℹ The CSR to CSC conversion is bounded by `csc_mem_gb` instead. The old
+#>   arguments are ignored.
+#> ℹ The deprecated feature was likely used in the bixverse package.
+#>   Please report the issue to the authors.
+#>  Converting the cell-based data into the gene-based format.
 #> Loading observations data from flat file into the DuckDB.
 #> Loading variable data from flat file into the DuckDB.
 
@@ -129,10 +135,10 @@ gpu_time <- system.time({
 })
 
 scrublet_gpu
-#> ScrubletRes: 14528 cells, 1765 doublets (12.1%)
-#>   Threshold:              0.2174
-#>   Detected doublet rate:  12.1%
-#>   Detectable fraction:    87.7%
+#> ScrubletRes: 14528 cells, 1782 doublets (12.3%)
+#>   Threshold:              0.2141
+#>   Detected doublet rate:  12.3%
+#>   Detectable fraction:    88.4%
 #>   Overall doublet rate:   13.9%
 #>   Simulated doublets:     21792
 ```
@@ -159,13 +165,13 @@ gpu_dt <- merge(gpu_dt, demuxlet_data, by = "Barcode")
 
 doublet_metrics(predicted = gpu_dt$doublet, actual = gpu_dt$Call)
 #> $precision
-#> [1] 0.6628895
+#> [1] 0.6632997
 #> 
 #> $recall
-#> [1] 0.7504811
+#> [1] 0.7581783
 #> 
 #> $f1
-#> [1] 0.7039711
+#> [1] 0.7075726
 ```
 
 ## Picking a kNN backend
@@ -271,8 +277,8 @@ data.table(
 )[, speed_up := round(seconds[1] / seconds, 2)][]
 #>    version seconds speed_up
 #>     <char>   <num>    <num>
-#> 1:     CPU    1.38     1.00
-#> 2:     GPU    0.99     1.39
+#> 1:     CPU    3.48      1.0
+#> 2:     GPU    1.51      2.3
 ```
 
 ## Do the calls agree?
@@ -295,8 +301,8 @@ data.table(
 )
 #>    version precision recall    f1 threshold
 #>     <char>     <num>  <num> <num>     <num>
-#> 1:     CPU     0.665  0.759 0.709    0.2141
-#> 2:     GPU     0.663  0.750 0.704    0.2174
+#> 1:     CPU     0.664  0.756 0.707    0.2102
+#> 2:     GPU     0.663  0.758 0.708    0.2141
 ```
 
 ``` r
@@ -325,7 +331,7 @@ cor(
   scrublet_gpu$doublet_scores_obs,
   method = "pearson"
 )
-#> [1] 0.9901311
+#> [1] 0.9884411
 ```
 
 The scores correlate, they do not match. Both paths use a randomised SVD

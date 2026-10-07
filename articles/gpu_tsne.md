@@ -251,11 +251,11 @@ timings <- rbindlist(lapply(approx_types, \(approx) {
 timings
 #>    approx_type seconds
 #>         <char>   <num>
-#> 1:  fft_3k_gpu    2.34
-#> 2:          bh   18.06
-#> 3:       bh_qd    3.58
-#> 4:         fft    5.63
-#> 5:      fft_3k    4.05
+#> 1:  fft_3k_gpu    2.46
+#> 2:          bh   25.41
+#> 3:       bh_qd    6.76
+#> 4:         fft    7.34
+#> 5:      fft_3k    5.91
 ```
 
 ## Using a pre-computed kNN graph

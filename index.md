@@ -43,7 +43,7 @@ Heads up: the R-facing API can still shift between versions.
 
 | Domain | What’s in there | Read more |
 |----|----|----|
-| Single cell core | Sparse randomised PCA, kNN graphs (CAGRA, IVF, exhaustive), Harmony, BBKNN, fast clustering | [single cell](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_single_cell.html) |
+| Single cell core | Sparse randomised PCA, kNN graphs (CAGRA, IVF, exhaustive), Harmony, fastMNN, BBKNN, fast clustering | [single cell](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_single_cell.html) |
 | Meta cells | SEACells, both Frank-Wolfe solves on the GPU | [SEACells](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_metacells.html) |
 | Regulons | SCENIC with ExtraTrees and random forest learners on the GPU. grnboost2 stays on the CPU, it does not gain much | [SCENIC](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scenic.html) |
 | QC and DGE | Scrublet doublet detection, NEBULA mixed models | [Scrublet](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scrublet.html), [NEBULA](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_nebula.html) |
@@ -162,7 +162,8 @@ k-means clustering on GPU
 
 Sparse, randomised SVD for single cells
 
-GPU-accelerated Harmony and BBKNN batch correction (single cells)
+GPU-accelerated Harmony, fastMNN and BBKNN batch correction (single
+cells)
 
 GPU-accelerated correlations (Spearman and Pearson)
 

@@ -13,7 +13,7 @@ works on the "rna" modality.'><meta property="og:image" content="https://gregorl
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -90,7 +90,8 @@ works on the <code>"rna"</code> modality.</p>
 
 <dt id="arg-pca-params">pca_params<a class="anchor" aria-label="anchor" href="#arg-pca-params"></a></dt>
 <dd><p>Named list. Controls the parameters to be used for the
-PCA calculation which is single cell-specific, see <code><a href="https://gregorlueg.github.io/bixverse/reference/params_sc_pca.html" class="external-link">params_sc_pca()</a></code>.</p></dd>
+PCA calculation which is single cell-specific, see <code><a href="https://gregorlueg.github.io/bixverse/reference/params_sc_pca.html" class="external-link">params_sc_pca()</a></code>.
+<code>svd_solver</code> is ignored: the GPU path is always randomised.</p></dd>
 
 
 <dt id="arg-hvg">hvg<a class="anchor" aria-label="anchor" href="#arg-hvg"></a></dt>
@@ -101,8 +102,7 @@ these, the internal HVG will be overwritten.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
-<dd><p>Integer. Controls reproducibility. Only relevant if
-<code>randomised_svd = TRUE</code>.</p></dd>
+<dd><p>Integer. Seed for the randomised SVD.</p></dd>
 
 
 <dt id="arg--verbose">.verbose<a class="anchor" aria-label="anchor" href="#arg--verbose"></a></dt>
