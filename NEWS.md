@@ -1,3 +1,10 @@
+# bixverse.gpu 0.4.1
+
+## Features
+
+* Wired in the faster NEBULA via [`edge-rs`](https://crates.io/crates/edge-rs).
+  This affects also the GPU path because parts of it run on CPU.
+
 # bixverse.gpu 0.4.0
 
 ## Features
