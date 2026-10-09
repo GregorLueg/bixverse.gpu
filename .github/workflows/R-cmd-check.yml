@@ -17,6 +17,7 @@ jobs:
       rust: true
       gpu: true
       windows: true
+      windows-arm: true
       macos-x86: true
       linux-runner: ubuntu-latest
       extra-repositories: https://gregorlueg.r-universe.dev
