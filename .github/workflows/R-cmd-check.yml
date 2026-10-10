@@ -12,11 +12,12 @@ concurrency:
 
 jobs:
   R-CMD-check:
-    uses: GregorLueg/personal-actions/.github/workflows/r-cmd-check.yml@v1
+    uses: GregorLueg/personal-actions/.github/workflows/r-cmd-check.yml@fix-windows-arm-repos
     with:
       rust: true
       gpu: true
       windows: true
+      windows-arm: true
       macos-x86: true
       linux-runner: ubuntu-latest
       extra-repositories: https://gregorlueg.r-universe.dev
