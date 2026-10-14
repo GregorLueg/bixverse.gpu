@@ -1,5 +1,6 @@
 //! Utility functions (mostly copied over from manifoldsR)
 
+use crate::Backend;
 use ann_search_rs::prelude::AnnSearchFloat;
 use extendr_api::*;
 use manifolds_rs::prelude::*;
@@ -206,32 +207,24 @@ where
     })
 }
 
-/// Map the GPU nearest neighbour parameters onto the CPU struct the MLX
-/// searches in manifolds-rs take.
+/// Rewrite a kNN method string for the chosen backend.
 ///
-/// The MLX arms of `run_ann_search` read only the metric, the IVF list and
-/// probe counts, the NN-descent `delta` and `extract_knn`; everything else
-/// keeps its default.
+/// The MLX searches in manifolds-rs are the same three methods with an
+/// `_mlx` suffix and read the same GPU parameters.
 ///
 /// ### Params
 ///
-/// * `params` - The parsed GPU parameters
+/// * `method` - `"exhaustive"`, `"ivf"` or `"nndescent"`, optionally with a
+///   `_gpu` suffix
+/// * `backend` - Device backend
 ///
 /// ### Returns
 ///
-/// The equivalent `NearestNeighbourParams`.
-#[cfg(mlx_available)]
-pub fn nn_params_gpu_to_mlx<T>(params: &NearestNeighbourParamsGpu<T>) -> NearestNeighbourParams<T>
-where
-    T: AnnSearchFloat,
-{
-    NearestNeighbourParams {
-        dist_metric: params.dist_metric.clone(),
-        n_list: params.n_list,
-        n_probes: params.n_probes,
-        delta: params.delta,
-        extract_knn: params.extract_knn,
-        ..Default::default()
+/// The method string to hand to manifolds-rs.
+pub fn knn_method_for_backend(method: &str, backend: Backend) -> String {
+    match backend {
+        Backend::Wgpu => method.to_string(),
+        Backend::Mlx => format!("{}_mlx", method.trim_end_matches("_gpu")),
     }
 }
 

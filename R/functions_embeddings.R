@@ -122,6 +122,10 @@
 #' @param seed Integer. Random seed for reproducibility. Defaults to `42L`.
 #' @param use_high_precision Optional boolean. Gives fine-grained control over
 #' `fp32` vs `fp64` usage. The GPU calculations will be forced into `fp32`.
+#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the kNN
+#' search and the `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]). CPU optimisers stay on the
+#' CPU.
 #' @param .verbose Logical. Controls verbosity. Defaults to `TRUE`.
 #'
 #' @return A numerical matrix with dimensions samples x n_dim containing
@@ -144,9 +148,11 @@ umap_gpu <- function(
   umap_params = params_umap_gpu(),
   seed = 42L,
   use_high_precision = NULL,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
-  assert_gpu()
+  backend <- match.arg(backend)
+  assert_backend(backend)
 
   # transformation
   if (is.data.frame(data)) {
@@ -172,6 +178,7 @@ umap_gpu <- function(
   checkmate::qassert(.verbose, c("B1", "I1[0, 2]"))
   checkmate::qassert(use_high_precision, c("0", "B1"))
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
 
   final_umap_params <- .prepare_umap_params_gpu(
     n = nrow(data),
@@ -200,6 +207,7 @@ umap_gpu <- function(
           umap_params = final_umap_params,
           seed = seed,
           use_high_precision = use_high_precision,
+          backend = backend,
           verbose = parse_verbosity(.verbose)
         )
       },
@@ -219,6 +227,7 @@ umap_gpu <- function(
           umap_params = final_umap_params,
           seed = seed,
           use_high_precision = use_high_precision,
+          backend = backend,
           verbose = parse_verbosity(.verbose)
         )
       },
@@ -311,9 +320,10 @@ umap_gpu <- function(
 #' @param use_high_precision Optional boolean. Gives fine-grained control over
 #' `fp32` vs `fp64` usage. The GPU kNN calculations will be forced into `fp32`.
 #' Ignored with a warning for `"fft_3k_gpu"`, which always runs in `fp32`.
-#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` moves the
-#' `"fft_3k_gpu"` optimiser to MLX on Apple Silicon and needs a build with
-#' the MLX backend, see [mlx_available()]. The kNN search stays on WGPU.
+#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the kNN
+#' search and the `"fft_3k_gpu"` optimiser on MLX (Apple Silicon, needs a
+#' build with the MLX backend, see [mlx_available()]). CPU optimisers stay on
+#' the CPU.
 #' @param .verbose Logical. Controls verbosity. Defaults to `TRUE`.
 #'
 #' @return A numerical matrix with dimensions samples x n_dim containing
@@ -338,8 +348,6 @@ tsne_gpu <- function(
   backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
-  assert_gpu()
-
   # transformation
   if (is.data.frame(data)) {
     data <- as.matrix(data)
@@ -370,13 +378,6 @@ tsne_gpu <- function(
   checkmate::qassert(use_high_precision, c("0", "B1"))
   checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0, 2]"))
-
-  if (backend == "mlx" && approx_type != "fft_3k_gpu") {
-    stop(
-      "`backend = \"mlx\"` only applies to `approx_type = \"fft_3k_gpu\"`.",
-      call. = FALSE
-    )
-  }
   if (approx_type == "fft_3k_gpu" && isTRUE(use_high_precision)) {
     warning(
       "`use_high_precision` is ignored for \"fft_3k_gpu\", which runs in fp32.",

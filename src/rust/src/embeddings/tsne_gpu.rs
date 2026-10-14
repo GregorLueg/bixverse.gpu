@@ -7,7 +7,8 @@ use manifolds_rs::*;
 use rand_distr::{Distribution, StandardNormal};
 use std::collections::HashMap;
 
-use crate::embeddings::utils::get_params_nn_ann_gpu;
+use crate::embeddings::utils::{get_params_nn_ann_gpu, knn_method_for_backend};
+use crate::Backend;
 
 use manifolds_rs::utils::fft::FftFloat;
 
@@ -184,6 +185,8 @@ where
 /// * `perplexity` - Perplexity parameter (typical: 5-50)
 /// * `tsne_params` - Named R list with all t-SNE parameters
 /// * `seed` - Random seed for reproducibility
+/// * `backend` - Device backend. `Mlx` moves the kNN search to MLX; the
+///   optimiser string is already resolved by the caller.
 /// * `verbose` - If `0` -> silent or `1` for normal verbosity, `2` for detailed
 ///   verbosity.
 ///
@@ -199,6 +202,7 @@ pub fn tsne_manifold_gpu<T>(
     perplexity: T,
     tsne_params: List,
     seed: usize,
+    backend: Backend,
     verbose: usize,
 ) -> Result<Mat<T>>
 where
@@ -212,7 +216,9 @@ where
 
     let device: WgpuDevice = Default::default();
 
-    let tsne_params_internal = InternalTsneParamsGpu::from_r_list(tsne_params)?;
+    let mut tsne_params_internal = InternalTsneParamsGpu::from_r_list(tsne_params)?;
+    tsne_params_internal.knn_method =
+        knn_method_for_backend(&tsne_params_internal.knn_method, backend);
 
     let tsne_params = TsneParamsGpu {
         n_dim,
@@ -237,8 +243,10 @@ where
     .to_extendr()?;
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = cubecl::Device::from(device.clone()).client();
-    let _ = client.memory_cleanup();
+    if backend == Backend::Wgpu {
+        let client = cubecl::Device::from(device.clone()).client();
+        let _ = client.memory_cleanup();
+    }
 
     let ncol = res.len();
     let nrow = res[0].len();

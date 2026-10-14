@@ -7,7 +7,8 @@ use manifolds_rs::*;
 use rand_distr::{Distribution, StandardNormal};
 use std::collections::HashMap;
 
-use crate::embeddings::utils::get_params_nn_ann_gpu;
+use crate::embeddings::utils::{get_params_nn_ann_gpu, knn_method_for_backend};
+use crate::Backend;
 
 ////////////
 // Params //
@@ -232,6 +233,8 @@ where
 /// * `spread` - Spread parameter
 /// * `umap_list` - Named R list that has all of the various UMAP parameters.
 /// * `seed` - For reproducibility
+/// * `backend` - Device backend. `Mlx` moves the kNN search and the
+///   `"adam_gpu"` optimiser to MLX; CPU optimisers stay on the CPU.
 /// * `verbose` - If `0` -> silent or `1` for normal verbosity, `2` for detailed
 ///   verbosity.
 ///
@@ -248,6 +251,7 @@ pub fn umap_manifold_gpu<T>(
     spread: f64,
     umap_params: extendr_api::List,
     seed: usize,
+    backend: Backend,
     verbose: usize,
 ) -> Result<Mat<T>>
 where
@@ -256,7 +260,11 @@ where
 {
     let device: WgpuDevice = Default::default();
 
-    let internal = InternalUmapParamsGpu::from_r_list(umap_params, min_dist, spread)?;
+    let mut internal = InternalUmapParamsGpu::from_r_list(umap_params, min_dist, spread)?;
+    internal.knn_method = knn_method_for_backend(&internal.knn_method, backend);
+    if backend == Backend::Mlx && internal.optimiser == "adam_gpu" {
+        internal.optimiser = "adam_mlx".to_string();
+    }
 
     let init_range = if internal.init == "pca" {
         Some(T::from_f64(1.0).unwrap())
@@ -291,8 +299,10 @@ where
     let nrow = res[0].len();
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = cubecl::Device::from(device.clone()).client();
-    let _ = client.memory_cleanup();
+    if backend == Backend::Wgpu {
+        let client = cubecl::Device::from(device.clone()).client();
+        let _ = client.memory_cleanup();
+    }
 
     Ok(Mat::from_fn(nrow, ncol, |i, j| res[j][i]))
 }

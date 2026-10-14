@@ -9,8 +9,6 @@ use cubecl::wgpu::WgpuDevice;
 use extendr_api::prelude::*;
 use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
-#[cfg(mlx_available)]
-use manifolds_rs::prelude::run_ann_search;
 use manifolds_rs::prelude::run_ann_search_gpu;
 use manifolds_rs::training::tsne_optimiser::{parse_tsne_optimiser, TsneOpt};
 use std::panic::{self, AssertUnwindSafe};
@@ -36,9 +34,7 @@ pub use single_cell::seacells_gpu;
 use crate::embeddings::parametric_umap::*;
 use crate::embeddings::tsne_gpu::tsne_manifold_gpu;
 use crate::embeddings::umap_gpu::umap_manifold_gpu;
-use crate::embeddings::utils::get_params_nn_ann_gpu;
-#[cfg(mlx_available)]
-use crate::embeddings::utils::nn_params_gpu_to_mlx;
+use crate::embeddings::utils::{get_params_nn_ann_gpu, knn_method_for_backend};
 use crate::ml::clustering::*;
 use crate::utils::nearest_neighbours_to_rust;
 
@@ -363,7 +359,7 @@ fn rs_mlx_available() -> bool {
 
 /// Device backend for the functions that have an MLX path.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Backend {
+pub enum Backend {
     /// WGPU via cubecl, the default and only portable backend
     Wgpu,
     /// MLX via mlx-c, Apple Silicon only, f32 only
@@ -450,39 +446,25 @@ fn rs_gpu_knn(
     let data = r_matrix_to_faer_fp32(&embd);
     let params = get_params_nn_ann_gpu::<f32>(nn_params)?;
 
-    let (indices, dist) = match backend {
-        #[cfg(mlx_available)]
-        Backend::Mlx => run_ann_search::<f32>(
-            data.as_ref(),
-            k,
-            format!("{knn_method}_mlx"),
-            &nn_params_gpu_to_mlx(&params),
-            seed,
-            verbose,
-        )
-        .to_extendr()?,
-        #[cfg(not(mlx_available))]
-        Backend::Mlx => unreachable!("parse_backend rejects mlx without the MLX build"),
-        Backend::Wgpu => {
-            let device: WgpuDevice = Default::default();
-            let res = run_ann_search_gpu::<f32>(
-                data.as_ref(),
-                k,
-                knn_method,
-                &params,
-                device.clone().into(),
-                seed,
-                verbose,
-            )
-            .to_extendr()?;
+    let device: WgpuDevice = Default::default();
 
-            // manifolds-rs does not release the pool, and these indices are
-            // large enough that leaving them behind starves the next call.
-            let client = cubecl::Device::from(device.clone()).client();
-            let _ = client.memory_cleanup();
-            res
-        }
-    };
+    let (indices, dist) = run_ann_search_gpu::<f32>(
+        data.as_ref(),
+        k,
+        knn_method_for_backend(&knn_method, backend),
+        &params,
+        device.clone().into(),
+        seed,
+        verbose,
+    )
+    .to_extendr()?;
+
+    // manifolds-rs does not release the pool, and these indices are large
+    // enough that leaving them behind starves the next call.
+    if backend == Backend::Wgpu {
+        let client = cubecl::Device::from(device.clone()).client();
+        let _ = client.memory_cleanup();
+    }
 
     // An approximate backend can hand back a short row (IVF probing too few
     // lists, or a CAGRA graph narrower than k). Indexing straight into it would
@@ -895,6 +877,9 @@ fn rs_cov_gpu(
 /// @param seed Integer. Seed for reproducibility.
 /// @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
 /// If `NULL` will use sensible default thresholding.
+/// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
+/// the `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build with the MLX
+/// backend, see [mlx_available()]); CPU optimisers stay on the CPU.
 /// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
 /// for detailed verbosity.
 ///
@@ -912,9 +897,10 @@ fn rs_umap_gpu(
     umap_params: List,
     seed: usize,
     use_high_precision: Nullable<Rbool>,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
-    ensure_gpu()?;
+    let backend = parse_backend(backend)?;
 
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
     let precision = parse_precision(use_high_precision, embd.nrows());
@@ -936,6 +922,7 @@ fn rs_umap_gpu(
                 spread,
                 umap_params,
                 seed,
+                backend,
                 verbose,
             )
             .to_extendr()?;
@@ -958,6 +945,7 @@ fn rs_umap_gpu(
                 spread,
                 umap_params,
                 seed,
+                backend,
                 verbose,
             )
             .to_extendr()?;
@@ -987,6 +975,9 @@ fn rs_umap_gpu(
 /// @param seed Integer. Seed for reproducibility.
 /// @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
 /// If `NULL` will use sensible default thresholding.
+/// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
+/// the `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build with the MLX
+/// backend, see [mlx_available()]); CPU optimisers stay on the CPU.
 /// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
 /// for detailed verbosity.
 ///
@@ -1005,9 +996,10 @@ fn rs_umap_from_knn_gpu(
     umap_params: List,
     seed: usize,
     use_high_precision: Nullable<Rbool>,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
-    ensure_gpu()?;
+    let backend = parse_backend(backend)?;
 
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
     let precision = parse_precision(use_high_precision, embd.nrows());
@@ -1031,6 +1023,7 @@ fn rs_umap_from_knn_gpu(
                 spread,
                 umap_params,
                 seed,
+                backend,
                 verbose,
             )
             .to_extendr()?;
@@ -1055,6 +1048,7 @@ fn rs_umap_from_knn_gpu(
                 spread,
                 umap_params,
                 seed,
+                backend,
                 verbose,
             )
             .to_extendr()?;
@@ -1070,9 +1064,8 @@ fn rs_umap_from_knn_gpu(
 
 /// Swap the t-SNE optimiser string for the MLX one when asked.
 ///
-/// Only the three-kernel FFT optimiser has an MLX twin; the CPU optimisers do
-/// not touch the device, so asking for MLX with one of them is an error rather
-/// than a silent no-op.
+/// Only the three-kernel FFT optimiser has an MLX twin; the CPU optimisers stay
+/// on the CPU whatever the backend.
 ///
 /// ### Params
 ///
@@ -1082,13 +1075,10 @@ fn rs_umap_from_knn_gpu(
 /// ### Returns
 ///
 /// The approximation string to hand to manifolds-rs.
-fn tsne_approx_for_backend(approx_type: String, backend: Backend) -> extendr_api::Result<String> {
+fn tsne_approx_for_backend(approx_type: String, backend: Backend) -> String {
     match (backend, approx_type.as_str()) {
-        (Backend::Wgpu, _) => Ok(approx_type),
-        (Backend::Mlx, "fft_3k_gpu") => Ok("fft_3k_mlx".to_string()),
-        (Backend::Mlx, other) => Err(extendr_api::Error::Other(format!(
-            "backend = 'mlx' only applies to the 'fft_3k_gpu' optimiser, got '{other}'"
-        ))),
+        (Backend::Mlx, "fft_3k_gpu") => "fft_3k_mlx".to_string(),
+        _ => approx_type,
     }
 }
 
@@ -1115,9 +1105,9 @@ fn tsne_approx_for_backend(approx_type: String, backend: Backend) -> extendr_api
 /// @param use_high_precision Optional logical. Controls `fp32` vs `fp64`.
 /// If `NULL` will use sensible default thresholding. Ignored for
 /// `"fft_3k_gpu"`, which always runs in `fp32`.
-/// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` moves the
-/// `"fft_3k_gpu"` optimiser to MLX (Apple Silicon, needs a build with the MLX
-/// backend, see [mlx_available()]); the kNN search stays on WGPU.
+/// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
+/// the `"fft_3k_gpu"` optimiser on MLX (Apple Silicon, needs a build with the
+/// MLX backend, see [mlx_available()]); CPU optimisers stay on the CPU.
 /// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
 /// for detailed verbosity.
 ///
@@ -1137,9 +1127,8 @@ fn rs_tsne_gpu(
     #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
-    ensure_gpu()?;
-
-    let approx_type = tsne_approx_for_backend(approx_type, parse_backend(backend)?)?;
+    let backend = parse_backend(backend)?;
+    let approx_type = tsne_approx_for_backend(approx_type, backend);
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
     let precision = tsne_precision(&approx_type, use_high_precision, embd.nrows());
 
@@ -1159,6 +1148,7 @@ fn rs_tsne_gpu(
                 perplexity,
                 tsne_params,
                 seed,
+                backend,
                 verbose,
             )
             .to_extendr()?;
@@ -1179,6 +1169,7 @@ fn rs_tsne_gpu(
                 perplexity as f32,
                 tsne_params,
                 seed,
+                backend,
                 verbose,
             )
             .to_extendr()?;
@@ -1214,9 +1205,9 @@ fn rs_tsne_gpu(
 /// @param use_high_precision Optional logical. Controls `fp32` vs `fp64`.
 /// If `NULL` will use sensible default thresholding. Ignored for
 /// `"fft_3k_gpu"`, which always runs in `fp32`.
-/// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` moves the
-/// `"fft_3k_gpu"` optimiser to MLX (Apple Silicon, needs a build with the MLX
-/// backend, see [mlx_available()]); the kNN search stays on WGPU.
+/// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
+/// the `"fft_3k_gpu"` optimiser on MLX (Apple Silicon, needs a build with the
+/// MLX backend, see [mlx_available()]); CPU optimisers stay on the CPU.
 /// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
 /// for detailed verbosity.
 ///
@@ -1237,9 +1228,8 @@ fn rs_tsne_from_knn_gpu(
     #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
-    ensure_gpu()?;
-
-    let approx_type = tsne_approx_for_backend(approx_type, parse_backend(backend)?)?;
+    let backend = parse_backend(backend)?;
+    let approx_type = tsne_approx_for_backend(approx_type, backend);
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
     let precision = tsne_precision(&approx_type, use_high_precision, embd.nrows());
 
@@ -1261,6 +1251,7 @@ fn rs_tsne_from_knn_gpu(
                 perplexity as f32,
                 tsne_params,
                 seed,
+                backend,
                 verbose,
             )
             .to_extendr()?;
@@ -1284,6 +1275,7 @@ fn rs_tsne_from_knn_gpu(
                 perplexity,
                 tsne_params,
                 seed,
+                backend,
                 verbose,
             )
             .to_extendr()?;

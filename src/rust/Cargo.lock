@@ -799,7 +799,7 @@ dependencies = [
  "num-traits",
  "parking_lot",
  "portable-atomic",
- "spin 0.12.3",
+ "spin",
 ]
 
 [[package]]
@@ -818,7 +818,7 @@ dependencies = [
  "rand 0.10.3",
  "rand_distr 0.6.0",
  "serde",
- "spin 0.12.3",
+ "spin",
 ]
 
 [[package]]
@@ -861,7 +861,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "spin 0.12.3",
+ "spin",
 ]
 
 [[package]]
@@ -912,7 +912,7 @@ dependencies = [
  "derive-new",
  "hashbrown 0.16.1",
  "serde",
- "spin 0.12.3",
+ "spin",
 ]
 
 [[package]]
@@ -1017,7 +1017,7 @@ dependencies = [
  "hashbrown 0.16.1",
  "log",
  "serde",
- "spin 0.12.3",
+ "spin",
  "tracing",
 ]
 
@@ -1157,7 +1157,7 @@ dependencies = [
  "hashbrown 0.16.1",
  "portable-atomic",
  "serde",
- "spin 0.12.3",
+ "spin",
 ]
 
 [[package]]
@@ -1195,7 +1195,7 @@ dependencies = [
  "rand_distr 0.6.0",
  "serde",
  "smallvec",
- "spin 0.12.3",
+ "spin",
  "thiserror 2.0.21",
  "uuid",
 ]
@@ -1939,7 +1939,7 @@ dependencies = [
  "portable-atomic",
  "portable-atomic-util",
  "serde",
- "spin 0.12.3",
+ "spin",
  "tynm",
  "xxhash-rust",
 ]
@@ -2016,7 +2016,7 @@ dependencies = [
  "libc",
  "log",
  "pliron",
- "spin 0.12.3",
+ "spin",
  "sysinfo",
  "winapi",
 ]
@@ -2071,7 +2071,7 @@ dependencies = [
  "serde",
  "serde_bytes",
  "serde_json",
- "spin 0.12.3",
+ "spin",
  "toml",
  "turso",
  "wasm-bindgen",
@@ -2139,7 +2139,7 @@ dependencies = [
  "rustc_apfloat",
  "serde",
  "smallvec",
- "spin 0.12.3",
+ "spin",
  "thiserror 2.0.21",
  "variadics_please",
 ]
@@ -2331,7 +2331,7 @@ dependencies = [
  "num-traits",
  "paste",
  "serde",
- "spin 0.12.3",
+ "spin",
  "variadics_please",
 ]
 
@@ -4699,7 +4699,7 @@ checksum = "dae608c151f68243f2b000364e1f7b186d9c29845f7d2d85bd31b9ad77ad552b"
 [[package]]
 name = "manifolds-rs"
 version = "0.7.0"
-source = "git+https://github.com/GregorLueg/manifolds-rs?branch=feat-dreams#1de33eff12c060afca9b11efb45c197ed7cd3a54"
+source = "git+https://github.com/GregorLueg/manifolds-rs?branch=feat-dreams#e36bff6dfc9eb74f5a20a447ef5d9e034ad59f43"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -5710,7 +5710,7 @@ dependencies = [
  "rustc_apfloat",
  "slotmap",
  "smallvec",
- "spin 0.10.1",
+ "spin",
  "thiserror 2.0.21",
  "utf8-chars",
 ]
@@ -7071,15 +7071,6 @@ name = "softaes"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4fdfe13e1c42e45f497416afb8dc4e783bf0e25b7be9077c1c77c5fb14cb998"
-
-[[package]]
-name = "spin"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "023a211cb3138dbc438680b32560ad89f699977624c9f8dbb95a47d5b4c07dd3"
-dependencies = [
- "lock_api",
-]
 
 [[package]]
 name = "spin"
