@@ -57,9 +57,3 @@ strip = true
 [[bin]]
 name = "document"
 path = "document.rs"
-
-## Unreleased upstream branches. Remove before merging: CI and the vendored
-## offline build cannot resolve git sources.
-[patch.crates-io]
-bixverse-rs = { git = "https://github.com/GregorLueg/bixverse-rs", branch = "release-0.7.0" }
-manifolds-rs = { git = "https://github.com/GregorLueg/manifolds-rs", branch = "feat-dreams" }

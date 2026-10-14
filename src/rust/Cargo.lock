@@ -603,7 +603,8 @@ dependencies = [
 [[package]]
 name = "bixverse-rs"
 version = "0.7.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs?branch=release-0.7.0#e1c82c989e78882df83f4f1c71c93167124669f3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25d52de4570e37c8aec9c3f6a9d004e605a1b8c829d8904fce391fb039dc8cf3"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -3793,7 +3794,7 @@ dependencies = [
  "hdf5-metno-types",
  "libc",
  "lzf-sys",
- "ndarray 0.17.2",
+ "ndarray 0.16.1",
  "pastey 0.2.3",
 ]
 
@@ -4699,7 +4700,8 @@ checksum = "dae608c151f68243f2b000364e1f7b186d9c29845f7d2d85bd31b9ad77ad552b"
 [[package]]
 name = "manifolds-rs"
 version = "0.7.0"
-source = "git+https://github.com/GregorLueg/manifolds-rs?branch=feat-dreams#e36bff6dfc9eb74f5a20a447ef5d9e034ad59f43"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f2e7889c18977cbc60b93774c40b0ba74cc9fa5a3aa42999a49ee05c5e3a0ec"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -5688,7 +5690,7 @@ dependencies = [
  "combine",
  "downcast-rs",
  "dyn-clone",
- "hashbrown 0.13.2",
+ "hashbrown 0.17.1",
  "hi_sparse_bitset 0.10.0",
  "indexmap",
  "inventory",
