@@ -108,9 +108,30 @@ character limit. The build now puts the cargo target directory in
 `~/.bixverse-gpu-cargo`, which stays clear of it. Same fix as in
 [bixverse](https://github.com/GregorLueg/bixverse).
 
-One thing is still missing on Windows: the FFT-accelerated tSNE. FFTW does not
-come along for the ride, so `tsne_gpu(approx_type = "fft")` errors there.
-Barnes-Hut (`approx_type = "bh"`, the default) works everywhere.
+The FFT-accelerated tSNE used to be the one thing missing on Windows, since
+FFTW did not come along for the ride. It now runs on the pure-Rust rustfft, so
+`approx_type = "fft"` and `"fft_3k"` work everywhere.
+
+### MLX on Apple Silicon
+
+On Apple Silicon there is an optional second backend: MLX, via mlx-c. It is
+off by default because mlx-c is a system library the package cannot ship, so
+you opt in at install time:
+
+```
+brew install mlx-c
+```
+
+```r
+Sys.setenv(BIXVERSE_GPU_MLX = "true")
+# MLX_C_PREFIX if mlx-c is not under /opt/homebrew
+devtools::install_github("https://github.com/GregorLueg/bixverse.gpu")
+```
+
+This needs a source build, the r-universe binaries are WGPU only. Check with
+`mlx_available()`. Functions with an MLX path then take `backend = "mlx"`:
+PCA, kNN graphs, Harmony, SEACells, NMF, UMAP, tSNE and the correlations.
+MLX runs in fp32 only. Everything else stays on WGPU.
 
 ### Older Intel Macs
 
@@ -157,4 +178,4 @@ your agent set up so it stops guessing at the API.
 
 If you have some other ideas, please feel free to open an issue.
 
-*Last update to the read-me: 02.10.2026*
+*Last update to the read-me: 14.10.2026*

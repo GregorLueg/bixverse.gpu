@@ -1,3 +1,41 @@
+# bixverse.gpu 0.5.0
+
+## Features
+
+* Experimental MLX backend for Apple Silicon via mlx-c. Opt in at install
+  time: `brew install mlx-c` (or point `MLX_C_PREFIX` at an install prefix),
+  then install with `BIXVERSE_GPU_MLX=true`. Check with `mlx_available()`.
+  Functions with an MLX path take `backend = c("wgpu", "mlx")`: PCA, kNN
+  graphs, Harmony v2, SEACells, NMF (single, stabilised, consensus, k sweep),
+  UMAP, tSNE and the `rs_cor_gpu()` / `rs_cov_gpu()` correlations. For UMAP and
+  tSNE, `"mlx"` moves the kNN search and the device optimiser (`"adam_gpu"`,
+  `"fft_3k_gpu"`); CPU optimisers stay on the CPU. MLX is fp32 only. WGPU stays
+  the default and the only portable backend. On an Apple Silicon Mac, median
+  wall time WGPU vs MLX: NN-descent kNN on 200k x 32 3.8 s vs 1.0 s, UMAP on
+  100k x 32 2.6 s vs 1.3 s, consensus NMF (50k cells, k = 10, 10 runs) 11.1 s
+  vs 4.9 s, SEACells (50k cells, 500 meta cells) 40.4 s vs 27.8 s. PCA and
+  Harmony at 50k cells are within 20% of each other.
+* Fast clustering (`fast_cluster_gpu_sc()`) can build the centroid graph from
+  the cells instead of a kNN search over the centroids:
+  `params_sc_fast_cluster_gpu(cell_mediated = TRUE, n_anchors = 5L)`. Every
+  cell links its `n_anchors` nearest centroids. On a 10k cell synthetic set the
+  agreement with the ground truth went from ARI 0.29 to 0.71 at resolution 1.
+  Off by default.
+* FFT-accelerated tSNE (`approx_type = "fft"` and `"fft_3k"`) now works on
+  Windows too: FFTW was replaced by the pure-Rust rustfft.
+* On macOS the CPU GEMMs in the Rust backends go through Apple Accelerate.
+
+## Breaking changes
+
+* The `rs_*` wrappers with an MLX path gained a `backend` argument, inserted
+  before `verbose`. Named calls keep working (it defaults to `"wgpu"`);
+  positional calls past `seed` need updating.
+
+## Internal
+
+* Moved to bixverse-rs 0.7.0, manifolds-rs 0.7.0, ann-search-rs 0.11.0,
+  cubecl 0.11, burn 0.22 and faer 0.24.
+
 # bixverse.gpu 0.4.1
 
 ## Features
