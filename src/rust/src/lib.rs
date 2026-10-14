@@ -352,6 +352,8 @@ pub(crate) fn ensure_plane_ops() -> extendr_api::Result<()> {
 /// (`brew install mlx-c`, or `MLX_C_PREFIX` pointing at an install prefix).
 ///
 /// @returns Boolean. `TRUE` when the package was built with the MLX backend.
+/// 
+/// @keywords internal
 #[extendr]
 fn rs_mlx_available() -> bool {
     cfg!(mlx_available)

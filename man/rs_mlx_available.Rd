@@ -14,3 +14,4 @@ The MLX backend (Apple Silicon only, via mlx-c) is opt-in at install time:
 set \code{BIXVERSE_GPU_MLX=true} and have mlx-c installed
 (\verb{brew install mlx-c}, or \code{MLX_C_PREFIX} pointing at an install prefix).
 }
+\keyword{internal}

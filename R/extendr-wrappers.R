@@ -38,6 +38,8 @@ rs_gpu_plane_ops <- function() .Call(wrap__rs_gpu_plane_ops)
 #' (`brew install mlx-c`, or `MLX_C_PREFIX` pointing at an install prefix).
 #'
 #' @returns Boolean. `TRUE` when the package was built with the MLX backend.
+#' 
+#' @keywords internal
 rs_mlx_available <- function() .Call(wrap__rs_mlx_available)
 
 #' Generate a GPU-accelerated kNN graph
