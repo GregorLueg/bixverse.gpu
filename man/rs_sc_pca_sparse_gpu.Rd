@@ -12,6 +12,7 @@ rs_sc_pca_sparse_gpu(
   cell_indices,
   gene_indices,
   seed,
+  backend = "wgpu",
   verbose
 )
 }
@@ -31,6 +32,9 @@ run. \code{svd_solver} is ignored, the GPU path is always randomised.}
 \item{gene_indices}{Integer. The gene indices to use. (0-indexed!)}
 
 \item{seed}{Integer. Random seed for the randomised SVD.}
+
+\item{backend}{String. \code{"wgpu"} or \code{"mlx"} (Apple Silicon, needs a build
+with the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}).}
 
 \item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
 detailed verbosity.}

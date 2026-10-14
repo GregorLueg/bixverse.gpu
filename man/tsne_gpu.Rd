@@ -59,9 +59,10 @@ here.}
 \code{fp32} vs \code{fp64} usage. The GPU kNN calculations will be forced into \code{fp32}.
 Ignored with a warning for \code{"fft_3k_gpu"}, which always runs in \code{fp32}.}
 
-\item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} moves the
-\code{"fft_3k_gpu"} optimiser to MLX on Apple Silicon and needs a build with
-the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}. The kNN search stays on WGPU.}
+\item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the kNN
+search and the \code{"fft_3k_gpu"} optimiser on MLX (Apple Silicon, needs a
+build with the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}). CPU optimisers stay on
+the CPU.}
 
 \item{.verbose}{Logical. Controls verbosity. Defaults to \code{TRUE}.}
 }

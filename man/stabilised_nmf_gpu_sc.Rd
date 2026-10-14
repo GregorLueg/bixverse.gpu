@@ -14,6 +14,7 @@ stabilised_nmf_gpu_sc(
   nmf_hals_params = bixverse::params_nmf_hals(),
   n_runs = 30L,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 }
@@ -40,6 +41,10 @@ counts (recommended); if \code{FALSE}, on the raw counts.}
 \item{n_runs}{Integer. Number of random restarts.}
 
 \item{seed}{Integer. Random seed for initialisation.}
+
+\item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the
+HALS solves on Apple Silicon via MLX and needs a build with the MLX
+backend, see \code{\link[=mlx_available]{mlx_available()}}.}
 
 \item{.verbose}{Boolean or integer. Controls verbosity. \code{FALSE} -> quiet,
 \code{TRUE} or \code{1L} -> normal verbosity, \code{2L} -> detailed verbosity.}

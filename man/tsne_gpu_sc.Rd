@@ -69,7 +69,7 @@ deals usually better with the high k in tSNE.}
 control. GPU kNN is always fp32. Ignored for \code{"fft_3k_gpu"}.}
 
 \item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} moves the
-\code{"fft_3k_gpu"} optimiser to MLX, see \code{\link[=tsne_gpu]{tsne_gpu()}}.}
+kNN search and the \code{"fft_3k_gpu"} optimiser to MLX, see \code{\link[=tsne_gpu]{tsne_gpu()}}.}
 
 \item{.verbose}{Boolean or integer. Controls verbosity.}
 }

@@ -42,9 +42,9 @@ for the tSNE generation.}
 If \code{NULL} will use sensible default thresholding. Ignored for
 \code{"fft_3k_gpu"}, which always runs in \code{fp32}.}
 
-\item{backend}{String. \code{"wgpu"} or \code{"mlx"}. \code{"mlx"} moves the
-\code{"fft_3k_gpu"} optimiser to MLX (Apple Silicon, needs a build with the MLX
-backend, see \code{\link[=mlx_available]{mlx_available()}}); the kNN search stays on WGPU.}
+\item{backend}{String. \code{"wgpu"} or \code{"mlx"}. \code{"mlx"} runs the kNN search and
+the \code{"fft_3k_gpu"} optimiser on MLX (Apple Silicon, needs a build with the
+MLX backend, see \code{\link[=mlx_available]{mlx_available()}}); CPU optimisers stay on the CPU.}
 
 \item{verbose}{Integer. If \code{0L} -> silent or \code{1L} for normal verbosity; \code{2L}
 for detailed verbosity.}
