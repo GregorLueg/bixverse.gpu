@@ -1,6 +1,5 @@
 use bixverse_rs::prelude::IntoExtendrErr;
-use cubecl::prelude::Runtime;
-use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
+use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 use faer::{Mat, MatRef};
 use manifolds_rs::prelude::*;
@@ -240,7 +239,7 @@ where
 ///
 /// Returns the UMAP embeddings as matrix.
 #[allow(clippy::too_many_arguments)]
-pub fn umap_manifold_gpu<T, R>(
+pub fn umap_manifold_gpu<T>(
     data: MatRef<T>,
     pre_computed_knn: PreComputedKnn<T>,
     n_dim: usize,
@@ -254,7 +253,6 @@ pub fn umap_manifold_gpu<T, R>(
 where
     T: ManifoldsFloatGpu,
     StandardNormal: Distribution<T>,
-    R: Runtime,
 {
     let device: WgpuDevice = Default::default();
 
@@ -279,11 +277,11 @@ where
         internal.randomised,
     );
 
-    let res = umap_gpu::<T, WgpuRuntime>(
+    let res = umap_gpu::<T>(
         data,
         pre_computed_knn,
         &umap_params,
-        device.clone(),
+        device.clone().into(),
         seed,
         verbose,
     )
@@ -293,8 +291,8 @@ where
     let nrow = res[0].len();
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
 
     Ok(Mat::from_fn(nrow, ncol, |i, j| res[j][i]))
 }

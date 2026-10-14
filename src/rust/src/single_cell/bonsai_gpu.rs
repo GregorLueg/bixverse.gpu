@@ -12,8 +12,7 @@ use bixverse_rs::gpu::sc_gpu::sanity_bonsai_gpu::{sanity_bonsai_mc_gpu, sanity_b
 use bixverse_rs::prelude::*;
 use bixverse_rs::single_cell::sc_analysis::bonsai::BonsaiScParams;
 use bixverse_rs::single_cell::sc_r_wrappers::bonsai_sc_to_r_list;
-use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
-use cubecl::Runtime;
+use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 
 /////////////
@@ -82,20 +81,20 @@ fn rs_sc_bonsai_gpu(
 
     let device: WgpuDevice = Default::default();
 
-    let res = sanity_bonsai_sc_gpu::<WgpuRuntime, _, _>(
+    let res = sanity_bonsai_sc_gpu::<_, _>(
         &gene_reader,
         &cell_reader,
         &cell_indices,
         &gene_indices,
         &params,
-        device.clone(),
+        device.clone().into(),
         verbosity,
     )
     .to_extendr()?;
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
 
     Ok(bonsai_sc_to_r_list(res))
 }
@@ -142,18 +141,18 @@ fn rs_mc_bonsai_gpu(
 
     let device: WgpuDevice = Default::default();
 
-    let res = sanity_bonsai_mc_gpu::<WgpuRuntime>(
+    let res = sanity_bonsai_mc_gpu(
         &counts,
         &gene_indices,
         &params,
-        device.clone(),
+        device.clone().into(),
         verbosity,
     )
     .to_extendr()?;
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
 
     Ok(bonsai_sc_to_r_list(res))
 }

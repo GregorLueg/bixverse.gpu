@@ -1,16 +1,16 @@
 use ann_search_rs::gpu::k_means_gpu::KMeansGpuParams;
 use bixverse_rs::gpu::gpu_r_wrappers::KMeansGpuParamsFromR;
 use bixverse_rs::gpu::linalg::corr::{column_pairwise_cor_gpu, GpuCorCov};
+#[cfg(mlx_available)]
+use bixverse_rs::mlx::linalg::corr::{column_pairwise_cor_mlx, MlxCorCov};
 use bixverse_rs::prelude::*;
-use burn::backend::{
-    flex::{Flex, FlexDevice},
-    wgpu::{Wgpu, WgpuDevice, WgpuRuntime},
-    Autodiff,
-};
-use cubecl::Runtime;
+use burn::tensor::{Device as BurnDevice, DeviceKind};
+use cubecl::wgpu::WgpuDevice;
 use extendr_api::prelude::*;
 use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
+#[cfg(mlx_available)]
+use manifolds_rs::prelude::run_ann_search;
 use manifolds_rs::prelude::run_ann_search_gpu;
 use manifolds_rs::training::tsne_optimiser::{parse_tsne_optimiser, TsneOpt};
 use std::panic::{self, AssertUnwindSafe};
@@ -37,6 +37,8 @@ use crate::embeddings::parametric_umap::*;
 use crate::embeddings::tsne_gpu::tsne_manifold_gpu;
 use crate::embeddings::umap_gpu::umap_manifold_gpu;
 use crate::embeddings::utils::get_params_nn_ann_gpu;
+#[cfg(mlx_available)]
+use crate::embeddings::utils::nn_params_gpu_to_mlx;
 use crate::ml::clustering::*;
 use crate::utils::nearest_neighbours_to_rust;
 
@@ -61,6 +63,7 @@ extendr_module! {
     // device
     fn rs_gpu_available;
     fn rs_gpu_plane_ops;
+    fn rs_mlx_available;
     // knn
     fn rs_gpu_knn;
     // umap parametric
@@ -93,21 +96,15 @@ const SAMPLE_THRESHOLD_HIGH_PRECISION: usize = 100_000;
 // Types //
 ///////////
 
-/// GPU backend via WGPU
-type GpuBackend = Autodiff<Wgpu>;
-
-/// CPU backend via flex
-type CpuBackend = Autodiff<Flex<f32>>;
-
 /// Backend-agnostic wrapper around `TrainedUmapModel`.
 ///
 /// Allows the R-facing API to store a single `ExternalPtr<PUmapModel>` without
 /// exposing the backend type parameter to the caller.
 enum PUmapModel {
     /// Model trained on the WGPU backend
-    Gpu(TrainedUmapModel<GpuBackend, f32>),
+    Gpu(TrainedUmapModel<f32>),
     /// Model trained on the flex CPU backend
-    Cpu(TrainedUmapModel<CpuBackend, f32>),
+    Cpu(TrainedUmapModel<f32>),
 }
 
 impl PUmapModel {
@@ -196,8 +193,9 @@ fn parse_precision(use_high_precision: Nullable<Rbool>, n: usize) -> FloatingPoi
 
 /// Precision for t-SNE, honouring the device optimiser
 ///
-/// The GPU optimiser (`"fft_3k_gpu"`) always runs in fp32: f64 kernels do not
-/// run on Metal. Every other optimiser goes through [parse_precision].
+/// The GPU and MLX optimisers (`"fft_3k_gpu"`, `"fft_3k_mlx"`) always run in
+/// fp32: f64 kernels do not run on Metal. Every other optimiser goes through
+/// [parse_precision].
 ///
 /// ### Params
 ///
@@ -215,6 +213,8 @@ fn tsne_precision(
 ) -> FloatingPointPrecision {
     match parse_tsne_optimiser(approx_type) {
         Some(TsneOpt::Fft3KernelGpu) => FloatingPointPrecision::FP32,
+        #[cfg(mlx_available)]
+        Some(TsneOpt::Fft3KernelMlx) => FloatingPointPrecision::FP32,
         _ => parse_precision(use_high_precision, n),
     }
 }
@@ -247,7 +247,7 @@ fn rs_gpu_available() -> bool {
         panic::set_hook(Box::new(|_| {}));
         let probe = panic::catch_unwind(AssertUnwindSafe(|| {
             let device = WgpuDevice::default();
-            let _ = WgpuRuntime::client(&device);
+            let _ = cubecl::Device::from(device.clone()).client();
         }));
         panic::set_hook(hook);
         probe.is_ok()
@@ -289,13 +289,13 @@ mod plane_check {
     }
 
     /// `true` if a plane reduction runs and agrees with the plane width.
-    pub(crate) fn plane_ops_run<R: Runtime>(client: &ComputeClient<R>) -> bool {
+    pub(crate) fn plane_ops_run(client: &Client) -> bool {
         let limits = GpuLimits::from_client(client);
-        let Ok(out) = GpuTensor::<R, u32>::from_slice(&[0, 0], vec![2], client) else {
+        let Ok(out) = GpuTensor::<u32>::from_slice(&[0, 0], vec![2], client) else {
             return false;
         };
         unsafe {
-            plane_width::launch_unchecked::<R>(
+            plane_width::launch_unchecked(
                 client,
                 CubeCount::Static(1, 1, 1),
                 CubeDim::new_1d(limits.plane_size_max.max(1)),
@@ -325,7 +325,7 @@ fn rs_gpu_plane_ops() -> bool {
     static PLANE_OPS: OnceLock<bool> = OnceLock::new();
     rs_gpu_available()
         && *PLANE_OPS.get_or_init(|| {
-            plane_check::plane_ops_run(&WgpuRuntime::client(&WgpuDevice::default()))
+            plane_check::plane_ops_run(&cubecl::Device::from(WgpuDevice::default()).client())
         })
 }
 
@@ -345,6 +345,57 @@ pub(crate) fn ensure_plane_ops() -> extendr_api::Result<()> {
              the CPU version instead."
                 .to_string(),
         ))
+    }
+}
+
+/// Check whether the MLX backend was compiled in
+///
+/// @description
+/// The MLX backend (Apple Silicon only, via mlx-c) is opt-in at install time:
+/// set `BIXVERSE_GPU_MLX=true` and have mlx-c installed
+/// (`brew install mlx-c`, or `MLX_C_PREFIX` pointing at an install prefix).
+///
+/// @returns Boolean. `TRUE` when the package was built with the MLX backend.
+#[extendr]
+fn rs_mlx_available() -> bool {
+    cfg!(mlx_available)
+}
+
+/// Device backend for the functions that have an MLX path.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Backend {
+    /// WGPU via cubecl, the default and only portable backend
+    Wgpu,
+    /// MLX via mlx-c, Apple Silicon only, f32 only
+    Mlx,
+}
+
+/// Parse the R-side `backend` string and check the backend is usable.
+///
+/// ### Params
+///
+/// * `backend` - `"wgpu"` or `"mlx"`
+///
+/// ### Returns
+///
+/// The [Backend], or an error when the string is unknown, no GPU adapter is
+/// present (`"wgpu"`) or the package was built without MLX (`"mlx"`).
+pub(crate) fn parse_backend(backend: &str) -> extendr_api::Result<Backend> {
+    match backend {
+        "wgpu" => {
+            ensure_gpu()?;
+            Ok(Backend::Wgpu)
+        }
+        "mlx" if rs_mlx_available() => Ok(Backend::Mlx),
+        "mlx" => Err(extendr_api::Error::Other(
+            "bixverse.gpu was built without the MLX backend. Reinstall on Apple \
+             Silicon with BIXVERSE_GPU_MLX=true and mlx-c installed \
+             (`brew install mlx-c`, or MLX_C_PREFIX pointing at an install)."
+                .to_string(),
+        )),
+        other => Err(extendr_api::Error::Other(format!(
+            "unknown backend '{other}'; expected 'wgpu' or 'mlx'"
+        ))),
     }
 }
 
@@ -369,6 +420,8 @@ pub(crate) fn ensure_plane_ops() -> extendr_api::Result<()> {
 /// @param nn_params A named list with the parameters, see
 /// [bixverse.gpu::params_nn_gpu()]
 /// @param seed Integer. Random seed for reproducibility.
+/// @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+/// with the MLX backend, see [mlx_available()]).
 /// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 /// detailed verbosity.
 ///
@@ -389,29 +442,47 @@ fn rs_gpu_knn(
     knn_method: String,
     nn_params: List,
     seed: usize,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> Result<List, extendr_api::Error> {
-    ensure_gpu()?;
+    let backend = parse_backend(backend)?;
 
     let data = r_matrix_to_faer_fp32(&embd);
     let params = get_params_nn_ann_gpu::<f32>(nn_params)?;
-    let device: WgpuDevice = Default::default();
 
-    let (indices, dist) = run_ann_search_gpu::<f32, WgpuRuntime>(
-        data.as_ref(),
-        k,
-        knn_method,
-        &params,
-        device.clone(),
-        seed,
-        verbose,
-    )
-    .to_extendr()?;
+    let (indices, dist) = match backend {
+        #[cfg(mlx_available)]
+        Backend::Mlx => run_ann_search::<f32>(
+            data.as_ref(),
+            k,
+            format!("{knn_method}_mlx"),
+            &nn_params_gpu_to_mlx(&params),
+            seed,
+            verbose,
+        )
+        .to_extendr()?,
+        #[cfg(not(mlx_available))]
+        Backend::Mlx => unreachable!("parse_backend rejects mlx without the MLX build"),
+        Backend::Wgpu => {
+            let device: WgpuDevice = Default::default();
+            let res = run_ann_search_gpu::<f32>(
+                data.as_ref(),
+                k,
+                knn_method,
+                &params,
+                device.clone().into(),
+                seed,
+                verbose,
+            )
+            .to_extendr()?;
 
-    // manifolds-rs does not release the pool, and these indices are large
-    // enough that leaving them behind starves the next call.
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+            // manifolds-rs does not release the pool, and these indices are
+            // large enough that leaving them behind starves the next call.
+            let client = cubecl::Device::from(device.clone()).client();
+            let _ = client.memory_cleanup();
+            res
+        }
+    };
 
     // An approximate backend can hand back a short row (IVF probing too few
     // lists, or a CAGRA graph narrower than k). Indexing straight into it would
@@ -486,8 +557,8 @@ fn rs_parametric_umap(
     if use_gpu {
         ensure_gpu()?;
 
-        let device = WgpuDevice::default();
-        let (res, model) = parametric_umap_manifold::<GpuBackend>(
+        let device = BurnDevice::wgpu(DeviceKind::default());
+        let (res, model) = parametric_umap_manifold(
             data.as_ref(),
             n_dim,
             k,
@@ -504,8 +575,8 @@ fn rs_parametric_umap(
             model = ExternalPtr::new(PUmapModel::Gpu(model))
         ))
     } else {
-        let device = FlexDevice;
-        let (res, model) = parametric_umap_manifold::<CpuBackend>(
+        let device = BurnDevice::flex();
+        let (res, model) = parametric_umap_manifold(
             data.as_ref(),
             n_dim,
             k,
@@ -610,12 +681,12 @@ fn rs_deserialise_parametric_umap(bytes: Vec<u8>) -> Result<Robj, extendr_api::E
         0 => {
             ensure_gpu()?;
             PUmapModel::Gpu(
-                TrainedUmapModel::from_bytes(payload, WgpuDevice::default())
+                TrainedUmapModel::from_bytes(payload, BurnDevice::wgpu(DeviceKind::default()))
                     .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
             )
         }
         1 => PUmapModel::Cpu(
-            TrainedUmapModel::from_bytes(payload, FlexDevice)
+            TrainedUmapModel::from_bytes(payload, BurnDevice::flex())
                 .map_err(|e| extendr_api::Error::Other(e.to_string()))?,
         ),
         t => {
@@ -688,6 +759,45 @@ fn rs_kmeans_gpu(
 // Cor/Cov //
 /////////////
 
+/// Pairwise column correlation or covariance on the chosen backend.
+///
+/// ### Params
+///
+/// * `data` - Samples x features matrix
+/// * `cor_type` - Correlation or covariance variant
+/// * `backend` - Device backend
+/// * `verbose` - Print timings
+///
+/// ### Returns
+///
+/// The features x features matrix.
+fn column_cor(
+    data: MatRef<f32>,
+    cor_type: GpuCorCov,
+    backend: Backend,
+    verbose: bool,
+) -> extendr_api::Result<Mat<f32>> {
+    #[cfg(mlx_available)]
+    if backend == Backend::Mlx {
+        let cor_type = match cor_type {
+            GpuCorCov::Pearson => MlxCorCov::Pearson,
+            GpuCorCov::Spearman => MlxCorCov::Spearman,
+            GpuCorCov::Covariance => MlxCorCov::Covariance,
+        };
+        return column_pairwise_cor_mlx(data, cor_type, verbose).to_extendr();
+    }
+    debug_assert_eq!(backend, Backend::Wgpu);
+
+    let device: WgpuDevice = Default::default();
+    let res = column_pairwise_cor_gpu::<f32>(data, cor_type, device.clone().into(), verbose)
+        .to_extendr()?;
+
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
+
+    Ok(res)
+}
+
 /// GPU-accelerated correlation calculations
 ///
 /// @description
@@ -699,6 +809,8 @@ fn rs_kmeans_gpu(
 /// pairwise correlation matrix.
 /// @param spearman Boolean. Shall the Spearman correlation be calculated
 /// instead of Pearson.
+/// @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+/// with the MLX backend, see [mlx_available()]).
 /// @param verbose Boolean. Controls verbosity of the function.
 ///
 /// @returns The correlation matrix
@@ -708,12 +820,12 @@ fn rs_kmeans_gpu(
 fn rs_cor_gpu(
     x: RMatrix<f64>,
     spearman: bool,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: bool,
 ) -> Result<RMatrix<f64>, extendr_api::Error> {
-    ensure_gpu()?;
+    let backend = parse_backend(backend)?;
 
     let data = r_matrix_to_faer_fp32(&x);
-    let device: WgpuDevice = Default::default();
 
     let cor_type = if spearman {
         GpuCorCov::Spearman
@@ -721,24 +833,11 @@ fn rs_cor_gpu(
         GpuCorCov::Pearson
     };
 
-    let mut res = column_pairwise_cor_gpu::<f32, WgpuRuntime>(
-        data.as_ref(),
-        cor_type,
-        device.clone(),
-        verbose,
-    )
-    .to_extendr()?;
-
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let mut res = column_cor(data.as_ref(), cor_type, backend, verbose)?;
 
     // set the diagonals to 1
-    for i in 0..res.nrows() {
-        for j in 0..res.ncols() {
-            if i == j {
-                res[(i, j)] = 1.0;
-            }
-        }
+    for i in 0..res.nrows().min(res.ncols()) {
+        res[(i, i)] = 1.0;
     }
 
     Ok(faer_to_r_matrix(res.as_ref()))
@@ -752,28 +851,23 @@ fn rs_cor_gpu(
 ///
 /// @param x Numerical matrix. The matrix for which to calculate the column
 /// pairwise covariance matrix.
+/// @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+/// with the MLX backend, see [mlx_available()]).
 /// @param verbose Boolean. Controls verbosity of the function.
 ///
 /// @returns The covariance matrix
 ///
 /// @export
 #[extendr]
-fn rs_cov_gpu(x: RMatrix<f64>, verbose: bool) -> Result<RMatrix<f64>, extendr_api::Error> {
-    ensure_gpu()?;
+fn rs_cov_gpu(
+    x: RMatrix<f64>,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
+    verbose: bool,
+) -> Result<RMatrix<f64>, extendr_api::Error> {
+    let backend = parse_backend(backend)?;
 
     let data = r_matrix_to_faer_fp32(&x);
-    let device: WgpuDevice = Default::default();
-
-    let res = column_pairwise_cor_gpu::<f32, WgpuRuntime>(
-        data.as_ref(),
-        GpuCorCov::Covariance,
-        device.clone(),
-        verbose,
-    )
-    .to_extendr()?;
-
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let res = column_cor(data.as_ref(), GpuCorCov::Covariance, backend, verbose)?;
 
     Ok(faer_to_r_matrix(res.as_ref()))
 }
@@ -833,7 +927,7 @@ fn rs_umap_gpu(
 
             let embd = r_matrix_to_faer_fp32(&embd);
 
-            let res = umap_manifold_gpu::<f32, WgpuRuntime>(
+            let res = umap_manifold_gpu::<f32>(
                 embd.as_ref(),
                 None,
                 n_dim,
@@ -855,7 +949,7 @@ fn rs_umap_gpu(
 
             let embd = r_matrix_to_faer(&embd);
 
-            let res = umap_manifold_gpu::<f64, WgpuRuntime>(
+            let res = umap_manifold_gpu::<f64>(
                 embd.as_ref(),
                 None,
                 n_dim,
@@ -928,7 +1022,7 @@ fn rs_umap_from_knn_gpu(
 
             let knn = nearest_neighbours_to_rust(knn_data);
 
-            let res = umap_manifold_gpu::<f32, WgpuRuntime>(
+            let res = umap_manifold_gpu::<f32>(
                 embd.as_ref(),
                 knn,
                 n_dim,
@@ -952,7 +1046,7 @@ fn rs_umap_from_knn_gpu(
 
             let knn = nearest_neighbours_to_rust(knn_data);
 
-            let res = umap_manifold_gpu::<f64, WgpuRuntime>(
+            let res = umap_manifold_gpu::<f64>(
                 embd.as_ref(),
                 knn,
                 n_dim,
@@ -974,6 +1068,30 @@ fn rs_umap_from_knn_gpu(
 // tSNE //
 //////////
 
+/// Swap the t-SNE optimiser string for the MLX one when asked.
+///
+/// Only the three-kernel FFT optimiser has an MLX twin; the CPU optimisers do
+/// not touch the device, so asking for MLX with one of them is an error rather
+/// than a silent no-op.
+///
+/// ### Params
+///
+/// * `approx_type` - The t-SNE approximation string from R
+/// * `backend` - Device backend
+///
+/// ### Returns
+///
+/// The approximation string to hand to manifolds-rs.
+fn tsne_approx_for_backend(approx_type: String, backend: Backend) -> extendr_api::Result<String> {
+    match (backend, approx_type.as_str()) {
+        (Backend::Wgpu, _) => Ok(approx_type),
+        (Backend::Mlx, "fft_3k_gpu") => Ok("fft_3k_mlx".to_string()),
+        (Backend::Mlx, other) => Err(extendr_api::Error::Other(format!(
+            "backend = 'mlx' only applies to the 'fft_3k_gpu' optimiser, got '{other}'"
+        ))),
+    }
+}
+
 /// tSNE implementation
 ///
 /// @description
@@ -990,14 +1108,16 @@ fn rs_umap_from_knn_gpu(
 /// @param approx_type String. One of
 /// `c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")`. Which repulsive-force
 /// approximation to use; `"bh_qd"` is the depth-capped quick-and-dirty
-/// Barnes-Hut. `"fft"` and `"fft_3k"` need FFTW and are not available on
-/// Windows.
+/// Barnes-Hut.
 /// @param tsne_params Named list. List that contains all of the key parameters
 /// for the tSNE generation.
 /// @param seed Integer. Seed for reproducibility.
 /// @param use_high_precision Optional logical. Controls `fp32` vs `fp64`.
 /// If `NULL` will use sensible default thresholding. Ignored for
 /// `"fft_3k_gpu"`, which always runs in `fp32`.
+/// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` moves the
+/// `"fft_3k_gpu"` optimiser to MLX (Apple Silicon, needs a build with the MLX
+/// backend, see [mlx_available()]); the kNN search stays on WGPU.
 /// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
 /// for detailed verbosity.
 ///
@@ -1014,10 +1134,12 @@ fn rs_tsne_gpu(
     tsne_params: List,
     seed: usize,
     use_high_precision: Nullable<Rbool>,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
     ensure_gpu()?;
 
+    let approx_type = tsne_approx_for_backend(approx_type, parse_backend(backend)?)?;
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
     let precision = tsne_precision(&approx_type, use_high_precision, embd.nrows());
 
@@ -1085,14 +1207,16 @@ fn rs_tsne_gpu(
 /// @param approx_type String. One of
 /// `c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")`. Which repulsive-force
 /// approximation to use; `"bh_qd"` is the depth-capped quick-and-dirty
-/// Barnes-Hut. `"fft"` and `"fft_3k"` need FFTW and are not available on
-/// Windows.
+/// Barnes-Hut.
 /// @param tsne_params Named list. List that contains all of the key parameters
 /// for the tSNE generation.
 /// @param seed Integer. Seed for reproducibility.
 /// @param use_high_precision Optional logical. Controls `fp32` vs `fp64`.
 /// If `NULL` will use sensible default thresholding. Ignored for
 /// `"fft_3k_gpu"`, which always runs in `fp32`.
+/// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` moves the
+/// `"fft_3k_gpu"` optimiser to MLX (Apple Silicon, needs a build with the MLX
+/// backend, see [mlx_available()]); the kNN search stays on WGPU.
 /// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
 /// for detailed verbosity.
 ///
@@ -1110,10 +1234,12 @@ fn rs_tsne_from_knn_gpu(
     tsne_params: List,
     seed: usize,
     use_high_precision: Nullable<Rbool>,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
     ensure_gpu()?;
 
+    let approx_type = tsne_approx_for_backend(approx_type, parse_backend(backend)?)?;
     let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
     let precision = tsne_precision(&approx_type, use_high_precision, embd.nrows());
 

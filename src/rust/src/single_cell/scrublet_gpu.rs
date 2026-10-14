@@ -12,8 +12,7 @@ use crate::ensure_gpu;
 use bixverse_rs::gpu::sc_gpu::scrublet_gpu::{run_scrublet_gpu, ScrubletParamsGpu};
 use bixverse_rs::prelude::*;
 use bixverse_rs::single_cell::sc_processing::scrublet::FinalScrubletRes;
-use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
-use cubecl::Runtime;
+use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 
 /////////////
@@ -111,14 +110,14 @@ fn rs_sc_scrublet_gpu(
 
     let device: WgpuDevice = Default::default();
 
-    let (scrublet_res, pca, pair_1, pair_2): FinalScrubletRes = run_scrublet_gpu::<WgpuRuntime, _>(
+    let (scrublet_res, pca, pair_1, pair_2): FinalScrubletRes = run_scrublet_gpu::<_>(
         &gene_reader,
         &cell_reader,
         &scrublet_params,
         &cells_to_keep,
         streaming,
         seed,
-        device.clone(),
+        device.clone().into(),
         verbose,
         return_combined_pca,
         return_pairs,
@@ -126,8 +125,8 @@ fn rs_sc_scrublet_gpu(
     .to_extendr()?;
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
 
     let pca_out = pca.map(|m| faer_to_r_matrix(m.as_ref()));
     let pair_1_out: Robj = match pair_1 {

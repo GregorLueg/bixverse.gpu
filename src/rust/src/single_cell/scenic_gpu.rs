@@ -4,8 +4,7 @@ use bixverse_rs::gpu::sc_gpu::scenic_gpu::{
 };
 use bixverse_rs::prelude::*;
 use bixverse_rs::single_cell::sc_analysis::scenic::ScenicParams;
-use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
-use cubecl::Runtime;
+use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 
 /////////////
@@ -111,7 +110,7 @@ fn rs_scenic_grn_gpu(
 
     let reader = ParallelSparseReader::new(&f_path_genes).to_extendr()?;
 
-    let grn_matrix = run_scenic_grn_gpu::<WgpuRuntime, _>(
+    let grn_matrix = run_scenic_grn_gpu::<_>(
         &reader,
         &cell_indices,
         &gene_indices,
@@ -119,14 +118,14 @@ fn rs_scenic_grn_gpu(
         &scenic_params,
         &gpu_params,
         seed,
-        device.clone(),
+        device.clone().into(),
         verbose,
     )
     .to_extendr()?;
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
 
     Ok(faer_to_r_matrix(grn_matrix.as_ref()))
 }
@@ -181,7 +180,7 @@ fn rs_scenic_grn_streaming_gpu(
 
     let reader = ParallelSparseReader::new(&f_path_genes).to_extendr()?;
 
-    let grn_matrix = run_scenic_grn_streaming_gpu::<WgpuRuntime, _>(
+    let grn_matrix = run_scenic_grn_streaming_gpu::<_>(
         &reader,
         &cell_indices,
         &gene_indices,
@@ -189,14 +188,14 @@ fn rs_scenic_grn_streaming_gpu(
         &scenic_params,
         &gpu_params,
         seed,
-        device.clone(),
+        device.clone().into(),
         verbose,
     )
     .to_extendr()?;
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
 
     Ok(faer_to_r_matrix(grn_matrix.as_ref()))
 }
@@ -247,20 +246,20 @@ fn rs_mc_scenic_gpu(
 
     let device: WgpuDevice = Default::default();
 
-    let grn_matrix = run_scenic_grn_in_memory_gpu::<WgpuRuntime, u32>(
+    let grn_matrix = run_scenic_grn_in_memory_gpu::<u32>(
         &sparse,
         &tf_indices,
         &scenic_params,
         &gpu_params,
         seed,
-        device.clone(),
+        device.clone().into(),
         verbose,
     )
     .to_extendr()?;
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
 
     Ok(faer_to_r_matrix(grn_matrix.as_ref()))
 }

@@ -1,6 +1,5 @@
 use bixverse_rs::prelude::IntoExtendrErr;
-use cubecl::prelude::Runtime;
-use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
+use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 use faer::{Mat, MatRef};
 use manifolds_rs::prelude::*;
@@ -10,24 +9,13 @@ use std::collections::HashMap;
 
 use crate::embeddings::utils::get_params_nn_ann_gpu;
 
-#[cfg(not(target_os = "windows"))]
-use manifolds_rs::utils::fft::FftwFloat;
+use manifolds_rs::utils::fft::FftFloat;
 
-/// Float bound for the GPU t-SNE
-///
-/// `manifolds-rs` is built without the `fft_tsne` feature on Windows, as FFTW
-/// does not build there, so `FftwFloat` only exists on the other platforms.
-#[cfg(not(target_os = "windows"))]
-pub trait TsneFloatGpu: ManifoldsFloatGpu + FftwFloat {}
+/// Float bound for the GPU t-SNE: GPU-capable and usable by the FFT
+/// optimisers.
+pub trait TsneFloatGpu: ManifoldsFloatGpu + FftFloat {}
 
-#[cfg(not(target_os = "windows"))]
-impl<T: ManifoldsFloatGpu + FftwFloat> TsneFloatGpu for T {}
-
-#[cfg(target_os = "windows")]
-pub trait TsneFloatGpu: ManifoldsFloatGpu {}
-
-#[cfg(target_os = "windows")]
-impl<T: ManifoldsFloatGpu> TsneFloatGpu for T {}
+impl<T: ManifoldsFloatGpu + FftFloat> TsneFloatGpu for T {}
 
 /////////////
 // Helpers //
@@ -190,9 +178,9 @@ where
 /// * `pre_computed_knn` - Optional pre-computed kNN to be used.
 /// * `n_dim` - Number of dimensions to reduce to (typically 2)
 /// * `approx_type` - String. `"bh"` for Barnes-Hut, `"fft"` for FFT
-///   interpolation, `"fft_3k"` for its three-kernel variant (both need FFTW,
-///   so not on Windows) or `"fft_3k_gpu"` for the three-kernel optimiser on
-///   the GPU.
+///   interpolation, `"fft_3k"` for its three-kernel variant,
+///   `"fft_3k_gpu"` for the three-kernel optimiser on the GPU or
+///   `"fft_3k_mlx"` for it on MLX (MLX builds only).
 /// * `perplexity` - Perplexity parameter (typical: 5-50)
 /// * `tsne_params` - Named R list with all t-SNE parameters
 /// * `seed` - Random seed for reproducibility
@@ -237,20 +225,20 @@ where
         init_range: Some(T::from_f64(1e-2).unwrap()),
     };
 
-    let res = tsne_gpu::<T, WgpuRuntime>(
+    let res = tsne_gpu::<T>(
         data,
         pre_computed_knn,
         &tsne_params,
         approx_type,
-        device.clone(),
+        device.clone().into(),
         seed,
         verbose,
     )
     .to_extendr()?;
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
 
     let ncol = res.len();
     let nrow = res[0].len();

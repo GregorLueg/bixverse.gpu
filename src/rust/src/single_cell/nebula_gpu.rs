@@ -11,8 +11,7 @@ use crate::single_cell::sc_utils::nebula_res_to_r_list;
 use bixverse_rs::gpu::sc_gpu::nebula_gpu::run_nebula_gpu;
 use bixverse_rs::prelude::*;
 use bixverse_rs::single_cell::sc_analysis::nebula::NebulaScParams;
-use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
-use cubecl::Runtime;
+use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 
 /////////////
@@ -123,7 +122,7 @@ fn rs_nebula_sc_gpu(
 
     let device: WgpuDevice = Default::default();
 
-    let res = run_nebula_gpu::<WgpuRuntime, _>(
+    let res = run_nebula_gpu::<_>(
         &gene_reader,
         &cell_reader,
         &cells_to_keep,
@@ -133,14 +132,14 @@ fn rs_nebula_sc_gpu(
         n_coef,
         offset.as_deref(),
         &params,
-        device.clone(),
+        device.clone().into(),
         verbose,
     )
     .to_extendr()?;
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
 
     Ok(nebula_res_to_r_list(res))
 }

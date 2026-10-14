@@ -2,8 +2,7 @@ use crate::ensure_gpu;
 use bixverse_rs::gpu::sc_gpu::pca_gpu::pca_on_sc_sparse_gpu;
 use bixverse_rs::prelude::*;
 use bixverse_rs::single_cell::sc_processing::pca::SingleCellPcaParams;
-use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
-use cubecl::Runtime;
+use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 
 /////////////
@@ -95,7 +94,7 @@ fn rs_sc_pca_sparse_gpu(
 
     let gene_reader = ParallelSparseReader::new(f_path_gene).to_extendr()?;
 
-    let res = pca_on_sc_sparse_gpu::<WgpuRuntime, _>(
+    let res = pca_on_sc_sparse_gpu::<_>(
         &gene_reader,
         &cell_set,
         &gene_indices,
@@ -103,14 +102,14 @@ fn rs_sc_pca_sparse_gpu(
         offsets.as_deref(),
         &pca_params,
         seed,
-        device.clone(),
+        device.clone().into(),
         verbose,
     )
     .to_extendr()?;
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
 
     Ok(list!(
         scores = faer_to_r_matrix(res.0.as_ref()),

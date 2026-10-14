@@ -206,6 +206,35 @@ where
     })
 }
 
+/// Map the GPU nearest neighbour parameters onto the CPU struct the MLX
+/// searches in manifolds-rs take.
+///
+/// The MLX arms of `run_ann_search` read only the metric, the IVF list and
+/// probe counts, the NN-descent `delta` and `extract_knn`; everything else
+/// keeps its default.
+///
+/// ### Params
+///
+/// * `params` - The parsed GPU parameters
+///
+/// ### Returns
+///
+/// The equivalent `NearestNeighbourParams`.
+#[cfg(mlx_available)]
+pub fn nn_params_gpu_to_mlx<T>(params: &NearestNeighbourParamsGpu<T>) -> NearestNeighbourParams<T>
+where
+    T: AnnSearchFloat,
+{
+    NearestNeighbourParams {
+        dist_metric: params.dist_metric.clone(),
+        n_list: params.n_list,
+        n_probes: params.n_probes,
+        delta: params.delta,
+        extract_knn: params.extract_knn,
+        ..Default::default()
+    }
+}
+
 /// Parse the parametric UMAP training parameters from an R list.
 ///
 /// Computes `a` and `b` from `min_dist` and `spread` via curve fitting.

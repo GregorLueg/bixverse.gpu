@@ -327,6 +327,49 @@ if (
   }
 }
 
+# used to replace @MACOS_LIBS@. A staticlib does not carry its native link
+# requirements to R's linker, and R links with `-undefined dynamic_lookup`, so
+# a missing framework only shows up as a lazy-binding failure on first call.
+#
+# Accelerate backs the CPU GEMMs in ann-search-rs and bixverse-rs on macOS.
+#
+# MLX is opt-in through `BIXVERSE_GPU_MLX=true`, Apple Silicon only. It needs
+# mlx-c (`brew install mlx-c`, or `MLX_C_PREFIX` pointing at an install
+# prefix). ann-search-rs links the dylib for cargo, but the R link line needs
+# it too. Homebrew install names are absolute, so no rpath.
+.macos_libs <- ""
+is_macos <- Sys.info()[["sysname"]] == "Darwin"
+
+if (is_macos) {
+  .macos_libs <- "-framework Accelerate "
+}
+
+if (tolower(Sys.getenv("BIXVERSE_GPU_MLX")) %in% c("true", "1", "yes")) {
+  if (is_macos && R.version$arch %in% c("aarch64", "arm64")) {
+    mlx_prefix <- Sys.getenv("MLX_C_PREFIX", unset = "/opt/homebrew")
+    mlx_lib <- file.path(mlx_prefix, "lib")
+    if (file.exists(file.path(mlx_lib, "libmlxc.dylib"))) {
+      .cargo_features <- trimws(paste(.cargo_features, "--features mlx"))
+      .macos_libs <- paste0(.macos_libs, "-L", mlx_lib, " -lmlxc ")
+      message(
+        "BIXVERSE_GPU_MLX set: building the MLX backend against `",
+        mlx_lib,
+        "`."
+      )
+    } else {
+      message(
+        "BIXVERSE_GPU_MLX set, but `",
+        mlx_lib,
+        "` has no libmlxc.dylib. ",
+        "Building without MLX. Install it with `brew install mlx-c` or set ",
+        "MLX_C_PREFIX."
+      )
+    }
+  } else {
+    message("BIXVERSE_GPU_MLX set, but MLX needs Apple Silicon. Ignoring it.")
+  }
+}
+
 # if windows we replace in the Makevars.win.in
 mv_fp <- ifelse(
   is_windows,
@@ -365,6 +408,7 @@ new_txt <- gsub("@CRAN_FLAGS@", .cran_flags, mv_txt) |>
   gsub("@CARGO_FEATURES@", .cargo_features, x = _, fixed = TRUE) |>
   gsub("@HDF5_EXPORTS@", .hdf5_exports, x = _, fixed = TRUE) |>
   gsub("@HDF5_LIBS@", .hdf5_libs, x = _, fixed = TRUE) |>
+  gsub("@MACOS_LIBS@", .macos_libs, x = _, fixed = TRUE) |>
   gsub("@HDF5_RUSTFLAGS@", .hdf5_rustflags, x = _, fixed = TRUE) |>
   gsub("@LINKER_RUSTFLAGS@", .linker_rustflags, x = _, fixed = TRUE)
 

@@ -198,6 +198,9 @@
 #' @param ivf_params `r lifecycle::badge("deprecated")` Use `nn_params`.
 #' @param dist_metric `r lifecycle::badge("deprecated")` Use
 #' `params_nn_gpu(dist_metric = )`.
+#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the
+#' search on Apple Silicon via MLX and needs a build with the MLX backend,
+#' see [mlx_available()].
 #' @param .verbose Boolean or integer. Controls verbosity.
 #'
 #' @return Initialised `sc_knn` with the kNN data.
@@ -219,9 +222,10 @@ generate_gpu_knn_sc <- S7::new_generic(
     gpu_method = lifecycle::deprecated(),
     ivf_params = lifecycle::deprecated(),
     dist_metric = lifecycle::deprecated(),
+    backend = c("wgpu", "mlx"),
     .verbose = TRUE
   ) {
-    assert_gpu()
+    assert_backend(match.arg(backend))
 
     S7::S7_dispatch()
   }
@@ -245,9 +249,11 @@ S7::method(generate_gpu_knn_sc, SingleCells) <- function(
   gpu_method = lifecycle::deprecated(),
   ivf_params = lifecycle::deprecated(),
   dist_metric = lifecycle::deprecated(),
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
   modality <- match.arg(modality)
+  backend <- match.arg(backend)
 
   resolved <- .resolve_deprecated_knn_args(
     knn_method = knn_method,
@@ -274,6 +280,7 @@ S7::method(generate_gpu_knn_sc, SingleCells) <- function(
   assertNnGpuParams(nn_params)
   checkmate::qassert(k, "I1[1,)")
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   embd <- .gpu_knn_embedding(
@@ -299,6 +306,7 @@ S7::method(generate_gpu_knn_sc, SingleCells) <- function(
     knn_method = knn_method,
     nn_params = nn_params,
     seed = seed,
+    backend = backend,
     verbose = bixverse:::parse_verbosity(.verbose)
   )
 
@@ -333,6 +341,9 @@ S7::method(generate_gpu_knn_sc, SingleCells) <- function(
 #' @param ivf_params `r lifecycle::badge("deprecated")` Use `nn_params`.
 #' @param dist_metric `r lifecycle::badge("deprecated")` Use
 #' `params_nn_gpu(dist_metric = )`.
+#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the
+#' search on Apple Silicon via MLX and needs a build with the MLX backend,
+#' see [mlx_available()].
 #' @param .verbose Boolean. Controls verbosity.
 #'
 #' @return The object with added kNN matrix and sNN graph in the selected
@@ -355,9 +366,10 @@ find_neighbours_gpu_sc <- S7::new_generic(
     gpu_method = lifecycle::deprecated(),
     ivf_params = lifecycle::deprecated(),
     dist_metric = lifecycle::deprecated(),
+    backend = c("wgpu", "mlx"),
     .verbose = TRUE
   ) {
-    assert_gpu()
+    assert_backend(match.arg(backend))
 
     S7::S7_dispatch()
   }
@@ -381,9 +393,11 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
   gpu_method = lifecycle::deprecated(),
   ivf_params = lifecycle::deprecated(),
   dist_metric = lifecycle::deprecated(),
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
   modality <- match.arg(modality)
+  backend <- match.arg(backend)
 
   resolved <- .resolve_deprecated_knn_args(
     knn_method = knn_method,
@@ -409,6 +423,7 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
   assertNnGpuParams(nn_params)
   checkmate::qassert(k, "I1[1,)")
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   if (modality != "rna" && !S7::S7_inherits(object, SingleCellsMultiModal)) {
@@ -435,6 +450,7 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
     nn_params = nn_params,
     k = k,
     seed = seed,
+    backend = backend,
     .verbose = .verbose
   )
   object <- set_knn(

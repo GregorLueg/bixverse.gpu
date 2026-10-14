@@ -13,6 +13,7 @@
   regenerate_knn,
   target_size,
   seed,
+  backend,
   .verbose
 )
 }
@@ -58,6 +59,10 @@ the internal one will be used.}
 cells to.}
 
 \item{seed}{Integer. Seed for reproducibility.}
+
+\item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the
+fit on Apple Silicon via MLX and needs a build with the MLX backend, see
+\code{\link[=mlx_available]{mlx_available()}}.}
 
 \item{.verbose}{Boolean or integer. Controls verbosity and returns run times.
 \code{FALSE} -> quiet, \code{TRUE} or \code{1L} -> normal verbosity, \code{2L} -> detailed

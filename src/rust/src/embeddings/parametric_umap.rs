@@ -2,7 +2,6 @@ use ann_search_rs::cpu::hnsw::{HnswIndex, HnswState};
 use ann_search_rs::cpu::nndescent::{NNDescent, NNDescentQuery};
 use ann_search_rs::utils::nndescent_utils::ApplySortedUpdates;
 use bixverse_rs::prelude::IntoExtendrErr;
-use burn::tensor::backend::AutodiffBackend;
 use extendr_api::*;
 use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
@@ -91,7 +90,7 @@ impl InternalParametricUmapParams {
 /// * `min_dist` - Minimum distance between points in the embedding
 /// * `spread` - Scale of the embedding; controls how clustered the output is
 /// * `parametric_params` - R list containing network and training configuration
-/// * `device` - Burn backend device to run the model on
+/// * `device` - Burn device to run the model on
 /// * `seed` - Random seed for reproducibility
 /// * `verbose` - `0L` - quiet; `1L` - normal verbosity; `2L` - detailed
 ///   verbosity.
@@ -101,19 +100,18 @@ impl InternalParametricUmapParams {
 /// The embedding generated from the trainings data and the trained
 /// UmapMlpModel.
 #[allow(clippy::too_many_arguments)]
-pub fn parametric_umap_manifold<B>(
+pub fn parametric_umap_manifold(
     data: MatRef<f32>,
     n_dim: usize,
     k: usize,
     min_dist: f32,
     spread: f32,
     parametric_params: List,
-    device: &B::Device,
+    device: &burn::tensor::Device,
     seed: usize,
     verbose: usize,
-) -> Result<(Mat<f32>, TrainedUmapModel<B, f32>)>
+) -> Result<(Mat<f32>, TrainedUmapModel<f32>)>
 where
-    B: AutodiffBackend,
     HnswIndex<f32>: HnswState<f32>,
     NNDescent<f32>: ApplySortedUpdates<f32> + NNDescentQuery<f32>,
 {
@@ -130,7 +128,7 @@ where
     );
 
     let (embd_res, model) =
-        train_parametric_umap_model::<f32, B>(data, &umap_params, device, seed, verbose)
+        train_parametric_umap_model::<f32>(data, &umap_params, device, seed, verbose)
             .to_extendr()?;
 
     let ncol = embd_res.len();

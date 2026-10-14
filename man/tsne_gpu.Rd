@@ -15,6 +15,7 @@ tsne_gpu(
   tsne_params = params_tsne_gpu(),
   seed = 42L,
   use_high_precision = NULL,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 }
@@ -40,7 +41,7 @@ Barnes-Hut of qdtsne (tree depth capped at \code{max_depth} in
 \code{\link[=params_tsne_gpu]{params_tsne_gpu()}}, faster and coarser), \code{"fft"} for FFT-accelerated
 interpolation or \code{"fft_3k"} for its three-kernel variant (one forward and
 three inverse FFTs per epoch instead of four each). The last four run on
-the CPU; \code{"fft"} and \code{"fft_3k"} are only available on Unix systems.}
+the CPU.}
 
 \item{knn_method}{Character. GPU-accelerated (approximate) nearest
 neighbour method to use. One of \code{"nndescent"}, \code{"exhaustive"}, or \code{"ivf"}.}
@@ -57,6 +58,10 @@ here.}
 \item{use_high_precision}{Optional boolean. Gives fine-grained control over
 \code{fp32} vs \code{fp64} usage. The GPU kNN calculations will be forced into \code{fp32}.
 Ignored with a warning for \code{"fft_3k_gpu"}, which always runs in \code{fp32}.}
+
+\item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} moves the
+\code{"fft_3k_gpu"} optimiser to MLX on Apple Silicon and needs a build with
+the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}. The kNN search stays on WGPU.}
 
 \item{.verbose}{Logical. Controls verbosity. Defaults to \code{TRUE}.}
 }

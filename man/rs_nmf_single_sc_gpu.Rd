@@ -13,6 +13,7 @@ rs_nmf_single_sc_gpu(
   use_second_layer,
   nmf_hals_params,
   seed,
+  backend = "wgpu",
   verbose
 )
 }
@@ -38,6 +39,9 @@ counts; if \code{FALSE}, on the raw counts.}
 \item{nmf_hals_params}{Named list. Contains the NMF parameters.}
 
 \item{seed}{Integer. Random seed for initialisation.}
+
+\item{backend}{String. \code{"wgpu"} or \code{"mlx"} (Apple Silicon, needs a build
+with the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}).}
 
 \item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
 detailed verbosity.}

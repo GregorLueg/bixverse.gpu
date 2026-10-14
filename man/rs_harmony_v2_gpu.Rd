@@ -4,7 +4,14 @@
 \alias{rs_harmony_v2_gpu}
 \title{Harmony batch correction in Rust (version 2, GPU-accelerated)}
 \usage{
-rs_harmony_v2_gpu(pca, harmony_params, batch_labels, seed, verbose)
+rs_harmony_v2_gpu(
+  pca,
+  harmony_params,
+  batch_labels,
+  seed,
+  backend = "wgpu",
+  verbose
+)
 }
 \arguments{
 \item{pca}{Numerical matrix, i.e., the PCA matrix you want to correct.}
@@ -15,6 +22,9 @@ rs_harmony_v2_gpu(pca, harmony_params, batch_labels, seed, verbose)
 integer vector representing the batch effects you wish to regress out.}
 
 \item{seed}{Integer. Seed for reproducibility purposes.}
+
+\item{backend}{String. \code{"wgpu"} or \code{"mlx"} (Apple Silicon, needs a build
+with the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}).}
 
 \item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
 detailed verbosity.}

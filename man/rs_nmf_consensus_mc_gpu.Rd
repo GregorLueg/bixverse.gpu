@@ -13,6 +13,7 @@ rs_nmf_consensus_mc_gpu(
   nmf_consensus_params,
   n_runs,
   seed,
+  backend = "wgpu",
   verbose
 )
 }
@@ -35,6 +36,9 @@ rs_nmf_consensus_mc_gpu(
 \item{n_runs}{Integer. Number of restarts. Must be at least 2.}
 
 \item{seed}{Integer. Base random seed. Restart \code{i} uses \code{seed + i}.}
+
+\item{backend}{String. \code{"wgpu"} or \code{"mlx"} (Apple Silicon, needs a build
+with the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}).}
 
 \item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
 detailed verbosity.}

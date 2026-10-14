@@ -4,11 +4,14 @@
 \alias{rs_cov_gpu}
 \title{GPU-accelerated covariance calculations}
 \usage{
-rs_cov_gpu(x, verbose)
+rs_cov_gpu(x, backend = "wgpu", verbose)
 }
 \arguments{
 \item{x}{Numerical matrix. The matrix for which to calculate the column
 pairwise covariance matrix.}
+
+\item{backend}{String. \code{"wgpu"} or \code{"mlx"} (Apple Silicon, needs a build
+with the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}).}
 
 \item{verbose}{Boolean. Controls verbosity of the function.}
 }

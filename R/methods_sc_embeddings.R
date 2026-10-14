@@ -238,8 +238,7 @@ S7::method(umap_gpu_sc, SingleCells) <- function(
 #' @param approx_type String. Approximation method. One of `"fft_3k_gpu"`
 #' (three-kernel FFT on the GPU, the default), `"bh"` (Barnes-Hut), `"bh_qd"`
 #' (quick-and-dirty Barnes-Hut, depth-capped tree), `"fft"` or `"fft_3k"` (CPU
-#' FFT interpolation, four or three kernels). The CPU FFT variants are
-#' Unix-only. See [tsne_gpu()].
+#' FFT interpolation, four or three kernels). See [tsne_gpu()].
 #' @param knn_method String. GPU (approximate) nearest neighbour method. One
 #' of `c("ivf", "exhaustive", "nndescent")`. Default is `"ivf"` here, as it
 #' deals usually better with the high k in tSNE.
@@ -249,6 +248,8 @@ S7::method(umap_gpu_sc, SingleCells) <- function(
 #' @param seed Integer. For reproducibility.
 #' @param use_high_precision Optional boolean. Fine-grained fp32 vs fp64
 #' control. GPU kNN is always fp32. Ignored for `"fft_3k_gpu"`.
+#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` moves the
+#' `"fft_3k_gpu"` optimiser to MLX, see [tsne_gpu()].
 #' @param .verbose Boolean or integer. Controls verbosity.
 #'
 #' @return The object with a `"tsne"` embedding added. If the requested
@@ -277,9 +278,11 @@ tsne_gpu_sc <- S7::new_generic(
     tsne_params = params_tsne_gpu(),
     seed = 42L,
     use_high_precision = NULL,
+    backend = c("wgpu", "mlx"),
     .verbose = TRUE
   ) {
     assert_gpu()
+    assert_backend(match.arg(backend))
 
     S7::S7_dispatch()
   }
@@ -305,11 +308,13 @@ S7::method(tsne_gpu_sc, SingleCells) <- function(
   tsne_params = params_tsne_gpu(),
   seed = 42L,
   use_high_precision = NULL,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
   modality <- match.arg(modality)
   approx_type <- match.arg(approx_type)
   knn_method <- match.arg(knn_method)
+  backend <- match.arg(backend)
 
   checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
   checkmate::qassert(use_knn, "B1")
@@ -322,6 +327,7 @@ S7::method(tsne_gpu_sc, SingleCells) <- function(
   assertTsneGpuParams(tsne_params)
   checkmate::qassert(seed, "I1")
   checkmate::qassert(use_high_precision, c("0", "B1"))
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   if (modality != "rna" && !S7::S7_inherits(object, SingleCellsMultiModal)) {
@@ -383,6 +389,7 @@ S7::method(tsne_gpu_sc, SingleCells) <- function(
     tsne_params = tsne_params,
     seed = seed,
     use_high_precision = use_high_precision,
+    backend = backend,
     .verbose = .verbose
   )
 

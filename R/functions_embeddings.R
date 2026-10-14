@@ -299,7 +299,7 @@ umap_gpu <- function(
 #' [params_tsne_gpu()], faster and coarser), `"fft"` for FFT-accelerated
 #' interpolation or `"fft_3k"` for its three-kernel variant (one forward and
 #' three inverse FFTs per epoch instead of four each). The last four run on
-#' the CPU; `"fft"` and `"fft_3k"` are only available on Unix systems.
+#' the CPU.
 #' @param knn_method Character. GPU-accelerated (approximate) nearest
 #' neighbour method to use. One of `"nndescent"`, `"exhaustive"`, or `"ivf"`.
 #' @param nn_params Named list. Nearest neighbour search parameters, see
@@ -311,6 +311,9 @@ umap_gpu <- function(
 #' @param use_high_precision Optional boolean. Gives fine-grained control over
 #' `fp32` vs `fp64` usage. The GPU kNN calculations will be forced into `fp32`.
 #' Ignored with a warning for `"fft_3k_gpu"`, which always runs in `fp32`.
+#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` moves the
+#' `"fft_3k_gpu"` optimiser to MLX on Apple Silicon and needs a build with
+#' the MLX backend, see [mlx_available()]. The kNN search stays on WGPU.
 #' @param .verbose Logical. Controls verbosity. Defaults to `TRUE`.
 #'
 #' @return A numerical matrix with dimensions samples x n_dim containing
@@ -332,6 +335,7 @@ tsne_gpu <- function(
   tsne_params = params_tsne_gpu(),
   seed = 42L,
   use_high_precision = NULL,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
   assert_gpu()
@@ -342,6 +346,8 @@ tsne_gpu <- function(
   }
   approx_type <- match.arg(approx_type)
   knn_method <- match.arg(knn_method)
+  backend <- match.arg(backend)
+  assert_backend(backend)
 
   checkmate::assert_matrix(
     data,
@@ -362,13 +368,12 @@ tsne_gpu <- function(
   )
   checkmate::qassert(seed, "I1")
   checkmate::qassert(use_high_precision, c("0", "B1"))
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0, 2]"))
 
-  # CPU FFT needs FFTW, which is only built on Unix
-  if (approx_type %in% c("fft", "fft_3k") && .Platform$OS.type != "unix") {
+  if (backend == "mlx" && approx_type != "fft_3k_gpu") {
     stop(
-      "The CPU FFT approximations are not supported on non-Unix systems. ",
-      "Use `approx_type = \"fft_3k_gpu\"` instead.",
+      "`backend = \"mlx\"` only applies to `approx_type = \"fft_3k_gpu\"`.",
       call. = FALSE
     )
   }
@@ -401,6 +406,7 @@ tsne_gpu <- function(
           tsne_params = final_tsne_params,
           seed = seed,
           use_high_precision = use_high_precision,
+          backend = backend,
           verbose = parse_verbosity(.verbose)
         )
       },
@@ -419,6 +425,7 @@ tsne_gpu <- function(
           tsne_params = final_tsne_params,
           seed = seed,
           use_high_precision = use_high_precision,
+          backend = backend,
           verbose = parse_verbosity(.verbose)
         )
       },

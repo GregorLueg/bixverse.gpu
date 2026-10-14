@@ -17,6 +17,7 @@ generate_gpu_knn_sc(
   gpu_method = lifecycle::deprecated(),
   ivf_params = lifecycle::deprecated(),
   dist_metric = lifecycle::deprecated(),
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 }
@@ -49,6 +50,10 @@ on \code{SingleCellsMultiModal} class.}
 
 \item{dist_metric}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use
 \code{params_nn_gpu(dist_metric = )}.}
+
+\item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the
+search on Apple Silicon via MLX and needs a build with the MLX backend,
+see \code{\link[=mlx_available]{mlx_available()}}.}
 
 \item{.verbose}{Boolean or integer. Controls verbosity.}
 }
