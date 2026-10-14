@@ -491,6 +491,9 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
 #' [bixverse::get_hvg()]. Please provide 1-indexed genes here! If you provide
 #' these, the internal HVG will be overwritten.
 #' @param seed Integer. Seed for the randomised SVD.
+#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the SVD on
+#' Apple Silicon via MLX and needs a build with the MLX backend, see
+#' [mlx_available()].
 #' @param .verbose Boolean or integer. Controls verbosity and returns run times.
 #' `FALSE` -> quiet, `TRUE` or `1L` -> normal verbosity, `2L` -> detailed
 #' verbosity.
@@ -508,9 +511,10 @@ calculate_pca_gpu_sc <- S7::new_generic(
     pca_params = bixverse::params_sc_pca(),
     hvg = NULL,
     seed = 42L,
+    backend = c("wgpu", "mlx"),
     .verbose = TRUE
   ) {
-    assert_gpu()
+    assert_backend(match.arg(backend))
 
     S7::S7_dispatch()
   }
@@ -526,13 +530,17 @@ S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
   pca_params = bixverse::params_sc_pca(),
   hvg = NULL,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
+  backend <- match.arg(backend)
+
   checkmate::assertClass(object, "bixverse::SingleCells")
   checkmate::qassert(no_pcs, "I1")
   bixverse:::assertScPcaParams(pca_params)
   checkmate::qassert(hvg, c("I+", "0"))
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   if ((length(suppressWarnings(get_hvg(object))) == 0) && is.null(hvg)) {
@@ -579,6 +587,7 @@ S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
       cell_indices = get_cells_to_keep(object),
       gene_indices = selected_hvg,
       seed = seed,
+      backend = backend,
       verbose = bixverse:::parse_verbosity(.verbose)
     )
   )

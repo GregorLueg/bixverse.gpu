@@ -18,10 +18,9 @@
 //! CPU single-cell and meta-cell paths, so the result converters are concrete
 //! rather than generic over the float.
 //!
-//! The single and consensus runs also take `backend = "mlx"`; bixverse-rs
-//! has no MLX multi-run or k-sweep, so those stay on WGPU.
+//! Every entry point also takes `backend = "mlx"`.
 
-use crate::{ensure_gpu, parse_backend, Backend};
+use crate::{parse_backend, Backend};
 use bixverse_rs::gpu::methods_gpu::nmf_consensus_gpu::{
     nmf_consensus_run_sparse_gpu, nmf_k_sweep_run_sparse_gpu, nmf_multiple_run_sparse_gpu,
     nmf_single_run_sparse_gpu,
@@ -36,7 +35,10 @@ use indexmap::IndexSet;
 use std::time::Instant;
 
 #[cfg(mlx_available)]
-use bixverse_rs::mlx::methods::nmf::{nmf_consensus_run_sparse_mlx, nmf_single_run_sparse_mlx};
+use bixverse_rs::mlx::methods::nmf::{
+    nmf_consensus_run_sparse_mlx, nmf_k_sweep_run_sparse_mlx, nmf_multiple_run_sparse_mlx,
+    nmf_single_run_sparse_mlx,
+};
 
 /////////////
 // extendr //
@@ -254,6 +256,134 @@ fn run_nmf_consensus(
     let res = nmf_consensus_run_sparse_gpu(
         data,
         k,
+        preprocessing,
+        use_second_layer,
+        Some(opts),
+        Some(consensus),
+        n_runs,
+        seed,
+        device.clone().into(),
+        verbose,
+    )
+    .to_extendr()?;
+    release_device(&device);
+    Ok(res)
+}
+
+/// Multiple HALS NMF restarts on the chosen backend.
+///
+/// ### Params
+///
+/// * `data` - Sparse matrix, cells x genes.
+/// * `k` - Rank of the factorisation.
+/// * `preprocessing` - Pre-processing applied before the solve.
+/// * `use_second_layer` - Solve on the normalised counts.
+/// * `opts` - HALS options.
+/// * `n_runs` - Number of restarts.
+/// * `seed` - Base seed; restart `i` uses `seed + i`.
+/// * `backend` - Device backend.
+/// * `verbose` - `0` silent, `1` normal, `2` detailed.
+///
+/// ### Returns
+///
+/// The [StabilisedNmfResult].
+#[allow(clippy::too_many_arguments)]
+fn run_nmf_multi(
+    data: CompressedSparseData2<f32>,
+    k: usize,
+    preprocessing: &str,
+    use_second_layer: bool,
+    opts: HalsOpts<f32>,
+    n_runs: usize,
+    seed: usize,
+    backend: Backend,
+    verbose: usize,
+) -> Result<StabilisedNmfResult<f32>> {
+    #[cfg(mlx_available)]
+    if backend == Backend::Mlx {
+        return nmf_multiple_run_sparse_mlx(
+            data,
+            k,
+            preprocessing,
+            use_second_layer,
+            Some(opts),
+            n_runs,
+            seed,
+            verbose,
+        )
+        .to_extendr();
+    }
+    debug_assert_eq!(backend, Backend::Wgpu);
+
+    let device: WgpuDevice = Default::default();
+    let res = nmf_multiple_run_sparse_gpu(
+        data,
+        k,
+        preprocessing,
+        use_second_layer,
+        Some(opts),
+        n_runs,
+        seed,
+        device.clone().into(),
+        verbose,
+    )
+    .to_extendr()?;
+    release_device(&device);
+    Ok(res)
+}
+
+/// k-sweep of consensus HALS NMF on the chosen backend.
+///
+/// ### Params
+///
+/// * `data` - Sparse matrix, cells x genes.
+/// * `k_range` - Ranks to evaluate.
+/// * `preprocessing` - Pre-processing applied before the solve.
+/// * `use_second_layer` - Solve on the normalised counts.
+/// * `opts` - HALS options.
+/// * `consensus` - Consensus options.
+/// * `n_runs` - Number of restarts per rank.
+/// * `seed` - Base seed; restart `i` uses `seed + i`.
+/// * `backend` - Device backend.
+/// * `verbose` - `0` silent, `1` normal, `2` detailed.
+///
+/// ### Returns
+///
+/// One [KSweepEntry] per rank.
+#[allow(clippy::too_many_arguments)]
+fn run_nmf_k_sweep(
+    data: CompressedSparseData2<f32>,
+    k_range: &[usize],
+    preprocessing: &str,
+    use_second_layer: bool,
+    opts: HalsOpts<f32>,
+    consensus: ConsensusParams<f32>,
+    n_runs: usize,
+    seed: usize,
+    backend: Backend,
+    verbose: usize,
+) -> Result<Vec<KSweepEntry<f32>>> {
+    #[cfg(mlx_available)]
+    if backend == Backend::Mlx {
+        return nmf_k_sweep_run_sparse_mlx(
+            data,
+            k_range,
+            preprocessing,
+            use_second_layer,
+            Some(opts),
+            Some(consensus),
+            n_runs,
+            seed,
+            verbose,
+        )
+        .to_extendr();
+    }
+    debug_assert_eq!(backend, Backend::Wgpu);
+
+    let device: WgpuDevice = Default::default();
+    let res = nmf_k_sweep_run_sparse_gpu(
+        data,
+        k_range,
         preprocessing,
         use_second_layer,
         Some(opts),
@@ -513,6 +643,8 @@ fn rs_nmf_single_sc_gpu(
 /// @param nmf_hals_params Named list. Contains the NMF parameters.
 /// @param n_runs Integer. Number of random restarts.
 /// @param seed Integer. Base random seed. Run `i` uses `seed + i`.
+/// @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+/// with the MLX backend, see [mlx_available()]).
 /// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 /// detailed verbosity.
 ///
@@ -543,9 +675,10 @@ fn rs_nmf_multi_sc_gpu(
     nmf_hals_params: List,
     n_runs: usize,
     seed: usize,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> Result<List> {
-    ensure_gpu()?;
+    let backend = parse_backend(backend)?;
 
     let gene_indices = gene_indices.r_int_convert();
     let cell_indices = cell_indices.r_int_convert();
@@ -559,20 +692,17 @@ fn rs_nmf_multi_sc_gpu(
         verbose,
     )?;
 
-    let device: WgpuDevice = Default::default();
-    let nmf_res = nmf_multiple_run_sparse_gpu(
+    let nmf_res = run_nmf_multi(
         csc,
         k,
         preprocessing,
         use_second_layer,
-        Some(nmf_hals_opt),
+        nmf_hals_opt,
         n_runs,
         seed,
-        device.clone().into(),
+        backend,
         verbose,
-    )
-    .to_extendr()?;
-    release_device(&device);
+    )?;
 
     Ok(stabilised_res_to_r_list(&nmf_res))
 }
@@ -707,6 +837,8 @@ fn rs_nmf_consensus_sc_gpu(
 /// @param nmf_consensus_params Named list. Contains the consensus parameters.
 /// @param n_runs Integer. Number of restarts per k. Must be at least 2.
 /// @param seed Integer. Base random seed.
+/// @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+/// with the MLX backend, see [mlx_available()]).
 /// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 /// detailed verbosity.
 ///
@@ -743,9 +875,10 @@ fn rs_nmf_k_sweep_sc_gpu(
     nmf_consensus_params: List,
     n_runs: usize,
     seed: usize,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> Result<List> {
-    ensure_gpu()?;
+    let backend = parse_backend(backend)?;
 
     let gene_indices = gene_indices.r_int_convert();
     let cell_indices = cell_indices.r_int_convert();
@@ -761,21 +894,18 @@ fn rs_nmf_k_sweep_sc_gpu(
         verbose,
     )?;
 
-    let device: WgpuDevice = Default::default();
-    let sweep_res = nmf_k_sweep_run_sparse_gpu(
+    let sweep_res = run_nmf_k_sweep(
         csc,
         &k_range,
         preprocessing,
         use_second_layer,
-        Some(nmf_hals_opt),
-        Some(consensus_opt),
+        nmf_hals_opt,
+        consensus_opt,
         n_runs,
         seed,
-        device.clone().into(),
+        backend,
         verbose,
-    )
-    .to_extendr()?;
-    release_device(&device);
+    )?;
 
     Ok(k_sweep_to_r_list(&sweep_res))
 }
@@ -859,6 +989,8 @@ fn rs_nmf_single_mc_gpu(
 /// @param nmf_hals_params Named list. Contains the NMF parameters.
 /// @param n_runs Integer. Number of random restarts.
 /// @param seed Integer. Base random seed. Run `i` uses `seed + i`.
+/// @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+/// with the MLX backend, see [mlx_available()]).
 /// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 /// detailed verbosity.
 ///
@@ -878,29 +1010,27 @@ fn rs_nmf_multi_mc_gpu(
     nmf_hals_params: List,
     n_runs: usize,
     seed: usize,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> Result<List> {
-    ensure_gpu()?;
+    let backend = parse_backend(backend)?;
 
     let sparse: CompressedSparseData2<f64, f64> =
         list_to_sparse_matrix(sparse_data, true).to_extendr()?;
     let sparse = cast_sparse_f32(sparse);
     let nmf_hals_opt: HalsOpts<f32> = HalsOpts::from_r_list(nmf_hals_params, seed).to_extendr()?;
 
-    let device: WgpuDevice = Default::default();
-    let nmf_res = nmf_multiple_run_sparse_gpu(
+    let nmf_res = run_nmf_multi(
         sparse,
         k,
         preprocessing,
         use_second_layer,
-        Some(nmf_hals_opt),
+        nmf_hals_opt,
         n_runs,
         seed,
-        device.clone().into(),
+        backend,
         verbose,
-    )
-    .to_extendr()?;
-    release_device(&device);
+    )?;
 
     Ok(stabilised_res_to_r_list(&nmf_res))
 }
@@ -995,6 +1125,8 @@ fn rs_nmf_consensus_mc_gpu(
 /// @param nmf_consensus_params Named list. Contains the consensus parameters.
 /// @param n_runs Integer. Number of restarts per k. Must be at least 2.
 /// @param seed Integer. Base random seed.
+/// @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+/// with the MLX backend, see [mlx_available()]).
 /// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 /// detailed verbosity.
 ///
@@ -1018,9 +1150,10 @@ fn rs_nmf_k_sweep_mc_gpu(
     nmf_consensus_params: List,
     n_runs: usize,
     seed: usize,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> Result<List> {
-    ensure_gpu()?;
+    let backend = parse_backend(backend)?;
 
     let sparse: CompressedSparseData2<f64, f64> =
         list_to_sparse_matrix(sparse_data, true).to_extendr()?;
@@ -1029,21 +1162,18 @@ fn rs_nmf_k_sweep_mc_gpu(
     let nmf_hals_opt: HalsOpts<f32> = HalsOpts::from_r_list(nmf_hals_params, seed).to_extendr()?;
     let consensus_opt: ConsensusParams<f32> = ConsensusParams::from_r_list(nmf_consensus_params)?;
 
-    let device: WgpuDevice = Default::default();
-    let sweep_res = nmf_k_sweep_run_sparse_gpu(
+    let sweep_res = run_nmf_k_sweep(
         sparse,
         &k_range,
         preprocessing,
         use_second_layer,
-        Some(nmf_hals_opt),
-        Some(consensus_opt),
+        nmf_hals_opt,
+        consensus_opt,
         n_runs,
         seed,
-        device.clone().into(),
+        backend,
         verbose,
-    )
-    .to_extendr()?;
-    release_device(&device);
+    )?;
 
     Ok(k_sweep_to_r_list(&sweep_res))
 }

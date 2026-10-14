@@ -364,6 +364,8 @@ rs_tsne_from_knn_gpu <- function(embd, knn_data, n_dim, perplexity, approx_type,
 #' @param cell_indices Integer. The cell indices to use. (0-indexed!)
 #' @param gene_indices Integer. The gene indices to use. (0-indexed!)
 #' @param seed Integer. Random seed for the randomised SVD.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -380,7 +382,7 @@ rs_tsne_from_knn_gpu <- function(embd, knn_data, n_dim, perplexity, approx_type,
 #' @export
 #'
 #' @keywords internal
-rs_sc_pca_sparse_gpu <- function(f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, verbose) .Call(wrap__rs_sc_pca_sparse_gpu, f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, verbose)
+rs_sc_pca_sparse_gpu <- function(f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, backend = "wgpu", verbose) .Call(wrap__rs_sc_pca_sparse_gpu, f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, backend, verbose)
 
 #' Harmony batch correction in Rust (version 2, GPU-accelerated)
 #'
@@ -468,6 +470,8 @@ rs_nmf_single_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, pre
 #' @param nmf_hals_params Named list. Contains the NMF parameters.
 #' @param n_runs Integer. Number of random restarts.
 #' @param seed Integer. Base random seed. Run `i` uses `seed + i`.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -486,7 +490,7 @@ rs_nmf_single_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, pre
 #' @export
 #'
 #' @keywords internal
-rs_nmf_multi_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_multi_sc_gpu, f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, verbose)
+rs_nmf_multi_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, backend = "wgpu", verbose) .Call(wrap__rs_nmf_multi_sc_gpu, f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, backend, verbose)
 
 #' Run consensus NMF on the GPU over a set of single cells and genes
 #'
@@ -573,6 +577,8 @@ rs_nmf_consensus_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, 
 #' @param nmf_consensus_params Named list. Contains the consensus parameters.
 #' @param n_runs Integer. Number of restarts per k. Must be at least 2.
 #' @param seed Integer. Base random seed.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -596,7 +602,7 @@ rs_nmf_consensus_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, 
 #' @export
 #'
 #' @keywords internal
-rs_nmf_k_sweep_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_k_sweep_sc_gpu, f_path_gene, gene_indices, cell_indices, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose)
+rs_nmf_k_sweep_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, backend = "wgpu", verbose) .Call(wrap__rs_nmf_k_sweep_sc_gpu, f_path_gene, gene_indices, cell_indices, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, backend, verbose)
 
 #' Run NMF (HALS) on the GPU over meta cells
 #'
@@ -643,6 +649,8 @@ rs_nmf_single_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer
 #' @param nmf_hals_params Named list. Contains the NMF parameters.
 #' @param n_runs Integer. Number of random restarts.
 #' @param seed Integer. Base random seed. Run `i` uses `seed + i`.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -652,7 +660,7 @@ rs_nmf_single_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer
 #' @export
 #'
 #' @keywords internal
-rs_nmf_multi_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_multi_mc_gpu, sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, verbose)
+rs_nmf_multi_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, backend = "wgpu", verbose) .Call(wrap__rs_nmf_multi_mc_gpu, sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, backend, verbose)
 
 #' Run consensus NMF on the GPU over meta cells
 #'
@@ -708,6 +716,8 @@ rs_nmf_consensus_mc_gpu <- function(sparse_data, k, preprocessing, use_second_la
 #' @param nmf_consensus_params Named list. Contains the consensus parameters.
 #' @param n_runs Integer. Number of restarts per k. Must be at least 2.
 #' @param seed Integer. Base random seed.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -720,7 +730,7 @@ rs_nmf_consensus_mc_gpu <- function(sparse_data, k, preprocessing, use_second_la
 #' @export
 #'
 #' @keywords internal
-rs_nmf_k_sweep_mc_gpu <- function(sparse_data, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_k_sweep_mc_gpu, sparse_data, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose)
+rs_nmf_k_sweep_mc_gpu <- function(sparse_data, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, backend = "wgpu", verbose) .Call(wrap__rs_nmf_k_sweep_mc_gpu, sparse_data, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, backend, verbose)
 
 #' GPU: SCENIC gene-regulatory network inference (disk-backed)
 #'
