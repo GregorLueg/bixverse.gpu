@@ -603,6 +603,23 @@ spec_sc_fast_cluster_gpu <- param_spec(
         "neighbour. Both are normalised to `[0, 1]`."
       )
     ),
+    cell_mediated = p_lgl(
+      FALSE,
+      doc = paste(
+        "Build the centroid graph from the cells instead of a kNN search",
+        "over the centroids: every cell links its `n_anchors` nearest",
+        "centroids, so two centroids are connected when cells sit near",
+        "both. If `TRUE`, `snn` and the sNN settings are ignored."
+      )
+    ),
+    n_anchors = p_int(
+      5L,
+      range = "[1,)",
+      doc = paste(
+        "Number of nearest centroids each cell links to in the",
+        "cell-mediated graph. Clamped to the number of centroids."
+      )
+    ),
     louvain_iters = p_int(
       10L,
       range = "[1,)",

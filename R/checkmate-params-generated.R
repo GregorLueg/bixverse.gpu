@@ -449,6 +449,8 @@ checkScFastClusterGpuParams <- function(x) {
       "full_snn",
       "pruning",
       "snn_similarity",
+      "cell_mediated",
+      "n_anchors",
       "louvain_iters",
       "multi_level_louvain"
     )
@@ -467,6 +469,8 @@ checkScFastClusterGpuParams <- function(x) {
       same_weight = "B1",
       full_snn = "B1",
       pruning = c("N1[0,1]", "0"),
+      cell_mediated = "B1",
+      n_anchors = "I1[1,)",
       louvain_iters = "I1[1,)",
       multi_level_louvain = "B1"
     ),
