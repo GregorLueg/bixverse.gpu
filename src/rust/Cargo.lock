@@ -3794,7 +3794,7 @@ dependencies = [
  "hdf5-metno-types",
  "libc",
  "lzf-sys",
- "ndarray 0.16.1",
+ "ndarray 0.17.2",
  "pastey 0.2.3",
 ]
 
