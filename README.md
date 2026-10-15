@@ -110,12 +110,6 @@ Vulkan with `Sys.setenv(WGPU_BACKEND = "vulkan")` before the first GPU call
 should sidestep FXC, but that's untested. The tests for the affected methods
 are skipped on Windows until the kernels are fixed upstream.
 
-The h5 dependency (for reading h5ad files) turned out to be a dull
-`MAX_PATH` issue rather than a cross-compile one: `R CMD INSTALL` builds in a
-deep temp directory, and the HDF5 CMake build pushed object paths past the 260
-character limit. The build now puts the cargo target directory in
-`~/.bixverse-gpu-cargo`, which stays clear of it. Same fix as in
-[bixverse](https://github.com/GregorLueg/bixverse).
 
 The FFT-accelerated tSNE used to be the one thing missing on Windows, since
 FFTW did not come along for the ride. It now runs on the pure-Rust rustfft, so
