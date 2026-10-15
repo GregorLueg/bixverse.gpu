@@ -12,6 +12,7 @@ rs_tsne_gpu(
   tsne_params,
   seed,
   use_high_precision,
+  backend = "wgpu",
   verbose
 )
 }
@@ -27,8 +28,7 @@ others are not supported.}
 \item{approx_type}{String. One of
 \code{c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")}. Which repulsive-force
 approximation to use; \code{"bh_qd"} is the depth-capped quick-and-dirty
-Barnes-Hut. \code{"fft"} and \code{"fft_3k"} need FFTW and are not available on
-Windows.}
+Barnes-Hut.}
 
 \item{tsne_params}{Named list. List that contains all of the key parameters
 for the tSNE generation.}
@@ -38,6 +38,10 @@ for the tSNE generation.}
 \item{use_high_precision}{Optional logical. Controls \code{fp32} vs \code{fp64}.
 If \code{NULL} will use sensible default thresholding. Ignored for
 \code{"fft_3k_gpu"}, which always runs in \code{fp32}.}
+
+\item{backend}{String. \code{"wgpu"} or \code{"mlx"}. \code{"mlx"} runs the kNN search and
+the \code{"fft_3k_gpu"} optimiser on MLX (Apple Silicon, needs a build with the
+MLX backend, see \code{\link[=mlx_available]{mlx_available()}}); CPU optimisers stay on the CPU.}
 
 \item{verbose}{Integer. If \code{0L} -> silent or \code{1L} for normal verbosity; \code{2L}
 for detailed verbosity.}

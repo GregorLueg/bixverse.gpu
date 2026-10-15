@@ -10,6 +10,7 @@ harmony_v2_gpu_sc(
   modality = c("rna", "adt"),
   harmony_params = params_sc_harmony_v2_gpu(),
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 }
@@ -25,6 +26,10 @@ on \code{SingleCellsMultiModal} class.}
 \item{harmony_params}{List. Output of \code{\link[=params_sc_harmony_v2_gpu]{params_sc_harmony_v2_gpu()}}.}
 
 \item{seed}{Integer. For reproducibility.}
+
+\item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs on
+Apple Silicon via MLX and needs a build with the MLX backend, see
+\code{\link[=mlx_available]{mlx_available()}}.}
 
 \item{.verbose}{Boolean or integer. Controls verbosity and returns run times.
 \code{FALSE} -> quiet, \code{TRUE} or \code{1L} -> normal verbosity, \code{2L} -> detailed

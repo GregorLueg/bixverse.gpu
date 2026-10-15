@@ -4,6 +4,12 @@ if (!gpu_available()) {
   exit_file("no GPU adapter available")
 }
 
+# DX12 compiles shaders with FXC, which rejects barriers it cannot prove
+# uniform. Hits kernels in ann-search-rs and bixverse-rs.
+if (.Platform$OS.type == "windows") {
+  exit_file("kernels do not compile under DX12 / FXC yet")
+}
+
 n_neighbours <- 10L
 n_samples <- 1000L
 

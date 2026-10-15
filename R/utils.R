@@ -52,6 +52,58 @@ assert_gpu <- function() {
   invisible(TRUE)
 }
 
+#' Is the MLX backend available
+#'
+#' @description
+#' Reports whether this build carries the MLX backend. MLX is Apple Silicon
+#' only and opt-in at install time, since mlx-c is a system library the
+#' package cannot ship: install mlx-c (`brew install mlx-c`, or point
+#' `MLX_C_PREFIX` at an install prefix) and reinstall with
+#' `BIXVERSE_GPU_MLX=true`. Functions with an MLX path take
+#' `backend = "mlx"`.
+#'
+#' @returns Boolean. `TRUE` when the package was built with the MLX backend.
+#'
+#' @examples
+#' if (mlx_available()) {
+#'   # ... backend = "mlx"
+#' }
+#'
+#' @export
+mlx_available <- function() {
+  rs_mlx_available()
+}
+
+#' Assert that a device backend is usable
+#'
+#' @description
+#' The `backend` counterpart of [assert_gpu()]: `"wgpu"` needs a WGPU adapter,
+#' `"mlx"` needs a build with the MLX backend.
+#'
+#' @param backend String. One of `c("wgpu", "mlx")`.
+#'
+#' @returns Invisibly `TRUE`. Called for the error.
+#'
+#' @keywords internal
+assert_backend <- function(backend) {
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
+  if (backend == "wgpu") {
+    return(assert_gpu())
+  }
+  if (!mlx_available()) {
+    stop(
+      paste(
+        "bixverse.gpu was built without the MLX backend. Reinstall on Apple",
+        "Silicon with BIXVERSE_GPU_MLX=true and mlx-c installed",
+        "(`brew install mlx-c`, or MLX_C_PREFIX pointing at an install).",
+        "Probe with `mlx_available()`."
+      ),
+      call. = FALSE
+    )
+  }
+  invisible(TRUE)
+}
+
 ## verbosity -------------------------------------------------------------------
 
 #' Helper to parse the verbosity

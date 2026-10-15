@@ -446,8 +446,7 @@ pub fn nebula_res_to_r_list(res: NebulaScRes) -> List {
     let n_kept = res.gene_idx.len();
     let n_coef = res.n_coef;
 
-    let coefficients =
-        RMatrix::new_matrix(n_kept, n_coef, |r, c| res.coefficients[r * n_coef + c]);
+    let coefficients = RMatrix::new_matrix(n_kept, n_coef, |r, c| res.coefficients[r * n_coef + c]);
     let se = RMatrix::new_matrix(n_kept, n_coef, |r, c| res.se[r * n_coef + c]);
 
     // `Nullable` keeps an absent shrinkage an R `NULL` rather than a zero-length

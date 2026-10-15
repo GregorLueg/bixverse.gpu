@@ -4,7 +4,7 @@
 \alias{rs_gpu_knn}
 \title{Generate a GPU-accelerated kNN graph}
 \usage{
-rs_gpu_knn(embd, k, knn_method, nn_params, seed, verbose)
+rs_gpu_knn(embd, k, knn_method, nn_params, seed, backend = "wgpu", verbose)
 }
 \arguments{
 \item{embd}{Numeric matrix of embeddings, cells x features.}
@@ -17,6 +17,9 @@ rs_gpu_knn(embd, k, knn_method, nn_params, seed, verbose)
 \code{\link[=params_nn_gpu]{params_nn_gpu()}}}
 
 \item{seed}{Integer. Random seed for reproducibility.}
+
+\item{backend}{String. \code{"wgpu"} or \code{"mlx"} (Apple Silicon, needs a build
+with the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}).}
 
 \item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
 detailed verbosity.}

@@ -10,6 +10,7 @@ calculate_pca_gpu_sc(
   pca_params = bixverse::params_sc_pca(),
   hvg = NULL,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 }
@@ -28,6 +29,10 @@ Otherwise, the function will default to what is found in
 these, the internal HVG will be overwritten.}
 
 \item{seed}{Integer. Seed for the randomised SVD.}
+
+\item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the SVD on
+Apple Silicon via MLX and needs a build with the MLX backend, see
+\code{\link[=mlx_available]{mlx_available()}}.}
 
 \item{.verbose}{Boolean or integer. Controls verbosity and returns run times.
 \code{FALSE} -> quiet, \code{TRUE} or \code{1L} -> normal verbosity, \code{2L} -> detailed

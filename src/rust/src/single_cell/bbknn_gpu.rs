@@ -9,8 +9,7 @@
 use crate::ensure_gpu;
 use bixverse_rs::gpu::sc_gpu::bbknn_gpu::{bbknn_gpu, BbknnParamsGpu};
 use bixverse_rs::prelude::*;
-use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
-use cubecl::Runtime;
+use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 
 /////////////
@@ -83,19 +82,19 @@ fn rs_bbknn_gpu(
 
     let device: WgpuDevice = Default::default();
 
-    let (distances, connectivities) = bbknn_gpu::<WgpuRuntime>(
+    let (distances, connectivities) = bbknn_gpu(
         embd.as_ref(),
         &batch_labels,
         &bbknn_params,
         seed,
-        device.clone(),
+        device.clone().into(),
         verbose,
     )
     .to_extendr()?;
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
 
     Ok(list!(
         distances = sparse_data_to_list(distances).to_extendr()?,

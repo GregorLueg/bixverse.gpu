@@ -19,6 +19,7 @@ tsne_gpu_sc(
   tsne_params = params_tsne_gpu(),
   seed = 42L,
   use_high_precision = NULL,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 }
@@ -51,8 +52,7 @@ and 50. Defaults to \code{20.0}.}
 \item{approx_type}{String. Approximation method. One of \code{"fft_3k_gpu"}
 (three-kernel FFT on the GPU, the default), \code{"bh"} (Barnes-Hut), \code{"bh_qd"}
 (quick-and-dirty Barnes-Hut, depth-capped tree), \code{"fft"} or \code{"fft_3k"} (CPU
-FFT interpolation, four or three kernels). The CPU FFT variants are
-Unix-only. See \code{\link[=tsne_gpu]{tsne_gpu()}}.}
+FFT interpolation, four or three kernels). See \code{\link[=tsne_gpu]{tsne_gpu()}}.}
 
 \item{knn_method}{String. GPU (approximate) nearest neighbour method. One
 of \code{c("ivf", "exhaustive", "nndescent")}. Default is \code{"ivf"} here, as it
@@ -67,6 +67,9 @@ deals usually better with the high k in tSNE.}
 
 \item{use_high_precision}{Optional boolean. Fine-grained fp32 vs fp64
 control. GPU kNN is always fp32. Ignored for \code{"fft_3k_gpu"}.}
+
+\item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} moves the
+kNN search and the \code{"fft_3k_gpu"} optimiser to MLX, see \code{\link[=tsne_gpu]{tsne_gpu()}}.}
 
 \item{.verbose}{Boolean or integer. Controls verbosity.}
 }

@@ -6,9 +6,9 @@
 //! evaluation stay on the CPU inside `bixverse-rs`. Each solve falls back to its
 //! CPU sibling for that iteration when no workgroup tier covers `k`. The
 //! aggregation into meta cell pseudo-bulk is the same CPU reader-based path the
-//! CPU wrapper uses.
+//! CPU wrapper uses. With `backend = "mlx"` the fit runs on MLX instead.
 
-use crate::ensure_gpu;
+use crate::{parse_backend, Backend};
 use bixverse_rs::gpu::sc_gpu::seacells_gpu::seacells_fit_gpu;
 use bixverse_rs::prelude::*;
 use bixverse_rs::single_cell::mc_generation::cell_aggregation_utils::{
@@ -16,10 +16,12 @@ use bixverse_rs::single_cell::mc_generation::cell_aggregation_utils::{
 };
 use bixverse_rs::single_cell::mc_generation::seacells::SEACellsParams;
 use bixverse_rs::single_cell::sc_r_wrappers::assignments_to_r_list;
-use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
-use cubecl::Runtime;
+use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 use std::time::Instant;
+
+#[cfg(mlx_available)]
+use bixverse_rs::mlx::sc::seacells::seacells_fit_mlx;
 
 use crate::single_cell::sc_utils::{knn_data_to_rust, resolve_cell_mapping, subset_embedding};
 
@@ -60,6 +62,8 @@ extendr_module! {
 /// @param target_size Double. Library target size the meta cells are
 /// normalised to.
 /// @param seed Integer. Random seed.
+/// @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+/// with the MLX backend, see [mlx_available()]).
 /// @param verbose Integer. `0L` - quiet; `1L` - normal; `2L` - detailed.
 ///
 /// @returns A list with the cell assignments, the aggregated meta cell counts
@@ -81,9 +85,10 @@ fn rs_seacells_gpu(
     seacells_params: List,
     target_size: f64,
     seed: usize,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> Result<List> {
-    ensure_gpu()?;
+    let backend = parse_backend(backend)?;
 
     let start_seacell = Instant::now();
 
@@ -176,22 +181,38 @@ fn rs_seacells_gpu(
         (knn_indices, knn_dist)
     };
 
-    let device: WgpuDevice = Default::default();
+    let (assignments_raw, groups_raw, archetypes_raw, rss) = match backend {
+        #[cfg(mlx_available)]
+        Backend::Mlx => seacells_fit_mlx(
+            embd_mat.as_ref(),
+            &knn_indices,
+            &knn_dist,
+            &seacells_params,
+            seed,
+            verbose,
+        )
+        .to_extendr()?,
+        #[cfg(not(mlx_available))]
+        Backend::Mlx => unreachable!("parse_backend rejects mlx without the MLX build"),
+        Backend::Wgpu => {
+            let device: WgpuDevice = Default::default();
+            let res = seacells_fit_gpu(
+                embd_mat.as_ref(),
+                &knn_indices,
+                &knn_dist,
+                &seacells_params,
+                seed,
+                device.clone().into(),
+                verbose,
+            )
+            .to_extendr()?;
 
-    let (assignments_raw, groups_raw, archetypes_raw, rss) = seacells_fit_gpu::<WgpuRuntime>(
-        embd_mat.as_ref(),
-        &knn_indices,
-        &knn_dist,
-        &seacells_params,
-        seed,
-        device.clone(),
-        verbose,
-    )
-    .to_extendr()?;
-
-    // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+            // force VRAM memory clean up to avoid memory leaks
+            let client = cubecl::Device::from(device.clone()).client();
+            let _ = client.memory_cleanup();
+            res
+        }
+    };
 
     // Archetype initialisation dedups, so the fit can come back with fewer
     // archetypes than `n_sea_cells` were requested. Key everything off what came

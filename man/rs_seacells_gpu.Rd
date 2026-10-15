@@ -13,6 +13,7 @@ rs_seacells_gpu(
   seacells_params,
   target_size,
   seed,
+  backend = "wgpu",
   verbose
 )
 }
@@ -37,6 +38,9 @@ to narrow the run to. Forces a kNN rebuild on that subset.}
 normalised to.}
 
 \item{seed}{Integer. Random seed.}
+
+\item{backend}{String. \code{"wgpu"} or \code{"mlx"} (Apple Silicon, needs a build
+with the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}).}
 
 \item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal; \code{2L} - detailed.}
 }

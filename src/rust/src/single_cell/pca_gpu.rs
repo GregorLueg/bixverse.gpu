@@ -1,10 +1,12 @@
-use crate::ensure_gpu;
+use crate::{parse_backend, Backend};
 use bixverse_rs::gpu::sc_gpu::pca_gpu::pca_on_sc_sparse_gpu;
 use bixverse_rs::prelude::*;
 use bixverse_rs::single_cell::sc_processing::pca::SingleCellPcaParams;
-use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
-use cubecl::Runtime;
+use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
+
+#[cfg(mlx_available)]
+use bixverse_rs::mlx::sc::pca::pca_on_sc_sparse_mlx;
 
 /////////////
 // extendr //
@@ -41,6 +43,8 @@ extendr_module! {
 /// @param cell_indices Integer. The cell indices to use. (0-indexed!)
 /// @param gene_indices Integer. The gene indices to use. (0-indexed!)
 /// @param seed Integer. Random seed for the randomised SVD.
+/// @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+/// with the MLX backend, see [mlx_available()]).
 /// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 /// detailed verbosity.
 ///
@@ -67,9 +71,10 @@ fn rs_sc_pca_sparse_gpu(
     cell_indices: Vec<i32>,
     gene_indices: Vec<i32>,
     seed: usize,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> Result<List> {
-    ensure_gpu()?;
+    let backend = parse_backend(backend)?;
 
     let verbosity = parse_verbosity_level(verbose);
     let pca_params = SingleCellPcaParams::from_r_list(pca_params)?;
@@ -91,26 +96,44 @@ fn rs_sc_pca_sparse_gpu(
         None
     };
 
-    let device: WgpuDevice = Default::default();
-
     let gene_reader = ParallelSparseReader::new(f_path_gene).to_extendr()?;
 
-    let res = pca_on_sc_sparse_gpu::<WgpuRuntime, _>(
-        &gene_reader,
-        &cell_set,
-        &gene_indices,
-        no_pcs,
-        offsets.as_deref(),
-        &pca_params,
-        seed,
-        device.clone(),
-        verbose,
-    )
-    .to_extendr()?;
+    let res = match backend {
+        #[cfg(mlx_available)]
+        Backend::Mlx => pca_on_sc_sparse_mlx(
+            &gene_reader,
+            &cell_set,
+            &gene_indices,
+            no_pcs,
+            offsets.as_deref(),
+            &pca_params,
+            seed,
+            verbose,
+        )
+        .to_extendr()?,
+        #[cfg(not(mlx_available))]
+        Backend::Mlx => unreachable!("parse_backend rejects mlx without the MLX build"),
+        Backend::Wgpu => {
+            let device: WgpuDevice = Default::default();
+            let res = pca_on_sc_sparse_gpu::<_>(
+                &gene_reader,
+                &cell_set,
+                &gene_indices,
+                no_pcs,
+                offsets.as_deref(),
+                &pca_params,
+                seed,
+                device.clone().into(),
+                verbose,
+            )
+            .to_extendr()?;
 
-    // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+            // force VRAM memory clean up to avoid memory leaks
+            let client = cubecl::Device::from(device.clone()).client();
+            let _ = client.memory_cleanup();
+            res
+        }
+    };
 
     Ok(list!(
         scores = faer_to_r_matrix(res.0.as_ref()),

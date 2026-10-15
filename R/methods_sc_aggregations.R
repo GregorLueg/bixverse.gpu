@@ -57,6 +57,9 @@
 #' @param target_size Numeric. The library target size to normalise the meta
 #' cells to.
 #' @param seed Integer. Seed for reproducibility.
+#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the
+#' fit on Apple Silicon via MLX and needs a build with the MLX backend, see
+#' [mlx_available()].
 #' @param .verbose Boolean or integer. Controls verbosity and returns run times.
 #' `FALSE` -> quiet, `TRUE` or `1L` -> normal verbosity, `2L` -> detailed
 #' verbosity.
@@ -80,9 +83,10 @@ generate_seacells_gpu_sc <- S7::new_generic(
     regenerate_knn = FALSE,
     target_size = 1e5,
     seed = 42L,
+    backend = c("wgpu", "mlx"),
     .verbose = TRUE
   ) {
-    assert_gpu()
+    assert_backend(match.arg(backend))
 
     S7::S7_dispatch()
   }
@@ -104,6 +108,7 @@ S7::method(generate_seacells_gpu_sc, SingleCells) <- function(
   regenerate_knn = FALSE,
   target_size = 1e5,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
   .generate_seacells_gpu(
@@ -115,6 +120,7 @@ S7::method(generate_seacells_gpu_sc, SingleCells) <- function(
     regenerate_knn = regenerate_knn,
     target_size = target_size,
     seed = seed,
+    backend = match.arg(backend),
     .verbose = .verbose
   )
 }
@@ -135,6 +141,7 @@ S7::method(generate_seacells_gpu_sc, SingleCellsSubset) <- function(
   regenerate_knn = FALSE,
   target_size = 1e5,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
   .generate_seacells_gpu(
@@ -146,6 +153,7 @@ S7::method(generate_seacells_gpu_sc, SingleCellsSubset) <- function(
     regenerate_knn = regenerate_knn,
     target_size = target_size,
     seed = seed,
+    backend = match.arg(backend),
     .verbose = .verbose
   )
 }
@@ -173,6 +181,7 @@ S7::method(generate_seacells_gpu_sc, SingleCellsSubset) <- function(
   regenerate_knn,
   target_size,
   seed,
+  backend,
   .verbose
 ) {
   # checks
@@ -187,6 +196,7 @@ S7::method(generate_seacells_gpu_sc, SingleCellsSubset) <- function(
   checkmate::qassert(regenerate_knn, "B1")
   checkmate::qassert(target_size, "N1")
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   # hard tier: cell indices from here go straight into Rust
@@ -226,6 +236,7 @@ S7::method(generate_seacells_gpu_sc, SingleCellsSubset) <- function(
     seacells_params = seacell_params,
     target_size = target_size,
     seed = seed,
+    backend = backend,
     verbose = bixverse:::parse_verbosity(.verbose)
   )
 

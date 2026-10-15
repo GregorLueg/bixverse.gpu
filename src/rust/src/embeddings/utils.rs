@@ -1,5 +1,6 @@
 //! Utility functions (mostly copied over from manifoldsR)
 
+use crate::Backend;
 use ann_search_rs::prelude::AnnSearchFloat;
 use extendr_api::*;
 use manifolds_rs::prelude::*;
@@ -204,6 +205,27 @@ where
         n_entry_points,
         extract_knn,
     })
+}
+
+/// Rewrite a kNN method string for the chosen backend.
+///
+/// The MLX searches in manifolds-rs are the same three methods with an
+/// `_mlx` suffix and read the same GPU parameters.
+///
+/// ### Params
+///
+/// * `method` - `"exhaustive"`, `"ivf"` or `"nndescent"`, optionally with a
+///   `_gpu` suffix
+/// * `backend` - Device backend
+///
+/// ### Returns
+///
+/// The method string to hand to manifolds-rs.
+pub fn knn_method_for_backend(method: &str, backend: Backend) -> String {
+    match backend {
+        Backend::Wgpu => method.to_string(),
+        Backend::Mlx => format!("{}_mlx", method.trim_end_matches("_gpu")),
+    }
 }
 
 /// Parse the parametric UMAP training parameters from an R list.

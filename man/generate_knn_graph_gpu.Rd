@@ -11,6 +11,7 @@ generate_knn_graph_gpu(
   nn_params = params_nn_gpu(),
   seed = 42L,
   extract_knn = lifecycle::deprecated(),
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 }
@@ -30,6 +31,10 @@ search. One of \code{c("exhaustive", "ivf", "nndescent")}. Defaults to
 
 \item{extract_knn}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use the \code{extract_knn}
 field of \code{\link[=params_nn_gpu]{params_nn_gpu()}} instead.}
+
+\item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the
+search on Apple Silicon via MLX and needs a build with the MLX backend,
+see \code{\link[=mlx_available]{mlx_available()}}.}
 
 \item{.verbose}{Boolean. Controls verbosity.}
 }

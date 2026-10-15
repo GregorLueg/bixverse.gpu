@@ -14,8 +14,7 @@ use bixverse_rs::gpu::sc_gpu::fast_clusters_gpu::{
     fast_louvain_clusters_gpu, fast_louvain_clusters_grid_gpu, FastLouvainParamsGpu,
 };
 use bixverse_rs::prelude::*;
-use cubecl::wgpu::{WgpuDevice, WgpuRuntime};
-use cubecl::Runtime;
+use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 
 use crate::single_cell::sc_utils::{
@@ -94,21 +93,21 @@ fn rs_fast_cluster_gpu(
 
     let device: WgpuDevice = Default::default();
 
-    let fc_results = fast_louvain_clusters_gpu::<WgpuRuntime>(
+    let fc_results = fast_louvain_clusters_gpu(
         embd.as_ref(),
         &resolutions,
         &params,
         snn,
         return_kmeans,
         seed,
-        device.clone(),
+        device.clone().into(),
         verbose,
     )
     .to_extendr()?;
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
 
     let (memberships, k_means_cluster, centroids) =
         fast_cluster_unwrap_single(fc_results, return_kmeans)?;
@@ -193,7 +192,7 @@ fn rs_fast_cluster_grid_gpu(
 
     // The driver always keeps the k-means block here and `return_kmeans` is
     // honoured at the unwrap step. Matches the CPU grid path.
-    let fc_results = fast_louvain_clusters_grid_gpu::<WgpuRuntime>(
+    let fc_results = fast_louvain_clusters_grid_gpu(
         embd.as_ref(),
         &resolutions,
         &params,
@@ -201,14 +200,14 @@ fn rs_fast_cluster_grid_gpu(
         true,
         seed,
         no_seeds,
-        device.clone(),
+        device.clone().into(),
         verbose,
     )
     .to_extendr()?;
 
     // force VRAM memory clean up to avoid memory leaks
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
 
     let (memberships, k_means_cluster, centroids) =
         fast_cluster_unwrap_multiple(fc_results, return_kmeans)?;

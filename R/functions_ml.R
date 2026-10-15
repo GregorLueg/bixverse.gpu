@@ -88,6 +88,9 @@ k_means_cluster_gpu <- function(
 #' @param seed Integer. For reproducibility. Defaults to `42L`.
 #' @param extract_knn `r lifecycle::badge("deprecated")` Use the `extract_knn`
 #' field of [params_nn_gpu()] instead.
+#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the
+#' search on Apple Silicon via MLX and needs a build with the MLX backend,
+#' see [mlx_available()].
 #' @param .verbose Boolean. Controls verbosity.
 #'
 #' @return A nearest neighbours class object with 1-indexed neighbour indices
@@ -107,11 +110,12 @@ generate_knn_graph_gpu <- function(
   nn_params = params_nn_gpu(),
   seed = 42L,
   extract_knn = lifecycle::deprecated(),
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
-  assert_gpu()
-
   knn_method <- match.arg(knn_method)
+  backend <- match.arg(backend)
+  assert_backend(backend)
 
   if (lifecycle::is_present(extract_knn)) {
     lifecycle::deprecate_warn(
@@ -136,6 +140,7 @@ generate_knn_graph_gpu <- function(
   )
   assertNnGpuParams(nn_params)
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0, 2]"))
 
   nn_data <- rs_gpu_knn(
@@ -144,6 +149,7 @@ generate_knn_graph_gpu <- function(
     knn_method = knn_method,
     nn_params = nn_params,
     seed = seed,
+    backend = backend,
     verbose = parse_verbosity(.verbose)
   )
 

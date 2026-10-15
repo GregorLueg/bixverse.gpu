@@ -15,6 +15,7 @@ rs_nmf_k_sweep_sc_gpu(
   nmf_consensus_params,
   n_runs,
   seed,
+  backend = "wgpu",
   verbose
 )
 }
@@ -42,6 +43,9 @@ counts; if \code{FALSE}, on the raw counts.}
 \item{n_runs}{Integer. Number of restarts per k. Must be at least 2.}
 
 \item{seed}{Integer. Base random seed.}
+
+\item{backend}{String. \code{"wgpu"} or \code{"mlx"} (Apple Silicon, needs a build
+with the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}).}
 
 \item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
 detailed verbosity.}

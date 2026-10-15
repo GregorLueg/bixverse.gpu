@@ -80,6 +80,9 @@ NMF_GPU_MAX_RANK <- 128L
 #' counts (recommended); if `FALSE`, on the raw counts.
 #' @param nmf_hals_params List, see [bixverse::params_nmf_hals()].
 #' @param seed Integer. Random seed for initialisation.
+#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the
+#' HALS solves on Apple Silicon via MLX and needs a build with the MLX
+#' backend, see [mlx_available()].
 #' @param .verbose Boolean or integer. Controls verbosity. `FALSE` -> quiet,
 #' `TRUE` or `1L` -> normal verbosity, `2L` -> detailed verbosity.
 #'
@@ -98,9 +101,10 @@ nmf_gpu_sc <- S7::new_generic(
     use_second_layer = TRUE,
     nmf_hals_params = bixverse::params_nmf_hals(),
     seed = 42L,
+    backend = c("wgpu", "mlx"),
     .verbose = TRUE
   ) {
-    assert_gpu()
+    assert_backend(match.arg(backend))
 
     S7::S7_dispatch()
   }
@@ -120,8 +124,10 @@ S7::method(nmf_gpu_sc, SingleCells) <- function(
   use_second_layer = TRUE,
   nmf_hals_params = bixverse::params_nmf_hals(),
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
+  backend <- match.arg(backend)
   # checks
   checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
   checkmate::qassert(k, "I1[1,)")
@@ -132,6 +138,7 @@ S7::method(nmf_gpu_sc, SingleCells) <- function(
   checkmate::qassert(use_second_layer, "B1")
   bixverse:::assertNmfHalsParams(nmf_hals_params)
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   # function body
@@ -146,6 +153,7 @@ S7::method(nmf_gpu_sc, SingleCells) <- function(
     use_second_layer = use_second_layer,
     nmf_hals_params = nmf_hals_params,
     seed = seed,
+    backend = backend,
     verbose = bixverse:::parse_verbosity(.verbose)
   )
 
@@ -183,8 +191,10 @@ S7::method(nmf_gpu_sc, MetaCells) <- function(
   use_second_layer = TRUE,
   nmf_hals_params = bixverse::params_nmf_hals(),
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
+  backend <- match.arg(backend)
   # checks
   checkmate::assertTRUE(S7::S7_inherits(object, MetaCells))
   checkmate::qassert(k, "I1[1,)")
@@ -195,6 +205,7 @@ S7::method(nmf_gpu_sc, MetaCells) <- function(
   checkmate::qassert(use_second_layer, "B1")
   bixverse:::assertNmfHalsParams(nmf_hals_params)
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   # function body
@@ -209,6 +220,7 @@ S7::method(nmf_gpu_sc, MetaCells) <- function(
     use_second_layer = use_second_layer,
     nmf_hals_params = nmf_hals_params,
     seed = seed,
+    backend = backend,
     verbose = bixverse:::parse_verbosity(.verbose)
   )
 
@@ -267,9 +279,10 @@ stabilised_nmf_gpu_sc <- S7::new_generic(
     nmf_hals_params = bixverse::params_nmf_hals(),
     n_runs = 30L,
     seed = 42L,
+    backend = c("wgpu", "mlx"),
     .verbose = TRUE
   ) {
-    assert_gpu()
+    assert_backend(match.arg(backend))
 
     S7::S7_dispatch()
   }
@@ -290,8 +303,10 @@ S7::method(stabilised_nmf_gpu_sc, SingleCells) <- function(
   nmf_hals_params = bixverse::params_nmf_hals(),
   n_runs = 30L,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
+  backend <- match.arg(backend)
   # checks
   checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
   checkmate::qassert(k, "I1[1,)")
@@ -303,6 +318,7 @@ S7::method(stabilised_nmf_gpu_sc, SingleCells) <- function(
   bixverse:::assertNmfHalsParams(nmf_hals_params)
   checkmate::qassert(n_runs, "I1[1,)")
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   # function body
@@ -318,6 +334,7 @@ S7::method(stabilised_nmf_gpu_sc, SingleCells) <- function(
     nmf_hals_params = nmf_hals_params,
     n_runs = n_runs,
     seed = seed,
+    backend = backend,
     verbose = bixverse:::parse_verbosity(.verbose)
   )
 
@@ -357,8 +374,10 @@ S7::method(stabilised_nmf_gpu_sc, MetaCells) <- function(
   nmf_hals_params = bixverse::params_nmf_hals(),
   n_runs = 30L,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
+  backend <- match.arg(backend)
   # checks
   checkmate::assertTRUE(S7::S7_inherits(object, MetaCells))
   checkmate::qassert(k, "I1[1,)")
@@ -370,6 +389,7 @@ S7::method(stabilised_nmf_gpu_sc, MetaCells) <- function(
   bixverse:::assertNmfHalsParams(nmf_hals_params)
   checkmate::qassert(n_runs, "I1[1,)")
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   # function body
@@ -385,6 +405,7 @@ S7::method(stabilised_nmf_gpu_sc, MetaCells) <- function(
     nmf_hals_params = nmf_hals_params,
     n_runs = n_runs,
     seed = seed,
+    backend = backend,
     verbose = bixverse:::parse_verbosity(.verbose)
   )
 
@@ -462,9 +483,10 @@ consensus_nmf_gpu_sc <- S7::new_generic(
     nmf_consensus_params = bixverse::params_nmf_consensus(),
     n_runs = 30L,
     seed = 42L,
+    backend = c("wgpu", "mlx"),
     .verbose = TRUE
   ) {
-    assert_gpu()
+    assert_backend(match.arg(backend))
 
     S7::S7_dispatch()
   }
@@ -486,8 +508,10 @@ S7::method(consensus_nmf_gpu_sc, SingleCells) <- function(
   nmf_consensus_params = bixverse::params_nmf_consensus(),
   n_runs = 30L,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
+  backend <- match.arg(backend)
   # checks
   checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
   checkmate::qassert(k, "I1[2,)")
@@ -500,6 +524,7 @@ S7::method(consensus_nmf_gpu_sc, SingleCells) <- function(
   bixverse:::assertNmfConsensusParams(nmf_consensus_params)
   checkmate::qassert(n_runs, "I1[2,)")
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   # function body
@@ -524,6 +549,7 @@ S7::method(consensus_nmf_gpu_sc, SingleCells) <- function(
     use_second_layer = use_second_layer,
     nmf_hals_params = nmf_hals_params,
     n_runs = n_runs,
+    backend = backend,
     verbose = bixverse:::parse_verbosity(.verbose)
   )
 
@@ -565,8 +591,10 @@ S7::method(consensus_nmf_gpu_sc, MetaCells) <- function(
   nmf_consensus_params = bixverse::params_nmf_consensus(),
   n_runs = 30L,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
+  backend <- match.arg(backend)
   # checks
   checkmate::assertTRUE(S7::S7_inherits(object, MetaCells))
   checkmate::qassert(k, "I1[2,)")
@@ -579,6 +607,7 @@ S7::method(consensus_nmf_gpu_sc, MetaCells) <- function(
   bixverse:::assertNmfConsensusParams(nmf_consensus_params)
   checkmate::qassert(n_runs, "I1[2,)")
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   # function body
@@ -603,6 +632,7 @@ S7::method(consensus_nmf_gpu_sc, MetaCells) <- function(
     use_second_layer = use_second_layer,
     nmf_hals_params = nmf_hals_params,
     n_runs = n_runs,
+    backend = backend,
     verbose = bixverse:::parse_verbosity(.verbose)
   )
 
@@ -671,9 +701,10 @@ nmf_k_sweep_gpu_sc <- S7::new_generic(
     nmf_consensus_params = bixverse::params_nmf_consensus(),
     n_runs = 30L,
     seed = 42L,
+    backend = c("wgpu", "mlx"),
     .verbose = TRUE
   ) {
-    assert_gpu()
+    assert_backend(match.arg(backend))
 
     S7::S7_dispatch()
   }
@@ -695,8 +726,10 @@ S7::method(nmf_k_sweep_gpu_sc, SingleCells) <- function(
   nmf_consensus_params = bixverse::params_nmf_consensus(),
   n_runs = 30L,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
+  backend <- match.arg(backend)
   # checks
   checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
   k_range <- bixverse:::.assert_nmf_k_range(k_range)
@@ -709,6 +742,7 @@ S7::method(nmf_k_sweep_gpu_sc, SingleCells) <- function(
   bixverse:::assertNmfConsensusParams(nmf_consensus_params)
   checkmate::qassert(n_runs, "I1[2,)")
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   # function body
@@ -735,6 +769,7 @@ S7::method(nmf_k_sweep_gpu_sc, SingleCells) <- function(
     ),
     n_runs = n_runs,
     seed = seed,
+    backend = backend,
     verbose = bixverse:::parse_verbosity(.verbose)
   )
 
@@ -771,8 +806,10 @@ S7::method(nmf_k_sweep_gpu_sc, MetaCells) <- function(
   nmf_consensus_params = bixverse::params_nmf_consensus(),
   n_runs = 30L,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
+  backend <- match.arg(backend)
   # checks
   checkmate::assertTRUE(S7::S7_inherits(object, MetaCells))
   k_range <- bixverse:::.assert_nmf_k_range(k_range)
@@ -785,6 +822,7 @@ S7::method(nmf_k_sweep_gpu_sc, MetaCells) <- function(
   bixverse:::assertNmfConsensusParams(nmf_consensus_params)
   checkmate::qassert(n_runs, "I1[2,)")
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   # function body
@@ -811,6 +849,7 @@ S7::method(nmf_k_sweep_gpu_sc, MetaCells) <- function(
     ),
     n_runs = n_runs,
     seed = seed,
+    backend = backend,
     verbose = bixverse:::parse_verbosity(.verbose)
   )
 

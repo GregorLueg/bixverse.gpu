@@ -16,6 +16,7 @@ umap_gpu(
   umap_params = params_umap_gpu(),
   seed = 42L,
   use_high_precision = NULL,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 }
@@ -56,6 +57,11 @@ GPU-accelerated methods.}
 
 \item{use_high_precision}{Optional boolean. Gives fine-grained control over
 \code{fp32} vs \code{fp64} usage. The GPU calculations will be forced into \code{fp32}.}
+
+\item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the kNN
+search and the \code{"adam_gpu"} optimiser on MLX (Apple Silicon, needs a build
+with the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}). CPU optimisers stay on the
+CPU.}
 
 \item{.verbose}{Logical. Controls verbosity. Defaults to \code{TRUE}.}
 }

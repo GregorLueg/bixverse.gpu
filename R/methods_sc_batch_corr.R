@@ -19,6 +19,9 @@
 #' on `SingleCellsMultiModal` class.
 #' @param harmony_params List. Output of [params_sc_harmony_v2_gpu()].
 #' @param seed Integer. For reproducibility.
+#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs on
+#' Apple Silicon via MLX and needs a build with the MLX backend, see
+#' [mlx_available()].
 #' @param .verbose Boolean or integer. Controls verbosity and returns run times.
 #' `FALSE` -> quiet, `TRUE` or `1L` -> normal verbosity, `2L` -> detailed
 #' verbosity.
@@ -36,9 +39,10 @@ harmony_v2_gpu_sc <- S7::new_generic(
     modality = c("rna", "adt"),
     harmony_params = params_sc_harmony_v2_gpu(),
     seed = 42L,
+    backend = c("wgpu", "mlx"),
     .verbose = TRUE
   ) {
-    assert_gpu()
+    assert_backend(match.arg(backend))
 
     S7::S7_dispatch()
   }
@@ -53,14 +57,17 @@ S7::method(harmony_v2_gpu_sc, SingleCells) <- function(
   modality = c("rna", "adt"),
   harmony_params = params_sc_harmony_v2_gpu(),
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
   modality <- match.arg(modality)
+  backend <- match.arg(backend)
 
   checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
   checkmate::qassert(batch_column, "S1")
   assertScHarmonyV2GpuParams(harmony_params)
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   if (modality != "rna" && !S7::S7_inherits(object, SingleCellsMultiModal)) {
@@ -101,6 +108,7 @@ S7::method(harmony_v2_gpu_sc, SingleCells) <- function(
     harmony_params = harmony_params,
     batch_labels = list(batch_indices),
     seed = seed,
+    backend = backend,
     verbose = bixverse:::parse_verbosity(.verbose)
   )
 

@@ -12,6 +12,7 @@ rs_nmf_multi_mc_gpu(
   nmf_hals_params,
   n_runs,
   seed,
+  backend = "wgpu",
   verbose
 )
 }
@@ -31,6 +32,9 @@ solver's rank cap.}
 \item{n_runs}{Integer. Number of random restarts.}
 
 \item{seed}{Integer. Base random seed. Run \code{i} uses \code{seed + i}.}
+
+\item{backend}{String. \code{"wgpu"} or \code{"mlx"} (Apple Silicon, needs a build
+with the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}).}
 
 \item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
 detailed verbosity.}

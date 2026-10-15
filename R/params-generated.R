@@ -580,6 +580,13 @@ params_sc_bbknn_gpu <- function(
 #' neighbour sets; rank weights edges by the best combined rank of a shared
 #' neighbour. Both are normalised to `[0, 1]`. One of `c("jaccard", "rank")`.
 #' Defaults to `"jaccard"`.
+#' @param cell_mediated Boolean. Build the centroid graph from the cells instead
+#' of a kNN search over the centroids: every cell links its `n_anchors` nearest
+#' centroids, so two centroids are connected when cells sit near both. If
+#' `TRUE`, `snn` and the sNN settings are ignored. Defaults to `FALSE`.
+#' @param n_anchors Integer. Number of nearest centroids each cell links to in
+#' the cell-mediated graph. Clamped to the number of centroids. Defaults to
+#' `5L`.
 #' @param louvain_iters Integer. Number of Louvain iterations. Defaults to
 #' `10L`.
 #' @param multi_level_louvain Boolean. Shall multi-level Louvain be applied.
@@ -613,6 +620,13 @@ params_sc_bbknn_gpu <- function(
 #'  neighbour sets; rank weights edges by the best combined rank of a shared
 #'  neighbour. Both are normalised to `[0, 1]`. One of `c("jaccard", "rank")`.
 #'  Defaults to `"jaccard"`.
+#'  \item cell_mediated - Boolean. Build the centroid graph from the cells
+#'  instead of a kNN search over the centroids: every cell links its `n_anchors`
+#'  nearest centroids, so two centroids are connected when cells sit near both.
+#'  If `TRUE`, `snn` and the sNN settings are ignored. Defaults to `FALSE`.
+#'  \item n_anchors - Integer. Number of nearest centroids each cell links to in
+#'  the cell-mediated graph. Clamped to the number of centroids. Defaults to
+#'  `5L`.
 #'  \item louvain_iters - Integer. Number of Louvain iterations. Defaults to
 #'  `10L`.
 #'  \item multi_level_louvain - Boolean. Shall multi-level Louvain be applied.
@@ -631,6 +645,8 @@ params_sc_fast_cluster_gpu <- function(
   full_snn = FALSE,
   pruning = NULL,
   snn_similarity = c("jaccard", "rank"),
+  cell_mediated = FALSE,
+  n_anchors = 5L,
   louvain_iters = 10L,
   multi_level_louvain = TRUE,
   knn = list(k = 5L)
@@ -646,6 +662,8 @@ params_sc_fast_cluster_gpu <- function(
   checkmate::qassert(full_snn, "B1")
   checkmate::qassert(pruning, c("N1[0,1]", "0"))
   checkmate::assertChoice(snn_similarity, c("jaccard", "rank"))
+  checkmate::qassert(cell_mediated, "B1")
+  checkmate::qassert(n_anchors, "I1[1,)")
   checkmate::qassert(louvain_iters, "I1[1,)")
   checkmate::qassert(multi_level_louvain, "B1")
 
@@ -671,6 +689,8 @@ params_sc_fast_cluster_gpu <- function(
       full_snn = full_snn,
       pruning = pruning,
       snn_similarity = snn_similarity,
+      cell_mediated = cell_mediated,
+      n_anchors = n_anchors,
       louvain_iters = louvain_iters,
       multi_level_louvain = multi_level_louvain
     ),

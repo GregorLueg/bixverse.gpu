@@ -13,6 +13,8 @@ params_sc_fast_cluster_gpu(
   full_snn = FALSE,
   pruning = NULL,
   snn_similarity = c("jaccard", "rank"),
+  cell_mediated = FALSE,
+  n_anchors = 5L,
   louvain_iters = 10L,
   multi_level_louvain = TRUE,
   knn = list(k = 5L)
@@ -50,6 +52,15 @@ neighbour sets; rank weights edges by the best combined rank of a shared
 neighbour. Both are normalised to \verb{[0, 1]}. One of \code{c("jaccard", "rank")}.
 Defaults to \code{"jaccard"}.}
 
+\item{cell_mediated}{Boolean. Build the centroid graph from the cells instead
+of a kNN search over the centroids: every cell links its \code{n_anchors} nearest
+centroids, so two centroids are connected when cells sit near both. If
+\code{TRUE}, \code{snn} and the sNN settings are ignored. Defaults to \code{FALSE}.}
+
+\item{n_anchors}{Integer. Number of nearest centroids each cell links to in
+the cell-mediated graph. Clamped to the number of centroids. Defaults to
+\code{5L}.}
+
 \item{louvain_iters}{Integer. Number of Louvain iterations. Defaults to
 \code{10L}.}
 
@@ -85,6 +96,13 @@ when generating the sNN graph. If \code{NULL}, defaults to \code{1 / ceiling(k *
 neighbour sets; rank weights edges by the best combined rank of a shared
 neighbour. Both are normalised to \verb{[0, 1]}. One of \code{c("jaccard", "rank")}.
 Defaults to \code{"jaccard"}.
+\item cell_mediated - Boolean. Build the centroid graph from the cells
+instead of a kNN search over the centroids: every cell links its \code{n_anchors}
+nearest centroids, so two centroids are connected when cells sit near both.
+If \code{TRUE}, \code{snn} and the sNN settings are ignored. Defaults to \code{FALSE}.
+\item n_anchors - Integer. Number of nearest centroids each cell links to in
+the cell-mediated graph. Clamped to the number of centroids. Defaults to
+\code{5L}.
 \item louvain_iters - Integer. Number of Louvain iterations. Defaults to
 \code{10L}.
 \item multi_level_louvain - Boolean. Shall multi-level Louvain be applied.

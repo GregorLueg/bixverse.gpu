@@ -4,6 +4,12 @@ if (!gpu_available()) {
   exit_file("no GPU adapter available")
 }
 
+# DX12 compiles shaders with FXC, which rejects barriers it cannot prove
+# uniform. Hits kernels in ann-search-rs and bixverse-rs.
+if (.Platform$OS.type == "windows") {
+  exit_file("kernels do not compile under DX12 / FXC yet")
+}
+
 #' Helper function to check cluster separation
 #'
 #' Base R is unbearable slow, so, Rust...

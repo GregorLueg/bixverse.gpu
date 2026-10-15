@@ -30,6 +30,18 @@ rs_gpu_available <- function() .Call(wrap__rs_gpu_available)
 #' reduction on it returns the plane width.
 rs_gpu_plane_ops <- function() .Call(wrap__rs_gpu_plane_ops)
 
+#' Check whether the MLX backend was compiled in
+#'
+#' @description
+#' The MLX backend (Apple Silicon only, via mlx-c) is opt-in at install time:
+#' set `BIXVERSE_GPU_MLX=true` and have mlx-c installed
+#' (`brew install mlx-c`, or `MLX_C_PREFIX` pointing at an install prefix).
+#'
+#' @returns Boolean. `TRUE` when the package was built with the MLX backend.
+#' 
+#' @keywords internal
+rs_mlx_available <- function() .Call(wrap__rs_mlx_available)
+
 #' Generate a GPU-accelerated kNN graph
 #'
 #' @description
@@ -47,6 +59,8 @@ rs_gpu_plane_ops <- function() .Call(wrap__rs_gpu_plane_ops)
 #' @param nn_params A named list with the parameters, see
 #' [bixverse.gpu::params_nn_gpu()]
 #' @param seed Integer. Random seed for reproducibility.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -60,7 +74,7 @@ rs_gpu_plane_ops <- function() .Call(wrap__rs_gpu_plane_ops)
 #' }
 #'
 #' @export
-rs_gpu_knn <- function(embd, k, knn_method, nn_params, seed, verbose) .Call(wrap__rs_gpu_knn, embd, k, knn_method, nn_params, seed, verbose)
+rs_gpu_knn <- function(embd, k, knn_method, nn_params, seed, backend = "wgpu", verbose) .Call(wrap__rs_gpu_knn, embd, k, knn_method, nn_params, seed, backend, verbose)
 
 #' Parametric UMAP implementation
 #'
@@ -174,12 +188,14 @@ rs_kmeans_gpu <- function(data, dist, n_centroids, kmeans_params, seed, verbose)
 #' pairwise correlation matrix.
 #' @param spearman Boolean. Shall the Spearman correlation be calculated
 #' instead of Pearson.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Boolean. Controls verbosity of the function.
 #'
 #' @returns The correlation matrix
 #'
 #' @export
-rs_cor_gpu <- function(x, spearman, verbose) .Call(wrap__rs_cor_gpu, x, spearman, verbose)
+rs_cor_gpu <- function(x, spearman, backend = "wgpu", verbose) .Call(wrap__rs_cor_gpu, x, spearman, backend, verbose)
 
 #' GPU-accelerated covariance calculations
 #'
@@ -189,12 +205,14 @@ rs_cor_gpu <- function(x, spearman, verbose) .Call(wrap__rs_cor_gpu, x, spearman
 #'
 #' @param x Numerical matrix. The matrix for which to calculate the column
 #' pairwise covariance matrix.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Boolean. Controls verbosity of the function.
 #'
 #' @returns The covariance matrix
 #'
 #' @export
-rs_cov_gpu <- function(x, verbose) .Call(wrap__rs_cov_gpu, x, verbose)
+rs_cov_gpu <- function(x, backend = "wgpu", verbose) .Call(wrap__rs_cov_gpu, x, backend, verbose)
 
 #' UMAP implementation
 #'
@@ -215,13 +233,16 @@ rs_cov_gpu <- function(x, verbose) .Call(wrap__rs_cov_gpu, x, verbose)
 #' @param seed Integer. Seed for reproducibility.
 #' @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
 #' If `NULL` will use sensible default thresholding.
+#' @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
+#' the `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build with the MLX
+#' backend, see [mlx_available()]); CPU optimisers stay on the CPU.
 #' @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
 #' for detailed verbosity.
 #'
 #' @return The UMAP embeddings.
 #'
 #' @export
-rs_umap_gpu <- function(embd, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, verbose) .Call(wrap__rs_umap_gpu, embd, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, verbose)
+rs_umap_gpu <- function(embd, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, backend = "wgpu", verbose) .Call(wrap__rs_umap_gpu, embd, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, backend, verbose)
 
 #' UMAP implementation from a pre-computed kNN graph
 #'
@@ -243,13 +264,16 @@ rs_umap_gpu <- function(embd, n_dim, min_dist, spread, k, umap_params, seed, use
 #' @param seed Integer. Seed for reproducibility.
 #' @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
 #' If `NULL` will use sensible default thresholding.
+#' @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
+#' the `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build with the MLX
+#' backend, see [mlx_available()]); CPU optimisers stay on the CPU.
 #' @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
 #' for detailed verbosity.
 #'
 #' @return The UMAP embeddings.
 #'
 #' @export
-rs_umap_from_knn_gpu <- function(embd, knn_data, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, verbose) .Call(wrap__rs_umap_from_knn_gpu, embd, knn_data, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, verbose)
+rs_umap_from_knn_gpu <- function(embd, knn_data, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, backend = "wgpu", verbose) .Call(wrap__rs_umap_from_knn_gpu, embd, knn_data, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, backend, verbose)
 
 #' tSNE implementation
 #'
@@ -267,21 +291,23 @@ rs_umap_from_knn_gpu <- function(embd, knn_data, n_dim, min_dist, spread, k, uma
 #' @param approx_type String. One of
 #' `c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")`. Which repulsive-force
 #' approximation to use; `"bh_qd"` is the depth-capped quick-and-dirty
-#' Barnes-Hut. `"fft"` and `"fft_3k"` need FFTW and are not available on
-#' Windows.
+#' Barnes-Hut.
 #' @param tsne_params Named list. List that contains all of the key parameters
 #' for the tSNE generation.
 #' @param seed Integer. Seed for reproducibility.
 #' @param use_high_precision Optional logical. Controls `fp32` vs `fp64`.
 #' If `NULL` will use sensible default thresholding. Ignored for
 #' `"fft_3k_gpu"`, which always runs in `fp32`.
+#' @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
+#' the `"fft_3k_gpu"` optimiser on MLX (Apple Silicon, needs a build with the
+#' MLX backend, see [mlx_available()]); CPU optimisers stay on the CPU.
 #' @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
 #' for detailed verbosity.
 #'
 #' @return The tSNE embeddings.
 #'
 #' @export
-rs_tsne_gpu <- function(embd, n_dim, perplexity, approx_type, tsne_params, seed, use_high_precision, verbose) .Call(wrap__rs_tsne_gpu, embd, n_dim, perplexity, approx_type, tsne_params, seed, use_high_precision, verbose)
+rs_tsne_gpu <- function(embd, n_dim, perplexity, approx_type, tsne_params, seed, use_high_precision, backend = "wgpu", verbose) .Call(wrap__rs_tsne_gpu, embd, n_dim, perplexity, approx_type, tsne_params, seed, use_high_precision, backend, verbose)
 
 #' tSNE implementation from a pre-computed kNN graph
 #'
@@ -302,21 +328,23 @@ rs_tsne_gpu <- function(embd, n_dim, perplexity, approx_type, tsne_params, seed,
 #' @param approx_type String. One of
 #' `c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")`. Which repulsive-force
 #' approximation to use; `"bh_qd"` is the depth-capped quick-and-dirty
-#' Barnes-Hut. `"fft"` and `"fft_3k"` need FFTW and are not available on
-#' Windows.
+#' Barnes-Hut.
 #' @param tsne_params Named list. List that contains all of the key parameters
 #' for the tSNE generation.
 #' @param seed Integer. Seed for reproducibility.
 #' @param use_high_precision Optional logical. Controls `fp32` vs `fp64`.
 #' If `NULL` will use sensible default thresholding. Ignored for
 #' `"fft_3k_gpu"`, which always runs in `fp32`.
+#' @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
+#' the `"fft_3k_gpu"` optimiser on MLX (Apple Silicon, needs a build with the
+#' MLX backend, see [mlx_available()]); CPU optimisers stay on the CPU.
 #' @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
 #' for detailed verbosity.
 #'
 #' @return The tSNE embeddings.
 #'
 #' @export
-rs_tsne_from_knn_gpu <- function(embd, knn_data, n_dim, perplexity, approx_type, tsne_params, seed, use_high_precision, verbose) .Call(wrap__rs_tsne_from_knn_gpu, embd, knn_data, n_dim, perplexity, approx_type, tsne_params, seed, use_high_precision, verbose)
+rs_tsne_from_knn_gpu <- function(embd, knn_data, n_dim, perplexity, approx_type, tsne_params, seed, use_high_precision, backend = "wgpu", verbose) .Call(wrap__rs_tsne_from_knn_gpu, embd, knn_data, n_dim, perplexity, approx_type, tsne_params, seed, use_high_precision, backend, verbose)
 
 #' Calculates sparse PCA for single cell
 #'
@@ -338,6 +366,8 @@ rs_tsne_from_knn_gpu <- function(embd, knn_data, n_dim, perplexity, approx_type,
 #' @param cell_indices Integer. The cell indices to use. (0-indexed!)
 #' @param gene_indices Integer. The gene indices to use. (0-indexed!)
 #' @param seed Integer. Random seed for the randomised SVD.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -354,7 +384,7 @@ rs_tsne_from_knn_gpu <- function(embd, knn_data, n_dim, perplexity, approx_type,
 #' @export
 #'
 #' @keywords internal
-rs_sc_pca_sparse_gpu <- function(f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, verbose) .Call(wrap__rs_sc_pca_sparse_gpu, f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, verbose)
+rs_sc_pca_sparse_gpu <- function(f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, backend = "wgpu", verbose) .Call(wrap__rs_sc_pca_sparse_gpu, f_path_gene, f_path_cell, no_pcs, pca_params, cell_indices, gene_indices, seed, backend, verbose)
 
 #' Harmony batch correction in Rust (version 2, GPU-accelerated)
 #'
@@ -368,13 +398,15 @@ rs_sc_pca_sparse_gpu <- function(f_path_gene, f_path_cell, no_pcs, pca_params, c
 #' @param batch_labels List. Must contain exactly one element: a 0-indexed
 #' integer vector representing the batch effects you wish to regress out.
 #' @param seed Integer. Seed for reproducibility purposes.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
 #' @return The batch-corrected Harmony (v2) embedding space.
 #'
 #' @export
-rs_harmony_v2_gpu <- function(pca, harmony_params, batch_labels, seed, verbose) .Call(wrap__rs_harmony_v2_gpu, pca, harmony_params, batch_labels, seed, verbose)
+rs_harmony_v2_gpu <- function(pca, harmony_params, batch_labels, seed, backend = "wgpu", verbose) .Call(wrap__rs_harmony_v2_gpu, pca, harmony_params, batch_labels, seed, backend, verbose)
 
 #' Run NMF (HALS) on the GPU over a set of single cells and genes
 #'
@@ -398,6 +430,8 @@ rs_harmony_v2_gpu <- function(pca, harmony_params, batch_labels, seed, verbose) 
 #' counts; if `FALSE`, on the raw counts.
 #' @param nmf_hals_params Named list. Contains the NMF parameters.
 #' @param seed Integer. Random seed for initialisation.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -413,7 +447,7 @@ rs_harmony_v2_gpu <- function(pca, harmony_params, batch_labels, seed, verbose) 
 #' @export
 #'
 #' @keywords internal
-rs_nmf_single_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, seed, verbose) .Call(wrap__rs_nmf_single_sc_gpu, f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, seed, verbose)
+rs_nmf_single_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, seed, backend = "wgpu", verbose) .Call(wrap__rs_nmf_single_sc_gpu, f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, seed, backend, verbose)
 
 #' Run multiple NMF (HALS) restarts on the GPU over single cells and genes
 #'
@@ -438,6 +472,8 @@ rs_nmf_single_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, pre
 #' @param nmf_hals_params Named list. Contains the NMF parameters.
 #' @param n_runs Integer. Number of random restarts.
 #' @param seed Integer. Base random seed. Run `i` uses `seed + i`.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -456,7 +492,7 @@ rs_nmf_single_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, pre
 #' @export
 #'
 #' @keywords internal
-rs_nmf_multi_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_multi_sc_gpu, f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, verbose)
+rs_nmf_multi_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, backend = "wgpu", verbose) .Call(wrap__rs_nmf_multi_sc_gpu, f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, backend, verbose)
 
 #' Run consensus NMF on the GPU over a set of single cells and genes
 #'
@@ -486,6 +522,8 @@ rs_nmf_multi_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, prep
 #' @param nmf_consensus_params Named list. Contains the consensus parameters.
 #' @param n_runs Integer. Number of restarts. Must be at least 2.
 #' @param seed Integer. Base random seed. Restart `i` uses `seed + i`.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -514,7 +552,7 @@ rs_nmf_multi_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, prep
 #' @export
 #'
 #' @keywords internal
-rs_nmf_consensus_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_consensus_sc_gpu, f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose)
+rs_nmf_consensus_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, backend = "wgpu", verbose) .Call(wrap__rs_nmf_consensus_sc_gpu, f_path_gene, gene_indices, cell_indices, k, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, backend, verbose)
 
 #' Sweep k on the GPU and report consensus stability against error
 #'
@@ -541,6 +579,8 @@ rs_nmf_consensus_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, 
 #' @param nmf_consensus_params Named list. Contains the consensus parameters.
 #' @param n_runs Integer. Number of restarts per k. Must be at least 2.
 #' @param seed Integer. Base random seed.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -564,7 +604,7 @@ rs_nmf_consensus_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k, 
 #' @export
 #'
 #' @keywords internal
-rs_nmf_k_sweep_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_k_sweep_sc_gpu, f_path_gene, gene_indices, cell_indices, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose)
+rs_nmf_k_sweep_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, backend = "wgpu", verbose) .Call(wrap__rs_nmf_k_sweep_sc_gpu, f_path_gene, gene_indices, cell_indices, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, backend, verbose)
 
 #' Run NMF (HALS) on the GPU over meta cells
 #'
@@ -582,6 +622,8 @@ rs_nmf_k_sweep_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k_ran
 #' @param use_second_layer Boolean. If `TRUE`, runs NMF on normalised counts.
 #' @param nmf_hals_params Named list. Contains the NMF parameters.
 #' @param seed Integer. Random seed for initialisation.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -590,7 +632,7 @@ rs_nmf_k_sweep_sc_gpu <- function(f_path_gene, gene_indices, cell_indices, k_ran
 #' @export
 #'
 #' @keywords internal
-rs_nmf_single_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, seed, verbose) .Call(wrap__rs_nmf_single_mc_gpu, sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, seed, verbose)
+rs_nmf_single_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, seed, backend = "wgpu", verbose) .Call(wrap__rs_nmf_single_mc_gpu, sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, seed, backend, verbose)
 
 #' Run multiple NMF (HALS) restarts on the GPU over meta cells
 #'
@@ -609,6 +651,8 @@ rs_nmf_single_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer
 #' @param nmf_hals_params Named list. Contains the NMF parameters.
 #' @param n_runs Integer. Number of random restarts.
 #' @param seed Integer. Base random seed. Run `i` uses `seed + i`.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -618,7 +662,7 @@ rs_nmf_single_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer
 #' @export
 #'
 #' @keywords internal
-rs_nmf_multi_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_multi_mc_gpu, sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, verbose)
+rs_nmf_multi_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, backend = "wgpu", verbose) .Call(wrap__rs_nmf_multi_mc_gpu, sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, n_runs, seed, backend, verbose)
 
 #' Run consensus NMF on the GPU over meta cells
 #'
@@ -639,6 +683,8 @@ rs_nmf_multi_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer,
 #' @param nmf_consensus_params Named list. Contains the consensus parameters.
 #' @param n_runs Integer. Number of restarts. Must be at least 2.
 #' @param seed Integer. Base random seed. Restart `i` uses `seed + i`.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -652,7 +698,7 @@ rs_nmf_multi_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer,
 #' @export
 #'
 #' @keywords internal
-rs_nmf_consensus_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_consensus_mc_gpu, sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose)
+rs_nmf_consensus_mc_gpu <- function(sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, backend = "wgpu", verbose) .Call(wrap__rs_nmf_consensus_mc_gpu, sparse_data, k, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, backend, verbose)
 
 #' Sweep k on the GPU over meta cells
 #'
@@ -672,6 +718,8 @@ rs_nmf_consensus_mc_gpu <- function(sparse_data, k, preprocessing, use_second_la
 #' @param nmf_consensus_params Named list. Contains the consensus parameters.
 #' @param n_runs Integer. Number of restarts per k. Must be at least 2.
 #' @param seed Integer. Base random seed.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
 #'
@@ -684,7 +732,7 @@ rs_nmf_consensus_mc_gpu <- function(sparse_data, k, preprocessing, use_second_la
 #' @export
 #'
 #' @keywords internal
-rs_nmf_k_sweep_mc_gpu <- function(sparse_data, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose) .Call(wrap__rs_nmf_k_sweep_mc_gpu, sparse_data, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, verbose)
+rs_nmf_k_sweep_mc_gpu <- function(sparse_data, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, backend = "wgpu", verbose) .Call(wrap__rs_nmf_k_sweep_mc_gpu, sparse_data, k_range, preprocessing, use_second_layer, nmf_hals_params, nmf_consensus_params, n_runs, seed, backend, verbose)
 
 #' GPU: SCENIC gene-regulatory network inference (disk-backed)
 #'
@@ -901,6 +949,8 @@ rs_mc_bonsai_gpu <- function(sparse_data, gene_indices, bonsai_params, verbose) 
 #' @param target_size Double. Library target size the meta cells are
 #' normalised to.
 #' @param seed Integer. Random seed.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal; `2L` - detailed.
 #'
 #' @returns A list with the cell assignments, the aggregated meta cell counts
@@ -911,7 +961,7 @@ rs_mc_bonsai_gpu <- function(sparse_data, gene_indices, bonsai_params, verbose) 
 #' @references Persad, et al., Nat. Biotechnol., 2023.
 #'
 #' @keywords internal
-rs_seacells_gpu <- function(f_path, embd, cells_to_keep, cells_to_use, knn_data, seacells_params, target_size, seed, verbose) .Call(wrap__rs_seacells_gpu, f_path, embd, cells_to_keep, cells_to_use, knn_data, seacells_params, target_size, seed, verbose)
+rs_seacells_gpu <- function(f_path, embd, cells_to_keep, cells_to_use, knn_data, seacells_params, target_size, seed, backend = "wgpu", verbose) .Call(wrap__rs_seacells_gpu, f_path, embd, cells_to_keep, cells_to_use, knn_data, seacells_params, target_size, seed, backend, verbose)
 
 #' GPU: fast Louvain clustering on the data
 #'

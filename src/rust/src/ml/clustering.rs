@@ -1,8 +1,6 @@
 use ann_search_rs::gpu::k_means_gpu::{k_means_clusters_gpu, KMeansGpuParams};
 use bixverse_rs::prelude::IntoExtendrErr;
 use cubecl::wgpu::WgpuDevice;
-use cubecl::wgpu::WgpuRuntime;
-use cubecl::Runtime;
 use faer::{Mat, MatRef};
 use std::time::Instant;
 
@@ -42,13 +40,13 @@ pub fn kmeans_gpu_internal(
         println!("Running k-means clustering on the GPU via wgpu")
     }
 
-    let (centroids, assignments) = k_means_clusters_gpu::<f32, WgpuRuntime>(
+    let (centroids, assignments) = k_means_clusters_gpu::<f32>(
         data,
         dist,
         n_centroids,
         kmeans_params,
         seed,
-        device.clone(),
+        device.clone().into(),
         verbose,
     )
     .to_extendr()?;
@@ -60,8 +58,8 @@ pub fn kmeans_gpu_internal(
         )
     }
 
-    let client = WgpuRuntime::client(&device);
-    client.memory_cleanup();
+    let client = cubecl::Device::from(device.clone()).client();
+    let _ = client.memory_cleanup();
 
     Ok((centroids, assignments))
 }
