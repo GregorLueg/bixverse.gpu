@@ -115,19 +115,42 @@ devtools::install_github("https://github.com/GregorLueg/bixverse.gpu")
 
 ### Windows
 
-Windows works. WGPU was never the problem there, DX12 and Vulkan are
-both well covered, and the h5 dependency (for reading h5ad files) turned
-out to be a dull `MAX_PATH` issue rather than a cross-compile one:
-`R CMD INSTALL` builds in a deep temp directory, and the HDF5 CMake
-build pushed object paths past the 260 character limit. The build now
-puts the cargo target directory in `~/.bixverse-gpu-cargo`, which stays
-clear of it. Same fix as in
-[bixverse](https://github.com/GregorLueg/bixverse).
+Windows builds and installs, but the GPU side only partly works there
+for now. On the DX12 backend wgpu compiles shaders with Microsoft’s FXC,
+which is stricter about barriers in branching code than Metal or Vulkan.
+A handful of kernels fail to compile, so k-means, IVF kNN, tSNE, NMF,
+Scrublet, SCENIC, SEACells and parts of the single-cell suite error out.
+UMAP, parametric UMAP, fastMNN and exhaustive / NNDescent kNN run fine.
+Forcing Vulkan with `Sys.setenv(WGPU_BACKEND = "vulkan")` before the
+first GPU call should sidestep FXC, but that’s untested. The tests for
+the affected methods are skipped on Windows until the kernels are fixed
+upstream.
 
-One thing is still missing on Windows: the FFT-accelerated tSNE. FFTW
-does not come along for the ride, so `tsne_gpu(approx_type = "fft")`
-errors there. Barnes-Hut (`approx_type = "bh"`, the default) works
-everywhere.
+The FFT-accelerated tSNE used to be the one thing missing on Windows,
+since FFTW did not come along for the ride. It now runs on the pure-Rust
+rustfft, so `approx_type = "fft"` and `"fft_3k"` work everywhere.
+
+### MLX on Apple Silicon
+
+On Apple Silicon there is an optional second backend: MLX, via mlx-c. It
+is off by default because mlx-c is a system library the package cannot
+ship, so you opt in at install time:
+
+    brew install mlx-c
+
+``` r
+
+Sys.setenv(BIXVERSE_GPU_MLX = "true")
+# MLX_C_PREFIX if mlx-c is not under /opt/homebrew
+devtools::install_github("https://github.com/GregorLueg/bixverse.gpu")
+```
+
+This needs a source build, the r-universe binaries are WGPU only. Check
+with
+[`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md).
+Functions with an MLX path then take `backend = "mlx"`: PCA, kNN graphs,
+Harmony, SEACells, NMF, UMAP, tSNE and the correlations. MLX runs in
+fp32 only. Everything else stays on WGPU.
 
 ### Older Intel Macs
 
@@ -188,4 +211,4 @@ better.
 
 If you have some other ideas, please feel free to open an issue.
 
-*Last update to the read-me: 02.10.2026*
+*Last update to the read-me: 14.10.2026*

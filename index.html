@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -198,8 +198,19 @@
 <div class="section level3">
 <h3 id="windows">Windows<a class="anchor" aria-label="anchor" href="#windows"></a>
 </h3>
-<p>Windows works. WGPU was never the problem there, DX12 and Vulkan are both well covered, and the h5 dependency (for reading h5ad files) turned out to be a dull <code>MAX_PATH</code> issue rather than a cross-compile one: <code>R CMD INSTALL</code> builds in a deep temp directory, and the HDF5 CMake build pushed object paths past the 260 character limit. The build now puts the cargo target directory in <code>~/.bixverse-gpu-cargo</code>, which stays clear of it. Same fix as in <a href="https://github.com/GregorLueg/bixverse" class="external-link">bixverse</a>.</p>
-<p>One thing is still missing on Windows: the FFT-accelerated tSNE. FFTW does not come along for the ride, so <code>tsne_gpu(approx_type = "fft")</code> errors there. Barnes-Hut (<code>approx_type = "bh"</code>, the default) works everywhere.</p>
+<p>Windows builds and installs, but the GPU side only partly works there for now. On the DX12 backend wgpu compiles shaders with Microsoft’s FXC, which is stricter about barriers in branching code than Metal or Vulkan. A handful of kernels fail to compile, so k-means, IVF kNN, tSNE, NMF, Scrublet, SCENIC, SEACells and parts of the single-cell suite error out. UMAP, parametric UMAP, fastMNN and exhaustive / NNDescent kNN run fine. Forcing Vulkan with <code>Sys.setenv(WGPU_BACKEND = "vulkan")</code> before the first GPU call should sidestep FXC, but that’s untested. The tests for the affected methods are skipped on Windows until the kernels are fixed upstream.</p>
+<p>The FFT-accelerated tSNE used to be the one thing missing on Windows, since FFTW did not come along for the ride. It now runs on the pure-Rust rustfft, so <code>approx_type = "fft"</code> and <code>"fft_3k"</code> work everywhere.</p>
+</div>
+<div class="section level3">
+<h3 id="mlx-on-apple-silicon">MLX on Apple Silicon<a class="anchor" aria-label="anchor" href="#mlx-on-apple-silicon"></a>
+</h3>
+<p>On Apple Silicon there is an optional second backend: MLX, via mlx-c. It is off by default because mlx-c is a system library the package cannot ship, so you opt in at install time:</p>
+<pre><code>brew install mlx-c</code></pre>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>BIXVERSE_GPU_MLX <span class="op">=</span> <span class="st">"true"</span><span class="op">)</span></span>
+<span><span class="co"># MLX_C_PREFIX if mlx-c is not under /opt/homebrew</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"https://github.com/GregorLueg/bixverse.gpu"</span><span class="op">)</span></span></code></pre></div>
+<p>This needs a source build, the r-universe binaries are WGPU only. Check with <code><a href="reference/mlx_available.html">mlx_available()</a></code>. Functions with an MLX path then take <code>backend = "mlx"</code>: PCA, kNN graphs, Harmony, SEACells, NMF, UMAP, tSNE and the correlations. MLX runs in fp32 only. Everything else stays on WGPU.</p>
 </div>
 <div class="section level3">
 <h3 id="older-intel-macs">Older Intel Macs<a class="anchor" aria-label="anchor" href="#older-intel-macs"></a>
@@ -236,7 +247,7 @@
 <li><label><input type="checkbox" checked><del>More vignettes on some of the implemented functions.</del> Got a bit better.</label></li>
 </ul>
 <p>If you have some other ideas, please feel free to open an issue.</p>
-<p><em>Last update to the read-me: 02.10.2026</em></p>
+<p><em>Last update to the read-me: 14.10.2026</em></p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="license">

@@ -7,7 +7,14 @@ batch covariate is supported.
 ## Usage
 
 ``` r
-rs_harmony_v2_gpu(pca, harmony_params, batch_labels, seed, verbose)
+rs_harmony_v2_gpu(
+  pca,
+  harmony_params,
+  batch_labels,
+  seed,
+  backend = "wgpu",
+  verbose
+)
 ```
 
 ## Arguments
@@ -28,6 +35,12 @@ rs_harmony_v2_gpu(pca, harmony_params, batch_labels, seed, verbose)
 - seed:
 
   Integer. Seed for reproducibility purposes.
+
+- backend:
+
+  String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build with the MLX
+  backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md)).
 
 - verbose:
 

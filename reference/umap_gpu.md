@@ -21,6 +21,7 @@ umap_gpu(
   umap_params = params_umap_gpu(),
   seed = 42L,
   use_high_precision = NULL,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 ```
@@ -87,6 +88,14 @@ umap_gpu(
 
   Optional boolean. Gives fine-grained control over `fp32` vs `fp64`
   usage. The GPU calculations will be forced into `fp32`.
+
+- backend:
+
+  String. One of `c("wgpu", "mlx")`. `"mlx"` runs the kNN search and the
+  `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build with the
+  MLX backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md)).
+  CPU optimisers stay on the CPU.
 
 - .verbose:
 

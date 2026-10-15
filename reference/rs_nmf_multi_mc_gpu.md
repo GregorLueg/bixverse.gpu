@@ -16,6 +16,7 @@ rs_nmf_multi_mc_gpu(
   nmf_hals_params,
   n_runs,
   seed,
+  backend = "wgpu",
   verbose
 )
 ```
@@ -51,6 +52,12 @@ rs_nmf_multi_mc_gpu(
 - seed:
 
   Integer. Base random seed. Run `i` uses `seed + i`.
+
+- backend:
+
+  String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build with the MLX
+  backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md)).
 
 - verbose:
 

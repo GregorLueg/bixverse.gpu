@@ -18,6 +18,7 @@ rs_nmf_single_sc_gpu(
   use_second_layer,
   nmf_hals_params,
   seed,
+  backend = "wgpu",
   verbose
 )
 ```
@@ -60,6 +61,12 @@ rs_nmf_single_sc_gpu(
 - seed:
 
   Integer. Random seed for initialisation.
+
+- backend:
+
+  String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build with the MLX
+  backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md)).
 
 - verbose:
 

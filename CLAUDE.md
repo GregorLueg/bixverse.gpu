@@ -36,6 +36,16 @@ build, so do not benchmark or submit from one. It deliberately does not
 engage on a vendored build, where `CARGO_HOME` has to stay local for
 `vendor-config.toml`.
 
+MLX (Apple Silicon, via mlx-c) is opt-in at install time:
+`BIXVERSE_GPU_MLX=true` makes `tools/config.R` add `--features mlx` and
+link `-lmlxc` from `MLX_C_PREFIX` (default `/opt/homebrew`).
+`src/rust/build.rs` turns on `cfg(mlx_available)` from
+`DEP_MLXC_AVAILABLE`, which ann-search-rs exports. A
+`pkgbuild::compile_dll(force = TRUE)` is needed to switch between an MLX
+and a non-MLX build; `load_all()` alone does not re-run configure. On
+macOS `config.R` also adds `-framework Accelerate` to `PKG_LIBS`: the
+staticlib does not carry framework links to R’s linker.
+
 R CMD check runs in CI (`.github/workflows/R-cmd-check.yml`) on macOS
 and Ubuntu. Linux CI installs `libvulkan1` / `mesa-vulkan-drivers` and
 sets `WGPU_BACKEND=vulkan`.
@@ -105,10 +115,21 @@ The package is a thin R shim over a Rust crate. Three layers, top-down:
     - `utils.rs`: R to Rust matrix converters (`r_matrix_to_faer_fp32`,
       `faer_to_r_matrix`, `nearest_neighbours_to_rust`).
 
-Backends: - `GpuBackend = Autodiff<Wgpu>`: the WGPU/cubecl path for all
-“GPU” algorithms. - `CpuBackend = Autodiff<Flex<f32>>`: used by
-parametric UMAP on the CPU path. `flex` replaced the old `ndarray`
-backend for parametric UMAP.
+Backends: - WGPU via cubecl 0.11, which is runtime-erased: kernels and
+upstream entry points take a `cubecl::Device`
+(`WgpuDevice::default().into()`) rather than an `R: Runtime` generic.
+The default and only portable backend. - MLX, behind
+`cfg(mlx_available)`. Entry points with an MLX twin take `backend: &str`
+(`#[extendr(default = "\"wgpu\"")]`), parsed by `parse_backend()` in
+`lib.rs` into the `Backend` enum; the R side mirrors it with
+`backend = c("wgpu", "mlx")` and
+[`assert_backend()`](https://gregorlueg.github.io/bixverse.gpu/reference/assert_backend.md).
+For UMAP/tSNE/kNN the MLX path is a string rewrite
+(`knn_method_for_backend`, `adam_gpu` -\> `adam_mlx`, `fft_3k_gpu` -\>
+`fft_3k_mlx`); bixverse-rs paths call the `*_mlx` functions directly.
+fp32 only. - Parametric UMAP: burn 0.22 `Device::wgpu(...)` or
+`Device::flex()`; `TrainedUmapModel` no longer carries a backend type
+parameter.
 
 Precision policy: UMAP/tSNE dispatch fp32 vs fp64 through
 `parse_precision`, which honours the user’s `use_high_precision` arg or
@@ -136,26 +157,33 @@ most GPU kernels do not live in this repo.
   This package consumes its GPU-accelerated pieces (linalg, PCA,
   Harmony, correlations, SCENIC, SEACells); the main non-GPU R-facing
   interface lives in the separate `bixverse` R package. (features:
-  `gpu`, `single-cell`) It no longer owns the GPU k-means kernels, only
-  the R-list parsing for them, via the `KMeansGpuParamsFromR` extension
-  trait in `bixverse_rs::gpu::gpu_r_wrappers`.
+  `gpu`, `single-cell`, `bonsai`, `r`, plus `accelerate` on macOS and
+  `mlx` via this crate’s `mlx` feature. Since 0.7.0 the R bindings sit
+  behind `r`, so `default-features = false` must list it.) It no longer
+  owns the GPU k-means kernels, only the R-list parsing for them, via
+  the `KMeansGpuParamsFromR` extension trait in
+  `bixverse_rs::gpu::gpu_r_wrappers`.
 - **`manifolds-rs`**: manifold-learning crate. UMAP, tSNE, diffusion
   maps, PaCMAP, PHATE. Depends on `ann-search-rs` for kNN. GPU coverage
   is expanding: kNN searches are already GPU, and the UMAP optimiser now
-  has a GPU path too. (features: `parametric`, `gpu`, plus `fft_tsne`
-  off-Windows, see the h5 toolchain issue in the README)
+  has a GPU path too. (features: `parametric`, `gpu`, `fft_tsne` on
+  every platform since FFTW was replaced by rustfft, `mlx` via this
+  crate’s `mlx` feature)
 
-During development `src/rust/Cargo.toml` wires two of these to local
-checkouts so you track their HEAD. `bixverse-rs` is a plain `path`
-dependency, nothing else in the graph depends on it. `ann-search-rs`
-cannot be: this crate, `bixverse-rs` and `manifolds-rs` all depend on
-it, and a `path` dep would resolve to a second copy whose types no
-longer match across the boundary. It goes through `[patch.crates-io]`
-instead, which unifies the whole graph. Note that `bixverse-rs` carries
-the same patch block, but patches only apply from the top-level
-manifest, so it has to be repeated here. Both the `path` dep and the
-patch block have to go before merging, otherwise CI cannot resolve them
-and the vendored offline build path breaks.
+Unreleased sibling crates go through `[patch.crates-io]` in
+`src/rust/Cargo.toml` (a git branch or a local path), never a plain
+`path` dependency: `ann-search-rs` is depended on by this crate,
+`bixverse-rs` and `manifolds-rs`, and only a patch unifies the whole
+graph. Patches only apply from the top-level manifest, so any patch a
+sibling carries has to be repeated here. The patch block has to go
+before merging, otherwise CI cannot resolve it and the vendored offline
+build path breaks.
+
+`Cargo.lock` hand-pins `hdf5-metno`’s ndarray edge to the ndarray
+bixverse-rs uses (0.17.2 since bixverse-rs 0.7.0). Any `cargo update`,
+even `-p bixverse-rs`, can silently move it and break the h5ad code in
+bixverse-rs with `Selection: From<SliceInfo<...>>` errors; re-pin by
+editing the `hdf5-metno` block.
 
 ## Conventions
 

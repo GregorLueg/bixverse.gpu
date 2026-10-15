@@ -19,6 +19,7 @@ rs_sc_pca_sparse_gpu(
   cell_indices,
   gene_indices,
   seed,
+  backend = "wgpu",
   verbose
 )
 ```
@@ -54,6 +55,12 @@ rs_sc_pca_sparse_gpu(
 - seed:
 
   Integer. Random seed for the randomised SVD.
+
+- backend:
+
+  String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build with the MLX
+  backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md)).
 
 - verbose:
 

@@ -17,6 +17,7 @@ rs_umap_from_knn_gpu(
   umap_params,
   seed,
   use_high_precision,
+  backend = "wgpu",
   verbose
 )
 ```
@@ -61,6 +62,14 @@ rs_umap_from_knn_gpu(
 
   Optional logical. Controls `fp32` vs `fp64` for. If `NULL` will use
   sensible default thresholding.
+
+- backend:
+
+  String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and the
+  `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build with the
+  MLX backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md));
+  CPU optimisers stay on the CPU.
 
 - verbose:
 

@@ -7,7 +7,7 @@ calculations.
 ## Usage
 
 ``` r
-rs_cor_gpu(x, spearman, verbose)
+rs_cor_gpu(x, spearman, backend = "wgpu", verbose)
 ```
 
 ## Arguments
@@ -21,6 +21,12 @@ rs_cor_gpu(x, spearman, verbose)
 
   Boolean. Shall the Spearman correlation be calculated instead of
   Pearson.
+
+- backend:
+
+  String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build with the MLX
+  backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md)).
 
 - verbose:
 

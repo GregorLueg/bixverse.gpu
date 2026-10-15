@@ -19,6 +19,7 @@ rs_seacells_gpu(
   seacells_params,
   target_size,
   seed,
+  backend = "wgpu",
   verbose
 )
 ```
@@ -61,6 +62,12 @@ rs_seacells_gpu(
 - seed:
 
   Integer. Random seed.
+
+- backend:
+
+  String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build with the MLX
+  backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md)).
 
 - verbose:
 

@@ -14,6 +14,7 @@ calculate_pca_gpu_sc(
   pca_params = bixverse::params_sc_pca(),
   hvg = NULL,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 ```
@@ -46,6 +47,12 @@ calculate_pca_gpu_sc(
 - seed:
 
   Integer. Seed for the randomised SVD.
+
+- backend:
+
+  String. One of `c("wgpu", "mlx")`. `"mlx"` runs the SVD on Apple
+  Silicon via MLX and needs a build with the MLX backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md).
 
 - .verbose:
 

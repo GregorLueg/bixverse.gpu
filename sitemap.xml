@@ -31,6 +31,7 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertScrubletGpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertTsneGpuParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertUmapGpuParams.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assert_backend.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assert_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/bbknn_gpu_sc.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/bonsai_gpu_sc.html</loc></url>
@@ -79,6 +80,7 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/install_agent_skill_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/k_means_cluster_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/load_parametric_umap.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/nebula_gpu_sc.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/new_kmeans_cluster_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/nmf_gpu_sc.html</loc></url>
@@ -119,6 +121,7 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_kmeans_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_mc_bonsai_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_mc_scenic_gpu.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_mlx_available.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_nebula_sc_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_consensus_mc_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_consensus_sc_gpu.html</loc></url>

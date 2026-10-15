@@ -13,7 +13,7 @@ to the optimisation."><meta property="og:image" content="https://gregorlueg.gith
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,6 +76,7 @@ to the optimisation.</p>
 <span>  <span class="va">umap_params</span>,</span>
 <span>  <span class="va">seed</span>,</span>
 <span>  <span class="va">use_high_precision</span>,</span>
+<span>  backend <span class="op">=</span> <span class="st">"wgpu"</span>,</span>
 <span>  <span class="va">verbose</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -121,6 +122,12 @@ for the UMAP generation.</p></dd>
 <dt id="arg-use-high-precision">use_high_precision<a class="anchor" aria-label="anchor" href="#arg-use-high-precision"></a></dt>
 <dd><p>Optional logical. Controls <code>fp32</code> vs <code>fp64</code> for.
 If <code>NULL</code> will use sensible default thresholding.</p></dd>
+
+
+<dt id="arg-backend">backend<a class="anchor" aria-label="anchor" href="#arg-backend"></a></dt>
+<dd><p>String. <code>"wgpu"</code> or <code>"mlx"</code>. <code>"mlx"</code> runs the kNN search and
+the <code>"adam_gpu"</code> optimiser on MLX (Apple Silicon, needs a build with the MLX
+backend, see <code><a href="mlx_available.html">mlx_available()</a></code>); CPU optimisers stay on the CPU.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>

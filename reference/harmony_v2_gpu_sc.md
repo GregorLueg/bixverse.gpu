@@ -14,6 +14,7 @@ harmony_v2_gpu_sc(
   modality = c("rna", "adt"),
   harmony_params = params_sc_harmony_v2_gpu(),
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 ```
@@ -41,6 +42,12 @@ harmony_v2_gpu_sc(
 - seed:
 
   Integer. For reproducibility.
+
+- backend:
+
+  String. One of `c("wgpu", "mlx")`. `"mlx"` runs on Apple Silicon via
+  MLX and needs a build with the MLX backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md).
 
 - .verbose:
 

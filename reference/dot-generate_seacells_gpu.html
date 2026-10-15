@@ -11,7 +11,7 @@ and wraps the result into a bixverse::MetaCells()."><meta property="og:image" co
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,6 +72,7 @@ and wraps the result into a <code><a href="https://gregorlueg.github.io/bixverse
 <span>  <span class="va">regenerate_knn</span>,</span>
 <span>  <span class="va">target_size</span>,</span>
 <span>  <span class="va">seed</span>,</span>
+<span>  <span class="va">backend</span>,</span>
 <span>  <span class="va">.verbose</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -134,6 +135,12 @@ cells to.</p></dd>
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
 <dd><p>Integer. Seed for reproducibility.</p></dd>
+
+
+<dt id="arg-backend">backend<a class="anchor" aria-label="anchor" href="#arg-backend"></a></dt>
+<dd><p>String. One of <code>c("wgpu", "mlx")</code>. <code>"mlx"</code> runs the
+fit on Apple Silicon via MLX and needs a build with the MLX backend, see
+<code><a href="mlx_available.html">mlx_available()</a></code>.</p></dd>
 
 
 <dt id="arg--verbose">.verbose<a class="anchor" aria-label="anchor" href="#arg--verbose"></a></dt>

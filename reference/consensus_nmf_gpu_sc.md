@@ -26,6 +26,7 @@ consensus_nmf_gpu_sc(
   nmf_consensus_params = bixverse::params_nmf_consensus(),
   n_runs = 30L,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 ```
@@ -82,6 +83,12 @@ consensus_nmf_gpu_sc(
 - seed:
 
   Integer. Random seed for initialisation.
+
+- backend:
+
+  String. One of `c("wgpu", "mlx")`. `"mlx"` runs the HALS solves on
+  Apple Silicon via MLX and needs a build with the MLX backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md).
 
 - .verbose:
 

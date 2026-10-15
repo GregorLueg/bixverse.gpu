@@ -24,6 +24,7 @@ rs_nmf_consensus_sc_gpu(
   nmf_consensus_params,
   n_runs,
   seed,
+  backend = "wgpu",
   verbose
 )
 ```
@@ -73,6 +74,12 @@ rs_nmf_consensus_sc_gpu(
 - seed:
 
   Integer. Base random seed. Restart `i` uses `seed + i`.
+
+- backend:
+
+  String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build with the MLX
+  backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md)).
 
 - verbose:
 

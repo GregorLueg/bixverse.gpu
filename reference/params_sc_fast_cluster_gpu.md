@@ -22,6 +22,8 @@ params_sc_fast_cluster_gpu(
   full_snn = FALSE,
   pruning = NULL,
   snn_similarity = c("jaccard", "rank"),
+  cell_mediated = FALSE,
+  n_anchors = 5L,
   louvain_iters = 10L,
   multi_level_louvain = TRUE,
   knn = list(k = 5L)
@@ -75,6 +77,19 @@ params_sc_fast_cluster_gpu(
   Both are normalised to `[0, 1]`. One of `c("jaccard", "rank")`.
   Defaults to `"jaccard"`.
 
+- cell_mediated:
+
+  Boolean. Build the centroid graph from the cells instead of a kNN
+  search over the centroids: every cell links its `n_anchors` nearest
+  centroids, so two centroids are connected when cells sit near both. If
+  `TRUE`, `snn` and the sNN settings are ignored. Defaults to `FALSE`.
+
+- n_anchors:
+
+  Integer. Number of nearest centroids each cell links to in the
+  cell-mediated graph. Clamped to the number of centroids. Defaults to
+  `5L`.
+
 - louvain_iters:
 
   Integer. Number of Louvain iterations. Defaults to `10L`.
@@ -124,6 +139,16 @@ A named list with the following elements:
   neighbour sets; rank weights edges by the best combined rank of a
   shared neighbour. Both are normalised to `[0, 1]`. One of
   `c("jaccard", "rank")`. Defaults to `"jaccard"`.
+
+- cell_mediated - Boolean. Build the centroid graph from the cells
+  instead of a kNN search over the centroids: every cell links its
+  `n_anchors` nearest centroids, so two centroids are connected when
+  cells sit near both. If `TRUE`, `snn` and the sNN settings are
+  ignored. Defaults to `FALSE`.
+
+- n_anchors - Integer. Number of nearest centroids each cell links to in
+  the cell-mediated graph. Clamped to the number of centroids. Defaults
+  to `5L`.
 
 - louvain_iters - Integer. Number of Louvain iterations. Defaults to
   `10L`.

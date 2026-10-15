@@ -19,6 +19,7 @@ tsne_gpu(
   tsne_params = params_tsne_gpu(),
   seed = 42L,
   use_high_precision = NULL,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 ```
@@ -58,8 +59,7 @@ tsne_gpu(
   [`params_tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_tsne_gpu.md),
   faster and coarser), `"fft"` for FFT-accelerated interpolation or
   `"fft_3k"` for its three-kernel variant (one forward and three inverse
-  FFTs per epoch instead of four each). The last four run on the CPU;
-  `"fft"` and `"fft_3k"` are only available on Unix systems.
+  FFTs per epoch instead of four each). The last four run on the CPU.
 
 - knn_method:
 
@@ -86,6 +86,14 @@ tsne_gpu(
   Optional boolean. Gives fine-grained control over `fp32` vs `fp64`
   usage. The GPU kNN calculations will be forced into `fp32`. Ignored
   with a warning for `"fft_3k_gpu"`, which always runs in `fp32`.
+
+- backend:
+
+  String. One of `c("wgpu", "mlx")`. `"mlx"` runs the kNN search and the
+  `"fft_3k_gpu"` optimiser on MLX (Apple Silicon, needs a build with the
+  MLX backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md)).
+  CPU optimisers stay on the CPU.
 
 - .verbose:
 

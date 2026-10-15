@@ -21,6 +21,7 @@ generate_knn_graph_gpu(
   nn_params = params_nn_gpu(),
   seed = 42L,
   extract_knn = lifecycle::deprecated(),
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 ```
@@ -55,6 +56,12 @@ generate_knn_graph_gpu(
   **\[deprecated\]** Use the `extract_knn` field of
   [`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md)
   instead.
+
+- backend:
+
+  String. One of `c("wgpu", "mlx")`. `"mlx"` runs the search on Apple
+  Silicon via MLX and needs a build with the MLX backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md).
 
 - .verbose:
 

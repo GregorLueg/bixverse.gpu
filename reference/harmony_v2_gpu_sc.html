@@ -13,7 +13,7 @@ batch covariate is supported on the GPU path.'><meta property="og:image" content
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,6 +72,7 @@ batch covariate is supported on the GPU path.</p>
 <span>  modality <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rna"</span>, <span class="st">"adt"</span><span class="op">)</span>,</span>
 <span>  harmony_params <span class="op">=</span> <span class="fu"><a href="params_sc_harmony_v2_gpu.html">params_sc_harmony_v2_gpu</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">42L</span>,</span>
+<span>  backend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"wgpu"</span>, <span class="st">"mlx"</span><span class="op">)</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -100,6 +101,12 @@ on <code>SingleCellsMultiModal</code> class.</p></dd>
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
 <dd><p>Integer. For reproducibility.</p></dd>
+
+
+<dt id="arg-backend">backend<a class="anchor" aria-label="anchor" href="#arg-backend"></a></dt>
+<dd><p>String. One of <code>c("wgpu", "mlx")</code>. <code>"mlx"</code> runs on
+Apple Silicon via MLX and needs a build with the MLX backend, see
+<code><a href="mlx_available.html">mlx_available()</a></code>.</p></dd>
 
 
 <dt id="arg--verbose">.verbose<a class="anchor" aria-label="anchor" href="#arg--verbose"></a></dt>

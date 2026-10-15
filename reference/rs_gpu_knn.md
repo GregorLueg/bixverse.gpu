@@ -11,7 +11,7 @@ Euclidean distances come back as true L2, not squared.
 ## Usage
 
 ``` r
-rs_gpu_knn(embd, k, knn_method, nn_params, seed, verbose)
+rs_gpu_knn(embd, k, knn_method, nn_params, seed, backend = "wgpu", verbose)
 ```
 
 ## Arguments
@@ -36,6 +36,12 @@ rs_gpu_knn(embd, k, knn_method, nn_params, seed, verbose)
 - seed:
 
   Integer. Random seed for reproducibility.
+
+- backend:
+
+  String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build with the MLX
+  backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md)).
 
 - verbose:
 

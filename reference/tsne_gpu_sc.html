@@ -21,7 +21,7 @@ perplexities since the kNN is cheap on GPU.'><meta property="og:image" content="
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -93,6 +93,7 @@ perplexities since the kNN is cheap on GPU.</p>
 <span>  tsne_params <span class="op">=</span> <span class="fu"><a href="params_tsne_gpu.html">params_tsne_gpu</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">42L</span>,</span>
 <span>  use_high_precision <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  backend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"wgpu"</span>, <span class="st">"mlx"</span><span class="op">)</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -146,8 +147,7 @@ and 50. Defaults to <code>20.0</code>.</p></dd>
 <dd><p>String. Approximation method. One of <code>"fft_3k_gpu"</code>
 (three-kernel FFT on the GPU, the default), <code>"bh"</code> (Barnes-Hut), <code>"bh_qd"</code>
 (quick-and-dirty Barnes-Hut, depth-capped tree), <code>"fft"</code> or <code>"fft_3k"</code> (CPU
-FFT interpolation, four or three kernels). The CPU FFT variants are
-Unix-only. See <code><a href="tsne_gpu.html">tsne_gpu()</a></code>.</p></dd>
+FFT interpolation, four or three kernels). See <code><a href="tsne_gpu.html">tsne_gpu()</a></code>.</p></dd>
 
 
 <dt id="arg-knn-method">knn_method<a class="anchor" aria-label="anchor" href="#arg-knn-method"></a></dt>
@@ -172,6 +172,11 @@ deals usually better with the high k in tSNE.</p></dd>
 <dt id="arg-use-high-precision">use_high_precision<a class="anchor" aria-label="anchor" href="#arg-use-high-precision"></a></dt>
 <dd><p>Optional boolean. Fine-grained fp32 vs fp64
 control. GPU kNN is always fp32. Ignored for <code>"fft_3k_gpu"</code>.</p></dd>
+
+
+<dt id="arg-backend">backend<a class="anchor" aria-label="anchor" href="#arg-backend"></a></dt>
+<dd><p>String. One of <code>c("wgpu", "mlx")</code>. <code>"mlx"</code> moves the
+kNN search and the <code>"fft_3k_gpu"</code> optimiser to MLX, see <code><a href="tsne_gpu.html">tsne_gpu()</a></code>.</p></dd>
 
 
 <dt id="arg--verbose">.verbose<a class="anchor" aria-label="anchor" href="#arg--verbose"></a></dt>

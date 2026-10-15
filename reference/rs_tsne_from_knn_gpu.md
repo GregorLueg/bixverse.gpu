@@ -18,6 +18,7 @@ rs_tsne_from_knn_gpu(
   tsne_params,
   seed,
   use_high_precision,
+  backend = "wgpu",
   verbose
 )
 ```
@@ -46,8 +47,7 @@ rs_tsne_from_knn_gpu(
 
   String. One of `c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")`.
   Which repulsive-force approximation to use; `"bh_qd"` is the
-  depth-capped quick-and-dirty Barnes-Hut. `"fft"` and `"fft_3k"` need
-  FFTW and are not available on Windows.
+  depth-capped quick-and-dirty Barnes-Hut.
 
 - tsne_params:
 
@@ -63,6 +63,14 @@ rs_tsne_from_knn_gpu(
   Optional logical. Controls `fp32` vs `fp64`. If `NULL` will use
   sensible default thresholding. Ignored for `"fft_3k_gpu"`, which
   always runs in `fp32`.
+
+- backend:
+
+  String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and the
+  `"fft_3k_gpu"` optimiser on MLX (Apple Silicon, needs a build with the
+  MLX backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md));
+  CPU optimisers stay on the CPU.
 
 - verbose:
 

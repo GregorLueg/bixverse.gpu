@@ -114,6 +114,8 @@ can be found here.
   : Generate a k-nearest neighbour graph (GPU-accelerated)
 - [`gpu_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/gpu_available.md)
   : Is a GPU available
+- [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md)
+  : Is the MLX backend available
 
 ## Agent skill
 

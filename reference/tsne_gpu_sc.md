@@ -31,6 +31,7 @@ tsne_gpu_sc(
   tsne_params = params_tsne_gpu(),
   seed = 42L,
   use_high_precision = NULL,
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 ```
@@ -82,8 +83,7 @@ tsne_gpu_sc(
   String. Approximation method. One of `"fft_3k_gpu"` (three-kernel FFT
   on the GPU, the default), `"bh"` (Barnes-Hut), `"bh_qd"`
   (quick-and-dirty Barnes-Hut, depth-capped tree), `"fft"` or `"fft_3k"`
-  (CPU FFT interpolation, four or three kernels). The CPU FFT variants
-  are Unix-only. See
+  (CPU FFT interpolation, four or three kernels). See
   [`tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/tsne_gpu.md).
 
 - knn_method:
@@ -110,6 +110,12 @@ tsne_gpu_sc(
 
   Optional boolean. Fine-grained fp32 vs fp64 control. GPU kNN is always
   fp32. Ignored for `"fft_3k_gpu"`.
+
+- backend:
+
+  String. One of `c("wgpu", "mlx")`. `"mlx"` moves the kNN search and
+  the `"fft_3k_gpu"` optimiser to MLX, see
+  [`tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/tsne_gpu.md).
 
 - .verbose:
 

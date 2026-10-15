@@ -27,6 +27,7 @@ generate_gpu_knn_sc(
   gpu_method = lifecycle::deprecated(),
   ivf_params = lifecycle::deprecated(),
   dist_metric = lifecycle::deprecated(),
+  backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
 ```
@@ -85,6 +86,12 @@ generate_gpu_knn_sc(
 - dist_metric:
 
   **\[deprecated\]** Use `params_nn_gpu(dist_metric = )`.
+
+- backend:
+
+  String. One of `c("wgpu", "mlx")`. `"mlx"` runs the search on Apple
+  Silicon via MLX and needs a build with the MLX backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md).
 
 - .verbose:
 

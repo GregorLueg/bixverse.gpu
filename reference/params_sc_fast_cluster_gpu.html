@@ -19,7 +19,7 @@ argument, and &quot;manhattan&quot; is not supported by the GPU k-means."><meta 
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -84,6 +84,8 @@ argument, and <code>"manhattan"</code> is not supported by the GPU k-means.</p>
 <span>  full_snn <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  pruning <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  snn_similarity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"jaccard"</span>, <span class="st">"rank"</span><span class="op">)</span>,</span>
+<span>  cell_mediated <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  n_anchors <span class="op">=</span> <span class="fl">5L</span>,</span>
 <span>  louvain_iters <span class="op">=</span> <span class="fl">10L</span>,</span>
 <span>  multi_level_louvain <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  knn <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>k <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span>
@@ -141,6 +143,19 @@ neighbour. Both are normalised to <code>[0, 1]</code>. One of <code>c("jaccard",
 Defaults to <code>"jaccard"</code>.</p></dd>
 
 
+<dt id="arg-cell-mediated">cell_mediated<a class="anchor" aria-label="anchor" href="#arg-cell-mediated"></a></dt>
+<dd><p>Boolean. Build the centroid graph from the cells instead
+of a kNN search over the centroids: every cell links its <code>n_anchors</code> nearest
+centroids, so two centroids are connected when cells sit near both. If
+<code>TRUE</code>, <code>snn</code> and the sNN settings are ignored. Defaults to <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-n-anchors">n_anchors<a class="anchor" aria-label="anchor" href="#arg-n-anchors"></a></dt>
+<dd><p>Integer. Number of nearest centroids each cell links to in
+the cell-mediated graph. Clamped to the number of centroids. Defaults to
+<code>5L</code>.</p></dd>
+
+
 <dt id="arg-louvain-iters">louvain_iters<a class="anchor" aria-label="anchor" href="#arg-louvain-iters"></a></dt>
 <dd><p>Integer. Number of Louvain iterations. Defaults to
 <code>10L</code>.</p></dd>
@@ -181,6 +196,13 @@ when generating the sNN graph. If <code>NULL</code>, defaults to <code>1 / ceili
 neighbour sets; rank weights edges by the best combined rank of a shared
 neighbour. Both are normalised to <code>[0, 1]</code>. One of <code>c("jaccard", "rank")</code>.
 Defaults to <code>"jaccard"</code>.</p></li>
+<li><p>cell_mediated - Boolean. Build the centroid graph from the cells
+instead of a kNN search over the centroids: every cell links its <code>n_anchors</code>
+nearest centroids, so two centroids are connected when cells sit near both.
+If <code>TRUE</code>, <code>snn</code> and the sNN settings are ignored. Defaults to <code>FALSE</code>.</p></li>
+<li><p>n_anchors - Integer. Number of nearest centroids each cell links to in
+the cell-mediated graph. Clamped to the number of centroids. Defaults to
+<code>5L</code>.</p></li>
 <li><p>louvain_iters - Integer. Number of Louvain iterations. Defaults to
 <code>10L</code>.</p></li>
 <li><p>multi_level_louvain - Boolean. Shall multi-level Louvain be applied.
