@@ -133,6 +133,7 @@ reference:
       - params_kmeans_gpu
       - generate_knn_graph_gpu
       - gpu_available
+      - mlx_available
   - title: Agent skill
     desc:
       Teach your coding agent how to use the package.
