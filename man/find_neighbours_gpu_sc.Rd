@@ -12,11 +12,12 @@ find_neighbours_gpu_sc(
   knn_method = c("nndescent", "exhaustive", "ivf"),
   nn_params = params_nn_gpu(),
   k = 15L,
-  snn_params = params_sc_neighbours(),
+  graph_params = bixverse::params_knn_graph_defaults(),
   seed = 42L,
   gpu_method = lifecycle::deprecated(),
   ivf_params = lifecycle::deprecated(),
   dist_metric = lifecycle::deprecated(),
+  snn_params = lifecycle::deprecated(),
   backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
@@ -38,8 +39,9 @@ on \code{SingleCellsMultiModal} class.}
 
 \item{k}{Integer. Number of neighbours.}
 
-\item{snn_params}{List. Output of \code{\link[bixverse:params_sc_neighbours]{bixverse::params_sc_neighbours()}}. The
-kNN graph-related parameters will be ignored in favour of \code{nn_params}.}
+\item{graph_params}{List. Output of
+\code{\link[bixverse:params_knn_graph_defaults]{bixverse::params_knn_graph_defaults()}}. Controls how the kNN is turned into
+the connectivities graph.}
 
 \item{seed}{Integer. For reproducibility.}
 
@@ -50,6 +52,8 @@ kNN graph-related parameters will be ignored in favour of \code{nn_params}.}
 \item{dist_metric}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use
 \code{params_nn_gpu(dist_metric = )}.}
 
+\item{snn_params}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{graph_params}.}
+
 \item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the
 search on Apple Silicon via MLX and needs a build with the MLX backend,
 see \code{\link[=mlx_available]{mlx_available()}}.}
@@ -57,12 +61,12 @@ see \code{\link[=mlx_available]{mlx_available()}}.}
 \item{.verbose}{Boolean. Controls verbosity.}
 }
 \value{
-The object with added kNN matrix and sNN graph in the selected
-modality slot.
+The object with added kNN matrix and connectivities graph in the
+selected modality slot.
 }
 \description{
 This function generates kNN data using GPU-accelerated algorithms via the
-\code{bixverse.gpu} package, then turns it into an sNN igraph for downstream
+\code{bixverse.gpu} package, then turns it into a connectivities igraph for downstream
 clustering. See \code{\link[=generate_gpu_knn_sc]{generate_gpu_knn_sc()}} for the three searches on offer.
 This function lives in a separate package from the CPU-based
 \code{\link[bixverse:find_neighbours_sc]{find_neighbours_sc()}} so that users without GPU hardware do not need to

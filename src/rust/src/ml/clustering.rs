@@ -1,5 +1,5 @@
 use ann_search_rs::gpu::k_means_gpu::{k_means_clusters_gpu, KMeansGpuParams};
-use bixverse_rs::prelude::IntoExtendrErr;
+use bixverse_r::prelude::IntoExtendrErr;
 use cubecl::wgpu::WgpuDevice;
 use faer::{Mat, MatRef};
 use std::time::Instant;

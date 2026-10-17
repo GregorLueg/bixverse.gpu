@@ -9,19 +9,19 @@
 //! CPU wrapper uses. With `backend = "mlx"` the fit runs on MLX instead.
 
 use crate::{parse_backend, Backend};
-use bixverse_rs::gpu::sc_gpu::seacells_gpu::seacells_fit_gpu;
-use bixverse_rs::prelude::*;
-use bixverse_rs::single_cell::mc_generation::cell_aggregation_utils::{
+use bixverse_r::gpu::sc_gpu::seacells_gpu::seacells_fit_gpu;
+use bixverse_r::prelude::*;
+use bixverse_r::sc_r_wrappers::assignments_to_r_list;
+use bixverse_r::single_cell::mc_generation::cell_aggregation_utils::{
     aggregate_meta_cells, remap_assignments_to_original, remap_metacells_to_original,
 };
-use bixverse_rs::single_cell::mc_generation::seacells::SEACellsParams;
-use bixverse_rs::single_cell::sc_r_wrappers::assignments_to_r_list;
+use bixverse_r::single_cell::mc_generation::seacells::SEACellsParams;
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 use std::time::Instant;
 
 #[cfg(mlx_available)]
-use bixverse_rs::mlx::sc::seacells::seacells_fit_mlx;
+use bixverse_r::mlx::sc::seacells::seacells_fit_mlx;
 
 use crate::single_cell::sc_utils::{knn_data_to_rust, resolve_cell_mapping, subset_embedding};
 

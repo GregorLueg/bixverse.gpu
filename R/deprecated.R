@@ -213,11 +213,12 @@ S7::method(generate_cagra_knn_sc, SingleCells) <- function(
 #' @param cagra_params List. Output of the deprecated [params_sc_cagra()], or
 #' [params_nn_gpu()].
 #' @param extract_knn Logical. Skip the beam search.
-#' @param snn_params List. Output of [bixverse::params_sc_neighbours()].
+#' @param graph_params List. Output of
+#' [bixverse::params_knn_graph_defaults()].
 #' @param seed Integer. For reproducibility.
 #' @param .verbose Boolean. Controls verbosity.
 #'
-#' @return The object with added kNN matrix and sNN graph.
+#' @return The object with added kNN matrix and connectivities graph.
 #'
 #' @keywords internal
 #' @export
@@ -231,7 +232,7 @@ find_neighbours_cagra_sc <- S7::new_generic(
     modality = c("rna", "adt"),
     cagra_params = params_nn_gpu(),
     extract_knn = FALSE,
-    snn_params = params_sc_neighbours(),
+    graph_params = bixverse::params_knn_graph_defaults(),
     seed = 42L,
     .verbose = TRUE
   ) {
@@ -252,7 +253,7 @@ S7::method(find_neighbours_cagra_sc, SingleCells) <- function(
   modality = c("rna", "adt"),
   cagra_params = params_nn_gpu(),
   extract_knn = FALSE,
-  snn_params = params_sc_neighbours(),
+  graph_params = bixverse::params_knn_graph_defaults(),
   seed = 42L,
   .verbose = TRUE
 ) {
@@ -274,7 +275,7 @@ S7::method(find_neighbours_cagra_sc, SingleCells) <- function(
     knn_method = "nndescent",
     nn_params = cagra_params,
     k = k,
-    snn_params = snn_params,
+    graph_params = graph_params,
     seed = seed,
     .verbose = .verbose
   )

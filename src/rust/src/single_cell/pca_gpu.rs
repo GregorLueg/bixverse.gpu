@@ -1,12 +1,12 @@
 use crate::{parse_backend, Backend};
-use bixverse_rs::gpu::sc_gpu::pca_gpu::pca_on_sc_sparse_gpu;
-use bixverse_rs::prelude::*;
-use bixverse_rs::single_cell::sc_processing::pca::SingleCellPcaParams;
+use bixverse_r::gpu::sc_gpu::pca_gpu::pca_on_sc_sparse_gpu;
+use bixverse_r::prelude::*;
+use bixverse_r::single_cell::sc_processing::pca::SingleCellPcaParams;
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 
 #[cfg(mlx_available)]
-use bixverse_rs::mlx::sc::pca::pca_on_sc_sparse_mlx;
+use bixverse_r::mlx::sc::pca::pca_on_sc_sparse_mlx;
 
 /////////////
 // extendr //

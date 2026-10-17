@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------
 # GPU-accelerated single cell processing: kNN searches, sparse randomised PCA,
-# fast Louvain clustering and Scrublet doublet detection.
+# fast clustering and Scrublet doublet detection.
 # ------------------------------------------------------------------------------
 
 # knn searches -----------------------------------------------------------------
@@ -52,59 +52,6 @@
   }
 
   embd
-}
-
-#' Build an sNN igraph from kNN data and attach it to a single cell object
-#'
-#' @param object `SingleCells` (or `SingleCellsMultiModal`) class.
-#' @param knn_data Initialised `sc_knn` with the kNN data.
-#' @param snn_params List. Output of [bixverse::params_sc_neighbours()].
-#' @param modality String. One of `c("rna", "adt")`.
-#' @param .verbose Boolean or integer. Controls verbosity.
-#'
-#' @return The object with the sNN graph in the selected modality slot.
-#'
-#' @keywords internal
-.set_snn_graph_gpu <- function(
-  object,
-  knn_data,
-  snn_params,
-  modality,
-  .verbose
-) {
-  if (.verbose) {
-    message(sprintf("Generating sNN graph (full: %s).", snn_params$full_snn))
-  }
-  snn_graph_rs <- with(
-    snn_params,
-    rs_sc_snn(
-      knn_mat = get_knn_mat(knn_data),
-      snn_method = snn_similarity,
-      pruning = pruning,
-      limited_graph = !full_snn,
-      verbose = bixverse:::parse_verbosity(.verbose)
-    )
-  )
-
-  if (.verbose) {
-    message("Transforming sNN data to igraph.")
-  }
-  snn_g <- igraph::make_empty_graph(
-    n = nrow(get_knn_mat(knn_data)),
-    directed = FALSE
-  )
-  snn_g <- igraph::add_edges(
-    snn_g,
-    snn_graph_rs$edges,
-    attr = list(weight = snn_graph_rs$weights)
-  )
-
-  set_snn_graph(
-    object,
-    snn_graph = snn_g,
-    modality = modality,
-    from = "knn"
-  )
 }
 
 #' Fold the deprecated kNN arguments into the current ones
@@ -319,7 +266,7 @@ S7::method(generate_gpu_knn_sc, SingleCells) <- function(
 #'
 #' @description
 #' This function generates kNN data using GPU-accelerated algorithms via the
-#' `bixverse.gpu` package, then turns it into an sNN igraph for downstream
+#' `bixverse.gpu` package, then turns it into a connectivities igraph for downstream
 #' clustering. See [generate_gpu_knn_sc()] for the three searches on offer.
 #' This function lives in a separate package from the CPU-based
 #' [find_neighbours_sc()] so that users without GPU hardware do not need to
@@ -334,20 +281,22 @@ S7::method(generate_gpu_knn_sc, SingleCells) <- function(
 #' @param knn_method String. One of `c("nndescent", "exhaustive", "ivf")`.
 #' @param nn_params List. Output of [bixverse.gpu::params_nn_gpu()].
 #' @param k Integer. Number of neighbours.
-#' @param snn_params List. Output of [bixverse::params_sc_neighbours()]. The
-#' kNN graph-related parameters will be ignored in favour of `nn_params`.
+#' @param graph_params List. Output of
+#' [bixverse::params_knn_graph_defaults()]. Controls how the kNN is turned into
+#' the connectivities graph.
 #' @param seed Integer. For reproducibility.
 #' @param gpu_method `r lifecycle::badge("deprecated")` Use `knn_method`.
 #' @param ivf_params `r lifecycle::badge("deprecated")` Use `nn_params`.
 #' @param dist_metric `r lifecycle::badge("deprecated")` Use
 #' `params_nn_gpu(dist_metric = )`.
+#' @param snn_params `r lifecycle::badge("deprecated")` Use `graph_params`.
 #' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the
 #' search on Apple Silicon via MLX and needs a build with the MLX backend,
 #' see [mlx_available()].
 #' @param .verbose Boolean. Controls verbosity.
 #'
-#' @return The object with added kNN matrix and sNN graph in the selected
-#' modality slot.
+#' @return The object with added kNN matrix and connectivities graph in the
+#' selected modality slot.
 #'
 #' @export
 find_neighbours_gpu_sc <- S7::new_generic(
@@ -361,11 +310,12 @@ find_neighbours_gpu_sc <- S7::new_generic(
     knn_method = c("nndescent", "exhaustive", "ivf"),
     nn_params = params_nn_gpu(),
     k = 15L,
-    snn_params = params_sc_neighbours(),
+    graph_params = bixverse::params_knn_graph_defaults(),
     seed = 42L,
     gpu_method = lifecycle::deprecated(),
     ivf_params = lifecycle::deprecated(),
     dist_metric = lifecycle::deprecated(),
+    snn_params = lifecycle::deprecated(),
     backend = c("wgpu", "mlx"),
     .verbose = TRUE
   ) {
@@ -388,11 +338,12 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
   knn_method = c("nndescent", "exhaustive", "ivf"),
   nn_params = params_nn_gpu(),
   k = 15L,
-  snn_params = params_sc_neighbours(),
+  graph_params = bixverse::params_knn_graph_defaults(),
   seed = 42L,
   gpu_method = lifecycle::deprecated(),
   ivf_params = lifecycle::deprecated(),
   dist_metric = lifecycle::deprecated(),
+  snn_params = lifecycle::deprecated(),
   backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
@@ -415,6 +366,16 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
   nn_params <- resolved$nn_params
   k <- resolved$k
 
+  if (lifecycle::is_present(snn_params)) {
+    lifecycle::deprecate_warn(
+      when = "0.6.0",
+      what = "find_neighbours_gpu_sc(snn_params)",
+      with = "find_neighbours_gpu_sc(graph_params)"
+    )
+    # params_sc_neighbours() carries the graph keys next to the kNN ones
+    graph_params <- snn_params
+  }
+
   checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
   checkmate::qassert(embd_to_use, "S1")
   checkmate::qassert(no_embd_to_use, c("I1", "0"))
@@ -422,6 +383,7 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
   checkmate::assertChoice(knn_method, c("nndescent", "exhaustive", "ivf"))
   assertNnGpuParams(nn_params)
   checkmate::qassert(k, "I1[1,)")
+  bixverse:::assertKnnGraphParams(graph_params)
   checkmate::qassert(seed, "I1")
   checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
@@ -460,12 +422,15 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
     from = embd_to_use
   )
 
-  .set_snn_graph_gpu(
-    object = object,
-    knn_data = knn_data,
-    snn_params = snn_params,
+  set_connectivities(
+    object,
+    connectivities = bixverse:::.knn_to_graph(
+      knn = knn_data,
+      graph_params = graph_params,
+      .verbose = .verbose
+    ),
     modality = modality,
-    .verbose = .verbose
+    from = "knn"
   )
 }
 
@@ -601,8 +566,8 @@ S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
 
 
 # ------------------------------------------------------------------------------
-# GPU-accelerated fast Louvain clustering:
-# - Wraps `rs_fast_cluster_gpu` and `rs_fast_cluster_grid_gpu`.
+# GPU-accelerated fast clustering:
+# - Wraps `rs_fast_cluster_gpu`.
 # - Returns the same `SingleCellFastClusters` S3 object as the CPU
 #   `bixverse::fast_cluster_sc()`, so all its getters and `add_sc_new_obs()`
 #   work unchanged.
@@ -613,33 +578,39 @@ S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
 
 # fast clustering (gpu) --------------------------------------------------------
 
-#' Run fast Louvain clustering on a SingleCells object (GPU)
+#' Run fast clustering on a SingleCells object (GPU)
 #'
 #' @description
-#' GPU counterpart of [bixverse::fast_cluster_sc()]. Runs k-means on the chosen
-#' embedding, builds a kNN graph on the centroids, applies Louvain clustering
-#' and propagates the memberships back to the cells. Optionally runs a grid over
-#' multiple seeds and returns stability statistics.
+#' GPU counterpart of [bixverse::fast_cluster_sc()]. Coarsens the cells with
+#' k-means on the chosen embedding, builds a graph over the centroids (a kNN
+#' graph or the cell-mediated graph), runs Louvain or Leiden on it and
+#' propagates the communities back to the cells. With `n_seeds > 1` every
+#' resolution is run once per seed and stability statistics are returned.
 #'
-#' Only the k-means coarsening runs on the WGPU backend. The centroid kNN, the
-#' optional sNN pass and the Louvain runs stay on the CPU, so the speedup tracks
-#' how much of the run k-means owns. That share grows with the cell count and
-#' with `n_centroids`. There is no `km_type` argument: the GPU k-means is
-#' full-batch Lloyd's and has no mini-batch path.
+#' Only the k-means coarsening (and the cell-mediated top-m search) run on the
+#' GPU. The centroid graph and the community detection stay on the CPU, so the
+#' speedup tracks how much of the run k-means owns. That share grows with the
+#' cell count and with `n_centroids`. There is no `km_type` argument: the GPU
+#' k-means is full-batch Lloyd's and has no mini-batch path.
 #'
 #' @param object `SingleCells` or `SingleCellsSubset` class from `bixverse`.
 #' @param embd_to_use String. Embedding name. Defaults to `"pca"`.
 #' @param no_embd_to_use Optional integer. Number of dimensions to keep.
-#' @param resolutions Numeric vector. Louvain resolutions.
-#' @param n_centroids Optional integer. Number of k-means centroids. Defaults
-#' to `sqrt(n_cells)` Rust-side if `NULL`. Clamped to `n_cells - 1`.
+#' @param resolutions Numeric vector. Resolutions of the community detection.
 #' @param fc_params List. Output of [params_sc_fast_cluster_gpu()].
-#' @param snn Boolean. Convert the centroid kNN to an sNN graph.
+#' @param n_seeds Integer. Number of seeds per resolution. `1L` runs a single
+#' pass without stability statistics.
 #' @param return_kmeans Boolean. Return the k-means assignments and centroids.
-#' @param grid_search Boolean. Run the multi-seed grid version.
-#' @param no_seeds Integer. Number of seeds to vary Louvain over. Must be at
-#' least 2. Only used when `grid_search = TRUE`.
 #' @param seed Integer. Seed for reproducibility.
+#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the k-means
+#' on Apple Silicon via MLX and needs a build with the MLX backend, see
+#' [mlx_available()].
+#' @param n_centroids `r lifecycle::badge("deprecated")` Use
+#' `params_sc_fast_cluster_gpu(n_centroids = )`.
+#' @param snn `r lifecycle::badge("deprecated")` Use
+#' `params_sc_fast_cluster_gpu(centroid_graph = list(knn_sym = ))`.
+#' @param grid_search `r lifecycle::badge("deprecated")` Use `n_seeds`.
+#' @param no_seeds `r lifecycle::badge("deprecated")` Use `n_seeds`.
 #' @param .verbose Boolean or integer. Controls verbosity and returns run times.
 #' `FALSE` -> quiet, `TRUE` or `1L` -> normal verbosity, `2L` -> detailed
 #' verbosity.
@@ -648,7 +619,8 @@ S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
 #' \describe{
 #'   \item{memberships}{data.table with `cell_idx` and one column per
 #'   resolution (`res_<value>`).}
-#'   \item{stats}{data.table of grid statistics, or `NULL`.}
+#'   \item{stats}{data.table of the stability statistics, or `NULL` for
+#'   `n_seeds = 1L`.}
 #'   \item{k_means_cluster}{Integer vector of k-means assignments, or `NULL`.}
 #'   \item{centroids}{Numeric matrix of centroids, or `NULL`.}
 #'   \item{resolutions}{Resolutions used.}
@@ -664,16 +636,18 @@ fast_cluster_gpu_sc <- S7::new_generic(
     embd_to_use = "pca",
     no_embd_to_use = NULL,
     resolutions = c(2.0, 1.0, 0.5),
-    n_centroids = NULL,
     fc_params = params_sc_fast_cluster_gpu(),
-    snn = TRUE,
+    n_seeds = 1L,
     return_kmeans = FALSE,
-    grid_search = FALSE,
-    no_seeds = 10L,
     seed = 42L,
+    backend = c("wgpu", "mlx"),
+    n_centroids = lifecycle::deprecated(),
+    snn = lifecycle::deprecated(),
+    grid_search = lifecycle::deprecated(),
+    no_seeds = lifecycle::deprecated(),
     .verbose = TRUE
   ) {
-    assert_gpu()
+    assert_backend(match.arg(backend))
 
     S7::S7_dispatch()
   }
@@ -691,13 +665,15 @@ S7::method(fast_cluster_gpu_sc, SingleCells) <- function(
   embd_to_use = "pca",
   no_embd_to_use = NULL,
   resolutions = c(2.0, 1.0, 0.5),
-  n_centroids = NULL,
   fc_params = params_sc_fast_cluster_gpu(),
-  snn = TRUE,
+  n_seeds = 1L,
   return_kmeans = FALSE,
-  grid_search = FALSE,
-  no_seeds = 10L,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
+  n_centroids = lifecycle::deprecated(),
+  snn = lifecycle::deprecated(),
+  grid_search = lifecycle::deprecated(),
+  no_seeds = lifecycle::deprecated(),
   .verbose = TRUE
 ) {
   .fast_cluster_gpu(
@@ -705,13 +681,15 @@ S7::method(fast_cluster_gpu_sc, SingleCells) <- function(
     embd_to_use = embd_to_use,
     no_embd_to_use = no_embd_to_use,
     resolutions = resolutions,
-    n_centroids = n_centroids,
     fc_params = fc_params,
-    snn = snn,
+    n_seeds = n_seeds,
     return_kmeans = return_kmeans,
+    seed = seed,
+    backend = match.arg(backend),
+    n_centroids = n_centroids,
+    snn = snn,
     grid_search = grid_search,
     no_seeds = no_seeds,
-    seed = seed,
     .verbose = .verbose
   )
 }
@@ -728,13 +706,15 @@ S7::method(fast_cluster_gpu_sc, SingleCellsSubset) <- function(
   embd_to_use = "pca",
   no_embd_to_use = NULL,
   resolutions = c(2.0, 1.0, 0.5),
-  n_centroids = NULL,
   fc_params = params_sc_fast_cluster_gpu(),
-  snn = TRUE,
+  n_seeds = 1L,
   return_kmeans = FALSE,
-  grid_search = FALSE,
-  no_seeds = 10L,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
+  n_centroids = lifecycle::deprecated(),
+  snn = lifecycle::deprecated(),
+  grid_search = lifecycle::deprecated(),
+  no_seeds = lifecycle::deprecated(),
   .verbose = TRUE
 ) {
   .fast_cluster_gpu(
@@ -742,25 +722,93 @@ S7::method(fast_cluster_gpu_sc, SingleCellsSubset) <- function(
     embd_to_use = embd_to_use,
     no_embd_to_use = no_embd_to_use,
     resolutions = resolutions,
-    n_centroids = n_centroids,
     fc_params = fc_params,
-    snn = snn,
+    n_seeds = n_seeds,
     return_kmeans = return_kmeans,
+    seed = seed,
+    backend = match.arg(backend),
+    n_centroids = n_centroids,
+    snn = snn,
     grid_search = grid_search,
     no_seeds = no_seeds,
-    seed = seed,
     .verbose = .verbose
   )
 }
 
 ## implementation --------------------------------------------------------------
 
-#' Shared implementation of the GPU fast Louvain clustering
+#' Fold the deprecated fast clustering arguments into the current ones
+#'
+#' @param fc_params List. Current argument.
+#' @param n_seeds Integer. Current argument.
+#' @param n_centroids Deprecated. Superseded by `fc_params$n_centroids`.
+#' @param snn Deprecated. Superseded by `fc_params$knn_sym`.
+#' @param grid_search Deprecated. Superseded by `n_seeds`.
+#' @param no_seeds Deprecated. Superseded by `n_seeds`.
+#'
+#' @return A list with the resolved `fc_params` and `n_seeds`.
+#'
+#' @keywords internal
+.resolve_deprecated_fc_args <- function(
+  fc_params,
+  n_seeds,
+  n_centroids,
+  snn,
+  grid_search,
+  no_seeds
+) {
+  fn <- "fast_cluster_gpu_sc"
+
+  if (lifecycle::is_present(n_centroids)) {
+    lifecycle::deprecate_warn(
+      when = "0.6.0",
+      what = sprintf("%s(n_centroids)", fn),
+      with = "params_sc_fast_cluster_gpu(n_centroids = )"
+    )
+    fc_params$n_centroids <- n_centroids
+  }
+
+  if (lifecycle::is_present(snn)) {
+    lifecycle::deprecate_warn(
+      when = "0.6.0",
+      what = sprintf("%s(snn)", fn),
+      with = "params_sc_fast_cluster_gpu(centroid_graph = list(knn_sym = ))"
+    )
+    checkmate::qassert(snn, "B1")
+    fc_params$knn_sym <- if (snn) "snn" else "knn"
+  }
+
+  if (lifecycle::is_present(no_seeds)) {
+    lifecycle::deprecate_warn(
+      when = "0.6.0",
+      what = sprintf("%s(no_seeds)", fn),
+      with = sprintf("%s(n_seeds)", fn)
+    )
+  }
+
+  if (lifecycle::is_present(grid_search)) {
+    lifecycle::deprecate_warn(
+      when = "0.6.0",
+      what = sprintf("%s(grid_search)", fn),
+      with = sprintf("%s(n_seeds)", fn)
+    )
+    checkmate::qassert(grid_search, "B1")
+    # the old grid defaulted to 10 seeds
+    if (grid_search) {
+      n_seeds <- if (lifecycle::is_present(no_seeds)) no_seeds else 10L
+    }
+  }
+
+  list(fc_params = fc_params, n_seeds = n_seeds)
+}
+
+#' Shared implementation of the GPU fast clustering
 #'
 #' @description
 #' Body behind both `fast_cluster_gpu_sc()` methods. Pulls the embedding off the
-#' object, hands it to [rs_fast_cluster_gpu()] or [rs_fast_cluster_grid_gpu()]
-#' and wraps the result into a `SingleCellFastClusters` S3 object.
+#' object, resolves the `NULL` defaults of [params_sc_fast_cluster_gpu()], hands
+#' it to [rs_fast_cluster_gpu()] and wraps the result into a
+#' `SingleCellFastClusters` S3 object.
 #'
 #' @inheritParams fast_cluster_gpu_sc
 #'
@@ -772,31 +820,41 @@ S7::method(fast_cluster_gpu_sc, SingleCellsSubset) <- function(
   embd_to_use,
   no_embd_to_use,
   resolutions,
-  n_centroids,
   fc_params,
-  snn,
+  n_seeds,
   return_kmeans,
+  seed,
+  backend,
+  n_centroids,
+  snn,
   grid_search,
   no_seeds,
-  seed,
   .verbose
 ) {
+  resolved <- .resolve_deprecated_fc_args(
+    fc_params = fc_params,
+    n_seeds = n_seeds,
+    n_centroids = n_centroids,
+    snn = snn,
+    grid_search = grid_search,
+    no_seeds = no_seeds
+  )
+  fc_params <- resolved$fc_params
+  n_seeds <- resolved$n_seeds
+
   # checks
   checkmate::assertTRUE(
     S7::S7_inherits(object, bixverse::SingleCells) ||
       S7::S7_inherits(object, bixverse::SingleCellsSubset)
   )
-  assertScFastClusterGpuParams(fc_params)
   checkmate::qassert(embd_to_use, "S1")
   checkmate::qassert(no_embd_to_use, c("I1", "0"))
   checkmate::qassert(resolutions, "N+")
-  checkmate::qassert(n_centroids, c("I1", "0"))
-  checkmate::qassert(snn, "B1")
+  assertScFastClusterGpuParams(fc_params)
+  checkmate::qassert(n_seeds, "I1[1,)")
   checkmate::qassert(return_kmeans, "B1")
-  checkmate::qassert(grid_search, "B1")
-  # the grid needs at least two seeds to produce an ARI at all
-  checkmate::qassert(no_seeds, if (grid_search) "I1[2,)" else "I1")
   checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
   # function body
@@ -805,57 +863,52 @@ S7::method(fast_cluster_gpu_sc, SingleCellsSubset) <- function(
   }
 
   embd <- bixverse::get_embedding(x = object, embd_name = embd_to_use)
-
   if (!is.null(no_embd_to_use)) {
-    to_take <- min(c(no_embd_to_use, ncol(embd)))
-    embd <- embd[, 1:to_take]
+    embd <- embd[, 1:min(no_embd_to_use, ncol(embd))]
+  }
+
+  if (is.null(fc_params$n_centroids)) {
+    fc_params$n_centroids <- as.integer(floor(sqrt(nrow(embd))))
+  }
+  if (is.null(fc_params$n_iterations)) {
+    fc_params$n_iterations <- bixverse:::.default_community_iters(
+      fc_params$algorithm
+    )
   }
 
   cells_to_use <- bixverse::get_cells_to_keep(object)
 
-  if (grid_search) {
-    res <- rs_fast_cluster_grid_gpu(
-      embd = embd,
-      resolutions = resolutions,
-      n_centroids = n_centroids,
-      fc_params = fc_params,
-      snn = snn,
-      return_kmeans = return_kmeans,
-      no_seeds = no_seeds,
-      seed = seed,
-      verbose = parse_verbosity(.verbose)
-    )
-    memberships <- res$membership$memberships
-    stats <- data.table::as.data.table(res$membership$stats)
-    data.table::set(stats, j = "resolution", value = resolutions)
-    data.table::setcolorder(stats, "resolution")
-  } else {
-    res <- rs_fast_cluster_gpu(
-      embd = embd,
-      resolutions = resolutions,
-      n_centroids = n_centroids,
-      fc_params = fc_params,
-      snn = snn,
-      return_kmeans = return_kmeans,
-      seed = seed,
-      verbose = parse_verbosity(.verbose)
-    )
-    memberships <- res$membership
-    stats <- NULL
-  }
+  res <- rs_fast_cluster_gpu(
+    embd = embd,
+    resolutions = resolutions,
+    fc_params = fc_params,
+    n_seeds = n_seeds,
+    seed = seed,
+    verbose = parse_verbosity(.verbose),
+    backend = backend
+  )
 
   # cell_idx is 1-indexed ORIGINAL positions; matches obs_table$cell_idx
-  names(memberships) <- paste0("res_", resolutions)
-  membership_dt <- data.table::as.data.table(
-    c(list(cell_idx = cells_to_use + 1L), memberships)
+  membership_dt <- data.table::data.table(cell_idx = cells_to_use + 1L)
+  data.table::set(
+    membership_dt,
+    j = paste0("res_", resolutions),
+    value = res$membership
   )
+
+  stats <- NULL
+  if (!is.null(res$stats)) {
+    stats <- data.table::as.data.table(res$stats)
+    data.table::set(stats, j = "resolution", value = resolutions)
+    data.table::setcolorder(stats, "resolution")
+  }
 
   structure(
     list(
       memberships = membership_dt,
       stats = stats,
-      k_means_cluster = res$k_means_cluster,
-      centroids = res$centroids,
+      k_means_cluster = if (return_kmeans) res$k_means_cluster else NULL,
+      centroids = if (return_kmeans) res$centroids else NULL,
       resolutions = resolutions
     ),
     cell_indices = cells_to_use,

@@ -547,154 +547,188 @@ params_sc_bbknn_gpu <- function(
   )
 }
 
-#' Default parameters for GPU fast Louvain clustering
+#' Default parameters for GPU fast clustering
 #'
-#' @description GPU counterpart to [bixverse::params_sc_fast_cluster()]. The
-#' mini-batch k-means knobs are gone (the GPU k-means is full-batch Lloyd's) and
-#' the k-means block comes from the GPU parameters instead. Two knobs the CPU
-#' wrapper never exposed, `same_weight` and `multi_level_louvain`, are available
-#' here. The k-means distance is taken from `knn$ann_dist`, so the coarsening
-#' and the centroid graph agree on the geometry. There is no separate `metric`
-#' argument, and `"manhattan"` is not supported by the GPU k-means.
+#' @description GPU counterpart to [bixverse::params_sc_fast_cluster()]. Fast
+#' clustering coarsens the cells with k-means, builds a graph over the centroids
+#' and runs Louvain or Leiden on it. The community of each centroid is handed
+#' back to its cells. Only the k-means (and the cell-mediated top-m search) run
+#' on the GPU. The mini-batch k-means knobs are gone: the GPU k-means is
+#' full-batch Lloyd's.
 #'
+#' @param n_centroids Integer or `NULL`. Number of k-means centroids. If `NULL`,
+#' defaults to `floor(sqrt(n_cells))`. Defaults to `NULL`.
 #' @param k_means_iter Integer. Maximum number of k-means iterations. Defaults
 #' to `50L`.
 #' @param k_means_init String or `NULL`. Initialisation method. One of
 #' `"random"`, `"parallel"` or `"plusplus"`. If `NULL`, picked on the Rust side
 #' based on the number of centroids. Defaults to `NULL`.
 #' @param fixed Boolean. Shall k-means run for a fixed number of iterations,
-#' without checking for convergence. Defaults to `TRUE`.
+#' without checking for convergence. wgpu only; MLX always runs every iteration.
+#' Defaults to `TRUE`.
 #' @param quantise Boolean. Shall the data buffer be held at fp16 on the GPU.
 #' Halves the buffer and helps when the assignment kernels are memory bound.
-#' Defaults to `FALSE`.
-#' @param same_weight Boolean. If `TRUE`, all kNN edges get weight `1.0`.
-#' Otherwise edges with a reverse counterpart are double counted. Defaults to
-#' `FALSE`.
-#' @param full_snn Boolean. Shall the full shared nearest neighbour graph be
-#' generated, including edges between centroids that are not neighbours.
-#' Defaults to `FALSE`.
-#' @param pruning Numeric or `NULL`. Weights below this threshold are set to 0
-#' when generating the sNN graph. If `NULL`, defaults to `1 / ceiling(k * 0.8)`.
-#' Defaults to `NULL`.
-#' @param snn_similarity String. Jaccard computes the Jaccard index between
-#' neighbour sets; rank weights edges by the best combined rank of a shared
-#' neighbour. Both are normalised to `[0, 1]`. One of `c("jaccard", "rank")`.
-#' Defaults to `"jaccard"`.
-#' @param cell_mediated Boolean. Build the centroid graph from the cells instead
-#' of a kNN search over the centroids: every cell links its `n_anchors` nearest
-#' centroids, so two centroids are connected when cells sit near both. If
-#' `TRUE`, `snn` and the sNN settings are ignored. Defaults to `FALSE`.
+#' wgpu only. Defaults to `FALSE`.
+#' @param dist String. Distance for the k-means and the centroid graph. One of
+#' `c("euclidean", "cosine")`. Defaults to `"euclidean"`.
+#' @param cell_mediated Boolean. Shall the cell-mediated centroid graph from
+#' Secuer be built instead of the kNN graph on the centroids. Centroids are then
+#' linked by the cells that sit near both, so two centroids that are close in
+#' space but have no cells between them stay apart. If `TRUE`, `centroid_k` and
+#' `centroid_graph` are ignored. Defaults to `FALSE`.
 #' @param n_anchors Integer. Number of nearest centroids each cell links to in
-#' the cell-mediated graph. Clamped to the number of centroids. Defaults to
+#' the cell-mediated graph. Only used if `cell_mediated = TRUE`. Defaults to
 #' `5L`.
-#' @param louvain_iters Integer. Number of Louvain iterations. Defaults to
-#' `10L`.
-#' @param multi_level_louvain Boolean. Shall multi-level Louvain be applied.
-#' Defaults to `TRUE`.
-#' @param knn List. Optional overrides for the kNN parameters applied to the
-#' centroids. See [bixverse::params_knn_defaults()] for the available
-#' parameters. Defaults to `list(k = 5L)`.
+#' @param centroid_k Integer. Neighbours per centroid in the exact centroid kNN.
+#' Only used if `cell_mediated = FALSE`. Defaults to `15L`.
+#' @param centroid_graph List. Optional overrides for how the centroid kNN is
+#' turned into a graph. See [bixverse::params_knn_graph_defaults()]. Only used
+#' if `cell_mediated = FALSE`. Defaults to `list()`.
+#' @param algorithm String. Community detection on the centroid graph. One of
+#' `c("louvain", "leiden")`. Defaults to `"louvain"`.
+#' @param n_iterations Integer or `NULL`. Number of iterations of the community
+#' detection. A negative value iterates until stable. If `NULL`, the bixverse
+#' default for the chosen `algorithm`. Defaults to `NULL`.
+#' @param beta Numeric. Leiden only. Randomness of the refinement step. Defaults
+#' to `0.01`.
+#' @param min_gain Numeric. With a negative `n_iterations`, also stop once an
+#' iteration gains no more than this in modularity. Defaults to `0.0`.
+#' @param local_moving String. `"queue"` is Traag's sequential queue.
+#' `"coloured"` moves the nodes of one colour class in parallel, which only
+#' kicks in on larger levels of the graph. One of `c("queue", "coloured")`.
+#' Defaults to `"queue"`.
+#' @param multi_level Boolean. Shall the communities be aggregated and refined
+#' in levels. Defaults to `TRUE`.
+#' @param max_evals Integer. Cap on the node evaluations per local moving phase,
+#' in units of the number of nodes. Defaults to `10L`.
 #'
 #' @returns A named list with the following elements:
 #' \itemize{
+#'  \item n_centroids - Integer or `NULL`. Number of k-means centroids. If
+#'  `NULL`, defaults to `floor(sqrt(n_cells))`. Defaults to `NULL`.
 #'  \item k_means_iter - Integer. Maximum number of k-means iterations. Defaults
 #'  to `50L`.
 #'  \item k_means_init - String or `NULL`. Initialisation method. One of
 #'  `"random"`, `"parallel"` or `"plusplus"`. If `NULL`, picked on the Rust side
 #'  based on the number of centroids. Defaults to `NULL`.
 #'  \item fixed - Boolean. Shall k-means run for a fixed number of iterations,
-#'  without checking for convergence. Defaults to `TRUE`.
+#'  without checking for convergence. wgpu only; MLX always runs every
+#'  iteration. Defaults to `TRUE`.
 #'  \item quantise - Boolean. Shall the data buffer be held at fp16 on the GPU.
 #'  Halves the buffer and helps when the assignment kernels are memory bound.
-#'  Defaults to `FALSE`.
-#'  \item same_weight - Boolean. If `TRUE`, all kNN edges get weight `1.0`.
-#'  Otherwise edges with a reverse counterpart are double counted. Defaults to
-#'  `FALSE`.
-#'  \item full_snn - Boolean. Shall the full shared nearest neighbour graph be
-#'  generated, including edges between centroids that are not neighbours.
-#'  Defaults to `FALSE`.
-#'  \item pruning - Numeric or `NULL`. Weights below this threshold are set to 0
-#'  when generating the sNN graph. If `NULL`, defaults to `1 / ceiling(k *
-#'  0.8)`. Defaults to `NULL`.
-#'  \item snn_similarity - String. Jaccard computes the Jaccard index between
-#'  neighbour sets; rank weights edges by the best combined rank of a shared
-#'  neighbour. Both are normalised to `[0, 1]`. One of `c("jaccard", "rank")`.
-#'  Defaults to `"jaccard"`.
-#'  \item cell_mediated - Boolean. Build the centroid graph from the cells
-#'  instead of a kNN search over the centroids: every cell links its `n_anchors`
-#'  nearest centroids, so two centroids are connected when cells sit near both.
-#'  If `TRUE`, `snn` and the sNN settings are ignored. Defaults to `FALSE`.
+#'  wgpu only. Defaults to `FALSE`.
+#'  \item dist - String. Distance for the k-means and the centroid graph. One of
+#'  `c("euclidean", "cosine")`. Defaults to `"euclidean"`.
+#'  \item cell_mediated - Boolean. Shall the cell-mediated centroid graph from
+#'  Secuer be built instead of the kNN graph on the centroids. Centroids are
+#'  then linked by the cells that sit near both, so two centroids that are close
+#'  in space but have no cells between them stay apart. If `TRUE`, `centroid_k`
+#'  and `centroid_graph` are ignored. Defaults to `FALSE`.
 #'  \item n_anchors - Integer. Number of nearest centroids each cell links to in
-#'  the cell-mediated graph. Clamped to the number of centroids. Defaults to
+#'  the cell-mediated graph. Only used if `cell_mediated = TRUE`. Defaults to
 #'  `5L`.
-#'  \item louvain_iters - Integer. Number of Louvain iterations. Defaults to
-#'  `10L`.
-#'  \item multi_level_louvain - Boolean. Shall multi-level Louvain be applied.
-#'  Defaults to `TRUE`.
-#'  \item The elements of the base list, overridden by `knn`, spliced in at this
-#'  position.
+#'  \item centroid_k - Integer. Neighbours per centroid in the exact centroid
+#'  kNN. Only used if `cell_mediated = FALSE`. Defaults to `15L`.
+#'  \item The elements of the base list, overridden by `centroid_graph`, spliced
+#'  in at this position.
+#'  \item algorithm - String. Community detection on the centroid graph. One of
+#'  `c("louvain", "leiden")`. Defaults to `"louvain"`.
+#'  \item n_iterations - Integer or `NULL`. Number of iterations of the
+#'  community detection. A negative value iterates until stable. If `NULL`, the
+#'  bixverse default for the chosen `algorithm`. Defaults to `NULL`.
+#'  \item beta - Numeric. Leiden only. Randomness of the refinement step.
+#'  Defaults to `0.01`.
+#'  \item min_gain - Numeric. With a negative `n_iterations`, also stop once an
+#'  iteration gains no more than this in modularity. Defaults to `0.0`.
+#'  \item local_moving - String. `"queue"` is Traag's sequential queue.
+#'  `"coloured"` moves the nodes of one colour class in parallel, which only
+#'  kicks in on larger levels of the graph. One of `c("queue", "coloured")`.
+#'  Defaults to `"queue"`.
+#'  \item multi_level - Boolean. Shall the communities be aggregated and refined
+#'  in levels. Defaults to `TRUE`.
+#'  \item max_evals - Integer. Cap on the node evaluations per local moving
+#'  phase, in units of the number of nodes. Defaults to `10L`.
 #' }
+#'
+#' @references Wei, et al., PLoS Comput Biol, 2022.
 #'
 #' @export
 params_sc_fast_cluster_gpu <- function(
+  n_centroids = NULL,
   k_means_iter = 50L,
   k_means_init = NULL,
   fixed = TRUE,
   quantise = FALSE,
-  same_weight = FALSE,
-  full_snn = FALSE,
-  pruning = NULL,
-  snn_similarity = c("jaccard", "rank"),
+  dist = c("euclidean", "cosine"),
   cell_mediated = FALSE,
   n_anchors = 5L,
-  louvain_iters = 10L,
-  multi_level_louvain = TRUE,
-  knn = list(k = 5L)
+  centroid_k = 15L,
+  centroid_graph = list(),
+  algorithm = c("louvain", "leiden"),
+  n_iterations = NULL,
+  beta = 0.01,
+  min_gain = 0.0,
+  local_moving = c("queue", "coloured"),
+  multi_level = TRUE,
+  max_evals = 10L
 ) {
-  snn_similarity <- match.arg(snn_similarity)
+  dist <- match.arg(dist)
+  algorithm <- match.arg(algorithm)
+  local_moving <- match.arg(local_moving)
 
   # Checks
+  checkmate::qassert(n_centroids, c("I1[2,)", "0"))
   checkmate::qassert(k_means_iter, "I1[1,)")
   checkmate::qassert(k_means_init, c("S1", "0"))
   checkmate::qassert(fixed, "B1")
   checkmate::qassert(quantise, "B1")
-  checkmate::qassert(same_weight, "B1")
-  checkmate::qassert(full_snn, "B1")
-  checkmate::qassert(pruning, c("N1[0,1]", "0"))
-  checkmate::assertChoice(snn_similarity, c("jaccard", "rank"))
+  checkmate::assertChoice(dist, c("euclidean", "cosine"))
   checkmate::qassert(cell_mediated, "B1")
   checkmate::qassert(n_anchors, "I1[1,)")
-  checkmate::qassert(louvain_iters, "I1[1,)")
-  checkmate::qassert(multi_level_louvain, "B1")
+  checkmate::qassert(centroid_k, "I1[1,)")
+  checkmate::assertChoice(algorithm, c("louvain", "leiden"))
+  checkmate::qassert(n_iterations, c("I1", "0"))
+  checkmate::qassert(beta, "N1(0,)")
+  checkmate::qassert(min_gain, "N1[0,)")
+  checkmate::assertChoice(local_moving, c("queue", "coloured"))
+  checkmate::qassert(multi_level, "B1")
+  checkmate::qassert(max_evals, "I1[1,)")
 
   # Merge
-  knn <- utils::modifyList(
-    bixverse::params_knn_defaults(),
-    knn,
+  centroid_graph <- utils::modifyList(
+    bixverse::params_knn_graph_defaults(),
+    centroid_graph,
     keep.null = TRUE
   )
 
   if (!is.null(k_means_init)) {
     checkmate::assertChoice(k_means_init, c("random", "parallel", "plusplus"))
   }
+  bixverse:::assertKnnGraphParams(centroid_graph)
 
   # Return
   c(
     list(
+      n_centroids = n_centroids,
       k_means_iter = k_means_iter,
       k_means_init = k_means_init,
       fixed = fixed,
       quantise = quantise,
-      same_weight = same_weight,
-      full_snn = full_snn,
-      pruning = pruning,
-      snn_similarity = snn_similarity,
+      dist = dist,
       cell_mediated = cell_mediated,
       n_anchors = n_anchors,
-      louvain_iters = louvain_iters,
-      multi_level_louvain = multi_level_louvain
+      centroid_k = centroid_k
     ),
-    knn
+    centroid_graph,
+    list(
+      algorithm = algorithm,
+      n_iterations = n_iterations,
+      beta = beta,
+      min_gain = min_gain,
+      local_moving = local_moving,
+      multi_level = multi_level,
+      max_evals = max_evals
+    )
   )
 }
 

@@ -27,7 +27,7 @@ Suggests:
     quarto,
     tinytest
 Imports: 
-    bixverse (>= 0.6.0),
+    bixverse (>= 0.8.0),
     checkmate,
     data.table,
     igraph,

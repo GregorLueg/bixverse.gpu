@@ -7,8 +7,8 @@
 //! identical in shape and the R side can reuse `bixverse::rs_bbknn_filtering()`.
 
 use crate::ensure_gpu;
-use bixverse_rs::gpu::sc_gpu::bbknn_gpu::{bbknn_gpu, BbknnParamsGpu};
-use bixverse_rs::prelude::*;
+use bixverse_r::gpu::sc_gpu::bbknn_gpu::{bbknn_gpu, BbknnParamsGpu};
+use bixverse_r::prelude::*;
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 

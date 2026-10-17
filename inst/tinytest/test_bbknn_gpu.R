@@ -326,12 +326,12 @@ expect_true(
 )
 
 expect_true(
-  current = checkmate::testClass(get_snn_graph(bbknn_object), "igraph"),
+  current = checkmate::testClass(get_connectivities(bbknn_object), "igraph"),
   info = "bbknn gpu - the connectivities become an igraph"
 )
 
 expect_true(
-  current = igraph::is_weighted(get_snn_graph(bbknn_object)),
+  current = igraph::is_weighted(get_connectivities(bbknn_object)),
   info = "bbknn gpu - the graph carries the connectivities as weights"
 )
 

@@ -8,10 +8,10 @@
 
 use crate::ensure_plane_ops;
 use crate::single_cell::scenic_gpu::cast_sparse_u32_f32;
-use bixverse_rs::gpu::sc_gpu::sanity_bonsai_gpu::{sanity_bonsai_mc_gpu, sanity_bonsai_sc_gpu};
-use bixverse_rs::prelude::*;
-use bixverse_rs::single_cell::sc_analysis::bonsai::BonsaiScParams;
-use bixverse_rs::single_cell::sc_r_wrappers::bonsai_sc_to_r_list;
+use bixverse_r::gpu::sc_gpu::sanity_bonsai_gpu::{sanity_bonsai_mc_gpu, sanity_bonsai_sc_gpu};
+use bixverse_r::prelude::*;
+use bixverse_r::sc_r_wrappers::bonsai_sc_to_r_list;
+use bixverse_r::single_cell::sc_analysis::bonsai::BonsaiScParams;
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 

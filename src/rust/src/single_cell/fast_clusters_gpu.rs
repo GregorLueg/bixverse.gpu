@@ -1,25 +1,24 @@
-//! GPU-accelerated fast Louvain clustering.
+//! GPU-accelerated fast clustering.
 //!
-//! Mirrors `bixverse::rs_fast_cluster_sc` and `rs_fast_cluster_sc_grid`. Only
-//! stage one moves to the device: the k-means coarsening of the embedding. The
-//! centroid kNN, the optional sNN pass and the Louvain runs all stay on the CPU
-//! inside `bixverse-rs`, so the speedup tracks how much of the run k-means owns.
+//! Mirrors `bixverse::rs_fast_cluster_sc`. Only stage one moves to the device:
+//! the k-means coarsening of the embedding and, for the cell-mediated graph,
+//! the top-m search of the cells against the centroids. The centroid graph and
+//! the community detection stay on the CPU inside `bixverse-rs`.
 //!
-//! There is no `km_type` argument here. The GPU k-means is full-batch Lloyd's
-//! and has no mini-batch path. The distance metric comes from the kNN params, so
-//! the coarsening and the centroid graph agree on the geometry.
+//! There is no `km_type` argument here. Both GPU k-means are full-batch Lloyd's
+//! and have no mini-batch path.
 
-use crate::ensure_gpu;
-use bixverse_rs::gpu::sc_gpu::fast_clusters_gpu::{
-    fast_louvain_clusters_gpu, fast_louvain_clusters_grid_gpu, FastLouvainParamsGpu,
+use crate::{parse_backend, Backend};
+use ann_search_rs::gpu::k_means_gpu::KMeansGpuParams;
+use bixverse_r::gpu::sc_gpu::fast_clusters_gpu::GpuKMeans;
+#[cfg(mlx_available)]
+use bixverse_r::mlx::sc::fast_clusters::MlxKMeans;
+use bixverse_r::prelude::*;
+use bixverse_r::single_cell::sc_analysis::fast_clusters::{
+    fast_clusters, FastClusterParams, FastClusterResult, GridStats,
 };
-use bixverse_rs::prelude::*;
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
-
-use crate::single_cell::sc_utils::{
-    fast_cluster_unwrap_multiple, fast_cluster_unwrap_single, process_fc_louvain_results,
-};
 
 /////////////
 // extendr //
@@ -30,196 +29,160 @@ extendr_module! {
     mod fast_clusters_gpu;
     // functions
     fn rs_fast_cluster_gpu;
-    fn rs_fast_cluster_grid_gpu;
 }
 
 //////////////////
 // Fast cluster //
 //////////////////
 
-/// GPU: fast Louvain clustering on the data
+/// GPU: fast clustering on the data
 ///
 /// @description
 /// `r lifecycle::badge("experimental")`
-/// GPU equivalent of `bixverse::rs_fast_cluster_sc`. Runs k-means clustering on
-/// the WGPU backend, followed by a kNN detection on the centroids to then run
-/// Louvain clustering on the graph and propagate the membership back to the
-/// original data. Everything after the k-means stays on the CPU.
+/// GPU equivalent of `bixverse::rs_fast_cluster_sc`. Coarsens the cells with
+/// k-means on the GPU, builds a graph over the centroids (a kNN graph with one
+/// of the symmetrisations, or the cell-mediated graph) and runs Louvain or
+/// Leiden on it. The community of each centroid is propagated back to its
+/// cells. With `n_seeds > 1` every resolution is run once per seed, the labels
+/// come from the seed with the lowest mean conductance and stability metrics
+/// across the seeds are returned. Everything after stage one stays on the CPU.
 ///
-/// @param embd Numeric matrix. The original embedding.
-/// @param resolutions Numeric vector. The Louvain resolutions to iterate
-/// through.
-/// @param n_centroids Optional integer. The number of clusters to find. If
-/// not provided, defaults to `sqrt(nrow(embd))`.
-/// @param fc_params Named list. See [params_sc_fast_cluster_gpu()].
-/// @param snn Boolean. Shall the kNN graph be additionally transformed into
-/// an sNN graph.
-/// @param return_kmeans Boolean. Shall the k-means centroids and assignments
-/// be returned alongside the memberships.
+/// @param embd Numeric matrix. The embedding, cells x features.
+/// @param resolutions Numeric vector. The resolutions to iterate through.
+/// @param fc_params Named list. See [params_sc_fast_cluster_gpu()]. Carries
+/// the GPU k-means keys (`k_means_iter`, `k_means_init`, `fixed`, `quantise`)
+/// alongside the fast clustering ones.
+/// @param n_seeds Integer. Number of seeds per resolution. `1L` runs a single
+/// pass without stability metrics.
 /// @param seed Integer. For reproducibility.
 /// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 /// detailed verbosity.
+/// @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+/// with the MLX backend, see [mlx_available()]). MLX ignores `fixed` and
+/// `quantise`.
 ///
 /// @returns A list with the following elements:
 /// \itemize{
-///  \item membership - The memberships across the different resolutions.
-///  \item k_means_cluster - Optional integer vector of k-means assignments.
-///  \item centroids - Optional numeric matrix of k-means centroids.
+///  \item membership - List with one integer membership vector per
+///  resolution (0-indexed).
+///  \item k_means_cluster - Integer vector with the k-means centroid per cell
+///  (0-indexed).
+///  \item centroids - Numerical matrix with the k-means centroids.
+///  \item stats - `NULL` for `n_seeds = 1L`, otherwise a list with
+///  `mean_ari`, `median_ari`, `mean_conductance`, `median_conductance` and
+///  `mean_n_comms`, one value per resolution.
 /// }
 ///
 /// @export
 ///
 /// @keywords internal
 #[extendr]
-#[allow(clippy::too_many_arguments)]
 fn rs_fast_cluster_gpu(
     embd: RMatrix<f64>,
     resolutions: &[f64],
-    n_centroids: Option<usize>,
     fc_params: List,
-    snn: bool,
-    return_kmeans: bool,
+    n_seeds: usize,
     seed: usize,
     verbose: usize,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
 ) -> Result<List> {
-    ensure_gpu()?;
+    let backend = parse_backend(backend)?;
 
     let embd = r_matrix_to_faer_fp32(&embd);
-    let n_clusters = n_centroids.unwrap_or(((embd.nrows() as f32).sqrt()) as usize);
-    let resolutions = resolutions.r_float_convert();
+    let resolutions: Vec<f32> = resolutions.iter().map(|&r| r as f32).collect();
 
-    let mut params = FastLouvainParamsGpu::from_r_list(fc_params)?;
-    params.n_centroids = n_clusters;
+    let params = FastClusterParams::from_r_list(fc_params.clone())?;
+    let km = KMeansGpuParams::from_r_list(fc_params)?;
 
-    let device: WgpuDevice = Default::default();
+    let res = match backend {
+        #[cfg(mlx_available)]
+        Backend::Mlx => {
+            let km = ann_search_rs::utils::k_means_utils::KMeansTrainingParams::new(
+                km.iters, km.init, None,
+            );
+            fast_clusters(
+                embd.as_ref(),
+                &MlxKMeans::new(Some(km)),
+                &params,
+                &resolutions,
+                n_seeds,
+                seed,
+                verbose,
+            )
+            .to_extendr()?
+        }
+        #[cfg(not(mlx_available))]
+        Backend::Mlx => unreachable!("parse_backend rejects mlx without the MLX build"),
+        Backend::Wgpu => {
+            let device: WgpuDevice = Default::default();
+            let res = fast_clusters(
+                embd.as_ref(),
+                &GpuKMeans::new(Some(km), device.clone().into()),
+                &params,
+                &resolutions,
+                n_seeds,
+                seed,
+                verbose,
+            )
+            .to_extendr()?;
 
-    let fc_results = fast_louvain_clusters_gpu(
-        embd.as_ref(),
-        &resolutions,
-        &params,
-        snn,
-        return_kmeans,
-        seed,
-        device.clone().into(),
-        verbose,
-    )
-    .to_extendr()?;
+            // force VRAM memory clean up to avoid memory leaks
+            let client = cubecl::Device::from(device).client();
+            let _ = client.memory_cleanup();
 
-    // force VRAM memory clean up to avoid memory leaks
-    let client = cubecl::Device::from(device.clone()).client();
-    let _ = client.memory_cleanup();
+            res
+        }
+    };
 
-    let (memberships, k_means_cluster, centroids) =
-        fast_cluster_unwrap_single(fc_results, return_kmeans)?;
-
-    let mut memberships_ls = List::new(memberships.len());
-
-    for (index, membership) in memberships.iter().enumerate() {
-        let membership = membership.clone().r_int_convert();
-        memberships_ls.set_elt(index, Robj::from(membership))?;
-    }
-
-    let k_means_cluster = k_means_cluster.map_or_else(|| r!(NULL), |v| r!(v));
-    let centroids = centroids.map_or_else(|| r!(NULL), |m| r!(m));
-
-    Ok(list!(
-        membership = memberships_ls,
-        k_means_cluster = r!(k_means_cluster),
-        centroids = r!(centroids),
-    ))
+    fast_cluster_res_to_r_list(res, n_seeds)
 }
 
-/// GPU: fast Louvain clustering on the data (with multiple seeds)
+/////////////
+// Helpers //
+/////////////
+
+/// Converts the fast clustering results into an R list.
 ///
-/// @description
-/// `r lifecycle::badge("experimental")`
-/// GPU equivalent of `bixverse::rs_fast_cluster_sc_grid`. Builds the k-means to
-/// kNN/sNN graph once, then runs Louvain with several seeds (derived from the
-/// original one) for every resolution. Returns additional metrics around
-/// cluster stability and community conductance. Only the k-means runs on the
-/// GPU.
+/// Same shape as the list `bixverse::rs_fast_cluster_sc` returns, so the R
+/// wrappers can treat both alike.
 ///
-/// @param embd Numeric matrix. The original embedding.
-/// @param resolutions Numeric vector. The Louvain resolutions to iterate
-/// through.
-/// @param n_centroids Optional integer. The number of clusters to find. If
-/// not provided, defaults to `sqrt(nrow(embd))`.
-/// @param fc_params Named list. See [params_sc_fast_cluster_gpu()].
-/// @param snn Boolean. Shall the kNN graph be additionally transformed into
-/// an sNN graph.
-/// @param return_kmeans Boolean. Shall the k-means centroids and assignments
-/// be returned alongside the grid results.
-/// @param no_seeds Integer. Number of additional seeds to use. Should be >= 2.
-/// @param seed Integer. For reproducibility.
-/// @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
-/// detailed verbosity.
+/// ### Params
 ///
-/// @returns A list with the following elements:
-/// \itemize{
-///  \item membership - A list with `memberships` (the labels from the seed with
-///  the best conductance, per resolution) and `stats` (the metrics per
-///  resolution).
-///  \item k_means_cluster - Optional integer vector of k-means assignments.
-///  \item centroids - Optional numeric matrix of k-means centroids.
-/// }
+/// * `res` - The [FastClusterResult]
+/// * `n_seeds` - Number of seeds per resolution; stats are only returned for
+///   more than one
 ///
-/// @export
+/// ### Returns
 ///
-/// @keywords internal
-#[extendr]
-#[allow(clippy::too_many_arguments)]
-fn rs_fast_cluster_grid_gpu(
-    embd: RMatrix<f64>,
-    resolutions: &[f64],
-    n_centroids: Option<usize>,
-    fc_params: List,
-    snn: bool,
-    return_kmeans: bool,
-    no_seeds: usize,
-    seed: usize,
-    verbose: usize,
-) -> Result<List> {
-    ensure_gpu()?;
+/// A named list with `membership`, `k_means_cluster`, `centroids` and `stats`.
+fn fast_cluster_res_to_r_list(res: FastClusterResult, n_seeds: usize) -> Result<List> {
+    let mut membership = List::new(res.per_resolution.len());
+    for (i, r) in res.per_resolution.iter().enumerate() {
+        membership.set_elt(i, Robj::from(r.labels.clone().r_int_convert()))?;
+    }
 
-    let embd = r_matrix_to_faer_fp32(&embd);
-    let n_clusters = n_centroids.unwrap_or(((embd.nrows() as f32).sqrt()) as usize);
-    let resolutions = resolutions.r_float_convert();
-
-    let mut params = FastLouvainParamsGpu::from_r_list(fc_params)?;
-    params.n_centroids = n_clusters;
-
-    let device: WgpuDevice = Default::default();
-
-    // The driver always keeps the k-means block here and `return_kmeans` is
-    // honoured at the unwrap step. Matches the CPU grid path.
-    let fc_results = fast_louvain_clusters_grid_gpu(
-        embd.as_ref(),
-        &resolutions,
-        &params,
-        snn,
-        true,
-        seed,
-        no_seeds,
-        device.clone().into(),
-        verbose,
-    )
-    .to_extendr()?;
-
-    // force VRAM memory clean up to avoid memory leaks
-    let client = cubecl::Device::from(device.clone()).client();
-    let _ = client.memory_cleanup();
-
-    let (memberships, k_means_cluster, centroids) =
-        fast_cluster_unwrap_multiple(fc_results, return_kmeans)?;
-
-    let membership_ls = process_fc_louvain_results(memberships)?;
-
-    let k_means_cluster = k_means_cluster.map_or_else(|| r!(NULL), |v| r!(v));
-    let centroids = centroids.map_or_else(|| r!(NULL), |m| r!(m));
+    let stats = if n_seeds > 1 {
+        let get = |f: fn(&GridStats) -> f32| -> Vec<f64> {
+            res.per_resolution
+                .iter()
+                .map(|r| r.stability.as_ref().map_or(f64::NAN, |s| f(s) as f64))
+                .collect()
+        };
+        r!(list!(
+            mean_ari = get(|s| s.mean_ari),
+            median_ari = get(|s| s.median_ari),
+            mean_conductance = get(|s| s.mean_conductance),
+            median_conductance = get(|s| s.median_conductance),
+            mean_n_comms = get(|s| s.mean_n_communities)
+        ))
+    } else {
+        r!(NULL)
+    };
 
     Ok(list!(
-        membership = membership_ls,
-        k_means_cluster = r!(k_means_cluster),
-        centroids = r!(centroids),
+        membership = membership,
+        k_means_cluster = res.assignments.r_int_convert(),
+        centroids = faer_to_r_matrix(res.centroids.as_ref()),
+        stats = stats
     ))
 }

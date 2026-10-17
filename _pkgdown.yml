@@ -149,7 +149,6 @@ reference:
       - rs_cor_gpu
       - rs_cov_gpu
       - rs_fast_cluster_gpu
-      - rs_fast_cluster_grid_gpu
       - rs_gpu_available
       - rs_gpu_plane_ops
       - rs_harmony_v2_gpu

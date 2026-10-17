@@ -1,9 +1,8 @@
 use ann_search_rs::gpu::k_means_gpu::KMeansGpuParams;
-use bixverse_rs::gpu::gpu_r_wrappers::KMeansGpuParamsFromR;
-use bixverse_rs::gpu::linalg::corr::{column_pairwise_cor_gpu, GpuCorCov};
+use bixverse_r::gpu::linalg::corr::{column_pairwise_cor_gpu, GpuCorCov};
 #[cfg(mlx_available)]
-use bixverse_rs::mlx::linalg::corr::{column_pairwise_cor_mlx, MlxCorCov};
-use bixverse_rs::prelude::*;
+use bixverse_r::mlx::linalg::corr::{column_pairwise_cor_mlx, MlxCorCov};
+use bixverse_r::prelude::*;
 use burn::tensor::{Device as BurnDevice, DeviceKind};
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::prelude::*;
@@ -352,7 +351,7 @@ pub(crate) fn ensure_plane_ops() -> extendr_api::Result<()> {
 /// (`brew install mlx-c`, or `MLX_C_PREFIX` pointing at an install prefix).
 ///
 /// @returns Boolean. `TRUE` when the package was built with the MLX backend.
-/// 
+///
 /// @keywords internal
 #[extendr]
 fn rs_mlx_available() -> bool {
@@ -904,7 +903,7 @@ fn rs_umap_gpu(
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
 
-    let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
+    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
     let precision = parse_precision(use_high_precision, embd.nrows());
 
     match precision {
@@ -1003,7 +1002,7 @@ fn rs_umap_from_knn_gpu(
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
 
-    let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
+    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
     let precision = parse_precision(use_high_precision, embd.nrows());
 
     match precision {
@@ -1131,7 +1130,7 @@ fn rs_tsne_gpu(
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
     let approx_type = tsne_approx_for_backend(approx_type, backend);
-    let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
+    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
     let precision = tsne_precision(&approx_type, use_high_precision, embd.nrows());
 
     match precision {
@@ -1232,7 +1231,7 @@ fn rs_tsne_from_knn_gpu(
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
     let approx_type = tsne_approx_for_backend(approx_type, backend);
-    let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
+    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
     let precision = tsne_precision(&approx_type, use_high_precision, embd.nrows());
 
     match precision {
