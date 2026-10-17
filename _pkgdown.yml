@@ -78,6 +78,7 @@ reference:
       - scenic_grn_sc_gpu
       - scrublet_gpu_sc
       - fast_cluster_gpu_sc
+      - find_clusters_gpu_sc
       - bbknn_gpu_sc
       - fast_mnn_gpu_sc
       - nebula_gpu_sc
@@ -130,6 +131,7 @@ reference:
       can be found here.
     contents:
       - k_means_cluster_gpu
+      - leiden_clustering_gpu
       - params_kmeans_gpu
       - generate_knn_graph_gpu
       - gpu_available
@@ -154,6 +156,7 @@ reference:
       - rs_harmony_v2_gpu
       - rs_gpu_knn
       - rs_kmeans_gpu
+      - rs_leiden_clustering_gpu
       - rs_mc_scenic_gpu
       - rs_nebula_sc_gpu
       - rs_nmf_consensus_mc_gpu

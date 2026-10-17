@@ -2,6 +2,8 @@
 # Contains general GPU-accelerated machine learning algorithms:
 # - GPU-accelerated k-means. Useful in low-dimensional, high N/K scenarios (at
 #   least on Apple Silicon)
+# - GPU-accelerated Leiden/Louvain. Level-0 local moving on the GPU, the rest
+#   of the multi-level run on the CPU
 # ------------------------------------------------------------------------------
 
 # clustering -------------------------------------------------------------------
@@ -59,6 +61,96 @@ k_means_cluster_gpu <- function(
     assignments = res$assignments,
     k = k,
     metric = kmeans_params$metric
+  )
+}
+
+## leiden gpu ------------------------------------------------------------------
+
+#' GPU-accelerated Leiden or Louvain community detection on an igraph
+#'
+#' @description
+#' GPU counterpart of [bixverse::leiden_clustering()]. The level-0 local
+#' moving runs on the GPU; the coarser levels, the Leiden refinement and the
+#' aggregation stay on the CPU. Graphs below 50,000 nodes, or with a node of
+#' degree above 512, run fully on the CPU with coloured local moving, as the
+#' kernel launches cost more than they save there. On one device the partition
+#' depends on `seed` only, but it is not identical to the CPU result: the GPU
+#' accepts moves with an order-free rule instead of the CPU's sequential
+#' re-check. Communities are numbered by size, `1` being the largest.
+#'
+#' @param graph igraph. Undirected. If it has an edge attribute `weight`, it is
+#' used, otherwise all edges get weight 1.
+#' @param resolution Numeric. Modularity resolution parameter. Higher values
+#' give more communities.
+#' @param algorithm String. One of `c("leiden", "louvain")`.
+#' @param beta Numeric. Randomness of the Leiden refinement merges. Ignored for
+#' Louvain.
+#' @param n_iterations Optional integer. Number of full iterations, each
+#' starting from the previous partition. A negative value iterates until the
+#' partition is stable. If `NULL`, `5L` for Leiden and `2L` for Louvain.
+#' @param min_gain Numeric. With a negative `n_iterations`, also stop once an
+#' iteration gains no more than this in modularity.
+#' @param local_moving String. One of `c("queue", "coloured")`. Applies to the
+#' coarser levels only; level 0 always runs the coloured moves on the GPU.
+#' @param seed Integer. Random seed.
+#'
+#' @returns Integer vector with the community of each node (1-based, `1` is
+#' the largest community).
+#'
+#' @export
+#'
+#' @references Traag, Waltman & van Eck, Sci Rep, 2019; Blondel, et al., J Stat
+#' Mech, 2008
+leiden_clustering_gpu <- function(
+  graph,
+  resolution = 1.0,
+  algorithm = c("leiden", "louvain"),
+  beta = 0.01,
+  n_iterations = NULL,
+  min_gain = 0,
+  local_moving = c("queue", "coloured"),
+  seed = 42L
+) {
+  assert_gpu()
+
+  algorithm <- match.arg(algorithm)
+  local_moving <- match.arg(local_moving)
+  # checks
+  checkmate::assertClass(graph, "igraph")
+  checkmate::assertFALSE(igraph::is_directed(graph))
+  checkmate::qassert(resolution, "N1(0,)")
+  checkmate::assertChoice(algorithm, c("leiden", "louvain"))
+  checkmate::qassert(beta, "N1(0,)")
+  checkmate::qassert(n_iterations, c("X1", "0"))
+  checkmate::assertTRUE(is.null(n_iterations) || n_iterations != 0)
+  checkmate::qassert(min_gain, "N1[0,)")
+  checkmate::assertChoice(local_moving, c("queue", "coloured"))
+  checkmate::qassert(seed, "X1[0,)")
+
+  if (is.null(n_iterations)) {
+    n_iterations <- bixverse:::.default_community_iters(algorithm)
+  }
+
+  edges <- igraph::as_edgelist(graph, names = FALSE)
+  weights <- igraph::E(graph)$weight
+  if (is.null(weights)) {
+    weights <- rep(1, nrow(edges))
+  }
+
+  rs_leiden_clustering_gpu(
+    from = as.integer(edges[, 1]),
+    to = as.integer(edges[, 2]),
+    weights = as.numeric(weights),
+    n_nodes = igraph::vcount(graph),
+    leiden_params = list(
+      resolution = resolution,
+      beta = beta,
+      n_iterations = as.integer(n_iterations),
+      min_gain = min_gain,
+      refine = algorithm == "leiden",
+      local_moving = local_moving,
+      seed = as.integer(seed)
+    )
   )
 }
 

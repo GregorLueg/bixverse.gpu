@@ -566,6 +566,180 @@ S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
 
 
 # ------------------------------------------------------------------------------
+# GPU-accelerated graph clustering:
+# - Wraps `leiden_clustering_gpu()` on the cached connectivities, mirroring
+#   `bixverse::find_clusters_sc()`.
+# ------------------------------------------------------------------------------
+
+# graph clustering (gpu) -------------------------------------------------------
+
+#' Graph-based clustering of cells on the neighbour graph (GPU)
+#'
+#' @description
+#' GPU counterpart of [bixverse::find_clusters_sc()]. Runs Leiden or Louvain
+#' via [leiden_clustering_gpu()] on the neighbour graph and adds a column to
+#' the obs table. Only the level-0 local moving runs on the GPU, and only on
+#' graphs of at least 50,000 cells; smaller graphs run on the CPU. `0` is the
+#' largest cluster.
+#'
+#' @param object `SingleCells` or `SingleCellsSubset` class from `bixverse`.
+#' @param cluster_algorithm String. One of `c("leiden", "louvain")`.
+#' @param res Numeric. The modularity resolution parameter, see
+#' [leiden_clustering_gpu()].
+#' @param name String. The name to add to the obs table.
+#' @param modality String. Which modality's neighbour graph to use. One of
+#' `c("rna", "adt", "wnn")`. The two latter options are only available for
+#' multi-modal objects.
+#' @param seed Integer. For reproducibility.
+#' @param ... Further parameters for [leiden_clustering_gpu()]: `n_iterations`,
+#' `beta`, `min_gain` and `local_moving`.
+#'
+#' @returns The object with the added clustering in the obs table.
+#'
+#' @export
+find_clusters_gpu_sc <- S7::new_generic(
+  name = "find_clusters_gpu_sc",
+  dispatch_args = "object",
+  fun = function(
+    object,
+    cluster_algorithm = c("leiden", "louvain"),
+    res = 1.0,
+    name = "leiden_clustering",
+    modality = c("rna", "adt", "wnn"),
+    seed = 42L,
+    ...
+  ) {
+    assert_gpu()
+
+    S7::S7_dispatch()
+  }
+)
+
+## SingleCells -----------------------------------------------------------------
+
+#' @method find_clusters_gpu_sc SingleCells
+#'
+#' @export
+#'
+#' @import bixverse
+S7::method(find_clusters_gpu_sc, SingleCells) <- function(
+  object,
+  cluster_algorithm = c("leiden", "louvain"),
+  res = 1.0,
+  name = "leiden_clustering",
+  modality = c("rna", "adt", "wnn"),
+  seed = 42L,
+  ...
+) {
+  .find_clusters_gpu(
+    object = object,
+    cluster_algorithm = match.arg(cluster_algorithm),
+    res = res,
+    name = name,
+    modality = match.arg(modality),
+    seed = seed,
+    ...
+  )
+}
+
+## SingleCellsSubset -----------------------------------------------------------
+
+#' @method find_clusters_gpu_sc SingleCellsSubset
+#'
+#' @export
+#'
+#' @import bixverse
+S7::method(find_clusters_gpu_sc, SingleCellsSubset) <- function(
+  object,
+  cluster_algorithm = c("leiden", "louvain"),
+  res = 1.0,
+  name = "leiden_clustering",
+  modality = c("rna", "adt", "wnn"),
+  seed = 42L,
+  ...
+) {
+  .find_clusters_gpu(
+    object = object,
+    cluster_algorithm = match.arg(cluster_algorithm),
+    res = res,
+    name = name,
+    modality = match.arg(modality),
+    seed = seed,
+    ...
+  )
+}
+
+## implementation --------------------------------------------------------------
+
+#' Run the GPU graph clustering and write it to the obs table
+#'
+#' @param object `SingleCells` or `SingleCellsSubset` class.
+#' @param cluster_algorithm String. One of `c("leiden", "louvain")`.
+#' @param res Numeric. The modularity resolution parameter.
+#' @param name String. The name of the obs column.
+#' @param modality String. One of `c("rna", "adt", "wnn")`.
+#' @param seed Integer. For reproducibility.
+#' @param ... Passed to [leiden_clustering_gpu()].
+#'
+#' @return The object with the added clustering in the obs table.
+#'
+#' @keywords internal
+.find_clusters_gpu <- function(
+  object,
+  cluster_algorithm,
+  res,
+  name,
+  modality,
+  seed,
+  ...
+) {
+  # checks
+  checkmate::assertChoice(cluster_algorithm, c("leiden", "louvain"))
+  checkmate::qassert(res, "N1")
+  checkmate::qassert(name, "S1")
+  checkmate::assertChoice(modality, c("rna", "adt", "wnn"))
+  checkmate::qassert(seed, "I1")
+
+  if (
+    modality != "rna" &&
+      !S7::S7_inherits(object, bixverse::SingleCellsMultiModal)
+  ) {
+    stop(sprintf(
+      "modality = '%s' is only supported for SingleCellsMultiModal.",
+      modality
+    ))
+  }
+
+  # the labels are written back aligned to the kept cells, so a graph over a
+  # different cell set silently mislabels
+  assert_sc_state(object, artefacts = "connectivities", modality = modality)
+
+  connectivities <- get_connectivities(object, modality = modality)
+  if (is.null(connectivities)) {
+    warning(
+      paste(
+        "No neighbour graph found. Did you run find_neighbours_gpu_sc().",
+        "Returning class as is."
+      )
+    )
+    return(object)
+  }
+
+  clusters <- leiden_clustering_gpu(
+    graph = connectivities,
+    resolution = res,
+    algorithm = cluster_algorithm,
+    seed = seed,
+    ...
+  )
+
+  # Rust returns 1-based labels ordered by size; the column is 0-based
+  object[[name]] <- clusters - 1L
+
+  object
+}
+
+# ------------------------------------------------------------------------------
 # GPU-accelerated fast clustering:
 # - Wraps `rs_fast_cluster_gpu`.
 # - Returns the same `SingleCellFastClusters` S3 object as the CPU

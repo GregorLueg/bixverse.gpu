@@ -177,6 +177,32 @@ rs_deserialise_parametric_umap <- function(bytes) .Call(wrap__rs_deserialise_par
 #' @export
 rs_kmeans_gpu <- function(data, dist, n_centroids, kmeans_params, seed, verbose) .Call(wrap__rs_kmeans_gpu, data, dist, n_centroids, kmeans_params, seed, verbose)
 
+#' GPU-accelerated Leiden and Louvain clustering
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU twin of `bixverse::rs_leiden_clustering`. Level-0 local moving runs on
+#' the wgpu backend; coarser levels, refinement and aggregation stay on the
+#' CPU. Graphs below 50,000 nodes, or with a node of degree above 512, run
+#' fully on the CPU with coloured local moving. On one device the result
+#' depends on the seed only.
+#'
+#' @param from Integer vector. 1-based source node of each edge.
+#' @param to Integer vector. 1-based target node of each edge. Same length as
+#' `from`.
+#' @param weights Numeric vector. Edge weights, same length as `from`.
+#' @param n_nodes Integer. Number of nodes in the graph.
+#' @param leiden_params List. Named list with the optional fields `resolution`,
+#' `beta`, `n_iterations` (negative: until stable), `min_gain`, `refine`
+#' (`TRUE` for Leiden, `FALSE` for Louvain), `local_moving` (coarser levels
+#' only) and `seed`.
+#'
+#' @returns Integer vector with the 1-based community of each node; `1` is the
+#' largest community.
+#'
+#' @export
+rs_leiden_clustering_gpu <- function(from, to, weights, n_nodes, leiden_params) .Call(wrap__rs_leiden_clustering_gpu, from, to, weights, n_nodes, leiden_params)
+
 #' GPU-accelerated correlation calculations
 #'
 #' @description
