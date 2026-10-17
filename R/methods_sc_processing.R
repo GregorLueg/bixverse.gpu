@@ -266,9 +266,9 @@ S7::method(generate_gpu_knn_sc, SingleCells) <- function(
 #'
 #' @description
 #' This function generates kNN data using GPU-accelerated algorithms via the
-#' `bixverse.gpu` package, then turns it into a connectivities igraph for downstream
-#' clustering. See [generate_gpu_knn_sc()] for the three searches on offer.
-#' This function lives in a separate package from the CPU-based
+#' `bixverse.gpu` package, then turns it into a connectivities igraph for
+#' downstream clustering. See [generate_gpu_knn_sc()] for the three searches on
+#' offer. This function lives in a separate package from the CPU-based
 #' [find_neighbours_sc()] so that users without GPU hardware do not need to
 #' install the GPU dependencies.
 #'
