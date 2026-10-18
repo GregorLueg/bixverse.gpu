@@ -24,7 +24,7 @@ cubecl-utils-rs = "0.2.0"
 extendr-api = "0.9.0"
 faer = { version = '0.24.4' }
 indexmap = "2.13.0"
-manifolds-rs = { version = "0.7.1", features = [ "fft_tsne", "gpu", "parametric" ] }
+manifolds-rs = { version = "0.7.2", features = [ "fft_tsne", "gpu", "parametric" ] }
 rand_distr = "0.5.1"
 [target.'cfg(target_os = "macos")'.dependencies]
 bixverse-r = { version = "0.8.0", default-features = false, features = [
