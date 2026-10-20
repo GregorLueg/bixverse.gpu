@@ -30,7 +30,9 @@ obj <- find_hvg_sc(obj, hvg_no = 2000L)
 obj <- calculate_pca_gpu_sc(obj, no_pcs = 30L)
 ```
 
-Sparse randomised SVD with the big matmuls on the device. Scaling is applied
+Sparse SVD with the big matmuls on the device: exact block Lanczos by
+default, `params_sc_pca(svd_solver = "randomised")` for the faster approximate
+one. Scaling is applied
 without densifying. Takes `bixverse::params_sc_pca()`, so the PFlogPF option
 comes from there.
 

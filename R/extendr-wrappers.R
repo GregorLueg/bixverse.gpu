@@ -379,19 +379,22 @@ rs_tsne_from_knn_gpu <- function(embd, knn_data, n_dim, perplexity, approx_type,
 #' Helper function that will calculate sparse PCA without scaling the data.
 #' This has the advantage that you avoid creating a large dense matrix due
 #' to scaling; however, it has the disadvantage that the first PC will be
-#' heavily influenced by average expression. The SVD is always randomised:
-#' the sparse matrix is multiplied with a much smaller random dense matrix,
-#' avoiding holding a large dense matrix in memory.
+#' heavily influenced by average expression. `svd_solver = "randomised"` runs
+#' the randomised SVD: the sparse matrix is multiplied with a much smaller
+#' random dense matrix. Every other solver runs the exact block Lanczos, as
+#' there is no GPU covariance path.
 #'
 #' @param f_path_gene String. Path to the `counts_genes.bin` file.
 #' @param f_path_cell String. Path to the `counts_cells.bin` file. Used if
 #' you wish to use the PFlogPF transformation.
 #' @param no_pcs Integer. Number of PCs to calculate.
 #' @param pca_params Named list. Contains the parameters to use for this PCA
-#' run. `svd_solver` is ignored, the GPU path is always randomised.
+#' run. `"randomised"` runs the randomised SVD, any other `svd_solver` the
+#' exact block Lanczos.
 #' @param cell_indices Integer. The cell indices to use. (0-indexed!)
 #' @param gene_indices Integer. The gene indices to use. (0-indexed!)
-#' @param seed Integer. Random seed for the randomised SVD.
+#' @param seed Integer. Random seed for the sketch or the Lanczos starting
+#' block.
 #' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
 #' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -

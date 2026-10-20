@@ -36,8 +36,9 @@ outweigh the speedup, but the larger the data, the more these methods pay off
 
 `bixverse.gpu` currently provides:
 
-- **GPU PCA** via `calculate_pca_gpu_sc()`: a sparse, randomised SVD where the
-  large matrix multiplications run on GPU. Scaling (if desired) is applied 
+- **GPU PCA** via `calculate_pca_gpu_sc()`: a sparse SVD where the
+  large matrix multiplications run on GPU, exact via block Lanczos by default
+  or randomised via `svd_solver = "randomised"`. Scaling (if desired) is applied 
   without ever materialising the dense matrix. Also, option for the PFLogPF
   normalisation.
 - **GPU Harmony v2** via `harmony_v2_gpu_sc()`: a GPU implementation of

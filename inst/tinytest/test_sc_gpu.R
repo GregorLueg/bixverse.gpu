@@ -181,6 +181,23 @@ expect_true(
   info = "gpu pca - top 5 PCs strongly correlated with CPU PCA"
 )
 
+### solver dispatch ------------------------------------------------------------
+
+sc_obj_plain <- calculate_pca_gpu_sc(
+  object = sc_obj_plain,
+  no_pcs = no_pcs,
+  pca_params = bixverse::params_sc_pca(svd_solver = "randomised"),
+  .verbose = FALSE
+)
+
+expect_true(
+  current = all(
+    abs(diag(cor(cpu_pca_factors[, 1:4], get_pca_factors(sc_obj_plain)[, 1:4]))) >
+      0.95
+  ),
+  info = "gpu pca - randomised solver top PCs correlated with CPU PCA"
+)
+
 ### external HVG --------------------------------------------------------------
 
 sc_obj_plain <- calculate_pca_gpu_sc(

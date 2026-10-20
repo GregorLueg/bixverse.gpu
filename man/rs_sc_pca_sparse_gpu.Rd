@@ -25,13 +25,15 @@ you wish to use the PFlogPF transformation.}
 \item{no_pcs}{Integer. Number of PCs to calculate.}
 
 \item{pca_params}{Named list. Contains the parameters to use for this PCA
-run. \code{svd_solver} is ignored, the GPU path is always randomised.}
+run. \code{"randomised"} runs the randomised SVD, any other \code{svd_solver} the
+exact block Lanczos.}
 
 \item{cell_indices}{Integer. The cell indices to use. (0-indexed!)}
 
 \item{gene_indices}{Integer. The gene indices to use. (0-indexed!)}
 
-\item{seed}{Integer. Random seed for the randomised SVD.}
+\item{seed}{Integer. Random seed for the sketch or the Lanczos starting
+block.}
 
 \item{backend}{String. \code{"wgpu"} or \code{"mlx"} (Apple Silicon, needs a build
 with the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}).}
@@ -55,8 +57,9 @@ SVD).
 Helper function that will calculate sparse PCA without scaling the data.
 This has the advantage that you avoid creating a large dense matrix due
 to scaling; however, it has the disadvantage that the first PC will be
-heavily influenced by average expression. The SVD is always randomised:
-the sparse matrix is multiplied with a much smaller random dense matrix,
-avoiding holding a large dense matrix in memory.
+heavily influenced by average expression. \code{svd_solver = "randomised"} runs
+the randomised SVD: the sparse matrix is multiplied with a much smaller
+random dense matrix. Every other solver runs the exact block Lanczos, as
+there is no GPU covariance path.
 }
 \keyword{internal}

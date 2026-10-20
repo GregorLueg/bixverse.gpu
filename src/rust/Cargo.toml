@@ -18,7 +18,7 @@ mlx = ["ann-search-rs/mlx", "bixverse-r/mlx", "manifolds-rs/mlx"]
 [dependencies]
 ann-search-rs = { version = "0.11.1", features = [ "gpu" ] }
 burn = { version = "0.22.0", default-features = false, features = [ "std", "wgpu", "flex", "autodiff" ] }
-bixverse-r = { version = "0.8.0", default-features = false, features = [ "sc-gpu", "bonsai" ] }
+bixverse-r = { version = "0.8.1", default-features = false, features = [ "sc-gpu", "bonsai" ] }
 cubecl = "0.11.0"
 cubecl-utils-rs = "0.2.0"
 extendr-api = "0.9.0"

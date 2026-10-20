@@ -436,26 +436,33 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
 
 # pca --------------------------------------------------------------------------
 
-## gpu-accelerated sparse, randomised svd --------------------------------------
+## gpu-accelerated sparse svd -------------------------------------------------
 
 #' GPU-accelerated PCA for single cell
 #'
 #' @description
-#' This function will run sparse, randomised SVD while running several of the
-#' large matrix multiplications on GPU for improved speed. This also means you
-#' will have to provide the necessary VRAM for your data set. This version only
-#' works on the `"rna"` modality.
+#' This function will run a sparse SVD while running the large sparse matrix
+#' multiplications on GPU for improved speed. This also means you will have to
+#' provide the necessary VRAM for your data set. This version only works on the
+#' `"rna"` modality.
+#'
+#' @details `svd_solver = "randomised"` runs the randomised SVD: fast, but
+#' approximate in the trailing PCs. Every other solver (`"auto"`, `"exact"`,
+#' `"covariance"`) runs an exact block Lanczos, as there is no GPU covariance
+#' path. The default from [bixverse::params_sc_pca()] is `"auto"`, so the
+#' default is exact and slower than the randomised solver.
 #'
 #' @param object `SingleCells` class
 #' @param no_pcs Integer. Number of PCs to calculate.
 #' @param pca_params Named list. Controls the parameters to be used for the
 #' PCA calculation which is single cell-specific, see [params_sc_pca()].
-#' `svd_solver` is ignored: the GPU path is always randomised.
+#' `svd_solver = "randomised"` picks the randomised SVD, anything else the
+#' exact block Lanczos.
 #' @param hvg Optional integer. If you want to provide your own HVG genes.
 #' Otherwise, the function will default to what is found in
 #' [bixverse::get_hvg()]. Please provide 1-indexed genes here! If you provide
 #' these, the internal HVG will be overwritten.
-#' @param seed Integer. Seed for the randomised SVD.
+#' @param seed Integer. Seed for the sketch or the Lanczos starting block.
 #' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the SVD on
 #' Apple Silicon via MLX and needs a build with the MLX backend, see
 #' [mlx_available()].
@@ -536,7 +543,12 @@ S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
   if (.verbose) {
     message(
       sprintf(
-        "Using GPU-accelerated, randomised sparse SVD data with %i HVG.",
+        "Using GPU-accelerated sparse SVD (%s) with %i HVG.",
+        if (identical(pca_params$svd_solver, "randomised")) {
+          "randomised"
+        } else {
+          "block Lanczos"
+        },
         length(selected_hvg)
       )
     )

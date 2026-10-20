@@ -21,14 +21,15 @@ calculate_pca_gpu_sc(
 
 \item{pca_params}{Named list. Controls the parameters to be used for the
 PCA calculation which is single cell-specific, see \code{\link[bixverse:params_sc_pca]{params_sc_pca()}}.
-\code{svd_solver} is ignored: the GPU path is always randomised.}
+\code{svd_solver = "randomised"} picks the randomised SVD, anything else the
+exact block Lanczos.}
 
 \item{hvg}{Optional integer. If you want to provide your own HVG genes.
 Otherwise, the function will default to what is found in
 \code{\link[bixverse:get_hvg]{bixverse::get_hvg()}}. Please provide 1-indexed genes here! If you provide
 these, the internal HVG will be overwritten.}
 
-\item{seed}{Integer. Seed for the randomised SVD.}
+\item{seed}{Integer. Seed for the sketch or the Lanczos starting block.}
 
 \item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the SVD on
 Apple Silicon via MLX and needs a build with the MLX backend, see
@@ -43,8 +44,15 @@ The function will add the PCA factors, loadings and singular values
 to the object cache in memory.
 }
 \description{
-This function will run sparse, randomised SVD while running several of the
-large matrix multiplications on GPU for improved speed. This also means you
-will have to provide the necessary VRAM for your data set. This version only
-works on the \code{"rna"} modality.
+This function will run a sparse SVD while running the large sparse matrix
+multiplications on GPU for improved speed. This also means you will have to
+provide the necessary VRAM for your data set. This version only works on the
+\code{"rna"} modality.
+}
+\details{
+\code{svd_solver = "randomised"} runs the randomised SVD: fast, but
+approximate in the trailing PCs. Every other solver (\code{"auto"}, \code{"exact"},
+\code{"covariance"}) runs an exact block Lanczos, as there is no GPU covariance
+path. The default from \code{\link[bixverse:params_sc_pca]{bixverse::params_sc_pca()}} is \code{"auto"}, so the
+default is exact and slower than the randomised solver.
 }
