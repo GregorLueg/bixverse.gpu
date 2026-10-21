@@ -31,11 +31,6 @@ bixverse-r = { version = "0.8.0", default-features = false, features = [
     "accelerate",
 ] }
 
-## Unreleased bixverse-rs 0.8.0. Remove before merging: CI and the vendored
-## offline build cannot resolve a local path.
-[patch.crates-io]
-bixverse-r = { path = "/Users/gregorlueg/repos/shared/bixverse-rs/crates/bixverse-r" }
-
 [profile.dev.package.faer]
 opt-level = 3
 
