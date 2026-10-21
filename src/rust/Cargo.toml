@@ -47,7 +47,3 @@ strip = true
 [[bin]]
 name = "document"
 path = "document.rs"
-
-# Temporary: bixverse-rs 0.9.0 is unreleased. Remove before merging.
-[patch.crates-io]
-bixverse-r = { git = "https://github.com/GregorLueg/bixverse-rs.git", branch = "feat-sc-data-improv" }

@@ -567,7 +567,8 @@ dependencies = [
 [[package]]
 name = "bixverse-core"
 version = "0.9.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs.git?branch=feat-sc-data-improv#93bf560eb811f377bbd460aadb0818291ba5d4bd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "efe3c29b064068dd54ac25e4b90e49eaa6464587a41ec090cef5352cfcc8713c"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -589,7 +590,8 @@ dependencies = [
 [[package]]
 name = "bixverse-gpu"
 version = "0.9.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs.git?branch=feat-sc-data-improv#93bf560eb811f377bbd460aadb0818291ba5d4bd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "342debbb2b6363d1aea84ca01c8949c3a6dde139720ed7846e6885f8d3266c7e"
 dependencies = [
  "ann-search-rs",
  "bixverse-core",
@@ -609,7 +611,8 @@ dependencies = [
 [[package]]
 name = "bixverse-methods"
 version = "0.9.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs.git?branch=feat-sc-data-improv#93bf560eb811f377bbd460aadb0818291ba5d4bd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "646ad31d3e660697185ffc71cce4d1e066fdd4013d245c3d65a9ac673c472517"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -630,7 +633,8 @@ dependencies = [
 [[package]]
 name = "bixverse-mlx"
 version = "0.9.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs.git?branch=feat-sc-data-improv#93bf560eb811f377bbd460aadb0818291ba5d4bd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b5ba7739d7fce39b4cb0355419ee2208c13fb74b186d520555bf48f4714beb7"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -647,7 +651,8 @@ dependencies = [
 [[package]]
 name = "bixverse-r"
 version = "0.9.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs.git?branch=feat-sc-data-improv#93bf560eb811f377bbd460aadb0818291ba5d4bd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c419ea0194770fe21bf8f8dd62fedd557d824300908a3c3a1a121ae44692781"
 dependencies = [
  "ann-search-rs",
  "bixverse-rs",
@@ -666,7 +671,8 @@ dependencies = [
 [[package]]
 name = "bixverse-rs"
 version = "0.9.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs.git?branch=feat-sc-data-improv#93bf560eb811f377bbd460aadb0818291ba5d4bd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5cb79e5f7f4d97279c893698fffcb8d4b501c71ceb8386a512f3ee89b2db2b97"
 dependencies = [
  "bixverse-core",
  "bixverse-gpu",
@@ -681,7 +687,8 @@ dependencies = [
 [[package]]
 name = "bixverse-sc"
 version = "0.9.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs.git?branch=feat-sc-data-improv#93bf560eb811f377bbd460aadb0818291ba5d4bd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e418cbf438f87ec1d1b495037426f13994a6893c28a62b64c9cfc74f36dd2b6a"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -706,7 +713,8 @@ dependencies = [
 [[package]]
 name = "bixverse-sc-data"
 version = "0.9.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs.git?branch=feat-sc-data-improv#93bf560eb811f377bbd460aadb0818291ba5d4bd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6e0fedb493d05b990146d23672cebfbb62e97626bd054071f2f684f74b838d1"
 dependencies = [
  "approx",
  "bincode",
@@ -732,7 +740,8 @@ dependencies = [
 [[package]]
 name = "bixverse-sc-gpu"
 version = "0.9.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs.git?branch=feat-sc-data-improv#93bf560eb811f377bbd460aadb0818291ba5d4bd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d361c8edb76708a83a92be961dd0252e9c6f07d1ab7fb9906069d2adb5e32f15"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -5187,7 +5196,7 @@ dependencies = [
  "combine",
  "downcast-rs",
  "dyn-clone",
- "hashbrown 0.17.1",
+ "hashbrown 0.13.2",
  "hi_sparse_bitset 0.10.0",
  "indexmap",
  "inventory",
