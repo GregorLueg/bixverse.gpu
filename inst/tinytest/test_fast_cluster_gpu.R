@@ -56,7 +56,6 @@ sc_object <- load_r_data(
     min_lib_size = min_lib_size,
     min_cells = min_cells_exp
   ),
-  streaming = 0L,
   .verbose = FALSE
 )
 

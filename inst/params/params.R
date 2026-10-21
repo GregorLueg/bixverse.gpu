@@ -524,7 +524,7 @@ spec_sc_fast_cluster_gpu <- param_spec(
       null_ok = TRUE,
       doc = paste(
         "Number of k-means centroids. If `NULL`, defaults to",
-        "`floor(sqrt(n_cells))`."
+        "`floor(4 * sqrt(n_cells))`."
       )
     ),
     k_means_iter = p_int(

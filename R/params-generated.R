@@ -557,7 +557,7 @@ params_sc_bbknn_gpu <- function(
 #' full-batch Lloyd's.
 #'
 #' @param n_centroids Integer or `NULL`. Number of k-means centroids. If `NULL`,
-#' defaults to `floor(sqrt(n_cells))`. Defaults to `NULL`.
+#' defaults to `floor(4 * sqrt(n_cells))`. Defaults to `NULL`.
 #' @param k_means_iter Integer. Maximum number of k-means iterations. Defaults
 #' to `50L`.
 #' @param k_means_init String or `NULL`. Initialisation method. One of
@@ -605,7 +605,7 @@ params_sc_bbknn_gpu <- function(
 #' @returns A named list with the following elements:
 #' \itemize{
 #'  \item n_centroids - Integer or `NULL`. Number of k-means centroids. If
-#'  `NULL`, defaults to `floor(sqrt(n_cells))`. Defaults to `NULL`.
+#'  `NULL`, defaults to `floor(4 * sqrt(n_cells))`. Defaults to `NULL`.
 #'  \item k_means_iter - Integer. Maximum number of k-means iterations. Defaults
 #'  to `50L`.
 #'  \item k_means_init - String or `NULL`. Initialisation method. One of

@@ -103,7 +103,6 @@ build_sc_object <- function(dir, data) {
     obs = data$obs,
     var = data$var,
     sc_qc_param = sc_qc_param,
-    streaming = 0L,
     .verbose = FALSE
   )
   obj <- find_hvg_sc(obj, hvg_no = hvg_to_keep, .verbose = FALSE)
@@ -129,7 +128,6 @@ sc_no_hvg <- load_r_data(
   obs = sc_data_plain$obs,
   var = sc_data_plain$var,
   sc_qc_param = sc_qc_param,
-  streaming = 0L,
   .verbose = FALSE
 )
 
@@ -192,7 +190,10 @@ sc_obj_plain <- calculate_pca_gpu_sc(
 
 expect_true(
   current = all(
-    abs(diag(cor(cpu_pca_factors[, 1:4], get_pca_factors(sc_obj_plain)[, 1:4]))) >
+    abs(diag(cor(
+      cpu_pca_factors[, 1:4],
+      get_pca_factors(sc_obj_plain)[, 1:4]
+    ))) >
       0.95
   ),
   info = "gpu pca - randomised solver top PCs correlated with CPU PCA"
@@ -228,7 +229,7 @@ sc_obj_plain <- calculate_pca_gpu_sc(
     mean_center = FALSE,
     normalise_variance = FALSE,
     clr = TRUE,
-    randomised = TRUE,
+    svd_solver = "randomised",
     size_factor = 1e3
   ),
   .verbose = FALSE
@@ -275,7 +276,6 @@ sc_no_pca <- load_r_data(
   obs = sc_data_med$obs,
   var = sc_data_med$var,
   sc_qc_param = sc_qc_param,
-  streaming = 0L,
   .verbose = FALSE
 )
 

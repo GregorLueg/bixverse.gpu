@@ -51,7 +51,6 @@ sc_object <- load_r_data(
     min_lib_size = min_lib_size,
     min_cells = min_cells_exp
   ),
-  streaming = 0L,
   .verbose = FALSE
 )
 
@@ -108,7 +107,9 @@ check_tf_importances <- function(x, tf_to_gene_map) {
 
   for (i in seq_along(tf_to_gene_map)) {
     tf_i <- names(tf_to_gene_map)[[i]]
-    if (!(tf_i %in% colnames(x))) next
+    if (!(tf_i %in% colnames(x))) {
+      next
+    }
     genes_i <- intersect(tf_to_gene_map[[i]], represented_genes)
     not_genes_i <- setdiff(represented_genes, genes_i)
     ok[[i]] <- mean(x[genes_i, tf_i]) > mean(x[not_genes_i, tf_i])

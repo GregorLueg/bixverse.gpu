@@ -1054,7 +1054,7 @@ S7::method(fast_cluster_gpu_sc, SingleCellsSubset) <- function(
   }
 
   if (is.null(fc_params$n_centroids)) {
-    fc_params$n_centroids <- as.integer(floor(sqrt(nrow(embd))))
+    fc_params$n_centroids <- as.integer(floor(4 * sqrt(nrow(embd))))
   }
   if (is.null(fc_params$n_iterations)) {
     fc_params$n_iterations <- bixverse:::.default_community_iters(
