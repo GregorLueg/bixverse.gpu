@@ -1,7 +1,7 @@
 [package]
 name = 'bixverse_gpu'
 publish = false
-version = '0.6.0'
+version = '0.6.1'
 edition = '2021'
 rust-version = '1.95'
 
@@ -16,18 +16,18 @@ name = 'bixverse_gpu'
 mlx = ["ann-search-rs/mlx", "bixverse-r/mlx", "manifolds-rs/mlx"]
 
 [dependencies]
-ann-search-rs = { version = "0.11.1", features = [ "gpu" ] }
+ann-search-rs = { version = "0.11.2", features = [ "gpu" ] }
 burn = { version = "0.22.0", default-features = false, features = [ "std", "wgpu", "flex", "autodiff" ] }
-bixverse-r = { version = "0.8.1", default-features = false, features = [ "sc-gpu", "bonsai" ] }
+bixverse-r = { version = "0.9.0", default-features = false, features = [ "sc-gpu", "bonsai" ] }
 cubecl = "0.11.0"
 cubecl-utils-rs = "0.2.0"
 extendr-api = "0.9.0"
-faer = { version = '0.24.4' }
+faer = { version = '0.24.4', default-features = false, features = [ "std", "rayon", "sparse-linalg", "rand" ] }
 indexmap = "2.13.0"
-manifolds-rs = { version = "0.7.2", features = [ "fft_tsne", "gpu", "parametric" ] }
+manifolds-rs = { version = "0.7.3", features = [ "fft_tsne", "gpu", "parametric" ] }
 rand_distr = "0.5.1"
 [target.'cfg(target_os = "macos")'.dependencies]
-bixverse-r = { version = "0.8.0", default-features = false, features = [
+bixverse-r = { version = "0.9.0", default-features = false, features = [
     "accelerate",
 ] }
 
@@ -47,3 +47,7 @@ strip = true
 [[bin]]
 name = "document"
 path = "document.rs"
+
+# Temporary: bixverse-rs 0.9.0 is unreleased. Remove before merging.
+[patch.crates-io]
+bixverse-r = { git = "https://github.com/GregorLueg/bixverse-rs.git", branch = "feat-sc-data-improv" }
