@@ -27,9 +27,11 @@ have sufficient VRAM/unified memory that is…).
 
 - **GPU PCA** via
   [`calculate_pca_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/calculate_pca_gpu_sc.md):
-  a sparse, randomised SVD where the large matrix multiplications run on
-  GPU. Scaling (if desired) is applied without ever materialising the
-  dense matrix. Also, option for the PFLogPF normalisation.
+  a sparse SVD where the large matrix multiplications run on GPU, exact
+  via block Lanczos by default or randomised via
+  `svd_solver = "randomised"`. Scaling (if desired) is applied without
+  ever materialising the dense matrix. Also, option for the PFLogPF
+  normalisation.
 - **GPU Harmony v2** via
   [`harmony_v2_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/harmony_v2_gpu_sc.md):
   a GPU implementation of Harmony v2 ([Patikas et al.,
@@ -200,12 +202,33 @@ cpu_res <- get_pca_factors(sc_object)
 cpu_s <- get_pca_singular_val(sc_object)
 ```
 
-The GPU version looks very similar
+The GPU version looks very similar. There are two solvers behind it,
+picked via `svd_solver` in
+[`params_sc_pca()`](https://gregorlueg.github.io/bixverse/reference/params_sc_pca.html).
+`"randomised"` runs a randomised SVD: quick, but approximate in the
+trailing PCs. Everything else (the default `"auto"`, `"exact"` and
+`"covariance"`) runs an exact block Lanczos. There is no GPU covariance
+path, so `"covariance"` also lands on Lanczos. Let’s run the randomised
+one first and keep the singular values.
+
+``` r
+
+sc_object <- calculate_pca_gpu_sc(
+  object = sc_object,
+  no_pcs = 32L,
+  pca_params = params_sc_pca(svd_solver = "randomised")
+)
+#> Using GPU-accelerated sparse SVD (randomised) with 2000 HVG.
+gpu_s_rand <- get_pca_singular_val(sc_object)
+```
+
+The default is the exact path. It’s the slower of the two, and it
+overwrites the PCA we just stored, so everything downstream uses it.
 
 ``` r
 
 sc_object <- calculate_pca_gpu_sc(object = sc_object, no_pcs = 32L)
-#> Using GPU-accelerated, randomised sparse SVD data with 2000 HVG.
+#> Using GPU-accelerated sparse SVD (block Lanczos) with 2000 HVG.
 gpu_res <- get_pca_factors(sc_object)
 gpu_s <- get_pca_singular_val(sc_object)
 ```
@@ -245,6 +268,36 @@ ggplot(
 You might see some slight differences here driven by floating operation
 differences between CPU and GPU and sign shifts. The overall data
 structure is however clearly captured.
+
+How far does the randomised solver drift from the CPU singular values?
+
+``` r
+
+rel_err <- melt(
+  data.table(
+    pc = seq_along(cpu_s),
+    exact = abs(gpu_s - cpu_s) / cpu_s,
+    randomised = abs(gpu_s_rand - cpu_s) / cpu_s
+  ),
+  id.vars = "pc",
+  variable.name = "solver",
+  value.name = "rel_error"
+)
+
+ggplot(rel_err, mapping = aes(x = pc, y = rel_error, colour = solver)) +
+  geom_line() +
+  theme_bw() +
+  scale_y_log10() +
+  xlab("PC") +
+  ylab("Relative error vs CPU")
+#> Warning in scale_y_log10(): log-10 transformation introduced infinite values.
+```
+
+![](gpu_single_cell_files/figure-html/singular%20values%20-%20exact%20vs%20randomised-1.png)
+
+The exact solver tracks the CPU to f32 precision. The randomised one is
+looser, and the error grows towards the trailing PCs. Use it when you
+only care about the leading components and want the speed.
 
 ## GPU-accelerated Harmony v2
 
@@ -304,8 +357,7 @@ sc_object <- find_neighbours_gpu_sc(
   .verbose = TRUE
 )
 #> Generating GPU kNN data with exhaustive method.
-#> Generating sNN graph (full: TRUE).
-#> Transforming sNN data to igraph.
+#> Generating the snn graph.
 ```
 
 ### IVF
@@ -326,8 +378,7 @@ sc_object <- find_neighbours_gpu_sc(
   .verbose = TRUE
 )
 #> Generating GPU kNN data with ivf method.
-#> Generating sNN graph (full: TRUE).
-#> Transforming sNN data to igraph.
+#> Generating the snn graph.
 ```
 
 ### CAGRA
@@ -352,8 +403,7 @@ sc_object <- find_neighbours_gpu_sc(
   .verbose = TRUE
 )
 #> Generating GPU kNN data with nndescent method.
-#> Generating sNN graph (full: TRUE).
-#> Transforming sNN data to igraph.
+#> Generating the snn graph.
 ```
 
 From here downstream methods, clustering, UMAP/tSNE, marker detection,
@@ -386,6 +436,16 @@ fast_cluster_res <- fast_cluster_gpu_sc(
   grid_search = TRUE,
   no_seeds = 25L
 )
+#> Warning: The `no_seeds` argument of `fast_cluster_gpu_sc()` is deprecated as of
+#> bixverse.gpu 0.6.0.
+#> ℹ Please use the `n_seeds` argument instead.
+#> ℹ The deprecated feature was likely used in the bixverse.gpu package.
+#>   Please report the issue to the authors.
+#> Warning: The `grid_search` argument of `fast_cluster_gpu_sc()` is deprecated as of
+#> bixverse.gpu 0.6.0.
+#> ℹ Please use the `n_seeds` argument instead.
+#> ℹ The deprecated feature was likely used in the bixverse.gpu package.
+#>   Please report the issue to the authors.
 
 fast_cluster_res
 #> SingleCellFastClusters: 5841 cells, 4 resolutions
@@ -401,12 +461,12 @@ One column per resolution, keyed by `cell_idx`:
 head(get_data(fast_cluster_res))
 #>    cell_idx res_2 res_1.5 res_1 res_0.5
 #>       <int> <int>   <int> <int>   <int>
-#> 1:        1     5       1     0       0
-#> 2:        2     6       4     5       4
-#> 3:        3     1       1     0       0
-#> 4:        4     0       2     1       1
-#> 5:        6     1       1     0       0
-#> 6:        7     5       1     0       0
+#> 1:        1     5       5     0       1
+#> 2:        2     4       2     2       3
+#> 3:        3     2       4     4       0
+#> 4:        4     3       1     1       2
+#> 5:        6     2       4     4       0
+#> 6:        7     1       3     3       0
 ```
 
 The grid stats are the interesting bit. `mean_ari` is how stable the
@@ -419,16 +479,16 @@ up with.
 fast_cluster_res$stats
 #>    resolution  mean_ari median_ari mean_conductance median_conductance
 #>         <num>     <num>      <num>            <num>              <num>
-#> 1:        2.0 0.7857122  0.7831587       0.05734177         0.03315862
-#> 2:        1.5 0.7788464  0.7865978       0.04600120         0.02561712
-#> 3:        1.0 0.8163453  0.8264194       0.02511092         0.01912772
-#> 4:        0.5 0.8243054  0.8115990       0.01312273         0.01405819
+#> 1:        2.0 0.9505864  0.9751557       0.23809649         0.21501322
+#> 2:        1.5 0.9898399  1.0000000       0.13579100         0.12852848
+#> 3:        1.0 0.9953442  1.0000000       0.06534135         0.06370881
+#> 4:        0.5 0.9774942  1.0000000       0.06236054         0.06113581
 #>    mean_n_comms
 #>           <num>
-#> 1:         7.96
-#> 2:         7.40
-#> 3:         6.44
-#> 4:         5.72
+#> 1:         9.72
+#> 2:         6.00
+#> 3:         5.00
+#> 4:         4.92
 ```
 
 The k-means centroids and per-cell assignments are there too, if you
@@ -437,10 +497,10 @@ asked for them:
 ``` r
 
 dim(get_centroids_sc(fast_cluster_res))
-#> [1] 76 32
+#> [1] 305  32
 
 head(get_kmeans_clusters(fast_cluster_res))
-#> [1] 69 41 40 27 30 32
+#> [1] 176  80 250 114  45 221
 ```
 
 Push the memberships onto the object and they behave like any other obs
@@ -480,12 +540,12 @@ head(sc_object)
 #> 6:       1 AAACGCTGACCAGT   774     2161    TRUE 0.03840815 0.4183249   FALSE
 #>    res_2 res_1.5 res_1 res_0.5
 #>    <int>   <int> <int>   <int>
-#> 1:     5       1     0       0
-#> 2:     6       4     5       4
-#> 3:     1       1     0       0
-#> 4:     0       2     1       1
-#> 5:     1       1     0       0
-#> 6:     5       1     0       0
+#> 1:     5       5     0       1
+#> 2:     4       2     2       3
+#> 3:     2       4     4       0
+#> 4:     3       1     1       2
+#> 5:     2       4     4       0
+#> 6:     1       3     3       0
 ```
 
 ## Comparing GPU vs CPU Harmony
@@ -511,18 +571,18 @@ lisi_gpu <- calculate_lisi_sc(
 kbet_gpu
 #> kBET Scores
 #>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.1498 (875 / 5841)
-#>   Mean Chi-Square:     2.1533 (expected under H0: 1)
+#>   Rejection rate:      0.1436 (839 / 5841)
+#>   Mean Chi-Square:     2.0329 (expected under H0: 1)
 #>   Median Chi-Square:   0.7374
 asw_gpu
 #> Batch Silhouette Width
 #>   Cells: 5000 | Batches: 2
-#>   Mean ASW:    0.0240 (-1 = strong intermixing, 0 = mixed, 1 = separated)
-#>   Median ASW:  0.0423
+#>   Mean ASW:    0.0224 (-1 = strong intermixing, 0 = mixed, 1 = separated)
+#>   Median ASW:  0.0480
 lisi_gpu
 #> iLISI (batch)
 #>   Cells: 5841 | Labels: 2
-#>   Mean LISI:    1.6005
+#>   Mean LISI:    1.6197
 #>   Median LISI:  1.6423
 #>   Normalised:   0.6423 (0 = worst, 1 = best)
 ```
@@ -539,8 +599,7 @@ sc_object <- find_neighbours_gpu_sc(
   .verbose = TRUE
 )
 #> Generating GPU kNN data with nndescent method.
-#> Generating sNN graph (full: TRUE).
-#> Transforming sNN data to igraph.
+#> Generating the snn graph.
 
 kbet_cpu <- calculate_kbet_sc(sc_object, batch_column = "exp_id")
 asw_cpu <- calculate_batch_asw_sc(
@@ -557,18 +616,18 @@ lisi_cpu <- calculate_lisi_sc(
 kbet_cpu
 #> kBET Scores
 #>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.2190 (1279 / 5841)
-#>   Mean Chi-Square:     2.6428 (expected under H0: 1)
+#>   Rejection rate:      0.2291 (1338 / 5841)
+#>   Mean Chi-Square:     2.7245 (expected under H0: 1)
 #>   Median Chi-Square:   1.9151
 asw_cpu
 #> Batch Silhouette Width
 #>   Cells: 5000 | Batches: 2
-#>   Mean ASW:    0.0253 (-1 = strong intermixing, 0 = mixed, 1 = separated)
-#>   Median ASW:  0.0511
+#>   Mean ASW:    0.0235 (-1 = strong intermixing, 0 = mixed, 1 = separated)
+#>   Median ASW:  0.0532
 lisi_cpu
 #> iLISI (batch)
 #>   Cells: 5841 | Labels: 2
-#>   Mean LISI:    1.5677
+#>   Mean LISI:    1.5724
 #>   Median LISI:  1.6423
 #>   Normalised:   0.6423 (0 = worst, 1 = best)
 ```
@@ -599,8 +658,7 @@ sc_object <- find_neighbours_gpu_sc(
   .verbose = TRUE
 )
 #> Generating GPU kNN data with nndescent method.
-#> Generating sNN graph (full: TRUE).
-#> Transforming sNN data to igraph.
+#> Generating the snn graph.
 
 sc_object <- umap_gpu_sc(
   object = sc_object,
@@ -735,7 +793,7 @@ sc_object <- calculate_pca_gpu_sc(
   hvg = batch_aware_hvg$hvg_gene_idx + 1L
 )
 #> HVGs provided. Will use these ones and set the internal HVG to the provided genes.
-#> Using GPU-accelerated, randomised sparse SVD data with 3496 HVG.
+#> Using GPU-accelerated sparse SVD (block Lanczos) with 3496 HVG.
 ```
 
 With the PCA in place, the correction itself. The corrected embedding
@@ -788,8 +846,7 @@ sc_object <- find_neighbours_gpu_sc(
   .verbose = TRUE
 )
 #> Generating GPU kNN data with nndescent method.
-#> Generating sNN graph (full: TRUE).
-#> Transforming sNN data to igraph.
+#> Generating the snn graph.
 
 kbet_mnn <- calculate_kbet_sc(sc_object, batch_column = "exp_id")
 asw_mnn <- calculate_batch_asw_sc(
@@ -806,18 +863,18 @@ lisi_mnn <- calculate_lisi_sc(
 kbet_mnn
 #> kBET Scores
 #>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.3383 (1976 / 5841)
-#>   Mean Chi-Square:     3.5202 (expected under H0: 1)
-#>   Median Chi-Square:   3.6444
+#>   Rejection rate:      0.3166 (1849 / 5841)
+#>   Mean Chi-Square:     3.4157 (expected under H0: 1)
+#>   Median Chi-Square:   1.9151
 asw_mnn
 #> Batch Silhouette Width
 #>   Cells: 5000 | Batches: 2
-#>   Mean ASW:    0.0190 (-1 = strong intermixing, 0 = mixed, 1 = separated)
-#>   Median ASW:  0.0417
+#>   Mean ASW:    0.0176 (-1 = strong intermixing, 0 = mixed, 1 = separated)
+#>   Median ASW:  0.0403
 lisi_mnn
 #> iLISI (batch)
 #>   Cells: 5841 | Labels: 2
-#>   Mean LISI:    1.4467
+#>   Mean LISI:    1.4736
 #>   Median LISI:  1.4706
 #>   Normalised:   0.4706 (0 = worst, 1 = best)
 ```

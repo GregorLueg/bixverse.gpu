@@ -1,8 +1,8 @@
 # Find GPU-accelerated neighbours for single cells
 
 This function generates kNN data using GPU-accelerated algorithms via
-the `bixverse.gpu` package, then turns it into an sNN igraph for
-downstream clustering. See
+the `bixverse.gpu` package, then turns it into a connectivities igraph
+for downstream clustering. See
 [`generate_gpu_knn_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_gpu_knn_sc.md)
 for the three searches on offer. This function lives in a separate
 package from the CPU-based
@@ -21,11 +21,12 @@ find_neighbours_gpu_sc(
   knn_method = c("nndescent", "exhaustive", "ivf"),
   nn_params = params_nn_gpu(),
   k = 15L,
-  snn_params = params_sc_neighbours(),
+  graph_params = bixverse::params_knn_graph_defaults(),
   seed = 42L,
   gpu_method = lifecycle::deprecated(),
   ivf_params = lifecycle::deprecated(),
   dist_metric = lifecycle::deprecated(),
+  snn_params = lifecycle::deprecated(),
   backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
@@ -64,12 +65,11 @@ find_neighbours_gpu_sc(
 
   Integer. Number of neighbours.
 
-- snn_params:
+- graph_params:
 
   List. Output of
-  [`bixverse::params_sc_neighbours()`](https://gregorlueg.github.io/bixverse/reference/params_sc_neighbours.html).
-  The kNN graph-related parameters will be ignored in favour of
-  `nn_params`.
+  [`bixverse::params_knn_graph_defaults()`](https://gregorlueg.github.io/bixverse/reference/params_knn_graph_defaults.html).
+  Controls how the kNN is turned into the connectivities graph.
 
 - seed:
 
@@ -87,6 +87,10 @@ find_neighbours_gpu_sc(
 
   **\[deprecated\]** Use `params_nn_gpu(dist_metric = )`.
 
+- snn_params:
+
+  **\[deprecated\]** Use `graph_params`.
+
 - backend:
 
   String. One of `c("wgpu", "mlx")`. `"mlx"` runs the search on Apple
@@ -99,5 +103,5 @@ find_neighbours_gpu_sc(
 
 ## Value
 
-The object with added kNN matrix and sNN graph in the selected modality
-slot.
+The object with added kNN matrix and connectivities graph in the
+selected modality slot.

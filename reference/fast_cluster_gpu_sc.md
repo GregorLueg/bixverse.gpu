@@ -1,17 +1,19 @@
-# Run fast Louvain clustering on a SingleCells object (GPU)
+# Run fast clustering on a SingleCells object (GPU)
 
 GPU counterpart of
 [`bixverse::fast_cluster_sc()`](https://gregorlueg.github.io/bixverse/reference/fast_cluster_sc.html).
-Runs k-means on the chosen embedding, builds a kNN graph on the
-centroids, applies Louvain clustering and propagates the memberships
-back to the cells. Optionally runs a grid over multiple seeds and
-returns stability statistics.
+Coarsens the cells with k-means on the chosen embedding, builds a graph
+over the centroids (a kNN graph or the cell-mediated graph), runs
+Louvain or Leiden on it and propagates the communities back to the
+cells. With `n_seeds > 1` every resolution is run once per seed and
+stability statistics are returned.
 
-Only the k-means coarsening runs on the WGPU backend. The centroid kNN,
-the optional sNN pass and the Louvain runs stay on the CPU, so the
-speedup tracks how much of the run k-means owns. That share grows with
-the cell count and with `n_centroids`. There is no `km_type` argument:
-the GPU k-means is full-batch Lloyd's and has no mini-batch path.
+Only the k-means coarsening (and the cell-mediated top-m search) run on
+the GPU. The centroid graph and the community detection stay on the CPU,
+so the speedup tracks how much of the run k-means owns. That share grows
+with the cell count and with `n_centroids`. There is no `km_type`
+argument: the GPU k-means is full-batch Lloyd's and has no mini-batch
+path.
 
 ## Usage
 
@@ -21,13 +23,15 @@ fast_cluster_gpu_sc(
   embd_to_use = "pca",
   no_embd_to_use = NULL,
   resolutions = c(2, 1, 0.5),
-  n_centroids = NULL,
   fc_params = params_sc_fast_cluster_gpu(),
-  snn = TRUE,
+  n_seeds = 1L,
   return_kmeans = FALSE,
-  grid_search = FALSE,
-  no_seeds = 10L,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
+  n_centroids = lifecycle::deprecated(),
+  snn = lifecycle::deprecated(),
+  grid_search = lifecycle::deprecated(),
+  no_seeds = lifecycle::deprecated(),
   .verbose = TRUE
 )
 ```
@@ -48,38 +52,48 @@ fast_cluster_gpu_sc(
 
 - resolutions:
 
-  Numeric vector. Louvain resolutions.
-
-- n_centroids:
-
-  Optional integer. Number of k-means centroids. Defaults to
-  `sqrt(n_cells)` Rust-side if `NULL`. Clamped to `n_cells - 1`.
+  Numeric vector. Resolutions of the community detection.
 
 - fc_params:
 
   List. Output of
   [`params_sc_fast_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_fast_cluster_gpu.md).
 
-- snn:
+- n_seeds:
 
-  Boolean. Convert the centroid kNN to an sNN graph.
+  Integer. Number of seeds per resolution. `1L` runs a single pass
+  without stability statistics.
 
 - return_kmeans:
 
   Boolean. Return the k-means assignments and centroids.
 
-- grid_search:
-
-  Boolean. Run the multi-seed grid version.
-
-- no_seeds:
-
-  Integer. Number of seeds to vary Louvain over. Must be at least 2.
-  Only used when `grid_search = TRUE`.
-
 - seed:
 
   Integer. Seed for reproducibility.
+
+- backend:
+
+  String. One of `c("wgpu", "mlx")`. `"mlx"` runs the k-means on Apple
+  Silicon via MLX and needs a build with the MLX backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md).
+
+- n_centroids:
+
+  **\[deprecated\]** Use `params_sc_fast_cluster_gpu(n_centroids = )`.
+
+- snn:
+
+  **\[deprecated\]** Use
+  `params_sc_fast_cluster_gpu(centroid_graph = list(knn_sym = ))`.
+
+- grid_search:
+
+  **\[deprecated\]** Use `n_seeds`.
+
+- no_seeds:
+
+  **\[deprecated\]** Use `n_seeds`.
 
 - .verbose:
 
@@ -98,7 +112,7 @@ fast_cluster_gpu_sc(
 
 - stats:
 
-  data.table of grid statistics, or `NULL`.
+  data.table of the stability statistics, or `NULL` for `n_seeds = 1L`.
 
 - k_means_cluster:
 

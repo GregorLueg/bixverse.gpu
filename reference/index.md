@@ -20,7 +20,9 @@ applications.
 - [`scrublet_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/scrublet_gpu_sc.md)
   : Doublet detection with Scrublet on the GPU
 - [`fast_cluster_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/fast_cluster_gpu_sc.md)
-  : Run fast Louvain clustering on a SingleCells object (GPU)
+  : Run fast clustering on a SingleCells object (GPU)
+- [`find_clusters_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_clusters_gpu_sc.md)
+  : Graph-based clustering of cells on the neighbour graph (GPU)
 - [`bbknn_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/bbknn_gpu_sc.md)
   : Run BBKNN on the GPU
 - [`fast_mnn_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/fast_mnn_gpu_sc.md)
@@ -42,7 +44,7 @@ applications.
 - [`params_sc_harmony_v2_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_harmony_v2_gpu.md)
   : Default parameters for Harmony v2 GPU batch correction
 - [`params_sc_fast_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_fast_cluster_gpu.md)
-  : Default parameters for GPU fast Louvain clustering
+  : Default parameters for GPU fast clustering
 - [`params_scrublet_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_scrublet_gpu.md)
   : Wrapper function for GPU Scrublet doublet detection parameters
 - [`params_sc_bbknn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_bbknn_gpu.md)
@@ -72,9 +74,9 @@ analysis suite in bixverse.
 ## GPU-accelerated t-SNE
 
 t-SNE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive).
-Optimiser (BH or FFT) runs on CPU via the Rust implementation in
-manifoldsR. Also a version for the single cells analysis suite in
-bixverse.
+Optimiser runs on the GPU by default (three-kernel FFT, `"fft_3k_gpu"`)
+or on the CPU via manifoldsR (BH, FFT, three-kernel FFT). Also a version
+for the single cells analysis suite in bixverse.
 
 - [`tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/tsne_gpu.md)
   : Rust-based t-SNE (GPU)
@@ -108,6 +110,8 @@ can be found here.
 
 - [`k_means_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/k_means_cluster_gpu.md)
   : GPU-accelerated k-means clustering
+- [`leiden_clustering_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/leiden_clustering_gpu.md)
+  : GPU-accelerated Leiden or Louvain community detection on an igraph
 - [`params_kmeans_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_kmeans_gpu.md)
   : Default parameters for GPU k-means
 - [`generate_knn_graph_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_knn_graph_gpu.md)
@@ -138,10 +142,7 @@ useful for your own package? Use with care and read the documentation!
 - [`rs_cov_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_cov_gpu.md)
   **\[experimental\]** : GPU-accelerated covariance calculations
 - [`rs_fast_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_fast_cluster_gpu.md)
-  **\[experimental\]** : GPU: fast Louvain clustering on the data
-- [`rs_fast_cluster_grid_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_fast_cluster_grid_gpu.md)
-  **\[experimental\]** : GPU: fast Louvain clustering on the data (with
-  multiple seeds)
+  **\[experimental\]** : GPU: fast clustering on the data
 - [`rs_gpu_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_gpu_available.md)
   : Check whether a usable GPU adapter is present
 - [`rs_gpu_plane_ops()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_gpu_plane_ops.md)
@@ -153,6 +154,8 @@ useful for your own package? Use with care and read the documentation!
   **\[experimental\]** : Generate a GPU-accelerated kNN graph
 - [`rs_kmeans_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_kmeans_gpu.md)
   **\[experimental\]** : GPU-accelerated k-means
+- [`rs_leiden_clustering_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_leiden_clustering_gpu.md)
+  **\[experimental\]** : GPU-accelerated Leiden and Louvain clustering
 - [`rs_mc_scenic_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_mc_scenic_gpu.md)
   **\[experimental\]** : GPU: SCENIC GRN inference on MetaCells
   (in-memory sparse)

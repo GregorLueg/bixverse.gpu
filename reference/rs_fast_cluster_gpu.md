@@ -1,11 +1,14 @@
-# GPU: fast Louvain clustering on the data
+# GPU: fast clustering on the data
 
 **\[experimental\]** GPU equivalent of
 [`bixverse::rs_fast_cluster_sc`](https://gregorlueg.github.io/bixverse/reference/rs_fast_cluster_sc.html).
-Runs k-means clustering on the WGPU backend, followed by a kNN detection
-on the centroids to then run Louvain clustering on the graph and
-propagate the membership back to the original data. Everything after the
-k-means stays on the CPU.
+Coarsens the cells with k-means on the GPU, builds a graph over the
+centroids (a kNN graph with one of the symmetrisations, or the
+cell-mediated graph) and runs Louvain or Leiden on it. The community of
+each centroid is propagated back to its cells. With `n_seeds > 1` every
+resolution is run once per seed, the labels come from the seed with the
+lowest mean conductance and stability metrics across the seeds are
+returned. Everything after stage one stays on the CPU.
 
 ## Usage
 
@@ -13,12 +16,11 @@ k-means stays on the CPU.
 rs_fast_cluster_gpu(
   embd,
   resolutions,
-  n_centroids,
   fc_params,
-  snn,
-  return_kmeans,
+  n_seeds,
   seed,
-  verbose
+  verbose,
+  backend = "wgpu"
 )
 ```
 
@@ -26,31 +28,23 @@ rs_fast_cluster_gpu(
 
 - embd:
 
-  Numeric matrix. The original embedding.
+  Numeric matrix. The embedding, cells x features.
 
 - resolutions:
 
-  Numeric vector. The Louvain resolutions to iterate through.
-
-- n_centroids:
-
-  Optional integer. The number of clusters to find. If not provided,
-  defaults to `sqrt(nrow(embd))`.
+  Numeric vector. The resolutions to iterate through.
 
 - fc_params:
 
   Named list. See
   [`params_sc_fast_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_fast_cluster_gpu.md).
+  Carries the GPU k-means keys (`k_means_iter`, `k_means_init`, `fixed`,
+  `quantise`) alongside the fast clustering ones.
 
-- snn:
+- n_seeds:
 
-  Boolean. Shall the kNN graph be additionally transformed into an sNN
-  graph.
-
-- return_kmeans:
-
-  Boolean. Shall the k-means centroids and assignments be returned
-  alongside the memberships.
+  Integer. Number of seeds per resolution. `1L` runs a single pass
+  without stability metrics.
 
 - seed:
 
@@ -61,12 +55,25 @@ rs_fast_cluster_gpu(
   Integer. `0L` - quiet; `1L` - normal verbosity; `2L` - detailed
   verbosity.
 
+- backend:
+
+  String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build with the MLX
+  backend, see
+  [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md)).
+  MLX ignores `fixed` and `quantise`.
+
 ## Value
 
 A list with the following elements:
 
-- membership - The memberships across the different resolutions.
+- membership - List with one integer membership vector per resolution
+  (0-indexed).
 
-- k_means_cluster - Optional integer vector of k-means assignments.
+- k_means_cluster - Integer vector with the k-means centroid per cell
+  (0-indexed).
 
-- centroids - Optional numeric matrix of k-means centroids.
+- centroids - Numerical matrix with the k-means centroids.
+
+- stats - `NULL` for `n_seeds = 1L`, otherwise a list with `mean_ari`,
+  `median_ari`, `mean_conductance`, `median_conductance` and
+  `mean_n_comms`, one value per resolution.

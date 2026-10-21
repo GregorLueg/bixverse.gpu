@@ -1,9 +1,9 @@
 # GPU-accelerated PCA for single cell
 
-This function will run sparse, randomised SVD while running several of
-the large matrix multiplications on GPU for improved speed. This also
-means you will have to provide the necessary VRAM for your data set.
-This version only works on the `"rna"` modality.
+This function will run a sparse SVD while running the large sparse
+matrix multiplications on GPU for improved speed. This also means you
+will have to provide the necessary VRAM for your data set. This version
+only works on the `"rna"` modality.
 
 ## Usage
 
@@ -34,7 +34,8 @@ calculate_pca_gpu_sc(
   Named list. Controls the parameters to be used for the PCA calculation
   which is single cell-specific, see
   [`params_sc_pca()`](https://gregorlueg.github.io/bixverse/reference/params_sc_pca.html).
-  `svd_solver` is ignored: the GPU path is always randomised.
+  `svd_solver = "randomised"` picks the randomised SVD, anything else
+  the exact block Lanczos.
 
 - hvg:
 
@@ -46,7 +47,7 @@ calculate_pca_gpu_sc(
 
 - seed:
 
-  Integer. Seed for the randomised SVD.
+  Integer. Seed for the sketch or the Lanczos starting block.
 
 - backend:
 
@@ -64,3 +65,13 @@ calculate_pca_gpu_sc(
 
 The function will add the PCA factors, loadings and singular values to
 the object cache in memory.
+
+## Details
+
+`svd_solver = "randomised"` runs the randomised SVD: fast, but
+approximate in the trailing PCs. Every other solver (`"auto"`,
+`"exact"`, `"covariance"`) runs an exact block Lanczos, as there is no
+GPU covariance path. The default from
+[`bixverse::params_sc_pca()`](https://gregorlueg.github.io/bixverse/reference/params_sc_pca.html)
+is `"auto"`, so the default is exact and slower than the randomised
+solver.

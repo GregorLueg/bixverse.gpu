@@ -11,7 +11,7 @@ knn_method = "nndescent".'><meta property="og:image" content="https://gregorlueg
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,7 +70,7 @@ knn_method = "nndescent".'><meta property="og:image" content="https://gregorlueg
 <span>  modality <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rna"</span>, <span class="st">"adt"</span><span class="op">)</span>,</span>
 <span>  cagra_params <span class="op">=</span> <span class="fu"><a href="params_nn_gpu.html">params_nn_gpu</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  extract_knn <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  snn_params <span class="op">=</span> <span class="fu">params_sc_neighbours</span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  graph_params <span class="op">=</span> <span class="fu">bixverse</span><span class="fu">::</span><span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/params_knn_graph_defaults.html" class="external-link">params_knn_graph_defaults</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">42L</span>,</span>
 <span>  .verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -105,8 +105,9 @@ knn_method = "nndescent".'><meta property="og:image" content="https://gregorlueg
 <dd><p>Logical. Skip the beam search.</p></dd>
 
 
-<dt id="arg-snn-params">snn_params<a class="anchor" aria-label="anchor" href="#arg-snn-params"></a></dt>
-<dd><p>List. Output of <code><a href="https://gregorlueg.github.io/bixverse/reference/params_sc_neighbours.html" class="external-link">bixverse::params_sc_neighbours()</a></code>.</p></dd>
+<dt id="arg-graph-params">graph_params<a class="anchor" aria-label="anchor" href="#arg-graph-params"></a></dt>
+<dd><p>List. Output of
+<code><a href="https://gregorlueg.github.io/bixverse/reference/params_knn_graph_defaults.html" class="external-link">bixverse::params_knn_graph_defaults()</a></code>.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
@@ -119,7 +120,7 @@ knn_method = "nndescent".'><meta property="og:image" content="https://gregorlueg
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The object with added kNN matrix and sNN graph.</p>
+    <p>The object with added kNN matrix and connectivities graph.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

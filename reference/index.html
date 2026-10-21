@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -113,7 +113,14 @@
           <code><a href="fast_cluster_gpu_sc.html">fast_cluster_gpu_sc()</a></code>
 
         </dt>
-        <dd>Run fast Louvain clustering on a SingleCells object (GPU)</dd>
+        <dd>Run fast clustering on a SingleCells object (GPU)</dd>
+
+        <dt>
+
+          <code><a href="find_clusters_gpu_sc.html">find_clusters_gpu_sc()</a></code>
+
+        </dt>
+        <dd>Graph-based clustering of cells on the neighbour graph (GPU)</dd>
 
         <dt>
 
@@ -183,7 +190,7 @@
           <code><a href="params_sc_fast_cluster_gpu.html">params_sc_fast_cluster_gpu()</a></code>
 
         </dt>
-        <dd>Default parameters for GPU fast Louvain clustering</dd>
+        <dd>Default parameters for GPU fast clustering</dd>
 
         <dt>
 
@@ -259,7 +266,7 @@
       </dl></div><div class="section level2">
       <h2 id="gpu-accelerated-t-sne">GPU-accelerated t-SNE<a class="anchor" aria-label="anchor" href="#gpu-accelerated-t-sne"></a></h2>
 
-      <div class="section-desc"><p>t-SNE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive). Optimiser (BH or FFT) runs on CPU via the Rust implementation in manifoldsR. Also a version for the single cells analysis suite in bixverse.</p></div>
+      <div class="section-desc"><p>t-SNE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive). Optimiser runs on the GPU by default (three-kernel FFT, <code>"fft_3k_gpu"</code>) or on the CPU via manifoldsR (BH, FFT, three-kernel FFT). Also a version for the single cells analysis suite in bixverse.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -349,6 +356,13 @@
 
         <dt>
 
+          <code><a href="leiden_clustering_gpu.html">leiden_clustering_gpu()</a></code>
+
+        </dt>
+        <dd>GPU-accelerated Leiden or Louvain community detection on an igraph</dd>
+
+        <dt>
+
           <code><a href="params_kmeans_gpu.html">params_kmeans_gpu()</a></code>
 
         </dt>
@@ -433,14 +447,7 @@
           <code><a href="rs_fast_cluster_gpu.html">rs_fast_cluster_gpu()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
-        <dd>GPU: fast Louvain clustering on the data</dd>
-
-        <dt>
-
-          <code><a href="rs_fast_cluster_grid_gpu.html">rs_fast_cluster_grid_gpu()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
-        </dt>
-        <dd>GPU: fast Louvain clustering on the data (with multiple seeds)</dd>
+        <dd>GPU: fast clustering on the data</dd>
 
         <dt>
 
@@ -476,6 +483,13 @@
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>GPU-accelerated k-means</dd>
+
+        <dt>
+
+          <code><a href="rs_leiden_clustering_gpu.html">rs_leiden_clustering_gpu()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>GPU-accelerated Leiden and Louvain clustering</dd>
 
         <dt>
 

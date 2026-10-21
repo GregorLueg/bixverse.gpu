@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,21 +51,33 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.0" id="bixversegpu-060">bixverse.gpu 0.6.0<a class="anchor" aria-label="anchor" href="#bixversegpu-060"></a></h2>
+<div class="section level3">
+<h3 id="features-0-6-0">Features<a class="anchor" aria-label="anchor" href="#features-0-6-0"></a></h3>
+<ul><li>Exact sparse PCA on the GPU. <code><a href="../reference/calculate_pca_gpu_sc.html">calculate_pca_gpu_sc()</a></code> runs a block Lanczos on the device (WGPU and MLX) for every <code>svd_solver</code> except <code>"randomised"</code>, which keeps the randomised SVD. It matches the CPU Lanczos to f32 precision.</li>
+<li>Fast clustering (<code><a href="../reference/fast_cluster_gpu_sc.html">fast_cluster_gpu_sc()</a></code>) can build the centroid graph from the cells instead of a kNN search over the centroids: <code>params_sc_fast_cluster_gpu(cell_mediated = TRUE, n_anchors = 5L)</code>. Every cell links its <code>n_anchors</code> nearest centroids. On a 10k cell synthetic set the agreement with the ground truth went from ARI 0.29 to 0.71 at resolution 1. Off by default.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="breaking-changes-0-6-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-6-0"></a></h3>
+<ul><li>
+<code><a href="../reference/calculate_pca_gpu_sc.html">calculate_pca_gpu_sc()</a></code> no longer ignores <code>svd_solver</code>. The default (<code>"auto"</code>) is exact and slower than the randomised SVD it used to run. Pass <code>pca_params = params_sc_pca(svd_solver = "randomised")</code> for the old behaviour.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="internal-0-6-0">Internal<a class="anchor" aria-label="anchor" href="#internal-0-6-0"></a></h3>
+<ul><li>Moved to bixverse-rs 0.8.1, manifolds-rs 0.7.2, ann-search-rs 0.11.1, cubecl 0.11, burn 0.22 and faer 0.24.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.5.0" id="bixversegpu-050">bixverse.gpu 0.5.0<a class="anchor" aria-label="anchor" href="#bixversegpu-050"></a></h2>
 <div class="section level3">
 <h3 id="features-0-5-0">Features<a class="anchor" aria-label="anchor" href="#features-0-5-0"></a></h3>
 <ul><li>Experimental MLX backend for Apple Silicon via mlx-c. Opt in at install time: <code>brew install mlx-c</code> (or point <code>MLX_C_PREFIX</code> at an install prefix), then install with <code>BIXVERSE_GPU_MLX=true</code>. Check with <code><a href="../reference/mlx_available.html">mlx_available()</a></code>. Functions with an MLX path take <code>backend = c("wgpu", "mlx")</code>: PCA, kNN graphs, Harmony v2, SEACells, NMF (single, stabilised, consensus, k sweep), UMAP, tSNE and the <code><a href="../reference/rs_cor_gpu.html">rs_cor_gpu()</a></code> / <code><a href="../reference/rs_cov_gpu.html">rs_cov_gpu()</a></code> correlations. For UMAP and tSNE, <code>"mlx"</code> moves the kNN search and the device optimiser (<code>"adam_gpu"</code>, <code>"fft_3k_gpu"</code>); CPU optimisers stay on the CPU. MLX is fp32 only. WGPU stays the default and the only portable backend.</li>
-<li>Fast clustering (<code><a href="../reference/fast_cluster_gpu_sc.html">fast_cluster_gpu_sc()</a></code>) can build the centroid graph from the cells instead of a kNN search over the centroids: <code>params_sc_fast_cluster_gpu(cell_mediated = TRUE, n_anchors = 5L)</code>. Every cell links its <code>n_anchors</code> nearest centroids. On a 10k cell synthetic set the agreement with the ground truth went from ARI 0.29 to 0.71 at resolution 1. Off by default.</li>
 <li>FFT-accelerated tSNE (<code>approx_type = "fft"</code> and <code>"fft_3k"</code>) now works on Windows too: FFTW was replaced by the pure-Rust rustfft.</li>
 <li>On macOS the CPU GEMMs in the Rust backends go through Apple Accelerate.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="breaking-changes-0-5-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-5-0"></a></h3>
 <ul><li>The <code>rs_*</code> wrappers with an MLX path gained a <code>backend</code> argument, inserted before <code>verbose</code>. Named calls keep working (it defaults to <code>"wgpu"</code>); positional calls past <code>seed</code> need updating.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="internal-0-5-0">Internal<a class="anchor" aria-label="anchor" href="#internal-0-5-0"></a></h3>
-<ul><li>Moved to bixverse-rs 0.7.0, manifolds-rs 0.7.0, ann-search-rs 0.11.0, cubecl 0.11, burn 0.22 and faer 0.24.</li>
 </ul></div>
 </div>
     <div class="section level2">

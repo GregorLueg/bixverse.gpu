@@ -73,15 +73,8 @@ mtx_io_params$cells_as_rows <- TRUE
 
 sc_object <- load_mtx(
   object = sc_object,
-  sc_mtx_io_param = mtx_io_params,
-  streaming = 0L
+  sc_mtx_io_param = mtx_io_params
 )
-#> Warning: The `streaming` argument(s) of the count loaders was deprecated in bixverse
-#> 0.5.4.
-#> ℹ The CSR to CSC conversion is bounded by `csc_mem_gb` instead. The old
-#>   arguments are ignored.
-#> ℹ The deprecated feature was likely used in the bixverse package.
-#>   Please report the issue to the authors.
 #>  Converting the cell-based data into the gene-based format.
 #> Loading observations data from flat file into the DuckDB.
 #> Loading variable data from flat file into the DuckDB.
@@ -95,7 +88,7 @@ sc_object
 #>   PCA calculated: FALSE
 #>   Other embeddings: none
 #>   KNN generated: FALSE
-#>   SNN generated: FALSE
+#>   Graph generated: FALSE
 #>   MAGIC imputed: none
 #>   Residual model: none
 #>   Stale artefacts: none
@@ -138,7 +131,7 @@ scrublet_gpu
 #> ScrubletRes: 14528 cells, 1782 doublets (12.3%)
 #>   Threshold:              0.2141
 #>   Detected doublet rate:  12.3%
-#>   Detectable fraction:    88.4%
+#>   Detectable fraction:    88.3%
 #>   Overall doublet rate:   13.9%
 #>   Simulated doublets:     21792
 ```
@@ -277,8 +270,8 @@ data.table(
 )[, speed_up := round(seconds[1] / seconds, 2)][]
 #>    version seconds speed_up
 #>     <char>   <num>    <num>
-#> 1:     CPU    3.48      1.0
-#> 2:     GPU    1.51      2.3
+#> 1:     CPU    0.99      1.0
+#> 2:     GPU    1.10      0.9
 ```
 
 ## Do the calls agree?
@@ -331,7 +324,7 @@ cor(
   scrublet_gpu$doublet_scores_obs,
   method = "pearson"
 )
-#> [1] 0.9884411
+#> [1] 0.9884432
 ```
 
 The scores correlate, they do not match. Both paths use a randomised SVD

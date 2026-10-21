@@ -16,7 +16,7 @@ find_neighbours_cagra_sc(
   modality = c("rna", "adt"),
   cagra_params = params_nn_gpu(),
   extract_knn = FALSE,
-  snn_params = params_sc_neighbours(),
+  graph_params = bixverse::params_knn_graph_defaults(),
   seed = 42L,
   .verbose = TRUE
 )
@@ -51,10 +51,10 @@ find_neighbours_cagra_sc(
 
   Logical. Skip the beam search.
 
-- snn_params:
+- graph_params:
 
   List. Output of
-  [`bixverse::params_sc_neighbours()`](https://gregorlueg.github.io/bixverse/reference/params_sc_neighbours.html).
+  [`bixverse::params_knn_graph_defaults()`](https://gregorlueg.github.io/bixverse/reference/params_knn_graph_defaults.html).
 
 - seed:
 
@@ -66,4 +66,4 @@ find_neighbours_cagra_sc(
 
 ## Value
 
-The object with added kNN matrix and sNN graph.
+The object with added kNN matrix and connectivities graph.

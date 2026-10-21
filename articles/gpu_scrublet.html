@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,7 +80,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>GPU-accelerated Scrublet</h1>
 
       <p class="author">Gregor Lueg</p>
-      <p class="date">2026-10-15</p>
+      <p class="date">2026-10-21</p>
 
 
       <div class="d-none name"><code></code></div>
@@ -133,15 +133,8 @@
 <span></span>
 <span><span class="va">sc_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://gregorlueg.github.io/bixverse/reference/load_mtx.html" class="external-link">load_mtx</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">sc_object</span>,</span>
-<span>  sc_mtx_io_param <span class="op">=</span> <span class="va">mtx_io_params</span>,</span>
-<span>  streaming <span class="op">=</span> <span class="fl">0L</span></span>
+<span>  sc_mtx_io_param <span class="op">=</span> <span class="va">mtx_io_params</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: The `streaming` argument(s) of the count loaders was deprecated in bixverse</span></span>
-<span><span class="co">#&gt; 0.5.4.</span></span>
-<span><span class="co">#&gt; ℹ The CSR to CSC conversion is bounded by `csc_mem_gb` instead. The old</span></span>
-<span><span class="co">#&gt;   arguments are ignored.</span></span>
-<span><span class="co">#&gt; ℹ The deprecated feature was likely used in the bixverse package.</span></span>
-<span><span class="co">#&gt;   Please report the issue to the authors.</span></span>
 <span><span class="co">#&gt;  Converting the cell-based data into the gene-based format.</span></span>
 <span><span class="co">#&gt; Loading observations data from flat file into the DuckDB.</span></span>
 <span><span class="co">#&gt; Loading variable data from flat file into the DuckDB.</span></span>
@@ -155,7 +148,7 @@
 <span><span class="co">#&gt;   PCA calculated: FALSE</span></span>
 <span><span class="co">#&gt;   Other embeddings: none</span></span>
 <span><span class="co">#&gt;   KNN generated: FALSE</span></span>
-<span><span class="co">#&gt;   SNN generated: FALSE</span></span>
+<span><span class="co">#&gt;   Graph generated: FALSE</span></span>
 <span><span class="co">#&gt;   MAGIC imputed: none</span></span>
 <span><span class="co">#&gt;   Residual model: none</span></span>
 <span><span class="co">#&gt;   Stale artefacts: none</span></span></code></pre></div>
@@ -196,7 +189,7 @@
 <span><span class="co">#&gt; ScrubletRes: 14528 cells, 1782 doublets (12.3%)</span></span>
 <span><span class="co">#&gt;   Threshold:              0.2141</span></span>
 <span><span class="co">#&gt;   Detected doublet rate:  12.3%</span></span>
-<span><span class="co">#&gt;   Detectable fraction:    88.4%</span></span>
+<span><span class="co">#&gt;   Detectable fraction:    88.3%</span></span>
 <span><span class="co">#&gt;   Overall doublet rate:   13.9%</span></span>
 <span><span class="co">#&gt;   Simulated doublets:     21792</span></span></code></pre></div>
 </div>
@@ -318,8 +311,8 @@
 <span><span class="op">)</span><span class="op">[</span>, <span class="va">speed_up</span> <span class="op">:=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">seconds</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">/</span> <span class="va">seconds</span>, <span class="fl">2</span><span class="op">)</span><span class="op">]</span><span class="op">[</span><span class="op">]</span></span>
 <span><span class="co">#&gt;    version seconds speed_up</span></span>
 <span><span class="co">#&gt;     &lt;char&gt;   &lt;num&gt;    &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1:     CPU    3.48      1.0</span></span>
-<span><span class="co">#&gt; 2:     GPU    1.51      2.3</span></span></code></pre></div>
+<span><span class="co">#&gt; 1:     CPU    0.99      1.0</span></span>
+<span><span class="co">#&gt; 2:     GPU    1.10      0.9</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="do-the-calls-agree">Do the calls agree?<a class="anchor" aria-label="anchor" href="#do-the-calls-agree"></a>
 </h2>
@@ -373,7 +366,7 @@
 <span>  <span class="va">scrublet_gpu</span><span class="op">$</span><span class="va">doublet_scores_obs</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"pearson"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.9884411</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.9884432</span></span></code></pre></div>
 </div>
 <p>The scores correlate, they do not match. Both paths use a randomised SVD but draw a different sketch, and the GPU index breaks neighbour ties differently. On top of that Otsu’s threshold is a step function of the histogram bins, so the cut can land one bin over and flip a handful of borderline cells. Judge the two by their metrics, not by a diff.</p>
 </section><section class="level2"><h2 id="per-sample-runs">Per-sample runs<a class="anchor" aria-label="anchor" href="#per-sample-runs"></a>

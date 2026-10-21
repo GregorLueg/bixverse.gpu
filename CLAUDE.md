@@ -60,11 +60,11 @@ The package is a thin R shim over a Rust crate. Three layers, top-down:
 1.  **R user API** (`R/*.R`): friendly, validated wrappers, grouped by
     task like bixverse. S7 methods on the `bixverse` classes sit in
     `methods_sc_*.R`: `processing` (kNN, neighbours, PCA, fast
-    clustering, Scrublet), `batch_corr` (Harmony v2, BBKNN, fastMNN),
-    `embeddings` (UMAP, tSNE, Bonsai), `aggregations` (SEACells),
-    `dge_diffabund` (NEBULA), `nmf`, `scenic`. Plain-matrix functions
-    sit in `functions_embeddings.R` (`umap_gpu`, `tsne_gpu`, parametric
-    UMAP), `functions_ml.R` (k-means, kNN graphs) and
+    clustering, Leiden/Louvain, Scrublet), `batch_corr` (Harmony v2,
+    BBKNN, fastMNN), `embeddings` (UMAP, tSNE, Bonsai), `aggregations`
+    (SEACells), `dge_diffabund` (NEBULA), `nmf`, `scenic`. Plain-matrix
+    functions sit in `functions_embeddings.R` (`umap_gpu`, `tsne_gpu`,
+    parametric UMAP), `functions_ml.R` (k-means, kNN graphs) and
     `functions_agent_skill.R`; `utils.R` has `parse_verbosity`. Argument
     checks use `checkmate`. Most parameter builders and their
     `check*Params()` / `assert*Params()` pairs (`params_nn_gpu`,
@@ -98,16 +98,19 @@ The package is a thin R shim over a Rust crate. Three layers, top-down:
     precision helpers (`parse_precision`, `auto_precision`,
     `SAMPLE_THRESHOLD_HIGH_PRECISION`) and the `PUmapModel`
     backend-agnostic wrapper. It also holds most `#[extendr]` entry
-    points, but not all: `pca_gpu.rs`, `harmony_gpu.rs`,
-    `scenic_gpu.rs`, `scrublet_gpu.rs` and `seacells_gpu.rs` each carry
-    their own, registered through `use <mod>;` lines inside
-    `extendr_module!` rather than `fn` lines. Subdirectories:
+    points, but not all: every `single_cell/` file except `knn_gpu.rs`
+    and `sc_utils.rs` carries their own, registered through `use <mod>;`
+    lines inside `extendr_module!` rather than `fn` lines.
+    Subdirectories:
     - `embeddings/`: `umap_gpu.rs`, `tsne_gpu.rs`, `parametric_umap.rs`
       (neural-net UMAP with GPU and CPU backends), `utils.rs` (R list to
       Rust parameter structs).
     - `single_cell/`: `knn_gpu.rs` (CAGRA / IVF / exhaustive),
-      `pca_gpu.rs` (sparse randomised SVD), `harmony_gpu.rs`,
-      `scenic_gpu.rs` (in-memory, streaming and MetaCells GRN drivers),
+      `pca_gpu.rs` (sparse SVD: exact block Lanczos for every
+      `svd_solver` except `"randomised"`), `harmony_gpu.rs`,
+      `fast_mnn_gpu.rs`, `bbknn_gpu.rs`, `fast_clusters_gpu.rs`,
+      `bonsai_gpu.rs`, `nmf_gpu.rs`, `nebula_gpu.rs`, `scenic_gpu.rs`
+      (in-memory, streaming and MetaCells GRN drivers),
       `scrublet_gpu.rs`, `seacells_gpu.rs`, `sc_utils.rs` (shared
       cell-mapping and kNN conversion helpers; only `seacells_gpu.rs`
       consumes them so far).
@@ -153,15 +156,15 @@ most GPU kernels do not live in this repo.
   dispatched from here originate there, including the GPU k-means
   (`ann_search_rs::gpu::k_means_gpu`), which used to live in
   `bixverse-rs`. (feature: `gpu`)
-- **`bixverse-rs`**: Rust engine behind the whole `bixverse` ecosystem.
-  This package consumes its GPU-accelerated pieces (linalg, PCA,
-  Harmony, correlations, SCENIC, SEACells); the main non-GPU R-facing
-  interface lives in the separate `bixverse` R package. (features:
-  `gpu`, `single-cell`, `bonsai`, `r`, plus `accelerate` on macOS and
-  `mlx` via this crate’s `mlx` feature. Since 0.7.0 the R bindings sit
-  behind `r`, so `default-features = false` must list it.) It no longer
-  owns the GPU k-means kernels, only the R-list parsing for them, via
-  the `KMeansGpuParamsFromR` extension trait in
+- **`bixverse-r`** (repo `bixverse-rs`): Rust engine behind the whole
+  `bixverse` ecosystem. This package consumes its GPU-accelerated pieces
+  (linalg, PCA, Harmony, correlations, SCENIC, SEACells, Bonsai,
+  fastMNN, GPU Leiden); the main non-GPU R-facing interface lives in the
+  separate `bixverse` R package. (features: `sc-gpu`, `bonsai`, plus
+  `accelerate` on macOS and `mlx` via this crate’s `mlx` feature;
+  `default-features = false`.) It no longer owns the GPU k-means
+  kernels, only the R-list parsing for them, via the
+  `KMeansGpuParamsFromR` extension trait in
   `bixverse_rs::gpu::gpu_r_wrappers`.
 - **`manifolds-rs`**: manifold-learning crate. UMAP, tSNE, diffusion
   maps, PaCMAP, PHATE. Depends on `ann-search-rs` for kNN. GPU coverage
@@ -178,12 +181,6 @@ graph. Patches only apply from the top-level manifest, so any patch a
 sibling carries has to be repeated here. The patch block has to go
 before merging, otherwise CI cannot resolve it and the vendored offline
 build path breaks.
-
-`Cargo.lock` hand-pins `hdf5-metno`’s ndarray edge to the ndarray
-bixverse-rs uses (0.17.2 since bixverse-rs 0.7.0). Any `cargo update`,
-even `-p bixverse-rs`, can silently move it and break the h5ad code in
-bixverse-rs with `Selection: From<SliceInfo<...>>` errors; re-pin by
-editing the `hdf5-metno` block.
 
 ## Conventions
 
