@@ -63,7 +63,6 @@ sc_object <- load_r_data(
     min_lib_size = 0L,
     min_cells = 0L
   ),
-  streaming = 0L,
   .verbose = FALSE
 )
 
@@ -326,12 +325,12 @@ expect_true(
 )
 
 expect_true(
-  current = checkmate::testClass(get_snn_graph(bbknn_object), "igraph"),
+  current = checkmate::testClass(get_connectivities(bbknn_object), "igraph"),
   info = "bbknn gpu - the connectivities become an igraph"
 )
 
 expect_true(
-  current = igraph::is_weighted(get_snn_graph(bbknn_object)),
+  current = igraph::is_weighted(get_connectivities(bbknn_object)),
   info = "bbknn gpu - the graph carries the connectivities as weights"
 )
 

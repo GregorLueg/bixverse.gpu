@@ -78,6 +78,7 @@ reference:
       - scenic_grn_sc_gpu
       - scrublet_gpu_sc
       - fast_cluster_gpu_sc
+      - find_clusters_gpu_sc
       - bbknn_gpu_sc
       - fast_mnn_gpu_sc
       - nebula_gpu_sc
@@ -106,9 +107,9 @@ reference:
   - title: GPU-accelerated t-SNE
     desc:
       t-SNE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive).
-      Optimiser (BH or FFT) runs on CPU via the Rust implementation in
-      manifoldsR. Also a version for the single cells analysis suite in 
-      bixverse.
+      Optimiser runs on the GPU by default (three-kernel FFT, `"fft_3k_gpu"`)
+      or on the CPU via manifoldsR (BH, FFT, three-kernel FFT). Also a version
+      for the single cells analysis suite in bixverse.
     contents:
       - tsne_gpu
       - tsne_gpu_sc
@@ -130,6 +131,7 @@ reference:
       can be found here.
     contents:
       - k_means_cluster_gpu
+      - leiden_clustering_gpu
       - params_kmeans_gpu
       - generate_knn_graph_gpu
       - gpu_available
@@ -149,12 +151,12 @@ reference:
       - rs_cor_gpu
       - rs_cov_gpu
       - rs_fast_cluster_gpu
-      - rs_fast_cluster_grid_gpu
       - rs_gpu_available
       - rs_gpu_plane_ops
       - rs_harmony_v2_gpu
       - rs_gpu_knn
       - rs_kmeans_gpu
+      - rs_leiden_clustering_gpu
       - rs_mc_scenic_gpu
       - rs_nebula_sc_gpu
       - rs_nmf_consensus_mc_gpu

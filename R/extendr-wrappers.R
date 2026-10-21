@@ -38,7 +38,7 @@ rs_gpu_plane_ops <- function() .Call(wrap__rs_gpu_plane_ops)
 #' (`brew install mlx-c`, or `MLX_C_PREFIX` pointing at an install prefix).
 #'
 #' @returns Boolean. `TRUE` when the package was built with the MLX backend.
-#' 
+#'
 #' @keywords internal
 rs_mlx_available <- function() .Call(wrap__rs_mlx_available)
 
@@ -176,6 +176,32 @@ rs_deserialise_parametric_umap <- function(bytes) .Call(wrap__rs_deserialise_par
 #'
 #' @export
 rs_kmeans_gpu <- function(data, dist, n_centroids, kmeans_params, seed, verbose) .Call(wrap__rs_kmeans_gpu, data, dist, n_centroids, kmeans_params, seed, verbose)
+
+#' GPU-accelerated Leiden and Louvain clustering
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' GPU twin of `bixverse::rs_leiden_clustering`. Level-0 local moving runs on
+#' the wgpu backend; coarser levels, refinement and aggregation stay on the
+#' CPU. Graphs below 50,000 nodes, or with a node of degree above 512, run
+#' fully on the CPU with coloured local moving. On one device the result
+#' depends on the seed only.
+#'
+#' @param from Integer vector. 1-based source node of each edge.
+#' @param to Integer vector. 1-based target node of each edge. Same length as
+#' `from`.
+#' @param weights Numeric vector. Edge weights, same length as `from`.
+#' @param n_nodes Integer. Number of nodes in the graph.
+#' @param leiden_params List. Named list with the optional fields `resolution`,
+#' `beta`, `n_iterations` (negative: until stable), `min_gain`, `refine`
+#' (`TRUE` for Leiden, `FALSE` for Louvain), `local_moving` (coarser levels
+#' only) and `seed`.
+#'
+#' @returns Integer vector with the 1-based community of each node; `1` is the
+#' largest community.
+#'
+#' @export
+rs_leiden_clustering_gpu <- function(from, to, weights, n_nodes, leiden_params) .Call(wrap__rs_leiden_clustering_gpu, from, to, weights, n_nodes, leiden_params)
 
 #' GPU-accelerated correlation calculations
 #'
@@ -353,19 +379,22 @@ rs_tsne_from_knn_gpu <- function(embd, knn_data, n_dim, perplexity, approx_type,
 #' Helper function that will calculate sparse PCA without scaling the data.
 #' This has the advantage that you avoid creating a large dense matrix due
 #' to scaling; however, it has the disadvantage that the first PC will be
-#' heavily influenced by average expression. The SVD is always randomised:
-#' the sparse matrix is multiplied with a much smaller random dense matrix,
-#' avoiding holding a large dense matrix in memory.
+#' heavily influenced by average expression. `svd_solver = "randomised"` runs
+#' the randomised SVD: the sparse matrix is multiplied with a much smaller
+#' random dense matrix. Every other solver runs the exact block Lanczos, as
+#' there is no GPU covariance path.
 #'
 #' @param f_path_gene String. Path to the `counts_genes.bin` file.
 #' @param f_path_cell String. Path to the `counts_cells.bin` file. Used if
 #' you wish to use the PFlogPF transformation.
 #' @param no_pcs Integer. Number of PCs to calculate.
 #' @param pca_params Named list. Contains the parameters to use for this PCA
-#' run. `svd_solver` is ignored, the GPU path is always randomised.
+#' run. `"randomised"` runs the randomised SVD, any other `svd_solver` the
+#' exact block Lanczos.
 #' @param cell_indices Integer. The cell indices to use. (0-indexed!)
 #' @param gene_indices Integer. The gene indices to use. (0-indexed!)
-#' @param seed Integer. Random seed for the randomised SVD.
+#' @param seed Integer. Random seed for the sketch or the Lanczos starting
+#' block.
 #' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
 #' with the MLX backend, see [mlx_available()]).
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
@@ -963,79 +992,48 @@ rs_mc_bonsai_gpu <- function(sparse_data, gene_indices, bonsai_params, verbose) 
 #' @keywords internal
 rs_seacells_gpu <- function(f_path, embd, cells_to_keep, cells_to_use, knn_data, seacells_params, target_size, seed, backend = "wgpu", verbose) .Call(wrap__rs_seacells_gpu, f_path, embd, cells_to_keep, cells_to_use, knn_data, seacells_params, target_size, seed, backend, verbose)
 
-#' GPU: fast Louvain clustering on the data
+#' GPU: fast clustering on the data
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
-#' GPU equivalent of `bixverse::rs_fast_cluster_sc`. Runs k-means clustering on
-#' the WGPU backend, followed by a kNN detection on the centroids to then run
-#' Louvain clustering on the graph and propagate the membership back to the
-#' original data. Everything after the k-means stays on the CPU.
+#' GPU equivalent of `bixverse::rs_fast_cluster_sc`. Coarsens the cells with
+#' k-means on the GPU, builds a graph over the centroids (a kNN graph with one
+#' of the symmetrisations, or the cell-mediated graph) and runs Louvain or
+#' Leiden on it. The community of each centroid is propagated back to its
+#' cells. With `n_seeds > 1` every resolution is run once per seed, the labels
+#' come from the seed with the lowest mean conductance and stability metrics
+#' across the seeds are returned. Everything after stage one stays on the CPU.
 #'
-#' @param embd Numeric matrix. The original embedding.
-#' @param resolutions Numeric vector. The Louvain resolutions to iterate
-#' through.
-#' @param n_centroids Optional integer. The number of clusters to find. If
-#' not provided, defaults to `sqrt(nrow(embd))`.
-#' @param fc_params Named list. See [params_sc_fast_cluster_gpu()].
-#' @param snn Boolean. Shall the kNN graph be additionally transformed into
-#' an sNN graph.
-#' @param return_kmeans Boolean. Shall the k-means centroids and assignments
-#' be returned alongside the memberships.
+#' @param embd Numeric matrix. The embedding, cells x features.
+#' @param resolutions Numeric vector. The resolutions to iterate through.
+#' @param fc_params Named list. See [params_sc_fast_cluster_gpu()]. Carries
+#' the GPU k-means keys (`k_means_iter`, `k_means_init`, `fixed`, `quantise`)
+#' alongside the fast clustering ones.
+#' @param n_seeds Integer. Number of seeds per resolution. `1L` runs a single
+#' pass without stability metrics.
 #' @param seed Integer. For reproducibility.
 #' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
 #' detailed verbosity.
+#' @param backend String. `"wgpu"` or `"mlx"` (Apple Silicon, needs a build
+#' with the MLX backend, see [mlx_available()]). MLX ignores `fixed` and
+#' `quantise`.
 #'
 #' @returns A list with the following elements:
 #' \itemize{
-#'  \item membership - The memberships across the different resolutions.
-#'  \item k_means_cluster - Optional integer vector of k-means assignments.
-#'  \item centroids - Optional numeric matrix of k-means centroids.
+#'  \item membership - List with one integer membership vector per
+#'  resolution (0-indexed).
+#'  \item k_means_cluster - Integer vector with the k-means centroid per cell
+#'  (0-indexed).
+#'  \item centroids - Numerical matrix with the k-means centroids.
+#'  \item stats - `NULL` for `n_seeds = 1L`, otherwise a list with
+#'  `mean_ari`, `median_ari`, `mean_conductance`, `median_conductance` and
+#'  `mean_n_comms`, one value per resolution.
 #' }
 #'
 #' @export
 #'
 #' @keywords internal
-rs_fast_cluster_gpu <- function(embd, resolutions, n_centroids, fc_params, snn, return_kmeans, seed, verbose) .Call(wrap__rs_fast_cluster_gpu, embd, resolutions, n_centroids, fc_params, snn, return_kmeans, seed, verbose)
-
-#' GPU: fast Louvain clustering on the data (with multiple seeds)
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#' GPU equivalent of `bixverse::rs_fast_cluster_sc_grid`. Builds the k-means to
-#' kNN/sNN graph once, then runs Louvain with several seeds (derived from the
-#' original one) for every resolution. Returns additional metrics around
-#' cluster stability and community conductance. Only the k-means runs on the
-#' GPU.
-#'
-#' @param embd Numeric matrix. The original embedding.
-#' @param resolutions Numeric vector. The Louvain resolutions to iterate
-#' through.
-#' @param n_centroids Optional integer. The number of clusters to find. If
-#' not provided, defaults to `sqrt(nrow(embd))`.
-#' @param fc_params Named list. See [params_sc_fast_cluster_gpu()].
-#' @param snn Boolean. Shall the kNN graph be additionally transformed into
-#' an sNN graph.
-#' @param return_kmeans Boolean. Shall the k-means centroids and assignments
-#' be returned alongside the grid results.
-#' @param no_seeds Integer. Number of additional seeds to use. Should be >= 2.
-#' @param seed Integer. For reproducibility.
-#' @param verbose Integer. `0L` - quiet; `1L` - normal verbosity; `2L` -
-#' detailed verbosity.
-#'
-#' @returns A list with the following elements:
-#' \itemize{
-#'  \item membership - A list with `memberships` (the labels from the seed with
-#'  the best conductance, per resolution) and `stats` (the metrics per
-#'  resolution).
-#'  \item k_means_cluster - Optional integer vector of k-means assignments.
-#'  \item centroids - Optional numeric matrix of k-means centroids.
-#' }
-#'
-#' @export
-#'
-#' @keywords internal
-rs_fast_cluster_grid_gpu <- function(embd, resolutions, n_centroids, fc_params, snn, return_kmeans, no_seeds, seed, verbose) .Call(wrap__rs_fast_cluster_grid_gpu, embd, resolutions, n_centroids, fc_params, snn, return_kmeans, no_seeds, seed, verbose)
+rs_fast_cluster_gpu <- function(embd, resolutions, fc_params, n_seeds, seed, verbose, backend = "wgpu") .Call(wrap__rs_fast_cluster_gpu, embd, resolutions, fc_params, n_seeds, seed, verbose, backend)
 
 #' GPU: BBKNN batch correction
 #'

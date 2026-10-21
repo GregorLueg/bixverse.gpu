@@ -103,7 +103,6 @@ build_sc_object <- function(dir, data) {
     obs = data$obs,
     var = data$var,
     sc_qc_param = sc_qc_param,
-    streaming = 0L,
     .verbose = FALSE
   )
   obj <- find_hvg_sc(obj, hvg_no = hvg_to_keep, .verbose = FALSE)
@@ -129,7 +128,6 @@ sc_no_hvg <- load_r_data(
   obs = sc_data_plain$obs,
   var = sc_data_plain$var,
   sc_qc_param = sc_qc_param,
-  streaming = 0L,
   .verbose = FALSE
 )
 
@@ -181,6 +179,26 @@ expect_true(
   info = "gpu pca - top 5 PCs strongly correlated with CPU PCA"
 )
 
+### solver dispatch ------------------------------------------------------------
+
+sc_obj_plain <- calculate_pca_gpu_sc(
+  object = sc_obj_plain,
+  no_pcs = no_pcs,
+  pca_params = bixverse::params_sc_pca(svd_solver = "randomised"),
+  .verbose = FALSE
+)
+
+expect_true(
+  current = all(
+    abs(diag(cor(
+      cpu_pca_factors[, 1:4],
+      get_pca_factors(sc_obj_plain)[, 1:4]
+    ))) >
+      0.95
+  ),
+  info = "gpu pca - randomised solver top PCs correlated with CPU PCA"
+)
+
 ### external HVG --------------------------------------------------------------
 
 sc_obj_plain <- calculate_pca_gpu_sc(
@@ -211,7 +229,7 @@ sc_obj_plain <- calculate_pca_gpu_sc(
     mean_center = FALSE,
     normalise_variance = FALSE,
     clr = TRUE,
-    randomised = TRUE,
+    svd_solver = "randomised",
     size_factor = 1e3
   ),
   .verbose = FALSE
@@ -258,7 +276,6 @@ sc_no_pca <- load_r_data(
   obs = sc_data_med$obs,
   var = sc_data_med$var,
   sc_qc_param = sc_qc_param,
-  streaming = 0L,
   .verbose = FALSE
 )
 
@@ -531,8 +548,64 @@ expect_true(
 )
 
 expect_true(
-  current = checkmate::testClass(get_snn_graph(obj_ex), "igraph"),
-  info = "find_neighbours_gpu_sc (exhaustive) - sNN graph generated"
+  current = checkmate::testClass(get_connectivities(obj_ex), "igraph"),
+  info = "find_neighbours_gpu_sc (exhaustive) - connectivities generated"
+)
+
+### graph options --------------------------------------------------------------
+
+# the graph comes from bixverse's own builder, so the same kNN has to give the
+# same edges as the CPU path
+knn_ex <- get_knn_obj(obj_ex)
+
+for (knn_sym in c("snn", "umap", "knn")) {
+  graph_params <- bixverse::params_knn_graph_defaults()
+  graph_params$knn_sym <- knn_sym
+
+  obj_sym <- find_neighbours_gpu_sc(
+    object = sc_obj_plain,
+    knn_method = "exhaustive",
+    k = knn_k,
+    graph_params = graph_params,
+    .verbose = FALSE
+  )
+  g_gpu <- get_connectivities(obj_sym)
+  g_cpu <- bixverse:::.knn_to_graph(
+    knn = knn_ex,
+    graph_params = graph_params,
+    .verbose = FALSE
+  )
+
+  expect_equal(
+    current = igraph::graph_attr(g_gpu, "method"),
+    target = knn_sym,
+    info = sprintf("find_neighbours_gpu_sc (%s) - method recorded", knn_sym)
+  )
+
+  expect_equal(
+    current = igraph::as_adjacency_matrix(g_gpu, attr = "weight"),
+    target = igraph::as_adjacency_matrix(g_cpu, attr = "weight"),
+    info = sprintf(
+      "find_neighbours_gpu_sc (%s) - matches the CPU graph",
+      knn_sym
+    )
+  )
+}
+
+expect_warning(
+  current = obj_dep <- find_neighbours_gpu_sc(
+    object = sc_obj_plain,
+    knn_method = "exhaustive",
+    k = knn_k,
+    snn_params = params_sc_neighbours(),
+    .verbose = FALSE
+  ),
+  info = "find_neighbours_gpu_sc - deprecated snn_params warns"
+)
+
+expect_true(
+  current = checkmate::testClass(get_connectivities(obj_dep), "igraph"),
+  info = "find_neighbours_gpu_sc - deprecated snn_params still builds a graph"
 )
 
 ### ivf ------------------------------------------------------------------------
@@ -555,8 +628,8 @@ expect_true(
 )
 
 expect_true(
-  current = checkmate::testClass(get_snn_graph(obj_ivf), "igraph"),
-  info = "find_neighbours_gpu_sc (ivf) - sNN graph generated"
+  current = checkmate::testClass(get_connectivities(obj_ivf), "igraph"),
+  info = "find_neighbours_gpu_sc (ivf) - connectivities generated"
 )
 
 ### nndescent + downstream clustering ------------------------------------------
@@ -579,8 +652,8 @@ expect_true(
 )
 
 expect_true(
-  current = checkmate::testClass(get_snn_graph(obj_cagra), "igraph"),
-  info = "find_neighbours_gpu_sc (nndescent) - sNN graph generated"
+  current = checkmate::testClass(get_connectivities(obj_cagra), "igraph"),
+  info = "find_neighbours_gpu_sc (nndescent) - connectivities generated"
 )
 
 obj_cagra <- find_clusters_sc(obj_cagra)

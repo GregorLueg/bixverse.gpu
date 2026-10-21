@@ -12,7 +12,7 @@ find_neighbours_cagra_sc(
   modality = c("rna", "adt"),
   cagra_params = params_nn_gpu(),
   extract_knn = FALSE,
-  snn_params = params_sc_neighbours(),
+  graph_params = bixverse::params_knn_graph_defaults(),
   seed = 42L,
   .verbose = TRUE
 )
@@ -31,14 +31,15 @@ find_neighbours_cagra_sc(
 
 \item{extract_knn}{Logical. Skip the beam search.}
 
-\item{snn_params}{List. Output of \code{\link[bixverse:params_sc_neighbours]{bixverse::params_sc_neighbours()}}.}
+\item{graph_params}{List. Output of
+\code{\link[bixverse:params_knn_graph_defaults]{bixverse::params_knn_graph_defaults()}}.}
 
 \item{seed}{Integer. For reproducibility.}
 
 \item{.verbose}{Boolean. Controls verbosity.}
 }
 \value{
-The object with added kNN matrix and sNN graph.
+The object with added kNN matrix and connectivities graph.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}

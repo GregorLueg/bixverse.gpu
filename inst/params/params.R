@@ -476,49 +476,31 @@ spec_sc_harmony_v2_gpu <- param_spec(
 
 spec_sc_fast_cluster_gpu <- param_spec(
   name = "sc_fast_cluster_gpu",
-  title = "Default parameters for GPU fast Louvain clustering",
+  title = "Default parameters for GPU fast clustering",
   description = paste(
-    "GPU counterpart to [bixverse::params_sc_fast_cluster()]. The",
-    "mini-batch k-means knobs are gone (the GPU k-means is",
-    "full-batch Lloyd's) and the k-means block comes from the GPU",
-    "parameters instead. Two knobs the CPU wrapper never exposed,",
-    "`same_weight` and `multi_level_louvain`, are available here.",
-    "The k-means distance is taken from `knn$ann_dist`, so the",
-    "coarsening and the centroid graph agree on the geometry.",
-    "There is no separate `metric` argument, and `\"manhattan\"`",
-    "is not supported by the GPU k-means."
+    "GPU counterpart to [bixverse::params_sc_fast_cluster()]. Fast",
+    "clustering coarsens the cells with k-means, builds a graph over the",
+    "centroids and runs Louvain or Leiden on it. The community of each",
+    "centroid is handed back to its cells. Only the k-means (and the",
+    "cell-mediated top-m search) run on the GPU. The mini-batch k-means",
+    "knobs are gone: the GPU k-means is full-batch Lloyd's."
   ),
+  references = "Wei, et al., PLoS Comput Biol, 2022.",
   checker = "ScFastClusterGpu",
   label = "GPU fast clustering params",
-  hint = "See ?params_sc_fast_cluster_gpu and ?bixverse::params_knn_defaults.",
-  extra_ctor = quote(
+  hint = paste(
+    "See ?params_sc_fast_cluster_gpu and",
+    "?bixverse::params_knn_graph_defaults."
+  ),
+  extra_ctor = quote({
     if (!is.null(k_means_init)) {
       checkmate::assertChoice(k_means_init, c("random", "parallel", "plusplus"))
     }
-  ),
-  # The kNN block comes from bixverse, so its rules are spelled out here.
+    bixverse:::assertKnnGraphParams(centroid_graph)
+  }),
+  # The graph block comes from bixverse, so its rules are checked there.
   extra_check = quote({
-    res <- check_list_shape(x, c("k", "knn_method", "ann_dist"))
-    if (!isTRUE(res)) {
-      return(res)
-    }
-    res <- apply_qtest_rules(
-      x,
-      list(
-        k = "I1[1,)",
-        n_trees = "I1[1,)",
-        m = "I1[1,)",
-        ef_construction = "I1[1,)",
-        ef_search = "I1[1,)",
-        search_budget = c("I1[1,)", "0"),
-        ef_budget = c("I1[1,)", "0"),
-        n_list = c("I1[1,)", "0"),
-        n_probe = c("I1[1,)", "0"),
-        delta = "N1[0,1]",
-        diversify_prob = "N1[0,1]"
-      ),
-      label = "GPU fast clustering params"
-    )
+    res <- bixverse:::checkKnnGraphParams(x)
     if (!isTRUE(res)) {
       return(res)
     }
@@ -534,13 +516,17 @@ spec_sc_fast_cluster_gpu <- param_spec(
         "'parallel' or 'plusplus'."
       ))
     }
-    # the GPU k-means takes its metric from here, and rejects "manhattan"
-    res <- checkmate::checkChoice(x[["ann_dist"]], c("euclidean", "cosine"))
-    if (!isTRUE(res)) {
-      return(res)
-    }
   }),
   fields = list(
+    n_centroids = p_int(
+      NULL,
+      range = "[2,)",
+      null_ok = TRUE,
+      doc = paste(
+        "Number of k-means centroids. If `NULL`, defaults to",
+        "`floor(4 * sqrt(n_cells))`."
+      )
+    ),
     k_means_iter = p_int(
       50L,
       range = "[1,)",
@@ -559,7 +545,8 @@ spec_sc_fast_cluster_gpu <- param_spec(
       TRUE,
       doc = paste(
         "Shall k-means run for a fixed number of iterations, without",
-        "checking for convergence."
+        "checking for convergence. wgpu only; MLX always runs every",
+        "iteration."
       )
     ),
     quantise = p_lgl(
@@ -567,49 +554,22 @@ spec_sc_fast_cluster_gpu <- param_spec(
       doc = paste(
         "Shall the data buffer be held at fp16 on the GPU. Halves the",
         "buffer and helps when the assignment kernels are memory",
-        "bound."
+        "bound. wgpu only."
       )
     ),
-    same_weight = p_lgl(
-      FALSE,
-      doc = paste(
-        "If `TRUE`, all kNN edges get weight `1.0`. Otherwise edges",
-        "with a reverse counterpart are double counted."
-      )
-    ),
-    full_snn = p_lgl(
-      FALSE,
-      doc = paste(
-        "Shall the full shared nearest neighbour graph be generated,",
-        "including edges between centroids that are not neighbours."
-      )
-    ),
-    pruning = p_dbl(
-      NULL,
-      range = "[0,1]",
-      null_ok = TRUE,
-      doc = paste(
-        "Weights below this threshold are set to 0 when generating",
-        "the sNN graph. If `NULL`, defaults to `1 / ceiling(k *",
-        "0.8)`."
-      )
-    ),
-    snn_similarity = p_choice(
-      "jaccard",
-      c("jaccard", "rank"),
-      doc = paste(
-        "Jaccard computes the Jaccard index between neighbour sets;",
-        "rank weights edges by the best combined rank of a shared",
-        "neighbour. Both are normalised to `[0, 1]`."
-      )
+    dist = p_choice(
+      "euclidean",
+      c("euclidean", "cosine"),
+      doc = "Distance for the k-means and the centroid graph."
     ),
     cell_mediated = p_lgl(
       FALSE,
       doc = paste(
-        "Build the centroid graph from the cells instead of a kNN search",
-        "over the centroids: every cell links its `n_anchors` nearest",
-        "centroids, so two centroids are connected when cells sit near",
-        "both. If `TRUE`, `snn` and the sNN settings are ignored."
+        "Shall the cell-mediated centroid graph from Secuer be built",
+        "instead of the kNN graph on the centroids. Centroids are then",
+        "linked by the cells that sit near both, so two centroids that are",
+        "close in space but have no cells between them stay apart. If",
+        "`TRUE`, `centroid_k` and `centroid_graph` are ignored."
       )
     ),
     n_anchors = p_int(
@@ -617,25 +577,71 @@ spec_sc_fast_cluster_gpu <- param_spec(
       range = "[1,)",
       doc = paste(
         "Number of nearest centroids each cell links to in the",
-        "cell-mediated graph. Clamped to the number of centroids."
+        "cell-mediated graph. Only used if `cell_mediated = TRUE`."
       )
     ),
-    louvain_iters = p_int(
+    centroid_k = p_int(
+      15L,
+      range = "[1,)",
+      doc = paste(
+        "Neighbours per centroid in the exact centroid kNN. Only used if",
+        "`cell_mediated = FALSE`."
+      )
+    ),
+    centroid_graph = p_merge(
+      quote(bixverse::params_knn_graph_defaults()),
+      doc = paste(
+        "Optional overrides for how the centroid kNN is turned into a",
+        "graph. See [bixverse::params_knn_graph_defaults()]. Only used if",
+        "`cell_mediated = FALSE`."
+      )
+    ),
+    algorithm = p_choice(
+      "louvain",
+      c("louvain", "leiden"),
+      doc = "Community detection on the centroid graph."
+    ),
+    n_iterations = p_int(
+      NULL,
+      null_ok = TRUE,
+      doc = paste(
+        "Number of iterations of the community detection. A negative value",
+        "iterates until stable. If `NULL`, the bixverse default for the",
+        "chosen `algorithm`."
+      )
+    ),
+    beta = p_dbl(
+      0.01,
+      range = "(0,)",
+      doc = "Leiden only. Randomness of the refinement step."
+    ),
+    min_gain = p_dbl(
+      0,
+      range = "[0,)",
+      doc = paste(
+        "With a negative `n_iterations`, also stop once an iteration gains",
+        "no more than this in modularity."
+      )
+    ),
+    local_moving = p_choice(
+      "queue",
+      c("queue", "coloured"),
+      doc = paste(
+        "`\"queue\"` is Traag's sequential queue. `\"coloured\"` moves the",
+        "nodes of one colour class in parallel, which only kicks in on",
+        "larger levels of the graph."
+      )
+    ),
+    multi_level = p_lgl(
+      TRUE,
+      doc = "Shall the communities be aggregated and refined in levels."
+    ),
+    max_evals = p_int(
       10L,
       range = "[1,)",
-      doc = "Number of Louvain iterations."
-    ),
-    multi_level_louvain = p_lgl(
-      TRUE,
-      doc = "Shall multi-level Louvain be applied."
-    ),
-    knn = p_merge(
-      quote(bixverse::params_knn_defaults()),
-      default = list(k = 5L),
       doc = paste(
-        "Optional overrides for the kNN parameters applied to the",
-        "centroids. See [bixverse::params_knn_defaults()] for the",
-        "available parameters."
+        "Cap on the node evaluations per local moving phase, in units of",
+        "the number of nodes."
       )
     )
   )

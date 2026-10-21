@@ -2,20 +2,22 @@
 % Please edit documentation in R/methods_sc_processing.R
 \name{.fast_cluster_gpu}
 \alias{.fast_cluster_gpu}
-\title{Shared implementation of the GPU fast Louvain clustering}
+\title{Shared implementation of the GPU fast clustering}
 \usage{
 .fast_cluster_gpu(
   object,
   embd_to_use,
   no_embd_to_use,
   resolutions,
-  n_centroids,
   fc_params,
-  snn,
+  n_seeds,
   return_kmeans,
+  seed,
+  backend,
+  n_centroids,
+  snn,
   grid_search,
   no_seeds,
-  seed,
   .verbose
 )
 }
@@ -26,23 +28,30 @@
 
 \item{no_embd_to_use}{Optional integer. Number of dimensions to keep.}
 
-\item{resolutions}{Numeric vector. Louvain resolutions.}
-
-\item{n_centroids}{Optional integer. Number of k-means centroids. Defaults
-to \code{sqrt(n_cells)} Rust-side if \code{NULL}. Clamped to \code{n_cells - 1}.}
+\item{resolutions}{Numeric vector. Resolutions of the community detection.}
 
 \item{fc_params}{List. Output of \code{\link[=params_sc_fast_cluster_gpu]{params_sc_fast_cluster_gpu()}}.}
 
-\item{snn}{Boolean. Convert the centroid kNN to an sNN graph.}
+\item{n_seeds}{Integer. Number of seeds per resolution. \code{1L} runs a single
+pass without stability statistics.}
 
 \item{return_kmeans}{Boolean. Return the k-means assignments and centroids.}
 
-\item{grid_search}{Boolean. Run the multi-seed grid version.}
-
-\item{no_seeds}{Integer. Number of seeds to vary Louvain over. Must be at
-least 2. Only used when \code{grid_search = TRUE}.}
-
 \item{seed}{Integer. Seed for reproducibility.}
+
+\item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the k-means
+on Apple Silicon via MLX and needs a build with the MLX backend, see
+\code{\link[=mlx_available]{mlx_available()}}.}
+
+\item{n_centroids}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use
+\code{params_sc_fast_cluster_gpu(n_centroids = )}.}
+
+\item{snn}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use
+\code{params_sc_fast_cluster_gpu(centroid_graph = list(knn_sym = ))}.}
+
+\item{grid_search}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{n_seeds}.}
+
+\item{no_seeds}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{n_seeds}.}
 
 \item{.verbose}{Boolean or integer. Controls verbosity and returns run times.
 \code{FALSE} -> quiet, \code{TRUE} or \code{1L} -> normal verbosity, \code{2L} -> detailed
@@ -53,7 +62,8 @@ A \code{SingleCellFastClusters} S3 object.
 }
 \description{
 Body behind both \code{fast_cluster_gpu_sc()} methods. Pulls the embedding off the
-object, hands it to \code{\link[=rs_fast_cluster_gpu]{rs_fast_cluster_gpu()}} or \code{\link[=rs_fast_cluster_grid_gpu]{rs_fast_cluster_grid_gpu()}}
-and wraps the result into a \code{SingleCellFastClusters} S3 object.
+object, resolves the \code{NULL} defaults of \code{\link[=params_sc_fast_cluster_gpu]{params_sc_fast_cluster_gpu()}}, hands
+it to \code{\link[=rs_fast_cluster_gpu]{rs_fast_cluster_gpu()}} and wraps the result into a
+\code{SingleCellFastClusters} S3 object.
 }
 \keyword{internal}

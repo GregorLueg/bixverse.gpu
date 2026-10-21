@@ -1,9 +1,11 @@
 use ann_search_rs::gpu::k_means_gpu::KMeansGpuParams;
-use bixverse_rs::gpu::gpu_r_wrappers::KMeansGpuParamsFromR;
-use bixverse_rs::gpu::linalg::corr::{column_pairwise_cor_gpu, GpuCorCov};
+use bixverse_r::gpu::graph::leiden_gpu::community_detection_gpu;
+use bixverse_r::gpu::linalg::corr::{column_pairwise_cor_gpu, GpuCorCov};
+use bixverse_r::graph::graph_structures::edge_pairs_to_sparse_graph;
+use bixverse_r::graph::leiden::LeidenParams;
 #[cfg(mlx_available)]
-use bixverse_rs::mlx::linalg::corr::{column_pairwise_cor_mlx, MlxCorCov};
-use bixverse_rs::prelude::*;
+use bixverse_r::mlx::linalg::corr::{column_pairwise_cor_mlx, MlxCorCov};
+use bixverse_r::prelude::*;
 use burn::tensor::{Device as BurnDevice, DeviceKind};
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::prelude::*;
@@ -69,6 +71,8 @@ extendr_module! {
     fn rs_deserialise_parametric_umap;
     // clustering
     fn rs_kmeans_gpu;
+
+    fn rs_leiden_clustering_gpu;
     // correlations
     fn rs_cor_gpu;
     fn rs_cov_gpu;
@@ -352,7 +356,7 @@ pub(crate) fn ensure_plane_ops() -> extendr_api::Result<()> {
 /// (`brew install mlx-c`, or `MLX_C_PREFIX` pointing at an install prefix).
 ///
 /// @returns Boolean. `TRUE` when the package was built with the MLX backend.
-/// 
+///
 /// @keywords internal
 #[extendr]
 fn rs_mlx_available() -> bool {
@@ -739,6 +743,80 @@ fn rs_kmeans_gpu(
     ))
 }
 
+//////////////////////////
+// Leiden/Louvain (GPU) //
+//////////////////////////
+
+/// GPU-accelerated Leiden and Louvain clustering
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// GPU twin of `bixverse::rs_leiden_clustering`. Level-0 local moving runs on
+/// the wgpu backend; coarser levels, refinement and aggregation stay on the
+/// CPU. Graphs below 50,000 nodes, or with a node of degree above 512, run
+/// fully on the CPU with coloured local moving. On one device the result
+/// depends on the seed only.
+///
+/// @param from Integer vector. 1-based source node of each edge.
+/// @param to Integer vector. 1-based target node of each edge. Same length as
+/// `from`.
+/// @param weights Numeric vector. Edge weights, same length as `from`.
+/// @param n_nodes Integer. Number of nodes in the graph.
+/// @param leiden_params List. Named list with the optional fields `resolution`,
+/// `beta`, `n_iterations` (negative: until stable), `min_gain`, `refine`
+/// (`TRUE` for Leiden, `FALSE` for Louvain), `local_moving` (coarser levels
+/// only) and `seed`.
+///
+/// @returns Integer vector with the 1-based community of each node; `1` is the
+/// largest community.
+///
+/// @export
+#[extendr]
+fn rs_leiden_clustering_gpu(
+    from: &[i32],
+    to: &[i32],
+    weights: &[f64],
+    n_nodes: usize,
+    leiden_params: List,
+) -> extendr_api::Result<Vec<i32>> {
+    // the kernels reduce within a plane; a device that drops those dispatches
+    // would hand back an unmoved partition rather than fail
+    ensure_plane_ops()?;
+
+    if from.len() != to.len() || from.len() != weights.len() {
+        return Err(Error::Other(format!(
+            "from ({}), to ({}) and weights ({}) must have the same length.",
+            from.len(),
+            to.len(),
+            weights.len()
+        )));
+    }
+    let params = LeidenParams::from_r_list(leiden_params)?;
+
+    let mut edges = Vec::with_capacity(2 * from.len());
+    for (&f, &t) in from.iter().zip(to) {
+        for x in [f, t] {
+            if x < 1 || x as usize > n_nodes {
+                return Err(Error::Other(format!(
+                    "Node index {} is outside 1..={}.",
+                    x, n_nodes
+                )));
+            }
+            edges.push((x - 1) as usize);
+        }
+    }
+
+    let graph = edge_pairs_to_sparse_graph(&edges, weights, n_nodes);
+
+    let device: WgpuDevice = Default::default();
+    let client = cubecl::Device::from(device).client();
+    let membership =
+        community_detection_gpu(&graph, &params, usize::MAX, true, &client).to_extendr()?;
+    let _ = client.memory_cleanup();
+
+    Ok(membership.iter().map(|&x| (x + 1) as i32).collect())
+}
+
 /////////////
 // Cor/Cov //
 /////////////
@@ -904,7 +982,7 @@ fn rs_umap_gpu(
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
 
-    let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
+    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
     let precision = parse_precision(use_high_precision, embd.nrows());
 
     match precision {
@@ -1003,7 +1081,7 @@ fn rs_umap_from_knn_gpu(
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
 
-    let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
+    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
     let precision = parse_precision(use_high_precision, embd.nrows());
 
     match precision {
@@ -1131,7 +1209,7 @@ fn rs_tsne_gpu(
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
     let approx_type = tsne_approx_for_backend(approx_type, backend);
-    let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
+    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
     let precision = tsne_precision(&approx_type, use_high_precision, embd.nrows());
 
     match precision {
@@ -1232,7 +1310,7 @@ fn rs_tsne_from_knn_gpu(
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
     let approx_type = tsne_approx_for_backend(approx_type, backend);
-    let verbosity = bixverse_rs::prelude::parse_verbosity_level(verbose);
+    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
     let precision = tsne_precision(&approx_type, use_high_precision, embd.nrows());
 
     match precision {

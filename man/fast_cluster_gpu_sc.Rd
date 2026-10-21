@@ -2,20 +2,22 @@
 % Please edit documentation in R/methods_sc_processing.R
 \name{fast_cluster_gpu_sc}
 \alias{fast_cluster_gpu_sc}
-\title{Run fast Louvain clustering on a SingleCells object (GPU)}
+\title{Run fast clustering on a SingleCells object (GPU)}
 \usage{
 fast_cluster_gpu_sc(
   object,
   embd_to_use = "pca",
   no_embd_to_use = NULL,
   resolutions = c(2, 1, 0.5),
-  n_centroids = NULL,
   fc_params = params_sc_fast_cluster_gpu(),
-  snn = TRUE,
+  n_seeds = 1L,
   return_kmeans = FALSE,
-  grid_search = FALSE,
-  no_seeds = 10L,
   seed = 42L,
+  backend = c("wgpu", "mlx"),
+  n_centroids = lifecycle::deprecated(),
+  snn = lifecycle::deprecated(),
+  grid_search = lifecycle::deprecated(),
+  no_seeds = lifecycle::deprecated(),
   .verbose = TRUE
 )
 }
@@ -26,23 +28,30 @@ fast_cluster_gpu_sc(
 
 \item{no_embd_to_use}{Optional integer. Number of dimensions to keep.}
 
-\item{resolutions}{Numeric vector. Louvain resolutions.}
-
-\item{n_centroids}{Optional integer. Number of k-means centroids. Defaults
-to \code{sqrt(n_cells)} Rust-side if \code{NULL}. Clamped to \code{n_cells - 1}.}
+\item{resolutions}{Numeric vector. Resolutions of the community detection.}
 
 \item{fc_params}{List. Output of \code{\link[=params_sc_fast_cluster_gpu]{params_sc_fast_cluster_gpu()}}.}
 
-\item{snn}{Boolean. Convert the centroid kNN to an sNN graph.}
+\item{n_seeds}{Integer. Number of seeds per resolution. \code{1L} runs a single
+pass without stability statistics.}
 
 \item{return_kmeans}{Boolean. Return the k-means assignments and centroids.}
 
-\item{grid_search}{Boolean. Run the multi-seed grid version.}
-
-\item{no_seeds}{Integer. Number of seeds to vary Louvain over. Must be at
-least 2. Only used when \code{grid_search = TRUE}.}
-
 \item{seed}{Integer. Seed for reproducibility.}
+
+\item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the k-means
+on Apple Silicon via MLX and needs a build with the MLX backend, see
+\code{\link[=mlx_available]{mlx_available()}}.}
+
+\item{n_centroids}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use
+\code{params_sc_fast_cluster_gpu(n_centroids = )}.}
+
+\item{snn}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use
+\code{params_sc_fast_cluster_gpu(centroid_graph = list(knn_sym = ))}.}
+
+\item{grid_search}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{n_seeds}.}
+
+\item{no_seeds}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{n_seeds}.}
 
 \item{.verbose}{Boolean or integer. Controls verbosity and returns run times.
 \code{FALSE} -> quiet, \code{TRUE} or \code{1L} -> normal verbosity, \code{2L} -> detailed
@@ -53,7 +62,8 @@ verbosity.}
 \describe{
 \item{memberships}{data.table with \code{cell_idx} and one column per
 resolution (\verb{res_<value>}).}
-\item{stats}{data.table of grid statistics, or \code{NULL}.}
+\item{stats}{data.table of the stability statistics, or \code{NULL} for
+\code{n_seeds = 1L}.}
 \item{k_means_cluster}{Integer vector of k-means assignments, or \code{NULL}.}
 \item{centroids}{Numeric matrix of centroids, or \code{NULL}.}
 \item{resolutions}{Resolutions used.}
@@ -61,14 +71,15 @@ resolution (\verb{res_<value>}).}
 with \code{cell_indices} stored as an attribute (0-indexed).
 }
 \description{
-GPU counterpart of \code{\link[bixverse:fast_cluster_sc]{bixverse::fast_cluster_sc()}}. Runs k-means on the chosen
-embedding, builds a kNN graph on the centroids, applies Louvain clustering
-and propagates the memberships back to the cells. Optionally runs a grid over
-multiple seeds and returns stability statistics.
+GPU counterpart of \code{\link[bixverse:fast_cluster_sc]{bixverse::fast_cluster_sc()}}. Coarsens the cells with
+k-means on the chosen embedding, builds a graph over the centroids (a kNN
+graph or the cell-mediated graph), runs Louvain or Leiden on it and
+propagates the communities back to the cells. With \code{n_seeds > 1} every
+resolution is run once per seed and stability statistics are returned.
 
-Only the k-means coarsening runs on the WGPU backend. The centroid kNN, the
-optional sNN pass and the Louvain runs stay on the CPU, so the speedup tracks
-how much of the run k-means owns. That share grows with the cell count and
-with \code{n_centroids}. There is no \code{km_type} argument: the GPU k-means is
-full-batch Lloyd's and has no mini-batch path.
+Only the k-means coarsening (and the cell-mediated top-m search) run on the
+GPU. The centroid graph and the community detection stay on the CPU, so the
+speedup tracks how much of the run k-means owns. That share grows with the
+cell count and with \code{n_centroids}. There is no \code{km_type} argument: the GPU
+k-means is full-batch Lloyd's and has no mini-batch path.
 }

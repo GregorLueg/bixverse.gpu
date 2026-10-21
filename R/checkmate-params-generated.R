@@ -441,18 +441,22 @@ checkScFastClusterGpuParams <- function(x) {
   res <- check_list_shape(
     x,
     c(
+      "n_centroids",
       "k_means_iter",
       "k_means_init",
       "fixed",
       "quantise",
-      "same_weight",
-      "full_snn",
-      "pruning",
-      "snn_similarity",
+      "dist",
       "cell_mediated",
       "n_anchors",
-      "louvain_iters",
-      "multi_level_louvain"
+      "centroid_k",
+      "algorithm",
+      "n_iterations",
+      "beta",
+      "min_gain",
+      "local_moving",
+      "multi_level",
+      "max_evals"
     )
   )
   if (!isTRUE(res)) {
@@ -462,22 +466,24 @@ checkScFastClusterGpuParams <- function(x) {
   res <- apply_qtest_rules(
     x,
     list(
+      n_centroids = c("I1[2,)", "0"),
       k_means_iter = "I1[1,)",
       k_means_init = c("S1", "0"),
       fixed = "B1",
       quantise = "B1",
-      same_weight = "B1",
-      full_snn = "B1",
-      pruning = c("N1[0,1]", "0"),
       cell_mediated = "B1",
       n_anchors = "I1[1,)",
-      louvain_iters = "I1[1,)",
-      multi_level_louvain = "B1"
+      centroid_k = "I1[1,)",
+      n_iterations = c("I1", "0"),
+      beta = "N1(0,)",
+      min_gain = "N1[0,)",
+      multi_level = "B1",
+      max_evals = "I1[1,)"
     ),
     label = "GPU fast clustering params",
     hint = paste(
       "See ?params_sc_fast_cluster_gpu and",
-      "?bixverse::params_knn_defaults."
+      "?bixverse::params_knn_graph_defaults."
     )
   )
   if (!isTRUE(res)) {
@@ -487,39 +493,21 @@ checkScFastClusterGpuParams <- function(x) {
   res <- apply_choice_rules(
     x,
     list(
-      snn_similarity = c("jaccard", "rank")
+      dist = c("euclidean", "cosine"),
+      algorithm = c("louvain", "leiden"),
+      local_moving = c("queue", "coloured")
     ),
     label = "GPU fast clustering params",
     hint = paste(
       "See ?params_sc_fast_cluster_gpu and",
-      "?bixverse::params_knn_defaults."
+      "?bixverse::params_knn_graph_defaults."
     )
   )
   if (!isTRUE(res)) {
     return(res)
   }
 
-  res <- check_list_shape(x, c("k", "knn_method", "ann_dist"))
-  if (!isTRUE(res)) {
-    return(res)
-  }
-  res <- apply_qtest_rules(
-    x,
-    list(
-      k = "I1[1,)",
-      n_trees = "I1[1,)",
-      m = "I1[1,)",
-      ef_construction = "I1[1,)",
-      ef_search = "I1[1,)",
-      search_budget = c("I1[1,)", "0"),
-      ef_budget = c("I1[1,)", "0"),
-      n_list = c("I1[1,)", "0"),
-      n_probe = c("I1[1,)", "0"),
-      delta = "N1[0,1]",
-      diversify_prob = "N1[0,1]"
-    ),
-    label = "GPU fast clustering params"
-  )
+  res <- bixverse:::checkKnnGraphParams(x)
   if (!isTRUE(res)) {
     return(res)
   }
@@ -534,10 +522,6 @@ checkScFastClusterGpuParams <- function(x) {
       "Element `k_means_init` must be NULL or one of 'random',",
       "'parallel' or 'plusplus'."
     ))
-  }
-  res <- checkmate::checkChoice(x[["ann_dist"]], c("euclidean", "cosine"))
-  if (!isTRUE(res)) {
-    return(res)
   }
 
   return(TRUE)

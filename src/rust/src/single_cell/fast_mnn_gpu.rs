@@ -6,8 +6,8 @@
 //! `bixverse-rs`.
 
 use crate::ensure_gpu;
-use bixverse_rs::gpu::sc_gpu::fast_mnn_gpu::{fast_mnn_gpu, FastMnnParamsGpu};
-use bixverse_rs::prelude::*;
+use bixverse_r::gpu::sc_gpu::fast_mnn_gpu::{fast_mnn_gpu, FastMnnParamsGpu};
+use bixverse_r::prelude::*;
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 

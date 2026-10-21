@@ -8,9 +8,9 @@
 
 use crate::ensure_plane_ops;
 use crate::single_cell::sc_utils::nebula_res_to_r_list;
-use bixverse_rs::gpu::sc_gpu::nebula_gpu::run_nebula_gpu;
-use bixverse_rs::prelude::*;
-use bixverse_rs::single_cell::sc_analysis::nebula::NebulaScParams;
+use bixverse_r::gpu::sc_gpu::nebula_gpu::run_nebula_gpu;
+use bixverse_r::prelude::*;
+use bixverse_r::single_cell::sc_analysis::nebula::NebulaScParams;
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 

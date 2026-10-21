@@ -1,13 +1,13 @@
 use crate::{parse_backend, Backend};
-use bixverse_rs::gpu::sc_gpu::harmony_gpu::{harmony_v2_gpu, HarmonyParamsV2Gpu};
-use bixverse_rs::prelude::*;
+use bixverse_r::gpu::sc_gpu::harmony_gpu::{harmony_v2_gpu, HarmonyParamsV2Gpu};
+use bixverse_r::prelude::*;
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 
 #[cfg(mlx_available)]
-use bixverse_rs::mlx::sc::harmony::harmony_v2_mlx;
+use bixverse_r::mlx::sc::harmony::harmony_v2_mlx;
 #[cfg(mlx_available)]
-use bixverse_rs::single_cell::sc_batch_correction::harmony_v2::HarmonyParamsV2;
+use bixverse_r::single_cell::sc_batch_correction::harmony_v2::HarmonyParamsV2;
 
 /////////////
 // extendr //

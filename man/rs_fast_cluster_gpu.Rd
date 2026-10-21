@@ -2,54 +2,60 @@
 % Please edit documentation in R/extendr-wrappers.R
 \name{rs_fast_cluster_gpu}
 \alias{rs_fast_cluster_gpu}
-\title{GPU: fast Louvain clustering on the data}
+\title{GPU: fast clustering on the data}
 \usage{
 rs_fast_cluster_gpu(
   embd,
   resolutions,
-  n_centroids,
   fc_params,
-  snn,
-  return_kmeans,
+  n_seeds,
   seed,
-  verbose
+  verbose,
+  backend = "wgpu"
 )
 }
 \arguments{
-\item{embd}{Numeric matrix. The original embedding.}
+\item{embd}{Numeric matrix. The embedding, cells x features.}
 
-\item{resolutions}{Numeric vector. The Louvain resolutions to iterate
-through.}
+\item{resolutions}{Numeric vector. The resolutions to iterate through.}
 
-\item{n_centroids}{Optional integer. The number of clusters to find. If
-not provided, defaults to \code{sqrt(nrow(embd))}.}
+\item{fc_params}{Named list. See \code{\link[=params_sc_fast_cluster_gpu]{params_sc_fast_cluster_gpu()}}. Carries
+the GPU k-means keys (\code{k_means_iter}, \code{k_means_init}, \code{fixed}, \code{quantise})
+alongside the fast clustering ones.}
 
-\item{fc_params}{Named list. See \code{\link[=params_sc_fast_cluster_gpu]{params_sc_fast_cluster_gpu()}}.}
-
-\item{snn}{Boolean. Shall the kNN graph be additionally transformed into
-an sNN graph.}
-
-\item{return_kmeans}{Boolean. Shall the k-means centroids and assignments
-be returned alongside the memberships.}
+\item{n_seeds}{Integer. Number of seeds per resolution. \code{1L} runs a single
+pass without stability metrics.}
 
 \item{seed}{Integer. For reproducibility.}
 
 \item{verbose}{Integer. \code{0L} - quiet; \code{1L} - normal verbosity; \code{2L} -
 detailed verbosity.}
+
+\item{backend}{String. \code{"wgpu"} or \code{"mlx"} (Apple Silicon, needs a build
+with the MLX backend, see \code{\link[=mlx_available]{mlx_available()}}). MLX ignores \code{fixed} and
+\code{quantise}.}
 }
 \value{
 A list with the following elements:
 \itemize{
-\item membership - The memberships across the different resolutions.
-\item k_means_cluster - Optional integer vector of k-means assignments.
-\item centroids - Optional numeric matrix of k-means centroids.
+\item membership - List with one integer membership vector per
+resolution (0-indexed).
+\item k_means_cluster - Integer vector with the k-means centroid per cell
+(0-indexed).
+\item centroids - Numerical matrix with the k-means centroids.
+\item stats - \code{NULL} for \code{n_seeds = 1L}, otherwise a list with
+\code{mean_ari}, \code{median_ari}, \code{mean_conductance}, \code{median_conductance} and
+\code{mean_n_comms}, one value per resolution.
 }
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-GPU equivalent of \code{bixverse::rs_fast_cluster_sc}. Runs k-means clustering on
-the WGPU backend, followed by a kNN detection on the centroids to then run
-Louvain clustering on the graph and propagate the membership back to the
-original data. Everything after the k-means stays on the CPU.
+GPU equivalent of \code{bixverse::rs_fast_cluster_sc}. Coarsens the cells with
+k-means on the GPU, builds a graph over the centroids (a kNN graph with one
+of the symmetrisations, or the cell-mediated graph) and runs Louvain or
+Leiden on it. The community of each centroid is propagated back to its
+cells. With \code{n_seeds > 1} every resolution is run once per seed, the labels
+come from the seed with the lowest mean conductance and stability metrics
+across the seeds are returned. Everything after stage one stays on the CPU.
 }
 \keyword{internal}

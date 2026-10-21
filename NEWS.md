@@ -1,3 +1,28 @@
+# bixverse.gpu 0.6.0
+
+## Features
+
+* Exact sparse PCA on the GPU. `calculate_pca_gpu_sc()` runs a block Lanczos
+  on the device (WGPU and MLX) for every `svd_solver` except `"randomised"`,
+  which keeps the randomised SVD. It matches the CPU Lanczos to f32 precision.
+* Fast clustering (`fast_cluster_gpu_sc()`) can build the centroid graph from
+  the cells instead of a kNN search over the centroids:
+  `params_sc_fast_cluster_gpu(cell_mediated = TRUE, n_anchors = 5L)`. Every
+  cell links its `n_anchors` nearest centroids. On a 10k cell synthetic set the
+  agreement with the ground truth went from ARI 0.29 to 0.71 at resolution 1.
+  Off by default.
+
+## Breaking changes
+
+* `calculate_pca_gpu_sc()` no longer ignores `svd_solver`. The default
+  (`"auto"`) is exact and slower than the randomised SVD it used to run. Pass
+  `pca_params = params_sc_pca(svd_solver = "randomised")` for the old behaviour.
+
+## Internal
+
+* Moved to bixverse-rs 0.8.1, manifolds-rs 0.7.2, ann-search-rs 0.11.1,
+  cubecl 0.11, burn 0.22 and faer 0.24.
+
 # bixverse.gpu 0.5.0
 
 ## Features
@@ -11,12 +36,6 @@
   tSNE, `"mlx"` moves the kNN search and the device optimiser (`"adam_gpu"`,
   `"fft_3k_gpu"`); CPU optimisers stay on the CPU. MLX is fp32 only. WGPU stays
   the default and the only portable backend. 
-* Fast clustering (`fast_cluster_gpu_sc()`) can build the centroid graph from
-  the cells instead of a kNN search over the centroids:
-  `params_sc_fast_cluster_gpu(cell_mediated = TRUE, n_anchors = 5L)`. Every
-  cell links its `n_anchors` nearest centroids. On a 10k cell synthetic set the
-  agreement with the ground truth went from ARI 0.29 to 0.71 at resolution 1.
-  Off by default.
 * FFT-accelerated tSNE (`approx_type = "fft"` and `"fft_3k"`) now works on
   Windows too: FFTW was replaced by the pure-Rust rustfft.
 * On macOS the CPU GEMMs in the Rust backends go through Apple Accelerate.
@@ -26,11 +45,6 @@
 * The `rs_*` wrappers with an MLX path gained a `backend` argument, inserted
   before `verbose`. Named calls keep working (it defaults to `"wgpu"`);
   positional calls past `seed` need updating.
-
-## Internal
-
-* Moved to bixverse-rs 0.7.0, manifolds-rs 0.7.0, ann-search-rs 0.11.0,
-  cubecl 0.11, burn 0.22 and faer 0.24.
 
 # bixverse.gpu 0.4.1
 

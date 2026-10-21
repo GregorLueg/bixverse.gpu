@@ -1,4 +1,4 @@
-use bixverse_rs::prelude::IntoExtendrErr;
+use bixverse_r::prelude::IntoExtendrErr;
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 use faer::{Mat, MatRef};

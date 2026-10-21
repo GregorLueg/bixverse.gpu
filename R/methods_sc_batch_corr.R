@@ -130,11 +130,10 @@ S7::method(harmony_v2_gpu_sc, SingleCells) <- function(
 # GPU-accelerated BBKNN:
 # - Wraps `rs_bbknn_gpu`.
 # - Writes back the same artefacts as `bixverse::bbknn_sc()`: a kNN matrix
-#   filtered down from the BBKNN distances, and an sNN graph built from the
-#   BBKNN connectivities.
-# - The graph does NOT go through `.set_snn_graph_gpu()`. BBKNN produces
-#   connectivities directly, so there is no shared nearest neighbour step and
-#   no `snn_params`. Weights are the connectivities themselves.
+#   filtered down from the BBKNN distances, and the BBKNN connectivities.
+# - The graph does NOT go through `bixverse:::.knn_to_graph()`. BBKNN produces
+#   connectivities directly, so there is no symmetrisation step and no
+#   `graph_params`. Weights are the connectivities themselves.
 # - Reuses `bixverse::rs_bbknn_filtering()` rather than keeping a second copy
 #   of the CSR-to-matrix filter. It is identical work on both paths.
 # ------------------------------------------------------------------------------
@@ -402,13 +401,13 @@ S7::method(bbknn_gpu_sc, SingleCellsSubset) <- function(
     index1 = TRUE
   )
 
-  snn_graph <- igraph::graph_from_adjacency_matrix(
+  connectivities <- igraph::graph_from_adjacency_matrix(
     sparse_mat,
     mode = "max",
     weighted = TRUE
   )
 
-  set_snn_graph(object, snn_graph = snn_graph, from = "knn")
+  set_connectivities(object, connectivities = connectivities, from = "knn")
 }
 
 # ------------------------------------------------------------------------------

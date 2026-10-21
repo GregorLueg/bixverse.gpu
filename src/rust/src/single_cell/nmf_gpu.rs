@@ -1,7 +1,7 @@
 //! GPU-accelerated NMF for single cells and meta cells.
 //!
 //! Thin bindings over the sparse GPU entry points in
-//! [`bixverse_rs::gpu::methods_gpu::nmf_consensus_gpu`]. Those own the device
+//! [`bixverse_r::gpu::methods_gpu::nmf_consensus_gpu`]. Those own the device
 //! client, the pre-processing, the upload and the scratch sizing, so there is
 //! nothing to do here beyond getting the counts into a
 //! [`CompressedSparseData2`] and converting the result back to an R list.
@@ -21,13 +21,14 @@
 //! Every entry point also takes `backend = "mlx"`.
 
 use crate::{parse_backend, Backend};
-use bixverse_rs::gpu::methods_gpu::nmf_consensus_gpu::{
+use bixverse_r::gpu::methods_gpu::nmf_consensus_gpu::{
     nmf_consensus_run_sparse_gpu, nmf_k_sweep_run_sparse_gpu, nmf_multiple_run_sparse_gpu,
     nmf_single_run_sparse_gpu,
 };
-use bixverse_rs::methods::nmf_hals::consensus::{ConsensusNmfResult, ConsensusParams, KSweepEntry};
-use bixverse_rs::methods::nmf_hals::{HalsOpts, NmfResult, StabilisedNmfResult};
-use bixverse_rs::prelude::*;
+use bixverse_r::methods::nmf_hals::consensus::{ConsensusNmfResult, ConsensusParams, KSweepEntry};
+use bixverse_r::methods::nmf_hals::{HalsOpts, NmfResult, StabilisedNmfResult};
+use bixverse_r::methods_r_wrapper::hals_opts_from_r_list;
+use bixverse_r::prelude::*;
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::prelude::Rint;
 use extendr_api::*;
@@ -35,7 +36,7 @@ use indexmap::IndexSet;
 use std::time::Instant;
 
 #[cfg(mlx_available)]
-use bixverse_rs::mlx::methods::nmf::{
+use bixverse_r::mlx::methods::nmf::{
     nmf_consensus_run_sparse_mlx, nmf_k_sweep_run_sparse_mlx, nmf_multiple_run_sparse_mlx,
     nmf_single_run_sparse_mlx,
 };
@@ -597,7 +598,7 @@ fn rs_nmf_single_sc_gpu(
 
     let gene_indices = gene_indices.r_int_convert();
     let cell_indices = cell_indices.r_int_convert();
-    let nmf_hals_opt: HalsOpts<f32> = HalsOpts::from_r_list(nmf_hals_params, seed).to_extendr()?;
+    let nmf_hals_opt: HalsOpts<f32> = hals_opts_from_r_list(nmf_hals_params, seed)?;
 
     let csc = load_sc_sparse(
         f_path_gene,
@@ -682,7 +683,7 @@ fn rs_nmf_multi_sc_gpu(
 
     let gene_indices = gene_indices.r_int_convert();
     let cell_indices = cell_indices.r_int_convert();
-    let nmf_hals_opt: HalsOpts<f32> = HalsOpts::from_r_list(nmf_hals_params, seed).to_extendr()?;
+    let nmf_hals_opt: HalsOpts<f32> = hals_opts_from_r_list(nmf_hals_params, seed)?;
 
     let csc = load_sc_sparse(
         f_path_gene,
@@ -785,7 +786,7 @@ fn rs_nmf_consensus_sc_gpu(
 
     let gene_indices = gene_indices.r_int_convert();
     let cell_indices = cell_indices.r_int_convert();
-    let nmf_hals_opt: HalsOpts<f32> = HalsOpts::from_r_list(nmf_hals_params, seed).to_extendr()?;
+    let nmf_hals_opt: HalsOpts<f32> = hals_opts_from_r_list(nmf_hals_params, seed)?;
     let consensus_opt: ConsensusParams<f32> = ConsensusParams::from_r_list(nmf_consensus_params)?;
 
     let csc = load_sc_sparse(
@@ -883,7 +884,7 @@ fn rs_nmf_k_sweep_sc_gpu(
     let gene_indices = gene_indices.r_int_convert();
     let cell_indices = cell_indices.r_int_convert();
     let k_range = k_range.r_int_convert();
-    let nmf_hals_opt: HalsOpts<f32> = HalsOpts::from_r_list(nmf_hals_params, seed).to_extendr()?;
+    let nmf_hals_opt: HalsOpts<f32> = hals_opts_from_r_list(nmf_hals_params, seed)?;
     let consensus_opt: ConsensusParams<f32> = ConsensusParams::from_r_list(nmf_consensus_params)?;
 
     let csc = load_sc_sparse(
@@ -957,7 +958,7 @@ fn rs_nmf_single_mc_gpu(
     let sparse: CompressedSparseData2<f64, f64> =
         list_to_sparse_matrix(sparse_data, true).to_extendr()?;
     let sparse = cast_sparse_f32(sparse);
-    let nmf_hals_opt: HalsOpts<f32> = HalsOpts::from_r_list(nmf_hals_params, seed).to_extendr()?;
+    let nmf_hals_opt: HalsOpts<f32> = hals_opts_from_r_list(nmf_hals_params, seed)?;
 
     let nmf_res = run_nmf_single(
         sparse,
@@ -1018,7 +1019,7 @@ fn rs_nmf_multi_mc_gpu(
     let sparse: CompressedSparseData2<f64, f64> =
         list_to_sparse_matrix(sparse_data, true).to_extendr()?;
     let sparse = cast_sparse_f32(sparse);
-    let nmf_hals_opt: HalsOpts<f32> = HalsOpts::from_r_list(nmf_hals_params, seed).to_extendr()?;
+    let nmf_hals_opt: HalsOpts<f32> = hals_opts_from_r_list(nmf_hals_params, seed)?;
 
     let nmf_res = run_nmf_multi(
         sparse,
@@ -1088,7 +1089,7 @@ fn rs_nmf_consensus_mc_gpu(
     let sparse: CompressedSparseData2<f64, f64> =
         list_to_sparse_matrix(sparse_data, true).to_extendr()?;
     let sparse = cast_sparse_f32(sparse);
-    let nmf_hals_opt: HalsOpts<f32> = HalsOpts::from_r_list(nmf_hals_params, seed).to_extendr()?;
+    let nmf_hals_opt: HalsOpts<f32> = hals_opts_from_r_list(nmf_hals_params, seed)?;
     let consensus_opt: ConsensusParams<f32> = ConsensusParams::from_r_list(nmf_consensus_params)?;
 
     let nmf_res = run_nmf_consensus(
@@ -1159,7 +1160,7 @@ fn rs_nmf_k_sweep_mc_gpu(
         list_to_sparse_matrix(sparse_data, true).to_extendr()?;
     let sparse = cast_sparse_f32(sparse);
     let k_range = k_range.r_int_convert();
-    let nmf_hals_opt: HalsOpts<f32> = HalsOpts::from_r_list(nmf_hals_params, seed).to_extendr()?;
+    let nmf_hals_opt: HalsOpts<f32> = hals_opts_from_r_list(nmf_hals_params, seed)?;
     let consensus_opt: ConsensusParams<f32> = ConsensusParams::from_r_list(nmf_consensus_params)?;
 
     let sweep_res = run_nmf_k_sweep(

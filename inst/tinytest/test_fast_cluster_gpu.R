@@ -26,7 +26,14 @@ min_cells_exp <- 500L
 hvg_to_keep <- 30L
 no_pcs <- 10L
 n_centroids <- 30L
+# bixverse's default centroid_k of 15 links half of 30 centroids to each other,
+# which merges everything into one community at the lower resolution
+centroid_k <- 5L
 resolutions <- c(1.0, 0.5)
+fc_params <- params_sc_fast_cluster_gpu(
+  n_centroids = n_centroids,
+  centroid_k = centroid_k
+)
 
 ## synthetic single-cell data --------------------------------------------------
 
@@ -49,7 +56,6 @@ sc_object <- load_r_data(
     min_lib_size = min_lib_size,
     min_cells = min_cells_exp
   ),
-  streaming = 0L,
   .verbose = FALSE
 )
 
@@ -64,7 +70,7 @@ n_cells_kept <- length(get_cells_to_keep(sc_object))
 fc_gpu <- fast_cluster_gpu_sc(
   object = sc_object,
   resolutions = resolutions,
-  n_centroids = n_centroids,
+  fc_params = fc_params,
   .verbose = FALSE
 )
 
@@ -97,7 +103,7 @@ expect_true(
 
 expect_null(
   current = fc_gpu$stats,
-  info = "fast cluster gpu - no grid stats without grid_search"
+  info = "fast cluster gpu - no stats for a single seed"
 )
 
 ### k-means getters warn without the data --------------------------------------
@@ -131,7 +137,7 @@ expect_true(
 fc_gpu_km <- fast_cluster_gpu_sc(
   object = sc_object,
   resolutions = resolutions,
-  n_centroids = n_centroids,
+  fc_params = fc_params,
   return_kmeans = TRUE,
   .verbose = FALSE
 )
@@ -159,9 +165,8 @@ expect_true(
 fc_gpu_grid <- fast_cluster_gpu_sc(
   object = sc_object,
   resolutions = resolutions,
-  n_centroids = n_centroids,
-  grid_search = TRUE,
-  no_seeds = 4L,
+  fc_params = fc_params,
+  n_seeds = 4L,
   .verbose = FALSE
 )
 
@@ -219,25 +224,75 @@ expect_true(
   info = "fast cluster gpu grid - memberships still cover every cell"
 )
 
-## sNN path --------------------------------------------------------------------
+## centroid graph variants ----------------------------------------------------
 
-fc_gpu_snn <- fast_cluster_gpu_sc(
-  object = sc_object,
-  resolutions = resolutions,
-  n_centroids = n_centroids,
-  fc_params = params_sc_fast_cluster_gpu(knn = list(k = 10L)),
-  snn = TRUE,
-  .verbose = FALSE
+graph_variants <- list(
+  knn = params_sc_fast_cluster_gpu(
+    n_centroids = n_centroids,
+    centroid_k = centroid_k,
+    centroid_graph = list(knn_sym = "knn")
+  ),
+  umap = params_sc_fast_cluster_gpu(
+    n_centroids = n_centroids,
+    centroid_k = centroid_k,
+    centroid_graph = list(knn_sym = "umap")
+  ),
+  snn_rank = params_sc_fast_cluster_gpu(
+    n_centroids = n_centroids,
+    centroid_k = centroid_k,
+    centroid_graph = list(snn_similarity = "rank")
+  ),
+  cell_mediated = params_sc_fast_cluster_gpu(
+    n_centroids = n_centroids,
+    cell_mediated = TRUE,
+    n_anchors = 3L
+  ),
+  leiden = params_sc_fast_cluster_gpu(
+    n_centroids = n_centroids,
+    centroid_k = centroid_k,
+    algorithm = "leiden"
+  )
 )
 
-ari_snn <- manifoldsR::calc_ari(
-  as.integer(factor(sc_cell_type)),
-  as.integer(get_data(fc_gpu_snn)[["res_0.5"]])
+for (variant in names(graph_variants)) {
+  fc_variant <- fast_cluster_gpu_sc(
+    object = sc_object,
+    resolutions = resolutions,
+    fc_params = graph_variants[[variant]],
+    .verbose = FALSE
+  )
+
+  ari_variant <- manifoldsR::calc_ari(
+    as.integer(factor(sc_cell_type)),
+    as.integer(get_data(fc_variant)[["res_0.5"]])
+  )
+
+  expect_true(
+    current = ari_variant > 0.5,
+    info = sprintf(
+      "fast cluster gpu - %s also recovers the cell types",
+      variant
+    )
+  )
+}
+
+## deprecated arguments --------------------------------------------------------
+
+expect_warning(
+  current = fc_gpu_dep <- fast_cluster_gpu_sc(
+    object = sc_object,
+    resolutions = resolutions,
+    n_centroids = n_centroids,
+    grid_search = TRUE,
+    no_seeds = 3L,
+    .verbose = FALSE
+  ),
+  info = "fast cluster gpu - deprecated grid arguments warn"
 )
 
 expect_true(
-  current = ari_snn > 0.5,
-  info = "fast cluster gpu - sNN path also recovers the cell types"
+  current = checkmate::testDataTable(fc_gpu_dep$stats, nrows = 2L),
+  info = "fast cluster gpu - deprecated grid arguments still run the grid"
 )
 
 ## reproducibility -------------------------------------------------------------
@@ -245,7 +300,7 @@ expect_true(
 fc_gpu_a <- fast_cluster_gpu_sc(
   object = sc_object,
   resolutions = resolutions,
-  n_centroids = n_centroids,
+  fc_params = fc_params,
   seed = 99L,
   .verbose = FALSE
 )
@@ -253,7 +308,7 @@ fc_gpu_a <- fast_cluster_gpu_sc(
 fc_gpu_b <- fast_cluster_gpu_sc(
   object = sc_object,
   resolutions = resolutions,
-  n_centroids = n_centroids,
+  fc_params = fc_params,
   seed = 99L,
   .verbose = FALSE
 )
@@ -273,7 +328,10 @@ expect_equal(
 fc_cpu <- fast_cluster_sc(
   object = sc_object,
   resolutions = resolutions,
-  n_centroids = n_centroids,
+  fc_params = params_sc_fast_cluster(
+    n_centroids = n_centroids,
+    centroid_k = centroid_k
+  ),
   .verbose = FALSE
 )
 
@@ -319,7 +377,7 @@ subset_parent_rows <- get_cells_to_keep(subset_object) + 1L
 fc_subset <- fast_cluster_gpu_sc(
   object = subset_object,
   resolutions = resolutions,
-  n_centroids = 15L,
+  fc_params = params_sc_fast_cluster_gpu(n_centroids = 15L),
   .verbose = FALSE
 )
 
@@ -351,14 +409,15 @@ expect_error(
 )
 
 expect_error(
-  current = fast_cluster_gpu_sc(
-    object = sc_object,
-    fc_params = params_sc_fast_cluster_gpu(
-      knn = list(ann_dist = "manhattan")
-    ),
-    .verbose = FALSE
-  ),
+  current = params_sc_fast_cluster_gpu(dist = "manhattan"),
   info = "fast cluster gpu - manhattan is rejected before it reaches the GPU"
+)
+
+expect_error(
+  current = params_sc_fast_cluster_gpu(
+    centroid_graph = list(knn_sym = "not_a_graph")
+  ),
+  info = "fast cluster gpu - an unknown symmetrisation is rejected"
 )
 
 expect_error(
@@ -373,9 +432,8 @@ expect_error(
 expect_error(
   current = fast_cluster_gpu_sc(
     object = sc_object,
-    grid_search = TRUE,
-    no_seeds = 1L,
+    n_seeds = 0L,
     .verbose = FALSE
   ),
-  info = "fast cluster gpu grid - fewer than two seeds is rejected"
+  info = "fast cluster gpu - zero seeds is rejected"
 )

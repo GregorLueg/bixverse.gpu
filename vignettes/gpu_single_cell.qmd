@@ -36,8 +36,9 @@ outweigh the speedup, but the larger the data, the more these methods pay off
 
 `bixverse.gpu` currently provides:
 
-- **GPU PCA** via `calculate_pca_gpu_sc()`: a sparse, randomised SVD where the
-  large matrix multiplications run on GPU. Scaling (if desired) is applied 
+- **GPU PCA** via `calculate_pca_gpu_sc()`: a sparse SVD where the
+  large matrix multiplications run on GPU, exact via block Lanczos by default
+  or randomised via `svd_solver = "randomised"`. Scaling (if desired) is applied 
   without ever materialising the dense matrix. Also, option for the PFLogPF
   normalisation.
 - **GPU Harmony v2** via `harmony_v2_gpu_sc()`: a GPU implementation of
@@ -192,7 +193,25 @@ cpu_res <- get_pca_factors(sc_object)
 cpu_s <- get_pca_singular_val(sc_object)
 ```
 
-The GPU version looks very similar
+The GPU version looks very similar. There are two solvers behind it, picked via
+`svd_solver` in `params_sc_pca()`. `"randomised"` runs a randomised SVD: quick,
+but approximate in the trailing PCs. Everything else (the default `"auto"`,
+`"exact"` and `"covariance"`) runs an exact block Lanczos. There is no GPU
+covariance path, so `"covariance"` also lands on Lanczos. Let's run the
+randomised one first and keep the singular values.
+
+```{r}
+#| label: gpu pca randomised
+sc_object <- calculate_pca_gpu_sc(
+  object = sc_object,
+  no_pcs = 32L,
+  pca_params = params_sc_pca(svd_solver = "randomised")
+)
+gpu_s_rand <- get_pca_singular_val(sc_object)
+```
+
+The default is the exact path. It's the slower of the two, and it overwrites the
+PCA we just stored, so everything downstream uses it.
 
 ```{r}
 #| label: gpu pca
@@ -231,6 +250,33 @@ ggplot(
 You might see some slight differences here driven by floating operation 
 differences between CPU and GPU and sign shifts. The overall data structure is 
 however clearly captured.
+
+How far does the randomised solver drift from the CPU singular values?
+
+```{r}
+#| label: singular values - exact vs randomised
+rel_err <- melt(
+  data.table(
+    pc = seq_along(cpu_s),
+    exact = abs(gpu_s - cpu_s) / cpu_s,
+    randomised = abs(gpu_s_rand - cpu_s) / cpu_s
+  ),
+  id.vars = "pc",
+  variable.name = "solver",
+  value.name = "rel_error"
+)
+
+ggplot(rel_err, mapping = aes(x = pc, y = rel_error, colour = solver)) +
+  geom_line() +
+  theme_bw() +
+  scale_y_log10() +
+  xlab("PC") +
+  ylab("Relative error vs CPU")
+```
+
+The exact solver tracks the CPU to f32 precision. The randomised one is looser,
+and the error grows towards the trailing PCs. Use it when you only care about
+the leading components and want the speed.
 
 ## GPU-accelerated Harmony v2
 

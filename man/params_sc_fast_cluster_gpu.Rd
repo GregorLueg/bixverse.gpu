@@ -2,25 +2,32 @@
 % Please edit documentation in R/params-generated.R
 \name{params_sc_fast_cluster_gpu}
 \alias{params_sc_fast_cluster_gpu}
-\title{Default parameters for GPU fast Louvain clustering}
+\title{Default parameters for GPU fast clustering}
 \usage{
 params_sc_fast_cluster_gpu(
+  n_centroids = NULL,
   k_means_iter = 50L,
   k_means_init = NULL,
   fixed = TRUE,
   quantise = FALSE,
-  same_weight = FALSE,
-  full_snn = FALSE,
-  pruning = NULL,
-  snn_similarity = c("jaccard", "rank"),
+  dist = c("euclidean", "cosine"),
   cell_mediated = FALSE,
   n_anchors = 5L,
-  louvain_iters = 10L,
-  multi_level_louvain = TRUE,
-  knn = list(k = 5L)
+  centroid_k = 15L,
+  centroid_graph = list(),
+  algorithm = c("louvain", "leiden"),
+  n_iterations = NULL,
+  beta = 0.01,
+  min_gain = 0,
+  local_moving = c("queue", "coloured"),
+  multi_level = TRUE,
+  max_evals = 10L
 )
 }
 \arguments{
+\item{n_centroids}{Integer or \code{NULL}. Number of k-means centroids. If \code{NULL},
+defaults to \code{floor(sqrt(n_cells))}. Defaults to \code{NULL}.}
+
 \item{k_means_iter}{Integer. Maximum number of k-means iterations. Defaults
 to \code{50L}.}
 
@@ -29,94 +36,114 @@ to \code{50L}.}
 based on the number of centroids. Defaults to \code{NULL}.}
 
 \item{fixed}{Boolean. Shall k-means run for a fixed number of iterations,
-without checking for convergence. Defaults to \code{TRUE}.}
+without checking for convergence. wgpu only; MLX always runs every iteration.
+Defaults to \code{TRUE}.}
 
 \item{quantise}{Boolean. Shall the data buffer be held at fp16 on the GPU.
 Halves the buffer and helps when the assignment kernels are memory bound.
-Defaults to \code{FALSE}.}
+wgpu only. Defaults to \code{FALSE}.}
 
-\item{same_weight}{Boolean. If \code{TRUE}, all kNN edges get weight \code{1.0}.
-Otherwise edges with a reverse counterpart are double counted. Defaults to
-\code{FALSE}.}
+\item{dist}{String. Distance for the k-means and the centroid graph. One of
+\code{c("euclidean", "cosine")}. Defaults to \code{"euclidean"}.}
 
-\item{full_snn}{Boolean. Shall the full shared nearest neighbour graph be
-generated, including edges between centroids that are not neighbours.
-Defaults to \code{FALSE}.}
-
-\item{pruning}{Numeric or \code{NULL}. Weights below this threshold are set to 0
-when generating the sNN graph. If \code{NULL}, defaults to \code{1 / ceiling(k * 0.8)}.
-Defaults to \code{NULL}.}
-
-\item{snn_similarity}{String. Jaccard computes the Jaccard index between
-neighbour sets; rank weights edges by the best combined rank of a shared
-neighbour. Both are normalised to \verb{[0, 1]}. One of \code{c("jaccard", "rank")}.
-Defaults to \code{"jaccard"}.}
-
-\item{cell_mediated}{Boolean. Build the centroid graph from the cells instead
-of a kNN search over the centroids: every cell links its \code{n_anchors} nearest
-centroids, so two centroids are connected when cells sit near both. If
-\code{TRUE}, \code{snn} and the sNN settings are ignored. Defaults to \code{FALSE}.}
+\item{cell_mediated}{Boolean. Shall the cell-mediated centroid graph from
+Secuer be built instead of the kNN graph on the centroids. Centroids are then
+linked by the cells that sit near both, so two centroids that are close in
+space but have no cells between them stay apart. If \code{TRUE}, \code{centroid_k} and
+\code{centroid_graph} are ignored. Defaults to \code{FALSE}.}
 
 \item{n_anchors}{Integer. Number of nearest centroids each cell links to in
-the cell-mediated graph. Clamped to the number of centroids. Defaults to
+the cell-mediated graph. Only used if \code{cell_mediated = TRUE}. Defaults to
 \code{5L}.}
 
-\item{louvain_iters}{Integer. Number of Louvain iterations. Defaults to
-\code{10L}.}
+\item{centroid_k}{Integer. Neighbours per centroid in the exact centroid kNN.
+Only used if \code{cell_mediated = FALSE}. Defaults to \code{15L}.}
 
-\item{multi_level_louvain}{Boolean. Shall multi-level Louvain be applied.
-Defaults to \code{TRUE}.}
+\item{centroid_graph}{List. Optional overrides for how the centroid kNN is
+turned into a graph. See \code{\link[bixverse:params_knn_graph_defaults]{bixverse::params_knn_graph_defaults()}}. Only used
+if \code{cell_mediated = FALSE}. Defaults to \code{list()}.}
 
-\item{knn}{List. Optional overrides for the kNN parameters applied to the
-centroids. See \code{\link[bixverse:params_knn_defaults]{bixverse::params_knn_defaults()}} for the available
-parameters. Defaults to \code{list(k = 5L)}.}
+\item{algorithm}{String. Community detection on the centroid graph. One of
+\code{c("louvain", "leiden")}. Defaults to \code{"louvain"}.}
+
+\item{n_iterations}{Integer or \code{NULL}. Number of iterations of the community
+detection. A negative value iterates until stable. If \code{NULL}, the bixverse
+default for the chosen \code{algorithm}. Defaults to \code{NULL}.}
+
+\item{beta}{Numeric. Leiden only. Randomness of the refinement step. Defaults
+to \code{0.01}.}
+
+\item{min_gain}{Numeric. With a negative \code{n_iterations}, also stop once an
+iteration gains no more than this in modularity. Defaults to \code{0.0}.}
+
+\item{local_moving}{String. \code{"queue"} is Traag's sequential queue.
+\code{"coloured"} moves the nodes of one colour class in parallel, which only
+kicks in on larger levels of the graph. One of \code{c("queue", "coloured")}.
+Defaults to \code{"queue"}.}
+
+\item{multi_level}{Boolean. Shall the communities be aggregated and refined
+in levels. Defaults to \code{TRUE}.}
+
+\item{max_evals}{Integer. Cap on the node evaluations per local moving phase,
+in units of the number of nodes. Defaults to \code{10L}.}
 }
 \value{
 A named list with the following elements:
 \itemize{
+\item n_centroids - Integer or \code{NULL}. Number of k-means centroids. If
+\code{NULL}, defaults to \code{floor(sqrt(n_cells))}. Defaults to \code{NULL}.
 \item k_means_iter - Integer. Maximum number of k-means iterations. Defaults
 to \code{50L}.
 \item k_means_init - String or \code{NULL}. Initialisation method. One of
 \code{"random"}, \code{"parallel"} or \code{"plusplus"}. If \code{NULL}, picked on the Rust side
 based on the number of centroids. Defaults to \code{NULL}.
 \item fixed - Boolean. Shall k-means run for a fixed number of iterations,
-without checking for convergence. Defaults to \code{TRUE}.
+without checking for convergence. wgpu only; MLX always runs every
+iteration. Defaults to \code{TRUE}.
 \item quantise - Boolean. Shall the data buffer be held at fp16 on the GPU.
 Halves the buffer and helps when the assignment kernels are memory bound.
-Defaults to \code{FALSE}.
-\item same_weight - Boolean. If \code{TRUE}, all kNN edges get weight \code{1.0}.
-Otherwise edges with a reverse counterpart are double counted. Defaults to
-\code{FALSE}.
-\item full_snn - Boolean. Shall the full shared nearest neighbour graph be
-generated, including edges between centroids that are not neighbours.
-Defaults to \code{FALSE}.
-\item pruning - Numeric or \code{NULL}. Weights below this threshold are set to 0
-when generating the sNN graph. If \code{NULL}, defaults to \code{1 / ceiling(k * 0.8)}. Defaults to \code{NULL}.
-\item snn_similarity - String. Jaccard computes the Jaccard index between
-neighbour sets; rank weights edges by the best combined rank of a shared
-neighbour. Both are normalised to \verb{[0, 1]}. One of \code{c("jaccard", "rank")}.
-Defaults to \code{"jaccard"}.
-\item cell_mediated - Boolean. Build the centroid graph from the cells
-instead of a kNN search over the centroids: every cell links its \code{n_anchors}
-nearest centroids, so two centroids are connected when cells sit near both.
-If \code{TRUE}, \code{snn} and the sNN settings are ignored. Defaults to \code{FALSE}.
+wgpu only. Defaults to \code{FALSE}.
+\item dist - String. Distance for the k-means and the centroid graph. One of
+\code{c("euclidean", "cosine")}. Defaults to \code{"euclidean"}.
+\item cell_mediated - Boolean. Shall the cell-mediated centroid graph from
+Secuer be built instead of the kNN graph on the centroids. Centroids are
+then linked by the cells that sit near both, so two centroids that are close
+in space but have no cells between them stay apart. If \code{TRUE}, \code{centroid_k}
+and \code{centroid_graph} are ignored. Defaults to \code{FALSE}.
 \item n_anchors - Integer. Number of nearest centroids each cell links to in
-the cell-mediated graph. Clamped to the number of centroids. Defaults to
+the cell-mediated graph. Only used if \code{cell_mediated = TRUE}. Defaults to
 \code{5L}.
-\item louvain_iters - Integer. Number of Louvain iterations. Defaults to
-\code{10L}.
-\item multi_level_louvain - Boolean. Shall multi-level Louvain be applied.
-Defaults to \code{TRUE}.
-\item The elements of the base list, overridden by \code{knn}, spliced in at this
-position.
+\item centroid_k - Integer. Neighbours per centroid in the exact centroid
+kNN. Only used if \code{cell_mediated = FALSE}. Defaults to \code{15L}.
+\item The elements of the base list, overridden by \code{centroid_graph}, spliced
+in at this position.
+\item algorithm - String. Community detection on the centroid graph. One of
+\code{c("louvain", "leiden")}. Defaults to \code{"louvain"}.
+\item n_iterations - Integer or \code{NULL}. Number of iterations of the
+community detection. A negative value iterates until stable. If \code{NULL}, the
+bixverse default for the chosen \code{algorithm}. Defaults to \code{NULL}.
+\item beta - Numeric. Leiden only. Randomness of the refinement step.
+Defaults to \code{0.01}.
+\item min_gain - Numeric. With a negative \code{n_iterations}, also stop once an
+iteration gains no more than this in modularity. Defaults to \code{0.0}.
+\item local_moving - String. \code{"queue"} is Traag's sequential queue.
+\code{"coloured"} moves the nodes of one colour class in parallel, which only
+kicks in on larger levels of the graph. One of \code{c("queue", "coloured")}.
+Defaults to \code{"queue"}.
+\item multi_level - Boolean. Shall the communities be aggregated and refined
+in levels. Defaults to \code{TRUE}.
+\item max_evals - Integer. Cap on the node evaluations per local moving
+phase, in units of the number of nodes. Defaults to \code{10L}.
 }
 }
 \description{
-GPU counterpart to \code{\link[bixverse:params_sc_fast_cluster]{bixverse::params_sc_fast_cluster()}}. The
-mini-batch k-means knobs are gone (the GPU k-means is full-batch Lloyd's) and
-the k-means block comes from the GPU parameters instead. Two knobs the CPU
-wrapper never exposed, \code{same_weight} and \code{multi_level_louvain}, are available
-here. The k-means distance is taken from \code{knn$ann_dist}, so the coarsening
-and the centroid graph agree on the geometry. There is no separate \code{metric}
-argument, and \code{"manhattan"} is not supported by the GPU k-means.
+GPU counterpart to \code{\link[bixverse:params_sc_fast_cluster]{bixverse::params_sc_fast_cluster()}}. Fast
+clustering coarsens the cells with k-means, builds a graph over the centroids
+and runs Louvain or Leiden on it. The community of each centroid is handed
+back to its cells. Only the k-means (and the cell-mediated top-m search) run
+on the GPU. The mini-batch k-means knobs are gone: the GPU k-means is
+full-batch Lloyd's.
+}
+\references{
+Wei, et al., PLoS Comput Biol, 2022.
 }

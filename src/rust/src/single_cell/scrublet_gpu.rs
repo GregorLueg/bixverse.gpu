@@ -9,9 +9,9 @@
 //! from it are identical on both paths.
 
 use crate::ensure_gpu;
-use bixverse_rs::gpu::sc_gpu::scrublet_gpu::{run_scrublet_gpu, ScrubletParamsGpu};
-use bixverse_rs::prelude::*;
-use bixverse_rs::single_cell::sc_processing::scrublet::FinalScrubletRes;
+use bixverse_r::gpu::sc_gpu::scrublet_gpu::{run_scrublet_gpu, ScrubletParamsGpu};
+use bixverse_r::prelude::*;
+use bixverse_r::single_cell::sc_processing::scrublet::FinalScrubletRes;
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::*;
 

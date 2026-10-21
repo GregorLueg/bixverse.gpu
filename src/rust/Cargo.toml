@@ -1,7 +1,7 @@
 [package]
 name = 'bixverse_gpu'
 publish = false
-version = '0.5.0'
+version = '0.6.0'
 edition = '2021'
 rust-version = '1.95'
 
@@ -10,34 +10,24 @@ crate-type = ['staticlib', 'rlib']
 name = 'bixverse_gpu'
 
 [features]
-## Compile HDF5 from source through `hdf5-metno-src`. On by default, since
-## that is the only thing that needs no system library. `tools/config.R`
-## switches it off with `--no-default-features` when it finds an external
-## libhdf5, which is what makes the Windows cross-host builds link.
-default = ["hdf5-static"]
-hdf5-static = ["bixverse-rs/hdf5-static"]
 ## Apple Silicon only: MLX backend via mlx-c. Off by default, since mlx-c is a
 ## system library we cannot ship. `tools/config.R` turns it on when
 ## `BIXVERSE_GPU_MLX=true` and finds `libmlxc.dylib`.
-mlx = ["ann-search-rs/mlx", "bixverse-rs/mlx", "manifolds-rs/mlx"]
+mlx = ["ann-search-rs/mlx", "bixverse-r/mlx", "manifolds-rs/mlx"]
 
 [dependencies]
-ann-search-rs = { version = "0.11.0", features = [ "gpu" ] }
-burn = { version = "0.22.0", features = [ "wgpu", "flex", "autodiff" ] }
-bixverse-rs = { version = "0.7.0", default-features = false, features = [ "gpu", "single-cell", "bonsai", "r" ] }
+ann-search-rs = { version = "0.11.1", features = [ "gpu" ] }
+burn = { version = "0.22.0", default-features = false, features = [ "std", "wgpu", "flex", "autodiff" ] }
+bixverse-r = { version = "0.8.1", default-features = false, features = [ "sc-gpu", "bonsai" ] }
 cubecl = "0.11.0"
 cubecl-utils-rs = "0.2.0"
 extendr-api = "0.9.0"
 faer = { version = '0.24.4' }
 indexmap = "2.13.0"
-manifolds-rs = { version = "0.7.0", features = [ "fft_tsne", "gpu", "parametric" ] }
+manifolds-rs = { version = "0.7.2", features = [ "fft_tsne", "gpu", "parametric" ] }
 rand_distr = "0.5.1"
-[target.'cfg(not(windows))'.dependencies]
-bixverse-rs = { version = "0.7.0", default-features = false, features = [
-    "hdf5-filters",
-] }
 [target.'cfg(target_os = "macos")'.dependencies]
-bixverse-rs = { version = "0.7.0", default-features = false, features = [
+bixverse-r = { version = "0.8.0", default-features = false, features = [
     "accelerate",
 ] }
 

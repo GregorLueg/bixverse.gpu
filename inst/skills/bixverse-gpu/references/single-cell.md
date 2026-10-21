@@ -8,14 +8,17 @@ those. The GPU functions slot into the same chain.
 |---|---|---|---|
 | PCA | `calculate_pca_sc()` | `calculate_pca_gpu_sc()` | `SingleCells` |
 | Harmony v2 | `harmony_v2_sc()` | `harmony_v2_gpu_sc()` | `SingleCells` |
+| fastMNN | `fast_mnn_sc()` | `fast_mnn_gpu_sc()` | `SingleCells`, `SingleCellsSubset` |
 | kNN + sNN | `find_neighbours_sc()` | `find_neighbours_gpu_sc()` | `SingleCells` |
 | kNN only | `generate_knn_sc()` | `generate_gpu_knn_sc()` | `SingleCells` |
 | Fast clustering | `fast_cluster_sc()` | `fast_cluster_gpu_sc()` | `SingleCells`, `SingleCellsSubset` |
+| Leiden / Louvain | `find_clusters_sc()` | `find_clusters_gpu_sc()` | `SingleCells`, `SingleCellsSubset` |
 | BBKNN | `bbknn_sc()` | `bbknn_gpu_sc()` | `SingleCells`, `SingleCellsSubset` |
 | UMAP | `umap_sc()` | `umap_gpu_sc()` | `SingleCells` |
 | t-SNE | `tsne_sc()` | `tsne_gpu_sc()` | `SingleCells` |
 | Scrublet | `scrublet_sc()` | `scrublet_gpu_sc()` | `SingleCells` |
 | SEACells | `generate_seacells_sc()` | `generate_seacells_gpu_sc()` | `SingleCells`, `SingleCellsSubset` |
+| Bonsai tree | `bonsai_sc()` | `bonsai_gpu_sc()` | `SingleCells`, `MetaCells` |
 | SCENIC GRN | `scenic_grn_sc()` | `scenic_grn_sc_gpu()` | `SingleCells`, `MetaCells` |
 | NMF | `nmf_sc()`, `stabilised_nmf_sc()`, `consensus_nmf_sc()`, `nmf_k_sweep_sc()` | same names with `_gpu_sc` | `SingleCells`, `MetaCells` |
 | NEBULA | `nebula_sc()` | `nebula_gpu_sc()` | `SingleCells`, `SingleCellsSubset` |
@@ -30,9 +33,22 @@ obj <- find_hvg_sc(obj, hvg_no = 2000L)
 obj <- calculate_pca_gpu_sc(obj, no_pcs = 30L)
 ```
 
-Sparse randomised SVD with the big matmuls on the device. Scaling is applied
-without densifying. Takes `bixverse::params_sc_pca()`, so the PFlogPF option
-comes from there.
+Sparse SVD with the big matmuls on the device, scaling applied without
+densifying. Takes `bixverse::params_sc_pca()`, so the PFlogPF option comes from
+there. The solver follows `svd_solver`:
+
+- `"randomised"`: randomised SVD. Fast, approximate in the trailing PCs.
+- `"auto"` (the `params_sc_pca()` default), `"exact"`, `"covariance"`: exact
+  block Lanczos. There is no GPU covariance path, so `"covariance"` falls
+  through to Lanczos rather than building the gene x gene cross-product.
+
+The default is exact and slower than the randomised solver. Older versions
+ignored `svd_solver` and always ran the randomised one; pass
+`params_sc_pca(svd_solver = "randomised")` to get that back. `seed` seeds the
+sketch or the Lanczos start block.
+
+`backend = "mlx"` runs the SVD on Apple Silicon via MLX, see
+`references/install.md`.
 
 - It writes to the **same PCA slot** as `calculate_pca_sc()`, so it overwrites
   a CPU PCA. `get_pca_factors()` / `get_pca_singular_val()` read either.
@@ -140,6 +156,37 @@ many batches and barely at all with two.
   needs an embedding BBKNN never produces.
 - GPU and CPU agree exactly with `knn_method = "exhaustive"`; the approximate
   backends break ties differently.
+
+## fastMNN
+
+```r
+obj <- fast_mnn_gpu_sc(obj, batch_column = "sample_id")
+```
+
+- Writes the embedding as **`"mnn_gpu"`**. Only the neighbour searches move to
+  the device.
+- Corrects the PCA already in the object. Unlike `fast_mnn_sc()` it does not
+  recompute the PCA on batch-aware HVGs: run `find_hvg_batch_aware_sc()` and
+  `calculate_pca_gpu_sc()` first if you want that.
+- Matches the CPU run only with `knn_method = "exhaustive"` on both sides.
+  Params come from `params_sc_fastmnn_gpu()`.
+
+## Leiden and Louvain
+
+```r
+obj <- find_clusters_gpu_sc(obj, res = 1, name = "leiden_gpu")
+```
+
+Only the level-0 local moving runs on the device, and only on graphs of at
+least 50,000 cells. Below that it runs on the CPU, so there is no point timing
+it on small data. Partitions depend on `seed` but are not identical to the CPU
+ones. `leiden_clustering_gpu()` does the same on a plain igraph.
+
+## Bonsai
+
+`bonsai_gpu_sc()` moves Sanity, most of the CPU run time, to the device. Tree
+search and layout stay on the CPU. Posteriors are f32, so a gene right at the
+signal-to-noise threshold can land on the other side. Returns a `BonsaiTree`.
 
 ## UMAP and t-SNE on the object
 

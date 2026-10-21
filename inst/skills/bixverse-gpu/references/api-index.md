@@ -15,17 +15,21 @@ Different GPU-accelerated methods specifically for the single cell applications.
 - `generate_seacells_gpu_sc`: Generate meta cells based on SEACells on the GPU
 - `scenic_grn_sc_gpu`: GPU-accelerated SCENIC GRN inference
 - `scrublet_gpu_sc`: Doublet detection with Scrublet on the GPU
-- `fast_cluster_gpu_sc`: Run fast Louvain clustering on a SingleCells object (GPU)
+- `fast_cluster_gpu_sc`: Run fast clustering on a SingleCells object (GPU)
+- `find_clusters_gpu_sc`: Graph-based clustering of cells on the neighbour graph (GPU)
 - `bbknn_gpu_sc`: Run BBKNN on the GPU
+- `fast_mnn_gpu_sc`: Run fastMNN on the GPU
 - `nebula_gpu_sc`: Run NEBULA on single cells on the GPU
 - `nmf_gpu_sc`: Run single-run NMF on the GPU over single cell or meta cell data
 - `stabilised_nmf_gpu_sc`: Run stabilised (multi-run) NMF on the GPU over single cell or meta cell data
 - `consensus_nmf_gpu_sc`: Run consensus NMF on the GPU over single cell or meta cell data
 - `nmf_k_sweep_gpu_sc`: Sweep k for consensus NMF on the GPU over single cell or meta cell data
+- `bonsai_gpu_sc`: Build a Bonsai tree over the cells, Sanity on the GPU
 - `params_sc_harmony_v2_gpu`: Default parameters for Harmony v2 GPU batch correction
-- `params_sc_fast_cluster_gpu`: Default parameters for GPU fast Louvain clustering
+- `params_sc_fast_cluster_gpu`: Default parameters for GPU fast clustering
 - `params_scrublet_gpu`: Wrapper function for GPU Scrublet doublet detection parameters
 - `params_sc_bbknn_gpu`: Wrapper function for the GPU BBKNN parameters
+- `params_sc_fastmnn_gpu`: Wrapper function for the GPU fastMNN parameters
 - `params_nebula_gpu`: Wrapper function for parameters for GPU NEBULA
 - `params_knn_gpu_defaults`: Default parameters for the GPU nearest neighbour backends
 
@@ -61,9 +65,11 @@ Want to train a neural net to do your UMAP embeddings? Want to train flexibly on
 Other GPU-accelerated methods that you might find useful... k-means clustering and a direct interface into the GPU-accelerated kNN searches can be found here.
 
 - `k_means_cluster_gpu`: GPU-accelerated k-means clustering
+- `leiden_clustering_gpu`: GPU-accelerated Leiden or Louvain community detection on an igraph
 - `params_kmeans_gpu`: Default parameters for GPU k-means
 - `generate_knn_graph_gpu`: Generate a k-nearest neighbour graph (GPU-accelerated)
 - `gpu_available`: Is a GPU available
+- `mlx_available`: Is the MLX backend available
 
 ## Agent skill
 
@@ -75,7 +81,7 @@ Teach your coding agent how to use the package.
 
 Everything rusty - only use this if you know what you are doing... Maybe useful for your own package? Use with care and read the documentation!
 
-30 `rs_*` functions are exposed here. They are the raw extendr bindings with no input validation. Use the R wrapper instead; only reach for these if you are building on top of bixverse.gpu and know exactly what you are doing.
+32 `rs_*` functions are exposed here. They are the raw extendr bindings with no input validation. Use the R wrapper instead; only reach for these if you are building on top of bixverse.gpu and know exactly what you are doing.
 
 Except these, which have no R wrapper and are meant to be called:
 
@@ -100,4 +106,6 @@ Exported but absent from `_pkgdown.yml`. Mostly internal constructors and `rs_*`
 
 - `.prepare_tsne_params_gpu`: Internal helper to prepare the t-SNE parameters (GPU version)
 - `.prepare_umap_params_gpu`: Internal helper to prepare the UMAP parameters (GPU version)
+- `rs_mc_bonsai_gpu`: GPU: Bonsai tree from metacell counts
+- `rs_sc_bonsai_gpu`: GPU: Bonsai tree from single cell counts
 
