@@ -11,9 +11,6 @@
   cell links its `n_anchors` nearest centroids. On a 10k cell synthetic set the
   agreement with the ground truth went from ARI 0.29 to 0.71 at resolution 1.
   Off by default.
-* FFT-accelerated tSNE (`approx_type = "fft"` and `"fft_3k"`) now works on
-  Windows too: FFTW was replaced by the pure-Rust rustfft.
-* On macOS the CPU GEMMs in the Rust backends go through Apple Accelerate.
 
 ## Breaking changes
 
@@ -39,6 +36,9 @@
   tSNE, `"mlx"` moves the kNN search and the device optimiser (`"adam_gpu"`,
   `"fft_3k_gpu"`); CPU optimisers stay on the CPU. MLX is fp32 only. WGPU stays
   the default and the only portable backend. 
+* FFT-accelerated tSNE (`approx_type = "fft"` and `"fft_3k"`) now works on
+  Windows too: FFTW was replaced by the pure-Rust rustfft.
+* On macOS the CPU GEMMs in the Rust backends go through Apple Accelerate.
 
 ## Breaking changes
 
