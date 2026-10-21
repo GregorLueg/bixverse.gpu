@@ -107,9 +107,9 @@ reference:
   - title: GPU-accelerated t-SNE
     desc:
       t-SNE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive).
-      Optimiser (BH or FFT) runs on CPU via the Rust implementation in
-      manifoldsR. Also a version for the single cells analysis suite in 
-      bixverse.
+      Optimiser runs on the GPU by default (three-kernel FFT, `"fft_3k_gpu"`)
+      or on the CPU via manifoldsR (BH, FFT, three-kernel FFT). Also a version
+      for the single cells analysis suite in bixverse.
     contents:
       - tsne_gpu
       - tsne_gpu_sc

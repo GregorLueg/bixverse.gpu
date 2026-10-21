@@ -47,6 +47,15 @@ Linux box that usually means installing the Vulkan loader and a driver
 (`libvulkan1`, `mesa-vulkan-drivers` on Debian/Ubuntu) and, if several
 backends are present, forcing one with `WGPU_BACKEND=vulkan`.
 
+## MLX (Apple Silicon, optional)
+
+Off by default, since mlx-c is a system library the package cannot ship.
+Install it (`brew install mlx-c`, or point `MLX_C_PREFIX` at a prefix) and
+reinstall from source with `BIXVERSE_GPU_MLX=true`. `mlx_available()` tells you
+whether the build has it. Functions with an MLX path take `backend = "mlx"`
+(see `?fn`); it is fp32 only. Switching an existing
+checkout between MLX and non-MLX needs a forced recompile.
+
 ## Windows
 
 Supported. The HDF5 build used to hit `MAX_PATH`; the cargo target directory
