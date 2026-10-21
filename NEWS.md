@@ -1,16 +1,7 @@
-# bixverse.gpu 0.5.0
+# bixverse.gpu 0.6.0
 
 ## Features
 
-* Experimental MLX backend for Apple Silicon via mlx-c. Opt in at install
-  time: `brew install mlx-c` (or point `MLX_C_PREFIX` at an install prefix),
-  then install with `BIXVERSE_GPU_MLX=true`. Check with `mlx_available()`.
-  Functions with an MLX path take `backend = c("wgpu", "mlx")`: PCA, kNN
-  graphs, Harmony v2, SEACells, NMF (single, stabilised, consensus, k sweep),
-  UMAP, tSNE and the `rs_cor_gpu()` / `rs_cov_gpu()` correlations. For UMAP and
-  tSNE, `"mlx"` moves the kNN search and the device optimiser (`"adam_gpu"`,
-  `"fft_3k_gpu"`); CPU optimisers stay on the CPU. MLX is fp32 only. WGPU stays
-  the default and the only portable backend. 
 * Exact sparse PCA on the GPU. `calculate_pca_gpu_sc()` runs a block Lanczos
   on the device (WGPU and MLX) for every `svd_solver` except `"randomised"`,
   which keeps the randomised SVD. It matches the CPU Lanczos to f32 precision.
@@ -26,17 +17,34 @@
 
 ## Breaking changes
 
-* The `rs_*` wrappers with an MLX path gained a `backend` argument, inserted
-  before `verbose`. Named calls keep working (it defaults to `"wgpu"`);
-  positional calls past `seed` need updating.
 * `calculate_pca_gpu_sc()` no longer ignores `svd_solver`. The default
   (`"auto"`) is exact and slower than the randomised SVD it used to run. Pass
   `pca_params = params_sc_pca(svd_solver = "randomised")` for the old behaviour.
 
 ## Internal
 
-* Moved to bixverse-rs 0.7.0, manifolds-rs 0.7.0, ann-search-rs 0.11.0,
+* Moved to bixverse-rs 0.8.1, manifolds-rs 0.7.2, ann-search-rs 0.11.1,
   cubecl 0.11, burn 0.22 and faer 0.24.
+
+# bixverse.gpu 0.5.0
+
+## Features
+
+* Experimental MLX backend for Apple Silicon via mlx-c. Opt in at install
+  time: `brew install mlx-c` (or point `MLX_C_PREFIX` at an install prefix),
+  then install with `BIXVERSE_GPU_MLX=true`. Check with `mlx_available()`.
+  Functions with an MLX path take `backend = c("wgpu", "mlx")`: PCA, kNN
+  graphs, Harmony v2, SEACells, NMF (single, stabilised, consensus, k sweep),
+  UMAP, tSNE and the `rs_cor_gpu()` / `rs_cov_gpu()` correlations. For UMAP and
+  tSNE, `"mlx"` moves the kNN search and the device optimiser (`"adam_gpu"`,
+  `"fft_3k_gpu"`); CPU optimisers stay on the CPU. MLX is fp32 only. WGPU stays
+  the default and the only portable backend. 
+
+## Breaking changes
+
+* The `rs_*` wrappers with an MLX path gained a `backend` argument, inserted
+  before `verbose`. Named calls keep working (it defaults to `"wgpu"`);
+  positional calls past `seed` need updating.
 
 # bixverse.gpu 0.4.1
 
