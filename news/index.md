@@ -1,5 +1,16 @@
 # Changelog
 
+## bixverse.gpu 0.6.1
+
+### Chores
+
+- Builds without `faer`’s `npy` feature, through `ann-search-rs` 0.11.2,
+  `manifolds-rs` 0.7.3 and `bixverse-rs` 0.9.0. This drops `npyz`,
+  `pest` and `stacker` from the build tree. The `stacker` build script
+  failed to find `windows.h` on the r-universe Windows ARM64 build,
+  where the host is MSVC and the target is `aarch64-pc-windows-gnullvm`.
+  No API change.
+
 ## bixverse.gpu 0.6.0
 
 ### Features

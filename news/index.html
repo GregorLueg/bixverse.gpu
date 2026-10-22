@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bixverse.gpu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,6 +50,13 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.1" id="bixversegpu-061">bixverse.gpu 0.6.1<a class="anchor" aria-label="anchor" href="#bixversegpu-061"></a></h2>
+<div class="section level3">
+<h3 id="chores-0-6-1">Chores<a class="anchor" aria-label="anchor" href="#chores-0-6-1"></a></h3>
+<ul><li>Builds without <code>faer</code>’s <code>npy</code> feature, through <code>ann-search-rs</code> 0.11.2, <code>manifolds-rs</code> 0.7.3 and <code>bixverse-rs</code> 0.9.0. This drops <code>npyz</code>, <code>pest</code> and <code>stacker</code> from the build tree. The <code>stacker</code> build script failed to find <code>windows.h</code> on the r-universe Windows ARM64 build, where the host is MSVC and the target is <code>aarch64-pc-windows-gnullvm</code>. No API change.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.0" id="bixversegpu-060">bixverse.gpu 0.6.0<a class="anchor" aria-label="anchor" href="#bixversegpu-060"></a></h2>
 <div class="section level3">
