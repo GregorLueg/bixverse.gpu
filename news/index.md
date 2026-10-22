@@ -25,9 +25,7 @@
   can build the centroid graph from the cells instead of a kNN search
   over the centroids:
   `params_sc_fast_cluster_gpu(cell_mediated = TRUE, n_anchors = 5L)`.
-  Every cell links its `n_anchors` nearest centroids. On a 10k cell
-  synthetic set the agreement with the ground truth went from ARI 0.29
-  to 0.71 at resolution 1. Off by default.
+  Every cell links its `n_anchors` nearest centroids.
 
 ### Breaking changes
 

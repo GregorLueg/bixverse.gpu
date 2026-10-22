@@ -62,7 +62,7 @@
 <div class="section level3">
 <h3 id="features-0-6-0">Features<a class="anchor" aria-label="anchor" href="#features-0-6-0"></a></h3>
 <ul><li>Exact sparse PCA on the GPU. <code><a href="../reference/calculate_pca_gpu_sc.html">calculate_pca_gpu_sc()</a></code> runs a block Lanczos on the device (WGPU and MLX) for every <code>svd_solver</code> except <code>"randomised"</code>, which keeps the randomised SVD. It matches the CPU Lanczos to f32 precision.</li>
-<li>Fast clustering (<code><a href="../reference/fast_cluster_gpu_sc.html">fast_cluster_gpu_sc()</a></code>) can build the centroid graph from the cells instead of a kNN search over the centroids: <code>params_sc_fast_cluster_gpu(cell_mediated = TRUE, n_anchors = 5L)</code>. Every cell links its <code>n_anchors</code> nearest centroids. On a 10k cell synthetic set the agreement with the ground truth went from ARI 0.29 to 0.71 at resolution 1. Off by default.</li>
+<li>Fast clustering (<code><a href="../reference/fast_cluster_gpu_sc.html">fast_cluster_gpu_sc()</a></code>) can build the centroid graph from the cells instead of a kNN search over the centroids: <code>params_sc_fast_cluster_gpu(cell_mediated = TRUE, n_anchors = 5L)</code>. Every cell links its <code>n_anchors</code> nearest centroids.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="breaking-changes-0-6-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-6-0"></a></h3>
