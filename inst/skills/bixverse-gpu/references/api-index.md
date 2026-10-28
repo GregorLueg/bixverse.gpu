@@ -65,7 +65,7 @@ Want to train a neural net to do your UMAP embeddings? Want to train flexibly on
 Other GPU-accelerated methods that you might find useful... k-means clustering and a direct interface into the GPU-accelerated kNN searches can be found here.
 
 - `k_means_cluster_gpu`: GPU-accelerated k-means clustering
-- `leiden_clustering_gpu`: GPU-accelerated Leiden or Louvain community detection on an igraph
+- `leiden_clustering_gpu`: GPU-accelerated Leiden or Louvain community detection
 - `params_kmeans_gpu`: Default parameters for GPU k-means
 - `generate_knn_graph_gpu`: Generate a k-nearest neighbour graph (GPU-accelerated)
 - `gpu_available`: Is a GPU available

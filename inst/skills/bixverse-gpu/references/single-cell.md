@@ -180,7 +180,9 @@ obj <- find_clusters_gpu_sc(obj, res = 1, name = "leiden_gpu")
 Only the level-0 local moving runs on the device, and only on graphs of at
 least 50,000 cells. Below that it runs on the CPU, so there is no point timing
 it on small data. Partitions depend on `seed` but are not identical to the CPU
-ones. `leiden_clustering_gpu()` does the same on a plain igraph.
+ones. `leiden_clustering_gpu()` does the same on a standalone graph: a
+`SingleCellConnectivity` (what `get_connectivities()` returns) or an undirected
+igraph.
 
 ## Bonsai
 
