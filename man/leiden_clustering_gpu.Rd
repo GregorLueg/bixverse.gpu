@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_ml.R
 \name{leiden_clustering_gpu}
 \alias{leiden_clustering_gpu}
-\title{GPU-accelerated Leiden or Louvain community detection on an igraph}
+\title{GPU-accelerated Leiden or Louvain community detection}
 \usage{
 leiden_clustering_gpu(
   graph,
@@ -16,8 +16,10 @@ leiden_clustering_gpu(
 )
 }
 \arguments{
-\item{graph}{igraph. Undirected. If it has an edge attribute \code{weight}, it is
-used, otherwise all edges get weight 1.}
+\item{graph}{\code{SingleCellConnectivity} or undirected igraph. For an igraph,
+the edge attribute \code{weight} is used if present, otherwise all edges get
+weight 1. An igraph is converted with \code{\link[bixverse:as_sc_connectivity]{bixverse::as_sc_connectivity()}}
+first.}
 
 \item{resolution}{Numeric. Modularity resolution parameter. Higher values
 give more communities.}

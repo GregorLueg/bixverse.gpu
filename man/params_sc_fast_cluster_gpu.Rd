@@ -26,7 +26,7 @@ params_sc_fast_cluster_gpu(
 }
 \arguments{
 \item{n_centroids}{Integer or \code{NULL}. Number of k-means centroids. If \code{NULL},
-defaults to \code{floor(sqrt(n_cells))}. Defaults to \code{NULL}.}
+defaults to \code{floor(4 * sqrt(n_cells))}. Defaults to \code{NULL}.}
 
 \item{k_means_iter}{Integer. Maximum number of k-means iterations. Defaults
 to \code{50L}.}
@@ -91,7 +91,7 @@ in units of the number of nodes. Defaults to \code{10L}.}
 A named list with the following elements:
 \itemize{
 \item n_centroids - Integer or \code{NULL}. Number of k-means centroids. If
-\code{NULL}, defaults to \code{floor(sqrt(n_cells))}. Defaults to \code{NULL}.
+\code{NULL}, defaults to \code{floor(4 * sqrt(n_cells))}. Defaults to \code{NULL}.
 \item k_means_iter - Integer. Maximum number of k-means iterations. Defaults
 to \code{50L}.
 \item k_means_init - String or \code{NULL}. Initialisation method. One of

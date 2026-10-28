@@ -186,9 +186,8 @@ expect_true(
   info = "bbknn gpu - symmetrisation adds edges to the connectivities"
 )
 
-# The graph is built by reading the connectivities as if they were CSR, which
-# is only safe because the set operations leave the matrix symmetric. If that
-# ever stops holding, the igraph below silently transposes.
+# The set operations leave the matrix symmetric, so the max-symmetrisation into
+# the neighbour graph keeps the connectivities as they are.
 connectivity_mat <- Matrix::sparseMatrix(
   i = rep(
     seq_along(rust_res$connectivities$indptr[-1]),
@@ -325,13 +324,17 @@ expect_true(
 )
 
 expect_true(
-  current = checkmate::testClass(get_connectivities(bbknn_object), "igraph"),
-  info = "bbknn gpu - the connectivities become an igraph"
+  current = checkmate::testClass(
+    get_connectivities(bbknn_object),
+    "SingleCellConnectivity"
+  ),
+  info = "bbknn gpu - the connectivities become a SingleCellConnectivity"
 )
 
-expect_true(
-  current = igraph::is_weighted(get_connectivities(bbknn_object)),
-  info = "bbknn gpu - the graph carries the connectivities as weights"
+expect_equal(
+  current = get_connectivities(bbknn_object)$method,
+  target = "bbknn",
+  info = "bbknn gpu - the graph records its method"
 )
 
 kbet_after <- calculate_kbet_sc(

@@ -767,7 +767,7 @@ dependencies = [
 
 [[package]]
 name = "bixverse_gpu"
-version = "0.6.1"
+version = "0.6.2"
 dependencies = [
  "ann-search-rs",
  "bixverse-r",

@@ -548,7 +548,10 @@ expect_true(
 )
 
 expect_true(
-  current = checkmate::testClass(get_connectivities(obj_ex), "igraph"),
+  current = checkmate::testClass(
+    get_connectivities(obj_ex),
+    "SingleCellConnectivity"
+  ),
   info = "find_neighbours_gpu_sc (exhaustive) - connectivities generated"
 )
 
@@ -577,14 +580,14 @@ for (knn_sym in c("snn", "umap", "knn")) {
   )
 
   expect_equal(
-    current = igraph::graph_attr(g_gpu, "method"),
+    current = g_gpu$method,
     target = knn_sym,
     info = sprintf("find_neighbours_gpu_sc (%s) - method recorded", knn_sym)
   )
 
   expect_equal(
-    current = igraph::as_adjacency_matrix(g_gpu, attr = "weight"),
-    target = igraph::as_adjacency_matrix(g_cpu, attr = "weight"),
+    current = bixverse::rs_graph_to_csr(g_gpu$ptr),
+    target = bixverse::rs_graph_to_csr(g_cpu$ptr),
     info = sprintf(
       "find_neighbours_gpu_sc (%s) - matches the CPU graph",
       knn_sym
@@ -604,7 +607,10 @@ expect_warning(
 )
 
 expect_true(
-  current = checkmate::testClass(get_connectivities(obj_dep), "igraph"),
+  current = checkmate::testClass(
+    get_connectivities(obj_dep),
+    "SingleCellConnectivity"
+  ),
   info = "find_neighbours_gpu_sc - deprecated snn_params still builds a graph"
 )
 
@@ -628,7 +634,10 @@ expect_true(
 )
 
 expect_true(
-  current = checkmate::testClass(get_connectivities(obj_ivf), "igraph"),
+  current = checkmate::testClass(
+    get_connectivities(obj_ivf),
+    "SingleCellConnectivity"
+  ),
   info = "find_neighbours_gpu_sc (ivf) - connectivities generated"
 )
 
@@ -652,7 +661,10 @@ expect_true(
 )
 
 expect_true(
-  current = checkmate::testClass(get_connectivities(obj_cagra), "igraph"),
+  current = checkmate::testClass(
+    get_connectivities(obj_cagra),
+    "SingleCellConnectivity"
+  ),
   info = "find_neighbours_gpu_sc (nndescent) - connectivities generated"
 )
 

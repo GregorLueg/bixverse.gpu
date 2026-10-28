@@ -757,10 +757,10 @@ fn rs_kmeans_gpu(
 /// fully on the CPU with coloured local moving. On one device the result
 /// depends on the seed only.
 ///
-/// @param from Integer vector. 1-based source node of each edge.
-/// @param to Integer vector. 1-based target node of each edge. Same length as
-/// `from`.
-/// @param weights Numeric vector. Edge weights, same length as `from`.
+/// @param edges Integer vector. Flattened edge pairs (1-indexed!),
+/// `c(from_1, to_1, from_2, to_2, ...)`, as `bixverse::rs_graph_to_edges()`
+/// returns them.
+/// @param weights Numeric vector. One weight per pair.
 /// @param n_nodes Integer. Number of nodes in the graph.
 /// @param leiden_params List. Named list with the optional fields `resolution`,
 /// `beta`, `n_iterations` (negative: until stable), `min_gain`, `refine`
@@ -773,8 +773,7 @@ fn rs_kmeans_gpu(
 /// @export
 #[extendr]
 fn rs_leiden_clustering_gpu(
-    from: &[i32],
-    to: &[i32],
+    edges: &[i32],
     weights: &[f64],
     n_nodes: usize,
     leiden_params: List,
@@ -783,30 +782,27 @@ fn rs_leiden_clustering_gpu(
     // would hand back an unmoved partition rather than fail
     ensure_plane_ops()?;
 
-    if from.len() != to.len() || from.len() != weights.len() {
+    if edges.len() != 2 * weights.len() {
         return Err(Error::Other(format!(
-            "from ({}), to ({}) and weights ({}) must have the same length.",
-            from.len(),
-            to.len(),
+            "edges ({}) must hold two entries per weight ({}).",
+            edges.len(),
             weights.len()
         )));
     }
     let params = LeidenParams::from_r_list(leiden_params)?;
 
-    let mut edges = Vec::with_capacity(2 * from.len());
-    for (&f, &t) in from.iter().zip(to) {
-        for x in [f, t] {
-            if x < 1 || x as usize > n_nodes {
-                return Err(Error::Other(format!(
-                    "Node index {} is outside 1..={}.",
-                    x, n_nodes
-                )));
-            }
-            edges.push((x - 1) as usize);
+    let mut pairs = Vec::with_capacity(edges.len());
+    for &x in edges {
+        if x < 1 || x as usize > n_nodes {
+            return Err(Error::Other(format!(
+                "Node index {} is outside 1..={}.",
+                x, n_nodes
+            )));
         }
+        pairs.push((x - 1) as usize);
     }
 
-    let graph = edge_pairs_to_sparse_graph(&edges, weights, n_nodes);
+    let graph = edge_pairs_to_sparse_graph(&pairs, weights, n_nodes);
 
     let device: WgpuDevice = Default::default();
     let client = cubecl::Device::from(device).client();

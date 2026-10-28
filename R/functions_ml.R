@@ -66,7 +66,7 @@ k_means_cluster_gpu <- function(
 
 ## leiden gpu ------------------------------------------------------------------
 
-#' GPU-accelerated Leiden or Louvain community detection on an igraph
+#' GPU-accelerated Leiden or Louvain community detection
 #'
 #' @description
 #' GPU counterpart of [bixverse::leiden_clustering()]. The level-0 local
@@ -78,8 +78,10 @@ k_means_cluster_gpu <- function(
 #' accepts moves with an order-free rule instead of the CPU's sequential
 #' re-check. Communities are numbered by size, `1` being the largest.
 #'
-#' @param graph igraph. Undirected. If it has an edge attribute `weight`, it is
-#' used, otherwise all edges get weight 1.
+#' @param graph `SingleCellConnectivity` or undirected igraph. For an igraph,
+#' the edge attribute `weight` is used if present, otherwise all edges get
+#' weight 1. An igraph is converted with [bixverse::as_sc_connectivity()]
+#' first.
 #' @param resolution Numeric. Modularity resolution parameter. Higher values
 #' give more communities.
 #' @param algorithm String. One of `c("leiden", "louvain")`.
@@ -116,8 +118,7 @@ leiden_clustering_gpu <- function(
   algorithm <- match.arg(algorithm)
   local_moving <- match.arg(local_moving)
   # checks
-  checkmate::assertClass(graph, "igraph")
-  checkmate::assertFALSE(igraph::is_directed(graph))
+  checkmate::assertMultiClass(graph, c("SingleCellConnectivity", "igraph"))
   checkmate::qassert(resolution, "N1(0,)")
   checkmate::assertChoice(algorithm, c("leiden", "louvain"))
   checkmate::qassert(beta, "N1(0,)")
@@ -131,17 +132,15 @@ leiden_clustering_gpu <- function(
     n_iterations <- bixverse:::.default_community_iters(algorithm)
   }
 
-  edges <- igraph::as_edgelist(graph, names = FALSE)
-  weights <- igraph::E(graph)$weight
-  if (is.null(weights)) {
-    weights <- rep(1, nrow(edges))
-  }
+  # the pointer belongs to bixverse's Rust lib, so the graph crosses over as
+  # an edge list
+  graph <- bixverse::as_sc_connectivity(graph)
+  edges <- bixverse::rs_graph_to_edges(bixverse:::.connectivity_ptr(graph))
 
   rs_leiden_clustering_gpu(
-    from = as.integer(edges[, 1]),
-    to = as.integer(edges[, 2]),
-    weights = as.numeric(weights),
-    n_nodes = igraph::vcount(graph),
+    edges = edges$edges,
+    weights = edges$weights,
+    n_nodes = graph$n,
     leiden_params = list(
       resolution = resolution,
       beta = beta,

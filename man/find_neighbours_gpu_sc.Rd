@@ -66,9 +66,9 @@ selected modality slot.
 }
 \description{
 This function generates kNN data using GPU-accelerated algorithms via the
-\code{bixverse.gpu} package, then turns it into a connectivities igraph for downstream
-clustering. See \code{\link[=generate_gpu_knn_sc]{generate_gpu_knn_sc()}} for the three searches on offer.
-This function lives in a separate package from the CPU-based
+\code{bixverse.gpu} package, then turns it into a \code{SingleCellConnectivity} for
+downstream clustering. See \code{\link[=generate_gpu_knn_sc]{generate_gpu_knn_sc()}} for the three searches on
+offer. This function lives in a separate package from the CPU-based
 \code{\link[bixverse:find_neighbours_sc]{find_neighbours_sc()}} so that users without GPU hardware do not need to
 install the GPU dependencies.
 }

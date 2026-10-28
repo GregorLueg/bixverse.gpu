@@ -187,10 +187,10 @@ rs_kmeans_gpu <- function(data, dist, n_centroids, kmeans_params, seed, verbose)
 #' fully on the CPU with coloured local moving. On one device the result
 #' depends on the seed only.
 #'
-#' @param from Integer vector. 1-based source node of each edge.
-#' @param to Integer vector. 1-based target node of each edge. Same length as
-#' `from`.
-#' @param weights Numeric vector. Edge weights, same length as `from`.
+#' @param edges Integer vector. Flattened edge pairs (1-indexed!),
+#' `c(from_1, to_1, from_2, to_2, ...)`, as `bixverse::rs_graph_to_edges()`
+#' returns them.
+#' @param weights Numeric vector. One weight per pair.
 #' @param n_nodes Integer. Number of nodes in the graph.
 #' @param leiden_params List. Named list with the optional fields `resolution`,
 #' `beta`, `n_iterations` (negative: until stable), `min_gain`, `refine`
@@ -201,7 +201,7 @@ rs_kmeans_gpu <- function(data, dist, n_centroids, kmeans_params, seed, verbose)
 #' largest community.
 #'
 #' @export
-rs_leiden_clustering_gpu <- function(from, to, weights, n_nodes, leiden_params) .Call(wrap__rs_leiden_clustering_gpu, from, to, weights, n_nodes, leiden_params)
+rs_leiden_clustering_gpu <- function(edges, weights, n_nodes, leiden_params) .Call(wrap__rs_leiden_clustering_gpu, edges, weights, n_nodes, leiden_params)
 
 #' GPU-accelerated correlation calculations
 #'

@@ -387,27 +387,13 @@ S7::method(bbknn_gpu_sc, SingleCellsSubset) <- function(
     ))
   }
 
-  sparse_mat <- Matrix::sparseMatrix(
-    i = rep(
-      seq_along(bbknn_res$connectivities$indptr[-1]),
-      diff(bbknn_res$connectivities$indptr)
+  set_connectivities(
+    object,
+    connectivities = bixverse:::.bbknn_to_connectivity(
+      bbknn_res$connectivities
     ),
-    j = bbknn_res$connectivities$indices + 1,
-    x = bbknn_res$connectivities$data,
-    dims = c(
-      bbknn_res$connectivities$nrow,
-      bbknn_res$connectivities$ncol
-    ),
-    index1 = TRUE
+    from = "knn"
   )
-
-  connectivities <- igraph::graph_from_adjacency_matrix(
-    sparse_mat,
-    mode = "max",
-    weighted = TRUE
-  )
-
-  set_connectivities(object, connectivities = connectivities, from = "knn")
 }
 
 # ------------------------------------------------------------------------------

@@ -1,3 +1,21 @@
+# bixverse.gpu 0.6.2
+
+## Breaking changes
+
+* The neighbour graph is a `SingleCellConnectivity` now, following bixverse
+  0.8.4, which moved it out of igraph and into Rust. `find_neighbours_gpu_sc()`
+  and `bbknn_gpu_sc()` store one, and `find_clusters_gpu_sc()` clusters it.
+  `leiden_clustering_gpu()` takes a `SingleCellConnectivity` or an undirected
+  igraph; an igraph goes through `bixverse::as_sc_connectivity()` first.
+* `rs_leiden_clustering_gpu()` takes one flattened, 1-indexed `edges` vector
+  instead of `from` and `to`, the layout `bixverse::rs_graph_to_edges()`
+  returns.
+
+## Chores
+
+* Needs bixverse >= 0.8.4. `igraph` and `Matrix` moved from Imports to
+  Suggests; only the tests use them.
+
 # bixverse.gpu 0.6.1
 
 ## Chores
