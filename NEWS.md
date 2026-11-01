@@ -33,7 +33,7 @@
   tSNE pick up the manifolds-rs 0.8.0 changes: `"nndescent"` builds the kNN
   graph directly there too, and spectral initialisation gives different
   coordinates at the same seed.
-* Needs bixverse >= 0.8.4. `igraph` and `Matrix` moved from Imports to
+* Needs bixverse >= 0.9.0. `igraph` and `Matrix` moved from Imports to
   Suggests; only the tests use them.
 
 # bixverse.gpu 0.6.1
