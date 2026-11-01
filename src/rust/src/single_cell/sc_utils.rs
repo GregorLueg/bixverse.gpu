@@ -11,7 +11,7 @@ use bixverse_r::prelude::*;
 use bixverse_r::single_cell::sc_analysis::nebula::NebulaScRes;
 use extendr_api::*;
 use faer::Mat;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 ///////////
 // Types //
@@ -110,7 +110,7 @@ pub fn resolve_cell_mapping(
 
     match cells_to_use {
         Some(use_cells) => {
-            let orig_to_working: HashMap<usize, usize> = keep
+            let orig_to_working: FxHashMap<usize, usize> = keep
                 .iter()
                 .enumerate()
                 .map(|(working_row, &orig_idx)| (orig_idx, working_row))
@@ -238,7 +238,7 @@ pub fn knn_distances_processing(knn_dist: RMatrix<f64>) -> Vec<Vec<f32>> {
 /// The [NeighboursData] or an error when a field is missing or has the wrong
 /// type.
 pub fn knn_data_to_rust(knn_data: List) -> NeighboursData {
-    let data: HashMap<&str, Robj> = knn_data.try_into()?;
+    let data: FxHashMap<&str, Robj> = knn_data.iter().collect();
 
     let knn_indices: RArray<i32, 2> = data
         .get("indices")

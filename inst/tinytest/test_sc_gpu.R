@@ -454,12 +454,11 @@ expect_true(
 
 ### nndescent ------------------------------------------------------------------
 
-for (extract in c(TRUE, FALSE)) {
+for (method in c("nndescent", "cagra")) {
   knn_cagra <- generate_gpu_knn_sc(
     object = sc_obj_plain,
     embd_to_use = "pca",
-    knn_method = "nndescent",
-    nn_params = params_nn_gpu(extract_knn = extract),
+    knn_method = method,
     k = knn_k,
     .verbose = FALSE
   )
@@ -471,8 +470,8 @@ for (extract in c(TRUE, FALSE)) {
       ncols = knn_k
     ),
     info = sprintf(
-      "generate_gpu_knn_sc (nndescent, extract_knn = %s) - kNN matrix of correct dim",
-      extract
+      "generate_gpu_knn_sc (%s) - kNN matrix of correct dim",
+      method
     )
   )
 }
@@ -646,7 +645,6 @@ expect_true(
 obj_cagra <- find_neighbours_gpu_sc(
   object = sc_obj_plain,
   knn_method = "nndescent",
-  nn_params = params_nn_gpu(extract_knn = FALSE),
   k = knn_k,
   .verbose = FALSE
 )

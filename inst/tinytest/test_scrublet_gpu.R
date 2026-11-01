@@ -518,17 +518,6 @@ expect_true(
 
 ## nndescent on the gpu arm ----------------------------------------------------
 
-# `"nndescent"` is the name used across the package, but the Rust parser only
-# matches `"nndescent_gpu"` and silently falls back to exhaustive on anything
-# else. If this stops holding, the backend below quietly stops being tested.
-expect_equal(
-  current = params_scrublet_gpu(knn = list(knn_method = "nndescent"))[[
-    "knn_method"
-  ]],
-  target = "nndescent_gpu",
-  info = "scrublet gpu - nndescent is translated for the Rust parser"
-)
-
 expect_equal(
   current = params_scrublet_gpu()[["knn_method"]],
   target = "exhaustive",

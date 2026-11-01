@@ -28,8 +28,8 @@ top connectivities. May help with population independence and improve the
 tidiness of clustering. If \code{NULL}, it defaults to \code{10 * neighbours_within_batch}. Defaults to \code{NULL}.}
 
 \item{knn}{List. Optional overrides for the kNN block. See
-\code{\link[=params_knn_gpu_defaults]{params_knn_gpu_defaults()}} for the available elements. Without \code{k},
-\code{extract_knn}. Unknown elements are an error. Defaults to \code{list()}.}
+\code{\link[=params_knn_gpu_defaults]{params_knn_gpu_defaults()}} for the available elements. Without \code{k}. Unknown
+elements are an error. Defaults to \code{list()}.}
 }
 \value{
 A named list with the following elements:
@@ -53,10 +53,10 @@ GPU counterpart to \code{\link[bixverse:params_sc_bbknn]{bixverse::params_sc_bbk
 knobs, but the kNN block is the GPU one, see \code{\link[=params_knn_gpu_defaults]{params_knn_gpu_defaults()}}.
 }
 \details{
-Two keys of the GPU kNN block do nothing here and are rejected rather than
-silently ignored. \code{k} is set by \code{neighbours_within_batch}, and \code{extract_knn}
-only applies to a self-query, whereas BBKNN builds one index per batch and
-queries each with every cell.
+\code{k} in the GPU kNN block is rejected rather than silently ignored: it is set
+by \code{neighbours_within_batch}. BBKNN builds one index per batch and queries
+each with every cell, so \code{knn_method = "nndescent"} builds and beam searches
+a CAGRA graph here.
 }
 \references{
 Polański, et al., Bioinformatics, 2020

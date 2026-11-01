@@ -7,7 +7,7 @@ use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
 use manifolds_rs::prelude::*;
 use manifolds_rs::*;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::embeddings::utils::*;
 
@@ -47,7 +47,7 @@ impl InternalParametricUmapParams {
         let umap_graph_params = get_params_umap_graph(r_list.clone())?;
         let train_param = get_params_parametric_train(r_list.clone(), min_dist, spread)?;
 
-        let params: HashMap<&str, Robj> = r_list.try_into()?;
+        let params: FxHashMap<&str, Robj> = r_list.iter().collect();
 
         let ann_type = std::string::String::from(
             params

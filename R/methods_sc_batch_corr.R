@@ -345,11 +345,6 @@ S7::method(bbknn_gpu_sc, SingleCellsSubset) <- function(
     message("Running BBKNN algorithm on the GPU.")
   }
 
-  # `"nndescent"` is the package-wide name, Rust only knows `"nndescent_gpu"`
-  bbknn_params[["knn_method"]] <- .normalise_gpu_knn_method(
-    bbknn_params[["knn_method"]]
-  )
-
   bbknn_res <- rs_bbknn_gpu(
     embd = embd,
     batch_labels = batch_index,
@@ -569,11 +564,6 @@ S7::method(fast_mnn_gpu_sc, SingleCellsSubset) <- function(
   if (.verbose) {
     message("Running fastMNN on the GPU.")
   }
-
-  # `"nndescent"` is the package-wide name, Rust only knows `"nndescent_gpu"`
-  fastmnn_params[["knn_method"]] <- .normalise_gpu_knn_method(
-    fastmnn_params[["knn_method"]]
-  )
 
   mnn_embd <- rs_fast_mnn_gpu(
     embd = embd,

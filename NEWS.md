@@ -1,4 +1,4 @@
-# bixverse.gpu 0.6.2
+# bixverse.gpu 0.7.0
 
 ## Breaking changes
 
@@ -10,9 +10,29 @@
 * `rs_leiden_clustering_gpu()` takes one flattened, 1-indexed `edges` vector
   instead of `from` and `to`, the layout `bixverse::rs_graph_to_edges()`
   returns.
+* `knn_method = "nndescent"` hands back the NN-descent kNN graph itself: no
+  CAGRA index, no beam search. Rows the descent left short are topped up with
+  an exact search of just those rows. The old behaviour is
+  `knn_method = "cagra"`, now accepted by `generate_gpu_knn_sc()`,
+  `find_neighbours_gpu_sc()`, `generate_knn_graph_gpu()`, `rs_gpu_knn()` and the
+  GPU kNN blocks of Scrublet, BBKNN and fastMNN. Different neighbours at the
+  same seed wherever `"nndescent"` was in use, which includes the defaults of
+  `generate_gpu_knn_sc()`, `find_neighbours_gpu_sc()` and
+  `generate_knn_graph_gpu()`. BBKNN and fastMNN query one set of cells against
+  another, so `"nndescent"` there still builds and beam searches CAGRA.
+* `extract_knn` is gone from `params_nn_gpu()` and
+  `params_knn_gpu_defaults()`. The deprecated `extract_knn` arguments of
+  `generate_knn_graph_gpu()` and the old CAGRA entry points map to
+  `"nndescent"` (`TRUE`) or `"cagra"` (`FALSE`).
+* `rs_gpu_knn()` runs through bixverse-rs instead of manifolds-rs, on wgpu and
+  MLX.
 
 ## Chores
 
+* `ann-search-rs` 0.12, `manifolds-rs` 0.8.0 and `bixverse-rs` 0.10.0. UMAP and
+  tSNE pick up the manifolds-rs 0.8.0 changes: `"nndescent"` builds the kNN
+  graph directly there too, and spectral initialisation gives different
+  coordinates at the same seed.
 * Needs bixverse >= 0.8.4. `igraph` and `Matrix` moved from Imports to
   Suggests; only the tests use them.
 

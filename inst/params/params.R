@@ -151,43 +151,47 @@ spec_nn_gpu <- param_spec(
       NULL,
       null_ok = TRUE,
       doc = paste(
-        "Final node degree of the CAGRA navigational graph. If",
-        "`NULL`, defaults to `30` on the Rust side."
+        "CAGRA GPU: Final node degree of the navigational graph. If",
+        "`NULL`, defaults to `30` on the Rust side. Ignored by UMAP and",
+        "tSNE."
       )
     ),
     k_build = p_int(
       NULL,
       null_ok = TRUE,
       doc = paste(
-        "Number of k-neighbours during the NNDescent build phase",
-        "before CAGRA pruning. If `NULL`, defaults to `1.5 *",
-        "node_degree_final` on the Rust side. (Cannot be smaller than",
-        "`node_degree_final`)"
+        "NNDescent and CAGRA GPU: Working degree of the descent. If",
+        "`NULL`, defaults to `1.5 * k` on the Rust side. For CAGRA it",
+        "cannot be smaller than `node_degree_final`."
       )
     ),
     n_tree = p_int(
       NULL,
       null_ok = TRUE,
       doc = paste(
-        "CAGRA GPU: Number of trees for graph build. Automatically if",
-        "`NULL`."
+        "NNDescent and CAGRA GPU: Number of trees seeding the descent.",
+        "Automatically if `NULL`."
       )
     ),
     delta = p_dbl(
       0.001,
-      doc = "CAGRA GPU: Early termination parameter for NN descent."
+      doc = paste(
+        "NNDescent and CAGRA GPU: Early termination parameter for the",
+        "descent."
+      )
     ),
     rho = p_dbl(
       NULL,
       null_ok = TRUE,
-      doc = "CAGRA GPU: Sample rate parameter for NN descent."
+      doc = "NNDescent and CAGRA GPU: Sample rate for the descent."
     ),
     beam_width = p_int(
       NULL,
       null_ok = TRUE,
       doc = paste(
         "CAGRA GPU: Beam width for beam search. If not provided will",
-        "be set to `max(c(k, node_degree_final, 16L)) * 2`."
+        "be set to `max(c(k, node_degree_final, 16L)) * 2`. Ignored by",
+        "UMAP and tSNE."
       )
     ),
     max_beam_iters = p_int(
@@ -195,7 +199,8 @@ spec_nn_gpu <- param_spec(
       null_ok = TRUE,
       doc = paste(
         "CAGRA GPU: Maximum number of beam search iterations. If not",
-        "provided, defaults to `3 * beam_width`."
+        "provided, defaults to `3 * beam_width`. Ignored by UMAP and",
+        "tSNE."
       )
     ),
     n_entry_points = p_int(
@@ -203,15 +208,7 @@ spec_nn_gpu <- param_spec(
       null_ok = TRUE,
       doc = paste(
         "CAGRA GPU: Number of entry points for beam search. If not",
-        "provided, defaults to `8L`."
-      )
-    ),
-    extract_knn = p_lgl(
-      FALSE,
-      doc = paste(
-        "CAGRA GPU: Skip the beam search and take the graph the",
-        "NNDescent left it. Faster, slightly lower recall. Ignored by",
-        "the other two searches."
+        "provided, defaults to `8L`. Ignored by UMAP and tSNE."
       )
     )
   )
@@ -656,12 +653,14 @@ spec_knn_gpu_defaults <- param_defaults(
     "what survives is exhaustive, IVF and NN-descent."
   ),
   details = paste(
-    "NN-descent builds a CAGRA graph and, with `extract_knn = TRUE`,",
-    "hands that graph back rather than beam searching over it. Note that",
-    "this saves the query, not the build: the descent itself dominates, and",
-    "its build degree tracks `k`. NN-descent is therefore a low-`k` tool on",
-    "the GPU. Above `k` of roughly 30 both exhaustive and IVF beat it, and",
-    "by `k = 200` they beat it by more than an order of magnitude."
+    "`\"nndescent\"` hands back the kNN graph the descent built, with no",
+    "index and no search; rows the descent left short are topped up with an",
+    "exact search of just those rows. Where the query is a different set of",
+    "cells (BBKNN, fastMNN) it builds and beam searches a CAGRA graph",
+    "instead. `\"cagra\"` always does the latter, self-queries included.",
+    "The descent itself dominates either way, and its build degree tracks",
+    "`k`, so both are low-`k` tools on the GPU. Above `k` of roughly 30",
+    "exhaustive and IVF beat them."
   ),
   checker = NULL,
   fields = list(
@@ -675,7 +674,7 @@ spec_knn_gpu_defaults <- param_defaults(
     ),
     knn_method = p_choice(
       "exhaustive",
-      c("exhaustive", "ivf", "nndescent"),
+      c("exhaustive", "ivf", "nndescent", "cagra"),
       doc = "The GPU index to use."
     ),
     ann_dist = p_choice(
@@ -700,8 +699,8 @@ spec_knn_gpu_defaults <- param_defaults(
       range = "[1,)",
       null_ok = TRUE,
       doc = paste(
-        "NN-descent only. Node degree of the graph after pruning. `NULL`",
-        "gives 30, widened to cover `k` when `extract_knn` is set."
+        "CAGRA only. Node degree of the graph after pruning. `NULL` gives",
+        "30."
       )
     ),
     k_build = p_int(
@@ -709,7 +708,7 @@ spec_knn_gpu_defaults <- param_defaults(
       range = "[1,)",
       null_ok = TRUE,
       doc = paste(
-        "NN-descent only. Build degree before pruning. `NULL` gives",
+        "NN-descent and CAGRA. Working degree of the descent. `NULL` gives",
         "`max(k, floor(1.5 * k))`."
       )
     ),
@@ -717,23 +716,23 @@ spec_knn_gpu_defaults <- param_defaults(
       NULL,
       range = "[1,)",
       null_ok = TRUE,
-      doc = "NN-descent only. Trees seeding the descent."
+      doc = "NN-descent and CAGRA. Trees seeding the descent."
     ),
     delta = p_dbl(
       0.001,
-      doc = "NN-descent only. Termination criterium for the descent."
+      doc = "NN-descent and CAGRA. Termination criterium for the descent."
     ),
     rho = p_dbl(
       NULL,
       null_ok = TRUE,
-      doc = "NN-descent only. Sampling rate for the descent."
+      doc = "NN-descent and CAGRA. Sampling rate for the descent."
     ),
     refine_knn = p_int(
       NULL,
       range = "[0,)",
       null_ok = TRUE,
       doc = paste(
-        "NN-descent only. 2-hop refinement sweeps after the descent. Buys",
+        "NN-descent and CAGRA. 2-hop refinement sweeps after the descent. Buys",
         "graph quality at a linear cost. `NULL` gives 0."
       )
     ),
@@ -742,8 +741,8 @@ spec_knn_gpu_defaults <- param_defaults(
       range = "[1,)",
       null_ok = TRUE,
       doc = paste(
-        "NN-descent only. Beam width when querying. Ignored when",
-        "`extract_knn` is set."
+        "CAGRA only, which includes NN-descent on a cross-query. Beam",
+        "width when querying."
       )
     ),
     max_beam_iters = p_int(
@@ -751,8 +750,8 @@ spec_knn_gpu_defaults <- param_defaults(
       range = "[1,)",
       null_ok = TRUE,
       doc = paste(
-        "NN-descent only. Beam search iterations. Ignored when",
-        "`extract_knn` is set."
+        "CAGRA only, which includes NN-descent on a cross-query. Beam",
+        "search iterations."
       )
     ),
     n_entry_points = p_int(
@@ -760,15 +759,8 @@ spec_knn_gpu_defaults <- param_defaults(
       range = "[1,)",
       null_ok = TRUE,
       doc = paste(
-        "NN-descent only. Entry points when querying. Ignored when",
-        "`extract_knn` is set."
-      )
-    ),
-    extract_knn = p_lgl(
-      FALSE,
-      doc = paste(
-        "NN-descent only. Hand back the graph the descent built instead of",
-        "beam searching over it."
+        "CAGRA only, which includes NN-descent on a cross-query. Entry",
+        "points when querying."
       )
     )
   )
@@ -906,10 +898,10 @@ spec_sc_bbknn_gpu <- param_spec(
     "the kNN block is the GPU one, see [params_knn_gpu_defaults()]."
   ),
   details = paste(
-    "Two keys of the GPU kNN block do nothing here and are rejected rather",
-    "than silently ignored. `k` is set by `neighbours_within_batch`, and",
-    "`extract_knn` only applies to a self-query, whereas BBKNN builds one",
-    "index per batch and queries each with every cell."
+    "`k` in the GPU kNN block is rejected rather than silently ignored: it is",
+    "set by `neighbours_within_batch`. BBKNN builds one index per batch and",
+    "queries each with every cell, so `knn_method = \"nndescent\"` builds and",
+    "beam searches a CAGRA graph here."
   ),
   references = "Polański, et al., Bioinformatics, 2020",
   checker = "ScBbknnGpu",
@@ -945,7 +937,7 @@ spec_sc_bbknn_gpu <- param_spec(
     ),
     knn = p_merge(
       "knn_gpu_defaults",
-      drop = c("k", "extract_knn"),
+      drop = "k",
       strict = TRUE,
       doc = "Optional overrides for the kNN block."
     )
@@ -963,10 +955,10 @@ spec_sc_fastmnn_gpu <- param_spec(
     "CPU values."
   ),
   details = paste(
-    "`extract_knn` is rejected rather than silently ignored: every search in",
-    "fastMNN is a cross-query between two sets of cells, and extraction only",
-    "applies to a self-query. `k = 0L` is rejected as well, since fastMNN has",
-    "no data-driven fallback for it."
+    "Every search in fastMNN is a cross-query between two sets of cells, so",
+    "`knn_method = \"nndescent\"` builds and beam searches a CAGRA graph",
+    "here. `k = 0L` is rejected, since fastMNN has no data-driven fallback",
+    "for it."
   ),
   references = "Haghverdi, et al., Nat Biotechnol, 2018",
   checker = "ScFastmnnGpu",
@@ -990,7 +982,6 @@ spec_sc_fastmnn_gpu <- param_spec(
     knn = p_merge(
       "knn_gpu_defaults",
       overrides = list(k = 20L, ann_dist = "cosine"),
-      drop = "extract_knn",
       strict = TRUE,
       doc = "Optional overrides for the kNN block."
     )

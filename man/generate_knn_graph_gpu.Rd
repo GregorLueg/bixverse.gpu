@@ -7,7 +7,7 @@
 generate_knn_graph_gpu(
   data,
   k,
-  knn_method = c("nndescent", "exhaustive", "ivf"),
+  knn_method = c("nndescent", "cagra", "exhaustive", "ivf"),
   nn_params = params_nn_gpu(),
   seed = 42L,
   extract_knn = lifecycle::deprecated(),
@@ -22,15 +22,16 @@ neighbours on. Rows are observations, columns are features.}
 \item{k}{Integer. The number of nearest neighbours to compute.}
 
 \item{knn_method}{Character. The algorithm to use for nearest neighbour
-search. One of \code{c("exhaustive", "ivf", "nndescent")}. Defaults to
-\code{"nndescent"}}
+search. One of \code{c("nndescent", "cagra", "exhaustive", "ivf")}. Defaults to
+\code{"nndescent"}.}
 
 \item{nn_params}{List. Output of \code{\link[=params_nn_gpu]{params_nn_gpu()}}.}
 
 \item{seed}{Integer. For reproducibility. Defaults to \code{42L}.}
 
-\item{extract_knn}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use the \code{extract_knn}
-field of \code{\link[=params_nn_gpu]{params_nn_gpu()}} instead.}
+\item{extract_knn}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use
+\code{knn_method = "nndescent"} (graph only) or \code{knn_method = "cagra"} (beam
+search) instead.}
 
 \item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the
 search on Apple Silicon via MLX and needs a build with the MLX backend,
@@ -43,13 +44,15 @@ A nearest neighbours class object with 1-indexed neighbour indices
 and distances. Euclidean distances are true L2, not squared.
 }
 \description{
-This function generates a kNN graph based on a given numeric matrix. Three
+This function generates a kNN graph based on a given numeric matrix. Four
 different GPU-accelerated versions are available
 \itemize{
+\item \code{"nndescent"} - The NN-descent kNN graph itself, no index and no
+search. Rows the descent left short are topped up with an exact search.
+\item \code{"cagra"} - The NN-descent graph pruned into a CAGRA graph and beam
+searched.
 \item \code{"exhaustive"} - Exact nearest neighbour search via GPU.
-\item \code{"ivf"} - Inverted file index that leverages k-means clustering
-and probing a few of the clusters via GPU-accelerated distance
-calculations.
-\item \code{"nndescent"} - A CAGRA style nearest neighbour search on the GPU.
+\item \code{"ivf"} - Inverted file index that clusters the data with k-means
+and probes a few of the clusters at query time.
 }
 }

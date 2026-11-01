@@ -10,7 +10,7 @@ generate_gpu_knn_sc(
   cells_to_use = NULL,
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
-  knn_method = c("nndescent", "exhaustive", "ivf"),
+  knn_method = c("nndescent", "cagra", "exhaustive", "ivf"),
   nn_params = params_nn_gpu(),
   k = 15L,
   seed = 42L,
@@ -36,7 +36,7 @@ use. If \code{NULL} all will be used.}
 \item{modality}{String. One of \code{c("rna", "adt")}. You can only use \code{"adt"}
 on \code{SingleCellsMultiModal} class.}
 
-\item{knn_method}{String. One of \code{c("nndescent", "exhaustive", "ivf")}.}
+\item{knn_method}{String. One of \code{c("nndescent", "cagra", "exhaustive", "ivf")}.}
 
 \item{nn_params}{List. Output of \code{\link[=params_nn_gpu]{params_nn_gpu()}}.}
 
@@ -62,12 +62,12 @@ Initialised \code{sc_knn} with the kNN data.
 }
 \description{
 This function generates a \code{SingleCellNearestNeighbour} object using
-GPU-accelerated kNN algorithms via the \code{bixverse.gpu} package. Three methods
-are available: \code{"exhaustive"} performs an exact brute-force search on the
-GPU; \code{"ivf"} builds an inverted file index that partitions the embedding
-space into Voronoi cells and probes only a subset at query time; and
-\code{"nndescent"} builds a dense NNDescent graph and prunes it into a CAGRA
-navigational graph, which is then either beam searched or handed back as the
-descent left it (\code{params_nn_gpu(extract_knn = TRUE)}, faster, lower recall).
+GPU-accelerated kNN algorithms via the \code{bixverse.gpu} package. Four methods
+are available: \code{"nndescent"} hands back the NN-descent kNN graph itself, with
+no index and no search, and tops up rows the descent left short with an
+exact search; \code{"cagra"} prunes the same graph into a CAGRA navigational graph
+and beam searches it; \code{"exhaustive"} performs an exact brute-force search on
+the GPU; and \code{"ivf"} builds an inverted file index that partitions the
+embedding space into Voronoi cells and probes only a subset at query time.
 This function is the GPU counterpart of \code{\link[bixverse:generate_knn_sc]{generate_knn_sc()}}.
 }

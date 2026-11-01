@@ -112,16 +112,45 @@ expect_true(
   info = "gpu ivf index - distance"
 )
 
+### nndescent ------------------------------------------------------------------
+
+gpu_nndescent <- rs_gpu_knn(
+  embd = data,
+  k = k,
+  knn_method = "nndescent",
+  # graph-only recall leans on the build degree, the default is too tight here
+  nn_params = params_nn_gpu(dist_metric = "euclidean", k_build = 30L),
+  seed = 42L,
+  verbose = 0L
+)
+
+recall_nndescent_gpu <- calc_recall_bioc(
+  knn_mat = bioc_knn$index,
+  rs_knn_mat = gpu_nndescent$indices
+)
+
+dist_diff_nndescent_gpu <- calc_dist_bioc(
+  knn_dist = bioc_knn$distance,
+  gpu_nndescent$dist
+)
+
+expect_true(
+  current = recall_nndescent_gpu >= 0.98,
+  info = "gpu nndescent graph - recall"
+)
+
+expect_true(
+  current = dist_diff_nndescent_gpu <= 1e-3,
+  info = "gpu nndescent graph - distance"
+)
+
 ### cagra ----------------------------------------------------------------------
 
 gpu_cagra <- rs_gpu_knn(
   embd = data,
   k = k,
-  knn_method = "nndescent",
-  nn_params = params_nn_gpu(
-    dist_metric = "euclidean",
-    extract_knn = FALSE
-  ),
+  knn_method = "cagra",
+  nn_params = params_nn_gpu(dist_metric = "euclidean"),
   seed = 42L,
   verbose = 0L
 )

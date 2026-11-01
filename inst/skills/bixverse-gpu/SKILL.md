@@ -1,6 +1,6 @@
 ---
 name: bixverse-gpu
-description: How to USE the bixverse.gpu R package, the GPU (WGPU, any vendor, no CUDA) companion to bixverse and manifoldsR. Covers GPU PCA (exact Lanczos or randomised), Harmony v2, fastMNN, kNN (exhaustive, IVF, NN-descent/CAGRA), fast clustering, Leiden/Louvain, BBKNN, Bonsai, Scrublet, SEACells, SCENIC, NMF and NEBULA on SingleCells / SingleCellsSubset / MetaCells objects, plus GPU UMAP, t-SNE, parametric UMAP, k-means and correlations on plain matrices. Use this whenever a task involves bixverse.gpu or any of its functions (calculate_pca_gpu_sc, harmony_v2_gpu_sc, fast_mnn_gpu_sc, find_clusters_gpu_sc, bonsai_gpu_sc, find_neighbours_gpu_sc, umap_gpu, tsne_gpu, parametric_umap, scrublet_gpu_sc, scenic_grn_sc_gpu, generate_seacells_gpu_sc, nebula_gpu_sc, *_nmf_gpu_sc, k_means_cluster_gpu, rs_cor_gpu, params_*_gpu), or when a user wants to speed up a bixverse single cell workflow or a manifoldsR embedding on a GPU. Apply even when the package is not named but the user is running large single cell data through bixverse and asks about GPU acceleration.
+description: How to USE the bixverse.gpu R package, the GPU (WGPU, any vendor, no CUDA) companion to bixverse and manifoldsR. Covers GPU PCA (exact Lanczos or randomised), Harmony v2, fastMNN, kNN (exhaustive, IVF, NN-descent, CAGRA), fast clustering, Leiden/Louvain, BBKNN, Bonsai, Scrublet, SEACells, SCENIC, NMF and NEBULA on SingleCells / SingleCellsSubset / MetaCells objects, plus GPU UMAP, t-SNE, parametric UMAP, k-means and correlations on plain matrices. Use this whenever a task involves bixverse.gpu or any of its functions (calculate_pca_gpu_sc, harmony_v2_gpu_sc, fast_mnn_gpu_sc, find_clusters_gpu_sc, bonsai_gpu_sc, find_neighbours_gpu_sc, umap_gpu, tsne_gpu, parametric_umap, scrublet_gpu_sc, scenic_grn_sc_gpu, generate_seacells_gpu_sc, nebula_gpu_sc, *_nmf_gpu_sc, k_means_cluster_gpu, rs_cor_gpu, params_*_gpu), or when a user wants to speed up a bixverse single cell workflow or a manifoldsR embedding on a GPU. Apply even when the package is not named but the user is running large single cell data through bixverse and asks about GPU acceleration.
 ---
 
 # Using bixverse.gpu
@@ -105,6 +105,10 @@ unlink(dir_sc, recursive = TRUE, force = TRUE)
   exhaustive search overtakes it, by more than an order of magnitude at
   `k = 200`. Use `"exhaustive"` or `"ivf"` for high `k` (t-SNE at high
   perplexity, Scrublet).
+- **`"nndescent"` is graph-only on a self-kNN.** No index, no beam search, and
+  recall depends on `k_build` in `params_nn_gpu()`. Use `"cagra"` for the beam
+  search. BBKNN and fastMNN are cross-queries, so there `"nndescent"` builds and
+  beam searches a CAGRA graph anyway.
 - **A missing prerequisite warns and returns the object unchanged**, same as in
   bixverse. `calculate_pca_gpu_sc()` without HVGs, or `harmony_v2_gpu_sc()`
   without a PCA, does nothing but warn. Print the object after each step.
@@ -122,6 +126,7 @@ unlink(dir_sc, recursive = TRUE, force = TRUE)
   have no wrapper and are the intended entry points.
 - **Deprecated names still work but warn**: `find_neighbours_cagra_sc()`,
   `generate_cagra_knn_sc()`, `params_sc_cagra()`, `params_sc_ivf()`, and the
-  `gpu_method` / `ivf_params` / `dist_metric` arguments on the kNN functions.
-  Use `find_neighbours_gpu_sc()` / `generate_gpu_knn_sc()` with `knn_method`
-  and `params_nn_gpu()`.
+  `gpu_method` / `ivf_params` / `dist_metric` / `extract_knn` arguments on the
+  kNN functions. Use `find_neighbours_gpu_sc()` / `generate_gpu_knn_sc()` with
+  `knn_method` and `params_nn_gpu()`. `params_nn_gpu(extract_knn = )` is gone
+  and errors: choose between `"nndescent"` and `"cagra"` instead.

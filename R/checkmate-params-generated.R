@@ -203,8 +203,7 @@ checkNnGpuParams <- function(x) {
       "rho",
       "beam_width",
       "max_beam_iters",
-      "n_entry_points",
-      "extract_knn"
+      "n_entry_points"
     )
   )
   if (!isTRUE(res)) {
@@ -223,8 +222,7 @@ checkNnGpuParams <- function(x) {
       rho = c("N1", "0"),
       beam_width = c("I1", "0"),
       max_beam_iters = c("I1", "0"),
-      n_entry_points = c("I1", "0"),
-      extract_knn = "B1"
+      n_entry_points = c("I1", "0")
     ),
     label = "GPU nearest neighbour params"
   )
@@ -398,7 +396,7 @@ checkScBbknnGpuParams <- function(x) {
   res <- apply_choice_rules(
     x,
     list(
-      knn_method = c("exhaustive", "ivf", "nndescent"),
+      knn_method = c("exhaustive", "ivf", "nndescent", "cagra"),
       ann_dist = c("euclidean", "cosine")
     ),
     label = "GPU BBKNN params",
@@ -606,7 +604,7 @@ checkScFastmnnGpuParams <- function(x) {
   res <- apply_choice_rules(
     x,
     list(
-      knn_method = c("exhaustive", "ivf", "nndescent"),
+      knn_method = c("exhaustive", "ivf", "nndescent", "cagra"),
       ann_dist = c("euclidean", "cosine")
     ),
     label = "GPU fastMNN params",

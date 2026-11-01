@@ -89,8 +89,8 @@ expect_equal(
   info = "bbknn gpu - exhaustive is the default kNN method"
 )
 
-# `k` and `extract_knn` do nothing on this path, so they are rejected rather
-# than silently ignored
+# `k` does nothing on this path, so it is rejected rather than silently
+# ignored. `extract_knn` is gone.
 expect_error(
   current = params_sc_bbknn_gpu(knn = list(k = 20L)),
   info = "bbknn gpu - k is rejected, it comes from neighbours_within_batch"
@@ -98,7 +98,7 @@ expect_error(
 
 expect_error(
   current = params_sc_bbknn_gpu(knn = list(extract_knn = TRUE)),
-  info = "bbknn gpu - extract_knn is rejected, the searches are cross-queries"
+  info = "bbknn gpu - the removed extract_knn is rejected"
 )
 
 expect_error(

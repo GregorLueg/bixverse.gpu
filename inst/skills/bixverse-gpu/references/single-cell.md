@@ -82,7 +82,7 @@ obj <- harmony_v2_gpu_sc(
 obj <- find_neighbours_gpu_sc(
   obj,
   embd_to_use = "harmony_gpu",
-  knn_method = "nndescent",    # or "exhaustive", "ivf"
+  knn_method = "nndescent",    # or "cagra", "exhaustive", "ivf"
   nn_params = params_nn_gpu(),
   k = 15L,
   snn_params = params_sc_neighbours()
@@ -100,10 +100,13 @@ Picking `knn_method`:
   cells, so it gets slow on very large data.
 - `"ivf"`: approximate, `n_list` / `n_probes` in `params_nn_gpu()`. The fallback
   when exhaustive is too slow, at any `k`.
-- `"nndescent"`: NN-descent pruned into a CAGRA graph, then beam search
-  (`extract_knn = FALSE`, default) or direct extraction from the graph
-  (`extract_knn = TRUE`, faster, lower recall). Fastest at `k` up to about 30,
-  then loses badly because the build degree tracks `k`.
+- `"nndescent"`: the default. Reads the kNN straight off the NN-descent graph,
+  with no index and no beam search. Raise `k_build` in `params_nn_gpu()`
+  (defaults to 1.5 * `k`) if recall matters. Loses badly above `k` of about 30,
+  because the build degree tracks `k`. BBKNN and fastMNN are cross-queries, so
+  there it builds and beam searches a CAGRA graph instead.
+- `"cagra"`: the same descent, pruned into a CAGRA graph, then beam search.
+  Raise `node_degree_final` if it errors on short rows.
 
 The distance metric is `dist_metric` in `params_nn_gpu()`, `"euclidean"` or
 `"cosine"`.

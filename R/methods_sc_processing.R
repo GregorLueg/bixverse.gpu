@@ -119,13 +119,13 @@
 #'
 #' @description
 #' This function generates a `SingleCellNearestNeighbour` object using
-#' GPU-accelerated kNN algorithms via the `bixverse.gpu` package. Three methods
-#' are available: `"exhaustive"` performs an exact brute-force search on the
-#' GPU; `"ivf"` builds an inverted file index that partitions the embedding
-#' space into Voronoi cells and probes only a subset at query time; and
-#' `"nndescent"` builds a dense NNDescent graph and prunes it into a CAGRA
-#' navigational graph, which is then either beam searched or handed back as the
-#' descent left it (`params_nn_gpu(extract_knn = TRUE)`, faster, lower recall).
+#' GPU-accelerated kNN algorithms via the `bixverse.gpu` package. Four methods
+#' are available: `"nndescent"` hands back the NN-descent kNN graph itself, with
+#' no index and no search, and tops up rows the descent left short with an
+#' exact search; `"cagra"` prunes the same graph into a CAGRA navigational graph
+#' and beam searches it; `"exhaustive"` performs an exact brute-force search on
+#' the GPU; and `"ivf"` builds an inverted file index that partitions the
+#' embedding space into Voronoi cells and probes only a subset at query time.
 #' This function is the GPU counterpart of [generate_knn_sc()].
 #'
 #' @param object `SingleCells` (or `SingleCellsMultiModal`) class.
@@ -137,7 +137,7 @@
 #' use. If `NULL` all will be used.
 #' @param modality String. One of `c("rna", "adt")`. You can only use `"adt"`
 #' on `SingleCellsMultiModal` class.
-#' @param knn_method String. One of `c("nndescent", "exhaustive", "ivf")`.
+#' @param knn_method String. One of `c("nndescent", "cagra", "exhaustive", "ivf")`.
 #' @param nn_params List. Output of [bixverse.gpu::params_nn_gpu()].
 #' @param k Integer. Number of neighbours.
 #' @param seed Integer. For reproducibility.
@@ -162,7 +162,7 @@ generate_gpu_knn_sc <- S7::new_generic(
     cells_to_use = NULL,
     no_embd_to_use = NULL,
     modality = c("rna", "adt"),
-    knn_method = c("nndescent", "exhaustive", "ivf"),
+    knn_method = c("nndescent", "cagra", "exhaustive", "ivf"),
     nn_params = params_nn_gpu(),
     k = 15L,
     seed = 42L,
@@ -189,7 +189,7 @@ S7::method(generate_gpu_knn_sc, SingleCells) <- function(
   cells_to_use = NULL,
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
-  knn_method = c("nndescent", "exhaustive", "ivf"),
+  knn_method = c("nndescent", "cagra", "exhaustive", "ivf"),
   nn_params = params_nn_gpu(),
   k = 15L,
   seed = 42L,
@@ -213,7 +213,7 @@ S7::method(generate_gpu_knn_sc, SingleCells) <- function(
   )
   knn_method <- match.arg(
     resolved$knn_method,
-    c("nndescent", "exhaustive", "ivf")
+    c("nndescent", "cagra", "exhaustive", "ivf")
   )
   nn_params <- resolved$nn_params
   k <- resolved$k
@@ -223,7 +223,7 @@ S7::method(generate_gpu_knn_sc, SingleCells) <- function(
   checkmate::qassert(cells_to_use, c("S+", "0"))
   checkmate::qassert(no_embd_to_use, c("I1", "0"))
   checkmate::assertChoice(modality, c("rna", "adt"))
-  checkmate::assertChoice(knn_method, c("nndescent", "exhaustive", "ivf"))
+  checkmate::assertChoice(knn_method, c("nndescent", "cagra", "exhaustive", "ivf"))
   assertNnGpuParams(nn_params)
   checkmate::qassert(k, "I1[1,)")
   checkmate::qassert(seed, "I1")
@@ -278,7 +278,7 @@ S7::method(generate_gpu_knn_sc, SingleCells) <- function(
 #' use. If `NULL` all will be used.
 #' @param modality String. One of `c("rna", "adt")`. You can only use `"adt"`
 #' on `SingleCellsMultiModal` class.
-#' @param knn_method String. One of `c("nndescent", "exhaustive", "ivf")`.
+#' @param knn_method String. One of `c("nndescent", "cagra", "exhaustive", "ivf")`.
 #' @param nn_params List. Output of [bixverse.gpu::params_nn_gpu()].
 #' @param k Integer. Number of neighbours.
 #' @param graph_params List. Output of
@@ -307,7 +307,7 @@ find_neighbours_gpu_sc <- S7::new_generic(
     embd_to_use = "pca",
     no_embd_to_use = NULL,
     modality = c("rna", "adt"),
-    knn_method = c("nndescent", "exhaustive", "ivf"),
+    knn_method = c("nndescent", "cagra", "exhaustive", "ivf"),
     nn_params = params_nn_gpu(),
     k = 15L,
     graph_params = bixverse::params_knn_graph_defaults(),
@@ -335,7 +335,7 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
   embd_to_use = "pca",
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
-  knn_method = c("nndescent", "exhaustive", "ivf"),
+  knn_method = c("nndescent", "cagra", "exhaustive", "ivf"),
   nn_params = params_nn_gpu(),
   k = 15L,
   graph_params = bixverse::params_knn_graph_defaults(),
@@ -361,7 +361,7 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
   )
   knn_method <- match.arg(
     resolved$knn_method,
-    c("nndescent", "exhaustive", "ivf")
+    c("nndescent", "cagra", "exhaustive", "ivf")
   )
   nn_params <- resolved$nn_params
   k <- resolved$k
@@ -380,7 +380,7 @@ S7::method(find_neighbours_gpu_sc, SingleCells) <- function(
   checkmate::qassert(embd_to_use, "S1")
   checkmate::qassert(no_embd_to_use, c("I1", "0"))
   checkmate::assertChoice(modality, c("rna", "adt"))
-  checkmate::assertChoice(knn_method, c("nndescent", "exhaustive", "ivf"))
+  checkmate::assertChoice(knn_method, c("nndescent", "cagra", "exhaustive", "ivf"))
   assertNnGpuParams(nn_params)
   checkmate::qassert(k, "I1[1,)")
   bixverse:::assertKnnGraphParams(graph_params)

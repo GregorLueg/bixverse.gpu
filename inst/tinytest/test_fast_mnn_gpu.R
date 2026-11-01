@@ -85,7 +85,7 @@ expect_equal(
 
 expect_error(
   current = params_sc_fastmnn_gpu(knn = list(extract_knn = TRUE)),
-  info = "fastmnn gpu - extract_knn is rejected, the searches are cross-queries"
+  info = "fastmnn gpu - the removed extract_knn is rejected"
 )
 
 expect_error(

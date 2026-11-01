@@ -29,7 +29,8 @@ find_neighbours_cagra_sc(
 \item{cagra_params}{List. Output of the deprecated \code{\link[=params_sc_cagra]{params_sc_cagra()}}, or
 \code{\link[=params_nn_gpu]{params_nn_gpu()}}.}
 
-\item{extract_knn}{Logical. Skip the beam search.}
+\item{extract_knn}{Logical. Skip the beam search, i.e. run
+\code{knn_method = "nndescent"} instead of \code{"cagra"}.}
 
 \item{graph_params}{List. Output of
 \code{\link[bixverse:params_knn_graph_defaults]{bixverse::params_knn_graph_defaults()}}.}
@@ -45,6 +46,7 @@ The object with added kNN matrix and connectivities graph.
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
 
 CAGRA now sits behind \code{\link[=find_neighbours_gpu_sc]{find_neighbours_gpu_sc()}} as
+\code{knn_method = "cagra"}, the graph without the beam search as
 \code{knn_method = "nndescent"}.
 }
 \keyword{internal}

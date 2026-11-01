@@ -3,7 +3,7 @@ Title:
     GPU-accelerated methods via cubecl and WGPU for the bixverse with general
     methods such as k-means and correlations and a lot of methods specific for
     single cell analysis acceleration.
-Version: 0.6.2
+Version: 0.7.0
 Authors@R: 
     person(
         given = "Gregor", 
@@ -11,8 +11,9 @@ Authors@R:
         email = "gregorlueg@me.com", 
         role = c("aut", "cre"))
 Description: 
-    Provides GPU-accelerated methods for the bixverse. These leverage Burn, 
-    cubecl and wgpu under the hood to work on very different hardwares.
+    Provides GPU-accelerated methods for the bixverse. These run on Burn,
+    cubecl and wgpu, so they work across GPU vendors, with an opt-in MLX backend
+    on Apple Silicon.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

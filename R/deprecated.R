@@ -121,6 +121,7 @@ params_sc_ivf <- function(
 #' `r lifecycle::badge("deprecated")`
 #'
 #' CAGRA now sits behind [bixverse.gpu::generate_gpu_knn_sc()] as
+#' `knn_method = "cagra"`, the graph without the beam search as
 #' `knn_method = "nndescent"`.
 #'
 #' @param object `SingleCells` (or `SingleCellsMultiModal`) class.
@@ -130,7 +131,8 @@ params_sc_ivf <- function(
 #' @param modality String. One of `c("rna", "adt")`.
 #' @param cagra_params List. Output of the deprecated [params_sc_cagra()], or
 #' [params_nn_gpu()].
-#' @param extract_knn Logical. Skip the beam search.
+#' @param extract_knn Logical. Skip the beam search, i.e. run
+#' `knn_method = "nndescent"` instead of `"cagra"`.
 #' @param seed Integer. For reproducibility.
 #' @param .verbose Boolean or integer. Controls verbosity.
 #'
@@ -181,7 +183,6 @@ S7::method(generate_cagra_knn_sc, SingleCells) <- function(
   checkmate::qassert(extract_knn, "B1")
   k <- if (is.null(cagra_params$k)) 15L else as.integer(cagra_params$k)
   cagra_params$k <- NULL
-  cagra_params$extract_knn <- extract_knn
 
   generate_gpu_knn_sc(
     object = object,
@@ -189,7 +190,7 @@ S7::method(generate_cagra_knn_sc, SingleCells) <- function(
     cells_to_use = cells_to_use,
     no_embd_to_use = no_embd_to_use,
     modality = match.arg(modality),
-    knn_method = "nndescent",
+    knn_method = if (extract_knn) "nndescent" else "cagra",
     nn_params = cagra_params,
     k = k,
     seed = seed,
@@ -204,6 +205,7 @@ S7::method(generate_cagra_knn_sc, SingleCells) <- function(
 #' `r lifecycle::badge("deprecated")`
 #'
 #' CAGRA now sits behind [bixverse.gpu::find_neighbours_gpu_sc()] as
+#' `knn_method = "cagra"`, the graph without the beam search as
 #' `knn_method = "nndescent"`.
 #'
 #' @param object `SingleCells` (or `SingleCellsMultiModal`) class.
@@ -212,7 +214,8 @@ S7::method(generate_cagra_knn_sc, SingleCells) <- function(
 #' @param modality String. One of `c("rna", "adt")`.
 #' @param cagra_params List. Output of the deprecated [params_sc_cagra()], or
 #' [params_nn_gpu()].
-#' @param extract_knn Logical. Skip the beam search.
+#' @param extract_knn Logical. Skip the beam search, i.e. run
+#' `knn_method = "nndescent"` instead of `"cagra"`.
 #' @param graph_params List. Output of
 #' [bixverse::params_knn_graph_defaults()].
 #' @param seed Integer. For reproducibility.
@@ -265,14 +268,13 @@ S7::method(find_neighbours_cagra_sc, SingleCells) <- function(
   checkmate::qassert(extract_knn, "B1")
   k <- if (is.null(cagra_params$k)) 15L else as.integer(cagra_params$k)
   cagra_params$k <- NULL
-  cagra_params$extract_knn <- extract_knn
 
   find_neighbours_gpu_sc(
     object = object,
     embd_to_use = embd_to_use,
     no_embd_to_use = no_embd_to_use,
     modality = match.arg(modality),
-    knn_method = "nndescent",
+    knn_method = if (extract_knn) "nndescent" else "cagra",
     nn_params = cagra_params,
     k = k,
     graph_params = graph_params,
@@ -294,7 +296,8 @@ S7::method(find_neighbours_cagra_sc, SingleCells) <- function(
 #'
 #' @param embd Numeric matrix of embeddings, cells x features.
 #' @param cagra_params Named list, see [params_nn_gpu()].
-#' @param extract_knn Logical. Skip the beam search.
+#' @param extract_knn Logical. Skip the beam search, i.e. run
+#' `knn_method = "nndescent"` instead of `"cagra"`.
 #' @param seed Integer. Random seed for reproducibility.
 #' @param verbose Integer. `0L` quiet, `1L` normal, `2L` detailed.
 #'
@@ -317,11 +320,10 @@ rs_cagra_gpu_knn <- function(
   )
   k <- if (is.null(cagra_params$k)) 15L else as.integer(cagra_params$k)
   cagra_params$k <- NULL
-  cagra_params$extract_knn <- extract_knn
   rs_gpu_knn(
     embd = embd,
     k = k,
-    knn_method = "nndescent",
+    knn_method = if (extract_knn) "nndescent" else "cagra",
     nn_params = cagra_params,
     seed = seed,
     verbose = verbose

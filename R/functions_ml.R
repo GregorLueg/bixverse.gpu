@@ -160,25 +160,28 @@ leiden_clustering_gpu <- function(
 #' Generate a k-nearest neighbour graph (GPU-accelerated)
 #'
 #' @description
-#' This function generates a kNN graph based on a given numeric matrix. Three
+#' This function generates a kNN graph based on a given numeric matrix. Four
 #' different GPU-accelerated versions are available
 #' \itemize{
+#'   \item `"nndescent"` - The NN-descent kNN graph itself, no index and no
+#'   search. Rows the descent left short are topped up with an exact search.
+#'   \item `"cagra"` - The NN-descent graph pruned into a CAGRA graph and beam
+#'   searched.
 #'   \item `"exhaustive"` - Exact nearest neighbour search via GPU.
-#'   \item `"ivf"` - Inverted file index that leverages k-means clustering
-#'   and probing a few of the clusters via GPU-accelerated distance
-#'   calculations.
-#'   \item `"nndescent"` - A CAGRA style nearest neighbour search on the GPU.
+#'   \item `"ivf"` - Inverted file index that clusters the data with k-means
+#'   and probes a few of the clusters at query time.
 #' }
 #' @param data Numeric matrix. The embedding or feature matrix to compute
 #' neighbours on. Rows are observations, columns are features.
 #' @param k Integer. The number of nearest neighbours to compute.
 #' @param knn_method Character. The algorithm to use for nearest neighbour
-#' search. One of `c("exhaustive", "ivf", "nndescent")`. Defaults to
-#' `"nndescent"`
+#' search. One of `c("nndescent", "cagra", "exhaustive", "ivf")`. Defaults to
+#' `"nndescent"`.
 #' @param nn_params List. Output of [params_nn_gpu()].
 #' @param seed Integer. For reproducibility. Defaults to `42L`.
-#' @param extract_knn `r lifecycle::badge("deprecated")` Use the `extract_knn`
-#' field of [params_nn_gpu()] instead.
+#' @param extract_knn `r lifecycle::badge("deprecated")` Use
+#' `knn_method = "nndescent"` (graph only) or `knn_method = "cagra"` (beam
+#' search) instead.
 #' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the
 #' search on Apple Silicon via MLX and needs a build with the MLX backend,
 #' see [mlx_available()].
@@ -195,6 +198,7 @@ generate_knn_graph_gpu <- function(
   k,
   knn_method = c(
     "nndescent",
+    "cagra",
     "exhaustive",
     "ivf"
   ),
@@ -212,10 +216,12 @@ generate_knn_graph_gpu <- function(
     lifecycle::deprecate_warn(
       when = "0.4.0",
       what = "generate_knn_graph_gpu(extract_knn)",
-      with = "params_nn_gpu(extract_knn = )"
+      with = "generate_knn_graph_gpu(knn_method)"
     )
     checkmate::qassert(extract_knn, "B1")
-    nn_params$extract_knn <- extract_knn
+    if (knn_method %in% c("nndescent", "cagra")) {
+      knn_method <- if (extract_knn) "nndescent" else "cagra"
+    }
   }
 
   # checks
@@ -223,11 +229,7 @@ generate_knn_graph_gpu <- function(
   checkmate::qassert(k, "I1")
   checkmate::assertChoice(
     knn_method,
-    c(
-      "exhaustive",
-      "ivf",
-      "nndescent"
-    )
+    c("nndescent", "cagra", "exhaustive", "ivf")
   )
   assertNnGpuParams(nn_params)
   checkmate::qassert(seed, "I1")

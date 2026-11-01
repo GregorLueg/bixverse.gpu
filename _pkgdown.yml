@@ -96,7 +96,7 @@ reference:
       - params_knn_gpu_defaults
   - title: GPU-accelerated UMAP
     desc:
-      GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent/CAGRA,
+      GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent,
       exhaustive) and CPU/GPU optimisers. Also a version for the single cells
       analysis suite in bixverse.
     contents:

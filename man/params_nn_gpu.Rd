@@ -15,8 +15,7 @@ params_nn_gpu(
   rho = NULL,
   beam_width = NULL,
   max_beam_iters = NULL,
-  n_entry_points = NULL,
-  extract_knn = FALSE
+  n_entry_points = NULL
 )
 }
 \arguments{
@@ -28,37 +27,34 @@ params_nn_gpu(
 \item{n_probes}{Integer or \code{NULL}. IVF GPU: Number of clusters to probe. If
 \code{NULL}, will default to \code{sqrt(n_list)}. Defaults to \code{NULL}.}
 
-\item{node_degree_final}{Integer or \code{NULL}. Final node degree of the CAGRA
-navigational graph. If \code{NULL}, defaults to \code{30} on the Rust side. Defaults to
-\code{NULL}.}
+\item{node_degree_final}{Integer or \code{NULL}. CAGRA GPU: Final node degree of
+the navigational graph. If \code{NULL}, defaults to \code{30} on the Rust side. Ignored
+by UMAP and tSNE. Defaults to \code{NULL}.}
 
-\item{k_build}{Integer or \code{NULL}. Number of k-neighbours during the NNDescent
-build phase before CAGRA pruning. If \code{NULL}, defaults to \code{1.5 * node_degree_final} on the Rust side. (Cannot be smaller than
-\code{node_degree_final}) Defaults to \code{NULL}.}
+\item{k_build}{Integer or \code{NULL}. NNDescent and CAGRA GPU: Working degree of
+the descent. If \code{NULL}, defaults to \code{1.5 * k} on the Rust side. For CAGRA it
+cannot be smaller than \code{node_degree_final}. Defaults to \code{NULL}.}
 
-\item{n_tree}{Integer or \code{NULL}. CAGRA GPU: Number of trees for graph build.
-Automatically if \code{NULL}. Defaults to \code{NULL}.}
+\item{n_tree}{Integer or \code{NULL}. NNDescent and CAGRA GPU: Number of trees
+seeding the descent. Automatically if \code{NULL}. Defaults to \code{NULL}.}
 
-\item{delta}{Numeric. CAGRA GPU: Early termination parameter for NN descent.
-Defaults to \code{0.001}.}
+\item{delta}{Numeric. NNDescent and CAGRA GPU: Early termination parameter
+for the descent. Defaults to \code{0.001}.}
 
-\item{rho}{Numeric or \code{NULL}. CAGRA GPU: Sample rate parameter for NN
+\item{rho}{Numeric or \code{NULL}. NNDescent and CAGRA GPU: Sample rate for the
 descent. Defaults to \code{NULL}.}
 
 \item{beam_width}{Integer or \code{NULL}. CAGRA GPU: Beam width for beam search.
 If not provided will be set to \code{max(c(k, node_degree_final, 16L)) * 2}.
-Defaults to \code{NULL}.}
+Ignored by UMAP and tSNE. Defaults to \code{NULL}.}
 
 \item{max_beam_iters}{Integer or \code{NULL}. CAGRA GPU: Maximum number of beam
-search iterations. If not provided, defaults to \code{3 * beam_width}. Defaults to
-\code{NULL}.}
+search iterations. If not provided, defaults to \code{3 * beam_width}. Ignored by
+UMAP and tSNE. Defaults to \code{NULL}.}
 
 \item{n_entry_points}{Integer or \code{NULL}. CAGRA GPU: Number of entry points
-for beam search. If not provided, defaults to \code{8L}. Defaults to \code{NULL}.}
-
-\item{extract_knn}{Boolean. CAGRA GPU: Skip the beam search and take the
-graph the NNDescent left it. Faster, slightly lower recall. Ignored by the
-other two searches. Defaults to \code{FALSE}.}
+for beam search. If not provided, defaults to \code{8L}. Ignored by UMAP and tSNE.
+Defaults to \code{NULL}.}
 }
 \value{
 A named list with the following elements:
@@ -69,29 +65,27 @@ A named list with the following elements:
 \code{NULL}, will default to \code{sqrt(n)}. Defaults to \code{NULL}.
 \item n_probes - Integer or \code{NULL}. IVF GPU: Number of clusters to probe. If
 \code{NULL}, will default to \code{sqrt(n_list)}. Defaults to \code{NULL}.
-\item node_degree_final - Integer or \code{NULL}. Final node degree of the CAGRA
-navigational graph. If \code{NULL}, defaults to \code{30} on the Rust side. Defaults
-to \code{NULL}.
-\item k_build - Integer or \code{NULL}. Number of k-neighbours during the
-NNDescent build phase before CAGRA pruning. If \code{NULL}, defaults to \code{1.5 * node_degree_final} on the Rust side. (Cannot be smaller than
-\code{node_degree_final}) Defaults to \code{NULL}.
-\item n_tree - Integer or \code{NULL}. CAGRA GPU: Number of trees for graph
-build. Automatically if \code{NULL}. Defaults to \code{NULL}.
-\item delta - Numeric. CAGRA GPU: Early termination parameter for NN
-descent. Defaults to \code{0.001}.
-\item rho - Numeric or \code{NULL}. CAGRA GPU: Sample rate parameter for NN
+\item node_degree_final - Integer or \code{NULL}. CAGRA GPU: Final node degree of
+the navigational graph. If \code{NULL}, defaults to \code{30} on the Rust side.
+Ignored by UMAP and tSNE. Defaults to \code{NULL}.
+\item k_build - Integer or \code{NULL}. NNDescent and CAGRA GPU: Working degree
+of the descent. If \code{NULL}, defaults to \code{1.5 * k} on the Rust side. For CAGRA
+it cannot be smaller than \code{node_degree_final}. Defaults to \code{NULL}.
+\item n_tree - Integer or \code{NULL}. NNDescent and CAGRA GPU: Number of trees
+seeding the descent. Automatically if \code{NULL}. Defaults to \code{NULL}.
+\item delta - Numeric. NNDescent and CAGRA GPU: Early termination parameter
+for the descent. Defaults to \code{0.001}.
+\item rho - Numeric or \code{NULL}. NNDescent and CAGRA GPU: Sample rate for the
 descent. Defaults to \code{NULL}.
 \item beam_width - Integer or \code{NULL}. CAGRA GPU: Beam width for beam search.
 If not provided will be set to \code{max(c(k, node_degree_final, 16L)) * 2}.
-Defaults to \code{NULL}.
+Ignored by UMAP and tSNE. Defaults to \code{NULL}.
 \item max_beam_iters - Integer or \code{NULL}. CAGRA GPU: Maximum number of beam
-search iterations. If not provided, defaults to \code{3 * beam_width}. Defaults
-to \code{NULL}.
+search iterations. If not provided, defaults to \code{3 * beam_width}. Ignored by
+UMAP and tSNE. Defaults to \code{NULL}.
 \item n_entry_points - Integer or \code{NULL}. CAGRA GPU: Number of entry points
-for beam search. If not provided, defaults to \code{8L}. Defaults to \code{NULL}.
-\item extract_knn - Boolean. CAGRA GPU: Skip the beam search and take the
-graph the NNDescent left it. Faster, slightly lower recall. Ignored by the
-other two searches. Defaults to \code{FALSE}.
+for beam search. If not provided, defaults to \code{8L}. Ignored by UMAP and
+tSNE. Defaults to \code{NULL}.
 }
 }
 \description{

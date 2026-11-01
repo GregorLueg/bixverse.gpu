@@ -3,15 +3,17 @@ use bixverse_r::gpu::graph::leiden_gpu::community_detection_gpu;
 use bixverse_r::gpu::linalg::corr::{column_pairwise_cor_gpu, GpuCorCov};
 use bixverse_r::graph::graph_structures::edge_pairs_to_sparse_graph;
 use bixverse_r::graph::leiden::LeidenParams;
+use bixverse_r::gpu::sc_gpu::knn_gpu::knn_with_dist_gpu;
 #[cfg(mlx_available)]
 use bixverse_r::mlx::linalg::corr::{column_pairwise_cor_mlx, MlxCorCov};
+#[cfg(mlx_available)]
+use bixverse_r::mlx::sc::knn::knn_with_dist_mlx;
 use bixverse_r::prelude::*;
 use burn::tensor::{Device as BurnDevice, DeviceKind};
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::prelude::*;
 use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
-use manifolds_rs::prelude::run_ann_search_gpu;
 use manifolds_rs::training::tsne_optimiser::{parse_tsne_optimiser, TsneOpt};
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::OnceLock;
@@ -36,9 +38,8 @@ pub use single_cell::seacells_gpu;
 use crate::embeddings::parametric_umap::*;
 use crate::embeddings::tsne_gpu::tsne_manifold_gpu;
 use crate::embeddings::umap_gpu::umap_manifold_gpu;
-use crate::embeddings::utils::{get_params_nn_ann_gpu, knn_method_for_backend};
 use crate::ml::clustering::*;
-use crate::utils::nearest_neighbours_to_rust;
+use crate::utils::{nearest_neighbours_to_rust, nn_list_to_knn_params_gpu};
 
 /////////////
 // extendR //
@@ -409,16 +410,18 @@ pub(crate) fn parse_backend(backend: &str) -> extendr_api::Result<Backend> {
 ///
 /// @description
 /// `r lifecycle::badge("experimental")`
-/// Builds a kNN graph from an embedding matrix on the wgpu backend. Three
-/// searches are available: an exact brute-force scan, an IVF index that probes
-/// a subset of Voronoi cells, and a CAGRA-style NNDescent graph that is either
-/// beam searched or handed back as the descent left it.
+/// Builds a kNN graph from an embedding matrix on the GPU. Four searches are
+/// available: an exact brute-force scan, an IVF index that probes a subset of
+/// Voronoi cells, the NN-descent kNN graph itself (no index, no search), and a
+/// CAGRA graph pruned from the NN-descent build and beam searched. Rows the
+/// descent left short are topped up with an exact search of only those rows.
 ///
 /// Euclidean distances come back as true L2, not squared.
 ///
 /// @param embd Numeric matrix of embeddings, cells x features.
 /// @param k Integer. Number of neighbours to return, self excluded.
-/// @param knn_method String. One of `c("nndescent", "exhaustive", "ivf")`.
+/// @param knn_method String. One of
+/// `c("nndescent", "cagra", "exhaustive", "ivf")`.
 /// @param nn_params A named list with the parameters, see
 /// [bixverse.gpu::params_nn_gpu()]
 /// @param seed Integer. Random seed for reproducibility.
@@ -450,36 +453,38 @@ fn rs_gpu_knn(
     let backend = parse_backend(backend)?;
 
     let data = r_matrix_to_faer_fp32(&embd);
-    let params = get_params_nn_ann_gpu::<f32>(nn_params)?;
+    let params = nn_list_to_knn_params_gpu(nn_params, &knn_method, k)?;
 
-    let device: WgpuDevice = Default::default();
+    let (indices, dist) = match backend {
+        #[cfg(mlx_available)]
+        Backend::Mlx => knn_with_dist_mlx(data.as_ref(), k, &params, seed, verbose).to_extendr()?,
+        _ => {
+            let device: WgpuDevice = Default::default();
+            let res = knn_with_dist_gpu(
+                data.as_ref(),
+                k,
+                &params,
+                device.clone().into(),
+                seed,
+                verbose,
+            )
+            .to_extendr()?;
+            // The indices are large enough that leaving the pool behind starves
+            // the next call.
+            let client = cubecl::Device::from(device).client();
+            let _ = client.memory_cleanup();
+            res
+        }
+    };
 
-    let (indices, dist) = run_ann_search_gpu::<f32>(
-        data.as_ref(),
-        k,
-        knn_method_for_backend(&knn_method, backend),
-        &params,
-        device.clone().into(),
-        seed,
-        verbose,
-    )
-    .to_extendr()?;
-
-    // manifolds-rs does not release the pool, and these indices are large
-    // enough that leaving them behind starves the next call.
-    if backend == Backend::Wgpu {
-        let client = cubecl::Device::from(device.clone()).client();
-        let _ = client.memory_cleanup();
-    }
-
-    // An approximate backend can hand back a short row (IVF probing too few
-    // lists, or a CAGRA graph narrower than k). Indexing straight into it would
-    // panic, which takes the whole R session with it.
+    // The NN-descent graph is topped up in bixverse-rs, but IVF probing too
+    // few lists can still hand back a short row. Indexing straight into it
+    // would panic, which takes the whole R session with it.
     if let Some(short) = indices.iter().find(|row| row.len() < k) {
         return Err(extendr_api::Error::Other(format!(
             "The kNN search returned {} neighbours where {} were asked for. \
              Widen the search (`n_probes` for IVF, `node_degree_final` for \
-             nndescent) or lower k.",
+             cagra) or lower k.",
             short.len(),
             k
         )));
@@ -491,7 +496,7 @@ fn rs_gpu_knn(
     Ok(list!(
         indices = faer_to_r_matrix(index_mat.as_ref()),
         dist = faer_to_r_matrix(dist_mat.as_ref()),
-        dist_metric = params.dist_metric
+        dist_metric = params.ann_dist
     ))
 }
 

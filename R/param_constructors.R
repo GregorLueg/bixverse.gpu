@@ -107,11 +107,6 @@ params_scrublet_gpu <- function(
 
   knn <- utils::modifyList(knn_defaults, knn, keep.null = TRUE)
 
-  # `"nndescent"` is the package-wide name, Rust only knows `"nndescent_gpu"`
-  if (knn_backend == "gpu") {
-    knn[["knn_method"]] <- .normalise_gpu_knn_method(knn[["knn_method"]])
-  }
-
   params <- list(
     knn_backend = knn_backend,
     normalisation = utils::modifyList(

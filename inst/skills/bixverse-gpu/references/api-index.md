@@ -35,7 +35,7 @@ Different GPU-accelerated methods specifically for the single cell applications.
 
 ## GPU-accelerated UMAP
 
-GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent/CAGRA, exhaustive) and CPU/GPU optimisers. Also a version for the single cells analysis suite in bixverse.
+GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent, exhaustive) and CPU/GPU optimisers. Also a version for the single cells analysis suite in bixverse.
 
 - `umap_gpu`: Rust-based UMAP (GPU)
 - `umap_gpu_sc`: Run UMAP on a SingleCells object (GPU)

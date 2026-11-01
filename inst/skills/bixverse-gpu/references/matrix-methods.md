@@ -72,15 +72,17 @@ emb <- tsne_gpu(
 knn <- generate_knn_graph_gpu(
   data = mat,
   k = 15L,
-  knn_method = "nndescent",
+  knn_method = "nndescent",          # or "cagra", "ivf", "exhaustive"
   nn_params = params_nn_gpu()
 )
 ```
 
 Returns a `manifoldsR` nearest neighbours object: **1-indexed** indices and
 true (not squared) Euclidean distances. Feeds `umap_gpu(knn = )` and
-`tsne_gpu(knn = )`. The `extract_knn` argument is deprecated; set it in
-`params_nn_gpu()` instead.
+`tsne_gpu(knn = )`. `"nndescent"` reads the kNN straight off the descent graph;
+`"cagra"` adds the CAGRA prune and a beam search. `umap_gpu()` and `tsne_gpu()`
+have no `"cagra"`. The `extract_knn` argument is deprecated in favour of
+`knn_method`.
 
 ## Parametric UMAP
 

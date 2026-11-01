@@ -9,7 +9,7 @@ find_neighbours_gpu_sc(
   embd_to_use = "pca",
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
-  knn_method = c("nndescent", "exhaustive", "ivf"),
+  knn_method = c("nndescent", "cagra", "exhaustive", "ivf"),
   nn_params = params_nn_gpu(),
   k = 15L,
   graph_params = bixverse::params_knn_graph_defaults(),
@@ -33,7 +33,7 @@ use. If \code{NULL} all will be used.}
 \item{modality}{String. One of \code{c("rna", "adt")}. You can only use \code{"adt"}
 on \code{SingleCellsMultiModal} class.}
 
-\item{knn_method}{String. One of \code{c("nndescent", "exhaustive", "ivf")}.}
+\item{knn_method}{String. One of \code{c("nndescent", "cagra", "exhaustive", "ivf")}.}
 
 \item{nn_params}{List. Output of \code{\link[=params_nn_gpu]{params_nn_gpu()}}.}
 

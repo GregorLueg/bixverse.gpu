@@ -14,8 +14,8 @@ bandwidth. Defaults to \code{3.0}.}
 distances. Defaults to \code{TRUE}.}
 
 \item{knn}{List. Optional overrides for the kNN block. See
-\code{\link[=params_knn_gpu_defaults]{params_knn_gpu_defaults()}} for the available elements. Without
-\code{extract_knn}. Unknown elements are an error. Defaults to \code{list()}.}
+\code{\link[=params_knn_gpu_defaults]{params_knn_gpu_defaults()}} for the available elements. Unknown elements are
+an error. Defaults to \code{list()}.}
 }
 \value{
 A named list with the following elements:
@@ -35,10 +35,8 @@ in the object. The kNN block is the GPU one, see \code{\link[=params_knn_gpu_def
 with \code{k} and \code{ann_dist} defaulting to the CPU values.
 }
 \details{
-\code{extract_knn} is rejected rather than silently ignored: every search in
-fastMNN is a cross-query between two sets of cells, and extraction only
-applies to a self-query. \code{k = 0L} is rejected as well, since fastMNN has no
-data-driven fallback for it.
+Every search in fastMNN is a cross-query between two sets of cells, so
+\code{knn_method = "nndescent"} builds and beam searches a CAGRA graph here. \code{k = 0L} is rejected, since fastMNN has no data-driven fallback for it.
 }
 \references{
 Haghverdi, et al., Nat Biotechnol, 2018

@@ -5,7 +5,7 @@ use faer::{Mat, MatRef};
 use manifolds_rs::prelude::*;
 use manifolds_rs::*;
 use rand_distr::{Distribution, StandardNormal};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::embeddings::utils::{get_params_nn_ann_gpu, knn_method_for_backend};
 use crate::Backend;
@@ -31,7 +31,7 @@ pub fn get_params_umap_graph<T>(r_list: List) -> Result<UmapGraphParams<T>>
 where
     T: ManifoldsFloat,
 {
-    let graph_params: HashMap<&str, Robj> = r_list.try_into()?;
+    let graph_params: FxHashMap<&str, Robj> = r_list.iter().collect();
 
     let mix_weight: T = graph_params
         .get("mix_weight")
@@ -80,7 +80,7 @@ fn get_params_umap_optim<T>(r_list: List, min_dist: f64, spread: f64) -> Result<
 where
     T: ManifoldsFloat,
 {
-    let optim_params: HashMap<&str, Robj> = r_list.try_into()?;
+    let optim_params: FxHashMap<&str, Robj> = r_list.iter().collect();
 
     let min_dist = T::from_f64(min_dist).unwrap();
     let spread = T::from_f64(spread).unwrap();
@@ -169,7 +169,7 @@ where
         let umap_graph_params = get_params_umap_graph(r_list.clone())?;
         let optim_params = get_params_umap_optim(r_list.clone(), min_dist, spread)?;
 
-        let umap_params: HashMap<&str, Robj> = r_list.try_into()?;
+        let umap_params: FxHashMap<&str, Robj> = r_list.iter().collect();
 
         let init = std::string::String::from(
             umap_params

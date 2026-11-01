@@ -21,8 +21,7 @@
     "refine_knn",
     "beam_width",
     "max_beam_iters",
-    "n_entry_points",
-    "extract_knn"
+    "n_entry_points"
   ),
   cpu = c(
     "k",
@@ -37,8 +36,7 @@
     "ef_construction",
     "ef_search",
     "n_list",
-    "n_probe",
-    "extract_knn"
+    "n_probe"
   )
 )
 
@@ -189,8 +187,7 @@ checkScrubletGpu <- function(x) {
     "refine_knn" = c("I1[0,)", "0"),
     "beam_width" = c("I1[1,)", "0"),
     "max_beam_iters" = c("I1[1,)", "0"),
-    "n_entry_points" = c("I1[1,)", "0"),
-    "extract_knn" = "B1"
+    "n_entry_points" = c("I1[1,)", "0")
   )
 
   res <- purrr::imap_lgl(x, \(elem, name) {
@@ -203,18 +200,15 @@ checkScrubletGpu <- function(x) {
         "The element `%s` in the GPU kNN block is incorrect.",
         "k must be an integer >= 0 (0 = automatic);",
         "delta must be numeric, rho numeric or NULL,",
-        "extract_knn a boolean,",
         "and the remaining knobs NULL or integers >= 1."
       ),
       broken_elem
     ))
   }
 
-  # `nndescent` is what the user types, `nndescent_gpu` what the parameter
-  # wrappers store. Both are legal here, hand-built lists included.
   res <- checkmate::checkChoice(
     x[["knn_method"]],
-    c("exhaustive", "ivf", "nndescent", "nndescent_gpu", "cagra")
+    c("exhaustive", "ivf", "nndescent", "cagra")
   )
   if (!isTRUE(res)) {
     return(res)

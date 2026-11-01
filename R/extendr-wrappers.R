@@ -46,16 +46,18 @@ rs_mlx_available <- function() .Call(wrap__rs_mlx_available)
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
-#' Builds a kNN graph from an embedding matrix on the wgpu backend. Three
-#' searches are available: an exact brute-force scan, an IVF index that probes
-#' a subset of Voronoi cells, and a CAGRA-style NNDescent graph that is either
-#' beam searched or handed back as the descent left it.
+#' Builds a kNN graph from an embedding matrix on the GPU. Four searches are
+#' available: an exact brute-force scan, an IVF index that probes a subset of
+#' Voronoi cells, the NN-descent kNN graph itself (no index, no search), and a
+#' CAGRA graph pruned from the NN-descent build and beam searched. Rows the
+#' descent left short are topped up with an exact search of only those rows.
 #'
 #' Euclidean distances come back as true L2, not squared.
 #'
 #' @param embd Numeric matrix of embeddings, cells x features.
 #' @param k Integer. Number of neighbours to return, self excluded.
-#' @param knn_method String. One of `c("nndescent", "exhaustive", "ivf")`.
+#' @param knn_method String. One of
+#' `c("nndescent", "cagra", "exhaustive", "ivf")`.
 #' @param nn_params A named list with the parameters, see
 #' [bixverse.gpu::params_nn_gpu()]
 #' @param seed Integer. Random seed for reproducibility.
