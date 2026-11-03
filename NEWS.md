@@ -26,13 +26,20 @@
   `"nndescent"` (`TRUE`) or `"cagra"` (`FALSE`).
 * `rs_gpu_knn()` runs through bixverse-rs instead of manifolds-rs, on wgpu and
   MLX.
+* `umap_gpu()`, `tsne_gpu()`, `umap_gpu_sc()`, `tsne_gpu_sc()` and their `rs_*`
+  functions lose `use_high_precision` and the automatic switch to fp64 above
+  100k samples. They always run in fp32 now, with manifolds-rs doing the steps
+  prone to catastrophic cancellation in fp64. Runs that used fp64 give different
+  embeddings at the same seed.
 
 ## Chores
 
-* `ann-search-rs` 0.12, `manifolds-rs` 0.8.0 and `bixverse-rs` 0.10.0. UMAP and
-  tSNE pick up the manifolds-rs 0.8.0 changes: `"nndescent"` builds the kNN
-  graph directly there too, and spectral initialisation gives different
-  coordinates at the same seed.
+* `ann-search-rs` 0.12, `manifolds-rs` 0.9.0 and `bixverse-rs` 0.10.0. UMAP and
+  tSNE pick up the manifolds-rs changes: `"nndescent"` builds the kNN graph
+  directly there too, spectral initialisation gives different coordinates at
+  the same seed, PCA initialisation runs its centring and SVD in fp64, and
+  `.verbose` follows one grammar: `1L` prints timed stages and epochs every 50,
+  `2L` adds parameters and the kNN internals.
 * Needs bixverse >= 0.9.0. `igraph` and `Matrix` moved from Imports to
   Suggests; only the tests use them.
 
