@@ -41,8 +41,6 @@
 #' @param umap_params Named list. UMAP (GPU) parameters, see
 #' [params_umap_gpu()].
 #' @param seed Integer. For reproducibility.
-#' @param use_high_precision Optional boolean. Fine-grained fp32 vs fp64
-#' control for the optimiser. GPU kNN is always fp32.
 #' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the kNN
 #' search and the `"adam_gpu"` optimiser on MLX, see [umap_gpu()].
 #' @param .verbose Boolean or integer. Controls verbosity.
@@ -73,7 +71,6 @@ umap_gpu_sc <- S7::new_generic(
     nn_params = params_nn_gpu(),
     umap_params = params_umap_gpu(),
     seed = 42L,
-    use_high_precision = NULL,
     backend = c("wgpu", "mlx"),
     .verbose = TRUE
   ) {
@@ -103,7 +100,6 @@ S7::method(umap_gpu_sc, SingleCells) <- function(
   nn_params = params_nn_gpu(),
   umap_params = params_umap_gpu(),
   seed = 42L,
-  use_high_precision = NULL,
   backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
@@ -123,7 +119,6 @@ S7::method(umap_gpu_sc, SingleCells) <- function(
   assertNnGpuParams(nn_params)
   assertUmapGpuParams(umap_params)
   checkmate::qassert(seed, "I1")
-  checkmate::qassert(use_high_precision, c("0", "B1"))
   checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
@@ -186,7 +181,6 @@ S7::method(umap_gpu_sc, SingleCells) <- function(
     nn_params = nn_params,
     umap_params = umap_params,
     seed = seed,
-    use_high_precision = use_high_precision,
     backend = backend,
     .verbose = .verbose
   )
@@ -253,8 +247,6 @@ S7::method(umap_gpu_sc, SingleCells) <- function(
 #' @param tsne_params Named list. t-SNE (GPU) parameters, see
 #' [params_tsne_gpu()].
 #' @param seed Integer. For reproducibility.
-#' @param use_high_precision Optional boolean. Fine-grained fp32 vs fp64
-#' control. GPU kNN is always fp32. Ignored for `"fft_3k_gpu"`.
 #' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` moves the
 #' kNN search and the `"fft_3k_gpu"` optimiser to MLX, see [tsne_gpu()].
 #' @param .verbose Boolean or integer. Controls verbosity.
@@ -284,7 +276,6 @@ tsne_gpu_sc <- S7::new_generic(
     nn_params = params_nn_gpu(),
     tsne_params = params_tsne_gpu(),
     seed = 42L,
-    use_high_precision = NULL,
     backend = c("wgpu", "mlx"),
     .verbose = TRUE
   ) {
@@ -313,7 +304,6 @@ S7::method(tsne_gpu_sc, SingleCells) <- function(
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
   seed = 42L,
-  use_high_precision = NULL,
   backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
@@ -332,7 +322,6 @@ S7::method(tsne_gpu_sc, SingleCells) <- function(
   assertNnGpuParams(nn_params)
   assertTsneGpuParams(tsne_params)
   checkmate::qassert(seed, "I1")
-  checkmate::qassert(use_high_precision, c("0", "B1"))
   checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
 
@@ -394,7 +383,6 @@ S7::method(tsne_gpu_sc, SingleCells) <- function(
     nn_params = nn_params,
     tsne_params = tsne_params,
     seed = seed,
-    use_high_precision = use_high_precision,
     backend = backend,
     .verbose = .verbose
   )

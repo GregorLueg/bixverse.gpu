@@ -120,8 +120,6 @@
 #' @param umap_params Named list. UMAP (GPU) algorithm parameters, see
 #' [params_umap_gpu()].
 #' @param seed Integer. Random seed for reproducibility. Defaults to `42L`.
-#' @param use_high_precision Optional boolean. Gives fine-grained control over
-#' `fp32` vs `fp64` usage. The GPU calculations will be forced into `fp32`.
 #' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the kNN
 #' search and the `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build
 #' with the MLX backend, see [mlx_available()]). CPU optimisers stay on the
@@ -147,7 +145,6 @@ umap_gpu <- function(
   nn_params = params_nn_gpu(),
   umap_params = params_umap_gpu(),
   seed = 42L,
-  use_high_precision = NULL,
   backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
@@ -176,7 +173,6 @@ umap_gpu <- function(
   checkmate::qassert(min_dist, "N1[0,)")
   checkmate::qassert(spread, "N1[0,)")
   checkmate::qassert(.verbose, c("B1", "I1[0, 2]"))
-  checkmate::qassert(use_high_precision, c("0", "B1"))
   checkmate::qassert(seed, "I1")
   checkmate::assertChoice(backend, c("wgpu", "mlx"))
 
@@ -206,7 +202,6 @@ umap_gpu <- function(
           k = k,
           umap_params = final_umap_params,
           seed = seed,
-          use_high_precision = use_high_precision,
           backend = backend,
           verbose = parse_verbosity(.verbose)
         )
@@ -226,7 +221,6 @@ umap_gpu <- function(
           k = k,
           umap_params = final_umap_params,
           seed = seed,
-          use_high_precision = use_high_precision,
           backend = backend,
           verbose = parse_verbosity(.verbose)
         )
@@ -317,9 +311,6 @@ umap_gpu <- function(
 #' @param tsne_params Named list. t-SNE (GPU) algorithm parameters, see
 #' [params_tsne_gpu()].
 #' @param seed Integer. Random seed for reproducibility. Defaults to `42L`.
-#' @param use_high_precision Optional boolean. Gives fine-grained control over
-#' `fp32` vs `fp64` usage. The GPU kNN calculations will be forced into `fp32`.
-#' Ignored with a warning for `"fft_3k_gpu"`, which always runs in `fp32`.
 #' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the kNN
 #' search and the `"fft_3k_gpu"` optimiser on MLX (Apple Silicon, needs a
 #' build with the MLX backend, see [mlx_available()]). CPU optimisers stay on
@@ -344,7 +335,6 @@ tsne_gpu <- function(
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
   seed = 42L,
-  use_high_precision = NULL,
   backend = c("wgpu", "mlx"),
   .verbose = TRUE
 ) {
@@ -375,15 +365,8 @@ tsne_gpu <- function(
     c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")
   )
   checkmate::qassert(seed, "I1")
-  checkmate::qassert(use_high_precision, c("0", "B1"))
   checkmate::assertChoice(backend, c("wgpu", "mlx"))
   checkmate::qassert(.verbose, c("B1", "I1[0, 2]"))
-  if (approx_type == "fft_3k_gpu" && isTRUE(use_high_precision)) {
-    warning(
-      "`use_high_precision` is ignored for \"fft_3k_gpu\", which runs in fp32.",
-      call. = FALSE
-    )
-  }
 
   final_tsne_params <- .prepare_tsne_params_gpu(
     knn_method = knn_method,
@@ -406,7 +389,6 @@ tsne_gpu <- function(
           approx_type = approx_type,
           tsne_params = final_tsne_params,
           seed = seed,
-          use_high_precision = use_high_precision,
           backend = backend,
           verbose = parse_verbosity(.verbose)
         )
@@ -425,7 +407,6 @@ tsne_gpu <- function(
           approx_type = approx_type,
           tsne_params = final_tsne_params,
           seed = seed,
-          use_high_precision = use_high_precision,
           backend = backend,
           verbose = parse_verbosity(.verbose)
         )

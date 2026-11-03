@@ -259,8 +259,6 @@ rs_cov_gpu <- function(x, backend = "wgpu", verbose) .Call(wrap__rs_cov_gpu, x, 
 #' @param umap_params Named list. List that contains all of the key parameters
 #' for the UMAP generation.
 #' @param seed Integer. Seed for reproducibility.
-#' @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
-#' If `NULL` will use sensible default thresholding.
 #' @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
 #' the `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build with the MLX
 #' backend, see [mlx_available()]); CPU optimisers stay on the CPU.
@@ -270,7 +268,7 @@ rs_cov_gpu <- function(x, backend = "wgpu", verbose) .Call(wrap__rs_cov_gpu, x, 
 #' @return The UMAP embeddings.
 #'
 #' @export
-rs_umap_gpu <- function(embd, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, backend = "wgpu", verbose) .Call(wrap__rs_umap_gpu, embd, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, backend, verbose)
+rs_umap_gpu <- function(embd, n_dim, min_dist, spread, k, umap_params, seed, backend = "wgpu", verbose) .Call(wrap__rs_umap_gpu, embd, n_dim, min_dist, spread, k, umap_params, seed, backend, verbose)
 
 #' UMAP implementation from a pre-computed kNN graph
 #'
@@ -290,8 +288,6 @@ rs_umap_gpu <- function(embd, n_dim, min_dist, spread, k, umap_params, seed, use
 #' @param umap_params Named list. List that contains all of the key parameters
 #' for the UMAP generation.
 #' @param seed Integer. Seed for reproducibility.
-#' @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
-#' If `NULL` will use sensible default thresholding.
 #' @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
 #' the `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build with the MLX
 #' backend, see [mlx_available()]); CPU optimisers stay on the CPU.
@@ -301,7 +297,7 @@ rs_umap_gpu <- function(embd, n_dim, min_dist, spread, k, umap_params, seed, use
 #' @return The UMAP embeddings.
 #'
 #' @export
-rs_umap_from_knn_gpu <- function(embd, knn_data, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, backend = "wgpu", verbose) .Call(wrap__rs_umap_from_knn_gpu, embd, knn_data, n_dim, min_dist, spread, k, umap_params, seed, use_high_precision, backend, verbose)
+rs_umap_from_knn_gpu <- function(embd, knn_data, n_dim, min_dist, spread, k, umap_params, seed, backend = "wgpu", verbose) .Call(wrap__rs_umap_from_knn_gpu, embd, knn_data, n_dim, min_dist, spread, k, umap_params, seed, backend, verbose)
 
 #' tSNE implementation
 #'
@@ -323,9 +319,6 @@ rs_umap_from_knn_gpu <- function(embd, knn_data, n_dim, min_dist, spread, k, uma
 #' @param tsne_params Named list. List that contains all of the key parameters
 #' for the tSNE generation.
 #' @param seed Integer. Seed for reproducibility.
-#' @param use_high_precision Optional logical. Controls `fp32` vs `fp64`.
-#' If `NULL` will use sensible default thresholding. Ignored for
-#' `"fft_3k_gpu"`, which always runs in `fp32`.
 #' @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
 #' the `"fft_3k_gpu"` optimiser on MLX (Apple Silicon, needs a build with the
 #' MLX backend, see [mlx_available()]); CPU optimisers stay on the CPU.
@@ -335,7 +328,7 @@ rs_umap_from_knn_gpu <- function(embd, knn_data, n_dim, min_dist, spread, k, uma
 #' @return The tSNE embeddings.
 #'
 #' @export
-rs_tsne_gpu <- function(embd, n_dim, perplexity, approx_type, tsne_params, seed, use_high_precision, backend = "wgpu", verbose) .Call(wrap__rs_tsne_gpu, embd, n_dim, perplexity, approx_type, tsne_params, seed, use_high_precision, backend, verbose)
+rs_tsne_gpu <- function(embd, n_dim, perplexity, approx_type, tsne_params, seed, backend = "wgpu", verbose) .Call(wrap__rs_tsne_gpu, embd, n_dim, perplexity, approx_type, tsne_params, seed, backend, verbose)
 
 #' tSNE implementation from a pre-computed kNN graph
 #'
@@ -360,9 +353,6 @@ rs_tsne_gpu <- function(embd, n_dim, perplexity, approx_type, tsne_params, seed,
 #' @param tsne_params Named list. List that contains all of the key parameters
 #' for the tSNE generation.
 #' @param seed Integer. Seed for reproducibility.
-#' @param use_high_precision Optional logical. Controls `fp32` vs `fp64`.
-#' If `NULL` will use sensible default thresholding. Ignored for
-#' `"fft_3k_gpu"`, which always runs in `fp32`.
 #' @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
 #' the `"fft_3k_gpu"` optimiser on MLX (Apple Silicon, needs a build with the
 #' MLX backend, see [mlx_available()]); CPU optimisers stay on the CPU.
@@ -372,7 +362,7 @@ rs_tsne_gpu <- function(embd, n_dim, perplexity, approx_type, tsne_params, seed,
 #' @return The tSNE embeddings.
 #'
 #' @export
-rs_tsne_from_knn_gpu <- function(embd, knn_data, n_dim, perplexity, approx_type, tsne_params, seed, use_high_precision, backend = "wgpu", verbose) .Call(wrap__rs_tsne_from_knn_gpu, embd, knn_data, n_dim, perplexity, approx_type, tsne_params, seed, use_high_precision, backend, verbose)
+rs_tsne_from_knn_gpu <- function(embd, knn_data, n_dim, perplexity, approx_type, tsne_params, seed, backend = "wgpu", verbose) .Call(wrap__rs_tsne_from_knn_gpu, embd, knn_data, n_dim, perplexity, approx_type, tsne_params, seed, backend, verbose)
 
 #' Calculates sparse PCA for single cell
 #'

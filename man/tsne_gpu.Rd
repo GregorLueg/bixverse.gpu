@@ -14,7 +14,6 @@ tsne_gpu(
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
   seed = 42L,
-  use_high_precision = NULL,
   backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
@@ -54,10 +53,6 @@ here.}
 \code{\link[=params_tsne_gpu]{params_tsne_gpu()}}.}
 
 \item{seed}{Integer. Random seed for reproducibility. Defaults to \code{42L}.}
-
-\item{use_high_precision}{Optional boolean. Gives fine-grained control over
-\code{fp32} vs \code{fp64} usage. The GPU kNN calculations will be forced into \code{fp32}.
-Ignored with a warning for \code{"fft_3k_gpu"}, which always runs in \code{fp32}.}
 
 \item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the kNN
 search and the \code{"fft_3k_gpu"} optimiser on MLX (Apple Silicon, needs a

@@ -170,8 +170,7 @@ Five options via `approx_type`:
 
 - **`"fft_3k_gpu"`**: the default. FFT-interpolated repulsion with three
   kernels (`q`, `q^2 dx`, `q^2 dy`), fully on the GPU. Always runs in fp32
-  (f64 kernels don't run on Metal); `use_high_precision = TRUE` is ignored
-  with a warning. Works on Windows, no FFTW needed.
+  (f64 kernels don't run on Metal). Works on Windows, no FFTW needed.
 - **`"bh"`**: Barnes-Hut on the CPU. `O(N log N)`.
 - **`"bh_qd"`**: the quick-and-dirty Barnes-Hut from
   [qdtsne](https://github.com/libscran/qdtsne), on the CPU. Tree depth capped

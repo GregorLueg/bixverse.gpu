@@ -14,7 +14,6 @@ use cubecl::wgpu::WgpuDevice;
 use extendr_api::prelude::*;
 use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
-use manifolds_rs::training::tsne_optimiser::{parse_tsne_optimiser, TsneOpt};
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::OnceLock;
 
@@ -85,14 +84,6 @@ extendr_module! {
     fn rs_tsne_from_knn_gpu;
 }
 
-////////////
-// Consts //
-////////////
-
-/// Threshold at which the switch from fp32 to fp64 happens. Some algorithms
-/// (tSNE, cough) are very sensitive to precision differences.
-const SAMPLE_THRESHOLD_HIGH_PRECISION: usize = 100_000;
-
 ///////////
 // Types //
 ///////////
@@ -125,98 +116,6 @@ impl PUmapModel {
             PUmapModel::Gpu(m) => m.predict(data),
             PUmapModel::Cpu(m) => m.predict(data),
         }
-    }
-}
-
-///////////////
-// Precision //
-///////////////
-
-///////////
-// Enums //
-///////////
-
-/// Enum defining the floating point operation precision. Some algorithms suffer
-/// from catastrophic cancellation and accumulation of precision errors
-#[derive(Debug, Clone, Copy, Default)]
-enum FloatingPointPrecision {
-    /// FP32
-    #[default]
-    FP32,
-    /// FP64
-    FP64,
-}
-
-/// Auto detection of the precision based on sensible thresholds
-///
-/// ### Params
-///
-/// * `n` - Number of samples
-///
-/// ### Returns
-///
-/// The [FloatingPointPrecision]
-fn auto_precision(n: usize) -> FloatingPointPrecision {
-    if n > SAMPLE_THRESHOLD_HIGH_PRECISION {
-        FloatingPointPrecision::FP64
-    } else {
-        FloatingPointPrecision::FP32
-    }
-}
-
-/// Function to parse the precision to use
-///
-/// ### Params
-///
-/// * `use_high_precision` - Nullable Rbool. If provided, will use that to
-///   determine precision to use
-/// * `n` - Number of samples in the data. Used to determine in an auto
-///   threshold which precision to use.
-///
-/// ### Returns
-///
-/// The determined [FloatingPointPrecision].
-fn parse_precision(use_high_precision: Nullable<Rbool>, n: usize) -> FloatingPointPrecision {
-    if use_high_precision != Nullable::Null {
-        let val = use_high_precision.into_option().map(|x| x.to_bool()).unwrap_or_else(|| {
-            println!("[WARNING] - The provided 'use_high_precision' could not be decoded into a boolean. Function will assume 'true'");
-            true
-        });
-        if val {
-            FloatingPointPrecision::FP64
-        } else {
-            FloatingPointPrecision::FP32
-        }
-    } else {
-        auto_precision(n)
-    }
-}
-
-/// Precision for t-SNE, honouring the device optimiser
-///
-/// The GPU and MLX optimisers (`"fft_3k_gpu"`, `"fft_3k_mlx"`) always run in
-/// fp32: f64 kernels do not run on Metal. Every other optimiser goes through
-/// [parse_precision].
-///
-/// ### Params
-///
-/// * `approx_type` - The t-SNE approximation string
-/// * `use_high_precision` - Nullable Rbool, see [parse_precision]
-/// * `n` - Number of samples in the data
-///
-/// ### Returns
-///
-/// The determined [FloatingPointPrecision].
-fn tsne_precision(
-    approx_type: &str,
-    use_high_precision: Nullable<Rbool>,
-    n: usize,
-) -> FloatingPointPrecision {
-    match parse_tsne_optimiser(approx_type) {
-        Some(TsneOpt::Fft3KernelGpu) => FloatingPointPrecision::FP32,
-        #[cfg(mlx_available)]
-        Some(TsneOpt::Fft3KernelMlx) => FloatingPointPrecision::FP32,
-        _ => parse_precision(use_high_precision, n),
     }
 }
 
@@ -956,8 +855,6 @@ fn rs_cov_gpu(
 /// @param umap_params Named list. List that contains all of the key parameters
 /// for the UMAP generation.
 /// @param seed Integer. Seed for reproducibility.
-/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
-/// If `NULL` will use sensible default thresholding.
 /// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
 /// the `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build with the MLX
 /// backend, see [mlx_available()]); CPU optimisers stay on the CPU.
@@ -977,63 +874,27 @@ fn rs_umap_gpu(
     k: usize,
     umap_params: List,
     seed: usize,
-    use_high_precision: Nullable<Rbool>,
     #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
+    let embd = r_matrix_to_faer_fp32(&embd);
 
-    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
-    let precision = parse_precision(use_high_precision, embd.nrows());
+    let res = umap_manifold_gpu::<f32>(
+        embd.as_ref(),
+        None,
+        n_dim,
+        k,
+        min_dist,
+        spread,
+        umap_params,
+        seed,
+        backend,
+        verbose,
+    )
+    .to_extendr()?;
 
-    match precision {
-        FloatingPointPrecision::FP32 => {
-            if verbosity.detailed_verbosity() {
-                println!("Lower precision (fp32) path chosen.")
-            }
-
-            let embd = r_matrix_to_faer_fp32(&embd);
-
-            let res = umap_manifold_gpu::<f32>(
-                embd.as_ref(),
-                None,
-                n_dim,
-                k,
-                min_dist,
-                spread,
-                umap_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
-
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-        FloatingPointPrecision::FP64 => {
-            if verbosity.detailed_verbosity() {
-                println!("Higher precision (fp64) path chosen.")
-            }
-
-            let embd = r_matrix_to_faer(&embd);
-
-            let res = umap_manifold_gpu::<f64>(
-                embd.as_ref(),
-                None,
-                n_dim,
-                k,
-                min_dist,
-                spread,
-                umap_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
-
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-    }
+    Ok(faer_to_r_matrix(res.as_ref()))
 }
 
 /// UMAP implementation from a pre-computed kNN graph
@@ -1054,8 +915,6 @@ fn rs_umap_gpu(
 /// @param umap_params Named list. List that contains all of the key parameters
 /// for the UMAP generation.
 /// @param seed Integer. Seed for reproducibility.
-/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
-/// If `NULL` will use sensible default thresholding.
 /// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
 /// the `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build with the MLX
 /// backend, see [mlx_available()]); CPU optimisers stay on the CPU.
@@ -1076,67 +935,28 @@ fn rs_umap_from_knn_gpu(
     k: usize,
     umap_params: List,
     seed: usize,
-    use_high_precision: Nullable<Rbool>,
     #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
+    let embd = r_matrix_to_faer_fp32(&embd);
+    let knn = nearest_neighbours_to_rust(knn_data);
 
-    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
-    let precision = parse_precision(use_high_precision, embd.nrows());
+    let res = umap_manifold_gpu::<f32>(
+        embd.as_ref(),
+        knn,
+        n_dim,
+        k,
+        min_dist,
+        spread,
+        umap_params,
+        seed,
+        backend,
+        verbose,
+    )
+    .to_extendr()?;
 
-    match precision {
-        FloatingPointPrecision::FP32 => {
-            if verbosity.detailed_verbosity() {
-                println!("Lower precision (fp32) path chosen.")
-            }
-
-            let embd = r_matrix_to_faer_fp32(&embd);
-
-            let knn = nearest_neighbours_to_rust(knn_data);
-
-            let res = umap_manifold_gpu::<f32>(
-                embd.as_ref(),
-                knn,
-                n_dim,
-                k,
-                min_dist,
-                spread,
-                umap_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
-
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-        FloatingPointPrecision::FP64 => {
-            if verbosity.detailed_verbosity() {
-                println!("Higher precision (fp64) path chosen.")
-            }
-
-            let embd = r_matrix_to_faer(&embd);
-
-            let knn = nearest_neighbours_to_rust(knn_data);
-
-            let res = umap_manifold_gpu::<f64>(
-                embd.as_ref(),
-                knn,
-                n_dim,
-                k,
-                min_dist,
-                spread,
-                umap_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
-
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-    }
+    Ok(faer_to_r_matrix(res.as_ref()))
 }
 
 //////////
@@ -1183,9 +1003,6 @@ fn tsne_approx_for_backend(approx_type: String, backend: Backend) -> String {
 /// @param tsne_params Named list. List that contains all of the key parameters
 /// for the tSNE generation.
 /// @param seed Integer. Seed for reproducibility.
-/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64`.
-/// If `NULL` will use sensible default thresholding. Ignored for
-/// `"fft_3k_gpu"`, which always runs in `fp32`.
 /// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
 /// the `"fft_3k_gpu"` optimiser on MLX (Apple Silicon, needs a build with the
 /// MLX backend, see [mlx_available()]); CPU optimisers stay on the CPU.
@@ -1204,60 +1021,27 @@ fn rs_tsne_gpu(
     approx_type: String,
     tsne_params: List,
     seed: usize,
-    use_high_precision: Nullable<Rbool>,
     #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
     let approx_type = tsne_approx_for_backend(approx_type, backend);
-    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
-    let precision = tsne_precision(&approx_type, use_high_precision, embd.nrows());
+    let embd = r_matrix_to_faer_fp32(&embd);
 
-    match precision {
-        FloatingPointPrecision::FP64 => {
-            if verbosity.detailed_verbosity() {
-                println!("Larger data set. Using high precision floats.")
-            }
+    let res = tsne_manifold_gpu(
+        embd.as_ref(),
+        None,
+        n_dim,
+        &approx_type,
+        perplexity as f32,
+        tsne_params,
+        seed,
+        backend,
+        verbose,
+    )
+    .to_extendr()?;
 
-            let embd = r_matrix_to_faer(&embd);
-
-            let res = tsne_manifold_gpu(
-                embd.as_ref(),
-                None,
-                n_dim,
-                &approx_type,
-                perplexity,
-                tsne_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
-
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-        FloatingPointPrecision::FP32 => {
-            if verbosity.detailed_verbosity() {
-                println!("Lower precision (fp32) path chosen.")
-            }
-            let embd = r_matrix_to_faer_fp32(&embd);
-
-            let res = tsne_manifold_gpu(
-                embd.as_ref(),
-                None,
-                n_dim,
-                &approx_type,
-                perplexity as f32,
-                tsne_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
-
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-    }
+    Ok(faer_to_r_matrix(res.as_ref()))
 }
 
 /// tSNE implementation from a pre-computed kNN graph
@@ -1283,9 +1067,6 @@ fn rs_tsne_gpu(
 /// @param tsne_params Named list. List that contains all of the key parameters
 /// for the tSNE generation.
 /// @param seed Integer. Seed for reproducibility.
-/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64`.
-/// If `NULL` will use sensible default thresholding. Ignored for
-/// `"fft_3k_gpu"`, which always runs in `fp32`.
 /// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
 /// the `"fft_3k_gpu"` optimiser on MLX (Apple Silicon, needs a build with the
 /// MLX backend, see [mlx_available()]); CPU optimisers stay on the CPU.
@@ -1305,63 +1086,26 @@ fn rs_tsne_from_knn_gpu(
     approx_type: String,
     tsne_params: List,
     seed: usize,
-    use_high_precision: Nullable<Rbool>,
     #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
     let approx_type = tsne_approx_for_backend(approx_type, backend);
-    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
-    let precision = tsne_precision(&approx_type, use_high_precision, embd.nrows());
+    let embd = r_matrix_to_faer_fp32(&embd);
+    let knn = nearest_neighbours_to_rust(knn_data);
 
-    match precision {
-        FloatingPointPrecision::FP32 => {
-            if verbosity.detailed_verbosity() {
-                println!("Lower precision (fp32) path chosen.")
-            }
+    let res = tsne_manifold_gpu(
+        embd.as_ref(),
+        knn,
+        n_dim,
+        &approx_type,
+        perplexity as f32,
+        tsne_params,
+        seed,
+        backend,
+        verbose,
+    )
+    .to_extendr()?;
 
-            let embd = r_matrix_to_faer_fp32(&embd);
-
-            let knn = nearest_neighbours_to_rust(knn_data);
-
-            let res = tsne_manifold_gpu(
-                embd.as_ref(),
-                knn,
-                n_dim,
-                &approx_type,
-                perplexity as f32,
-                tsne_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
-
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-        FloatingPointPrecision::FP64 => {
-            if verbosity.detailed_verbosity() {
-                println!("Large data set. Using higher precision floats.")
-            }
-
-            let embd = r_matrix_to_faer(&embd);
-
-            let knn = nearest_neighbours_to_rust(knn_data);
-
-            let res = tsne_manifold_gpu(
-                embd.as_ref(),
-                knn,
-                n_dim,
-                &approx_type,
-                perplexity,
-                tsne_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
-
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-    }
+    Ok(faer_to_r_matrix(res.as_ref()))
 }

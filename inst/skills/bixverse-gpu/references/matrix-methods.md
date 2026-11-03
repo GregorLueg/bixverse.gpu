@@ -51,8 +51,7 @@ emb <- tsne_gpu(
 
 `approx_type`:
 
-- `"fft_3k_gpu"`: default, three-kernel FFT optimiser on the device. Always
-  fp32; `use_high_precision = TRUE` is ignored with a warning.
+- `"fft_3k_gpu"`: default, three-kernel FFT optimiser on the device.
 - `"bh"`, `"fft"`, `"fft_3k"`: the `manifoldsR` CPU optimisers with a GPU
   kNN. The win is the kNN share of the run.
 
@@ -62,9 +61,8 @@ emb <- tsne_gpu(
   `"exhaustive"` or `"ivf"` at perplexity 30 and above.
 - FFT on very large data can relax into a gapless disc. Set
   `late_exag_factor` in `params_tsne_gpu()` to 2 to 4.
-- t-SNE is precision sensitive. `use_high_precision = NULL` picks fp64 above
-  100k samples for the CPU optimisers; the GPU kNN and `"fft_3k_gpu"` are
-  always fp32.
+- UMAP and t-SNE always run in fp32; manifolds-rs does the steps prone to
+  catastrophic cancellation in fp64 internally.
 
 ## kNN graphs
 
