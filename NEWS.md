@@ -19,6 +19,9 @@
   to its nearest `k` neighbours, with a warning on stderr. They used every
   neighbour given. Different embeddings whenever the cached graph was wider
   than `k`.
+* `parametric_umap()` defaults to `min_dist = 0.5` (was `0.1`), matching the
+  single default curve manifolds-rs now fits. Different embeddings with the
+  defaults.
 * Errors from the Rust side reach you as they are: `umap_gpu()`, `tsne_gpu()`
   and `parametric_umap()` no longer wrap them in "... computation failed: ".
 

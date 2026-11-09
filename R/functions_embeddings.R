@@ -614,7 +614,7 @@ phate_gpu <- function(
 #' @param n_dim Integer. Number of embedding dimensions. Defaults to `2L`.
 #' @param k Integer. Number of nearest neighbours. Defaults to `15L`.
 #' @param min_dist Numeric. Minimum distance between embedded points. Defaults
-#' to `0.1`.
+#' to `0.5`, the manifolds-rs default.
 #' @param spread Numeric. Effective scale of embedded points. Defaults to
 #' `1.0`.
 #' @param knn_method Character. Approximate nearest neighbour algorithm. One of
@@ -640,7 +640,7 @@ parametric_umap <- function(
   data,
   n_dim = 2L,
   k = 15L,
-  min_dist = 0.1,
+  min_dist = 0.5,
   spread = 1.0,
   knn_method = c(
     "kmknn",
