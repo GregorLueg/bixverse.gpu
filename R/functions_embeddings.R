@@ -1,5 +1,6 @@
 # ------------------------------------------------------------------------------
-# GPU-accelerated embeddings on plain matrices: UMAP, t-SNE and parametric UMAP.
+# GPU-accelerated embeddings on plain matrices: UMAP, t-SNE, PHATE and
+# parametric UMAP.
 # ------------------------------------------------------------------------------
 
 # umap -------------------------------------------------------------------------
@@ -191,43 +192,29 @@ umap_gpu <- function(
     if (.verbose) {
       message("Using provided kNN graph.")
     }
-    tryCatch(
-      {
-        rs_umap_from_knn_gpu(
-          embd = data,
-          knn_data = knn,
-          n_dim = n_dim,
-          min_dist = min_dist,
-          spread = spread,
-          k = k,
-          umap_params = final_umap_params,
-          seed = seed,
-          backend = backend,
-          verbose = parse_verbosity(.verbose)
-        )
-      },
-      error = function(e) {
-        stop("UMAP computation failed: ", e$message, call. = FALSE)
-      }
+    rs_umap_from_knn_gpu(
+      embd = data,
+      knn_data = knn,
+      n_dim = n_dim,
+      min_dist = min_dist,
+      spread = spread,
+      k = k,
+      umap_params = final_umap_params,
+      seed = seed,
+      backend = backend,
+      verbose = parse_verbosity(.verbose)
     )
   } else {
-    tryCatch(
-      {
-        rs_umap_gpu(
-          embd = data,
-          n_dim = n_dim,
-          min_dist = min_dist,
-          spread = spread,
-          k = k,
-          umap_params = final_umap_params,
-          seed = seed,
-          backend = backend,
-          verbose = parse_verbosity(.verbose)
-        )
-      },
-      error = function(e) {
-        stop("UMAP computation failed: ", e$message, call. = FALSE)
-      }
+    rs_umap_gpu(
+      embd = data,
+      n_dim = n_dim,
+      min_dist = min_dist,
+      spread = spread,
+      k = k,
+      umap_params = final_umap_params,
+      seed = seed,
+      backend = backend,
+      verbose = parse_verbosity(.verbose)
     )
   }
 
@@ -306,8 +293,8 @@ umap_gpu <- function(
 #' @param knn_method Character. GPU-accelerated (approximate) nearest
 #' neighbour method to use. One of `"nndescent"`, `"exhaustive"`, or `"ivf"`.
 #' @param nn_params Named list. Nearest neighbour search parameters, see
-#' [params_nn_gpu()]. tSNE uses higher k usually, hence, `"ivf"`` is the default
-#' here.
+#' [params_nn_gpu()]. tSNE usually needs a higher k, hence `"ivf"` is the
+#' default here.
 #' @param tsne_params Named list. t-SNE (GPU) algorithm parameters, see
 #' [params_tsne_gpu()].
 #' @param seed Integer. Random seed for reproducibility. Defaults to `42L`.
@@ -379,41 +366,196 @@ tsne_gpu <- function(
     if (.verbose) {
       message("Using provided kNN graph.")
     }
-    tryCatch(
-      {
-        rs_tsne_from_knn_gpu(
-          embd = data,
-          knn_data = knn,
-          n_dim = as.integer(n_dim),
-          perplexity = perplexity,
-          approx_type = approx_type,
-          tsne_params = final_tsne_params,
-          seed = seed,
-          backend = backend,
-          verbose = parse_verbosity(.verbose)
-        )
-      },
-      error = function(e) {
-        stop("t-SNE computation failed: ", e$message, call. = FALSE)
-      }
+    rs_tsne_from_knn_gpu(
+      embd = data,
+      knn_data = knn,
+      n_dim = as.integer(n_dim),
+      perplexity = perplexity,
+      approx_type = approx_type,
+      tsne_params = final_tsne_params,
+      seed = seed,
+      backend = backend,
+      verbose = parse_verbosity(.verbose)
     )
   } else {
-    tryCatch(
-      {
-        rs_tsne_gpu(
-          embd = data,
-          n_dim = as.integer(n_dim),
-          perplexity = perplexity,
-          approx_type = approx_type,
-          tsne_params = final_tsne_params,
-          seed = seed,
-          backend = backend,
-          verbose = parse_verbosity(.verbose)
-        )
-      },
-      error = function(e) {
-        stop("t-SNE computation failed: ", e$message, call. = FALSE)
-      }
+    rs_tsne_gpu(
+      embd = data,
+      n_dim = as.integer(n_dim),
+      perplexity = perplexity,
+      approx_type = approx_type,
+      tsne_params = final_tsne_params,
+      seed = seed,
+      backend = backend,
+      verbose = parse_verbosity(.verbose)
+    )
+  }
+
+  res
+}
+
+# phate ------------------------------------------------------------------------
+
+## param combination -----------------------------------------------------------
+
+#' Internal helper to prepare the PHATE parameters (GPU version)
+#'
+#' @param knn_method String. Method to use to generate the kNN graph.
+#' @param nn_params Named list. The nearest neighbour search parameters (GPU).
+#' @param phate_params Named list. The PHATE-specific parameters (GPU).
+#'
+#' @return Returns the list of final parameters.
+#'
+#' @export
+#'
+#' @keywords internal
+.prepare_phate_params_gpu <- function(
+  knn_method,
+  nn_params,
+  phate_params
+) {
+  # checks
+  checkmate::assertChoice(knn_method, c("nndescent", "exhaustive", "ivf"))
+  assertNnGpuParams(nn_params)
+  assertPhateGpuParams(phate_params)
+
+  final_params <- c(nn_params, phate_params)
+  final_params[["knn_method"]] <- knn_method
+
+  final_params
+}
+
+## main function ---------------------------------------------------------------
+
+#' Rust-based PHATE (GPU)
+#'
+#' @description Performs PHATE dimensionality reduction on the input data. The
+#' kNN search runs on the GPU, and so do the randomised SVD and k-means of the
+#' default spectral landmark selection. The diffusion time, the powering of
+#' the operator, MDS and the landmark interpolation stay on the CPU.
+#'
+#' @details The kNN search runs `6 * k + 5` wide: neighbours past `k` join the
+#' kernel while their affinity clears `thresh` (see [params_phate_gpu()]). A
+#' precomputed graph should be that wide as well.
+#'
+#' @param data Numerical matrix or data frame. The data to embed of shape
+#' samples x features. Will be coerced to a matrix.
+#' @param knn Optional `NearestNeighbours` class. If provided, PHATE will skip
+#' the k-nearest neighbour graph generation and use this one. Should be
+#' `6 * k + 5` wide; a narrower graph gives a warning. Defaults to `NULL`. See
+#' [manifoldsR::new_nearest_neighbour()] for details.
+#' @param n_dim Integer. Number of dimensions in the embedding space. Defaults
+#' to `2L`.
+#' @param k Integer. Number of nearest neighbours that set the kernel
+#' bandwidth. Defaults to `5L`.
+#' @param knn_method Character. GPU-accelerated (approximate) nearest
+#' neighbour method to use. One of `"nndescent"`, `"exhaustive"` or `"ivf"`.
+#' @param nn_params Named list. Nearest neighbour search parameters, see
+#' [params_nn_gpu()].
+#' @param phate_params Named list. PHATE (GPU) algorithm parameters, see
+#' [params_phate_gpu()].
+#' @param seed Integer. Random seed for reproducibility. Defaults to `42L`.
+#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the kNN
+#' search and the spectral landmark selection on MLX (Apple Silicon, needs a
+#' build with the MLX backend, see [mlx_available()]).
+#' @param .verbose Logical. Controls verbosity. Defaults to `TRUE`.
+#'
+#' @return A numerical matrix with dimensions samples x n_dim containing
+#' the PHATE embedding.
+#'
+#' @references Moon, et al., Nat. Biotechnol., 2019
+#'
+#' @export
+phate_gpu <- function(
+  data,
+  knn = NULL,
+  n_dim = 2L,
+  k = 5L,
+  knn_method = c("nndescent", "exhaustive", "ivf"),
+  nn_params = params_nn_gpu(),
+  phate_params = params_phate_gpu(),
+  seed = 42L,
+  backend = c("wgpu", "mlx"),
+  .verbose = TRUE
+) {
+  # transformation
+  if (is.data.frame(data)) {
+    data <- as.matrix(data)
+  }
+  knn_method <- match.arg(knn_method)
+  backend <- match.arg(backend)
+  assert_backend(backend)
+
+  checkmate::assert_matrix(
+    data,
+    mode = "numeric",
+    any.missing = FALSE,
+    min.rows = 2,
+    min.cols = 1
+  )
+  checkmate::assert(
+    checkmate::testNull(knn),
+    checkmate::testClass(knn, "NearestNeighbours")
+  )
+  checkmate::qassert(n_dim, "I1[1,)")
+  checkmate::qassert(k, "I1[1,)")
+  checkmate::assertChoice(knn_method, c("nndescent", "exhaustive", "ivf"))
+  checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
+  checkmate::qassert(.verbose, c("B1", "I1[0, 2]"))
+
+  final_phate_params <- .prepare_phate_params_gpu(
+    knn_method = knn_method,
+    nn_params = nn_params,
+    phate_params = phate_params
+  )
+
+  search_width <- 6L * k + 5L
+  if (!is.null(knn) && knn$k < search_width) {
+    warning(sprintf(
+      paste(
+        "The provided kNN graph has %d neighbours per sample; PHATE with",
+        "k = %d searches %d wide. Neighbours past the graph are lost from the",
+        "kernel."
+      ),
+      knn$k,
+      k,
+      search_width
+    ))
+  }
+  if (is.null(final_phate_params$n_landmarks) && nrow(data) >= 10000L) {
+    warning(sprintf(
+      paste(
+        "n_landmarks = NULL on %d samples runs the full N x N diffusion",
+        "operator. Expect it to be slow and memory hungry."
+      ),
+      nrow(data)
+    ))
+  }
+
+  # check if knn was provided
+  res <- if (!is.null(knn)) {
+    if (.verbose) {
+      message("Using provided kNN graph.")
+    }
+    rs_phate_from_knn_gpu(
+      embd = data,
+      knn_data = knn,
+      n_dim = as.integer(n_dim),
+      k = as.integer(k),
+      phate_params = final_phate_params,
+      seed = seed,
+      backend = backend,
+      verbose = parse_verbosity(.verbose)
+    )
+  } else {
+    rs_phate_gpu(
+      embd = data,
+      n_dim = as.integer(n_dim),
+      k = as.integer(k),
+      phate_params = final_phate_params,
+      seed = seed,
+      backend = backend,
+      verbose = parse_verbosity(.verbose)
     )
   }
 
@@ -547,23 +689,16 @@ parametric_umap <- function(
     parametric_umap_params = parametric_umap_params
   )
 
-  res <- tryCatch(
-    {
-      rs_parametric_umap(
-        data = data,
-        n_dim = n_dim,
-        min_dist = min_dist,
-        spread = spread,
-        k = k,
-        parametric_params = final_params,
-        seed = seed,
-        use_gpu = use_gpu,
-        verbose = parse_verbosity(.verbose)
-      )
-    },
-    error = function(e) {
-      stop("Parametric UMAP computation failed: ", e$message, call. = FALSE)
-    }
+  res <- rs_parametric_umap(
+    data = data,
+    n_dim = n_dim,
+    min_dist = min_dist,
+    spread = spread,
+    k = k,
+    parametric_params = final_params,
+    seed = seed,
+    use_gpu = use_gpu,
+    verbose = parse_verbosity(.verbose)
   )
 
   # wrap model pointer in environment to prevent GC

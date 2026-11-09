@@ -1,9 +1,9 @@
 use ann_search_rs::gpu::k_means_gpu::KMeansGpuParams;
 use bixverse_r::gpu::graph::leiden_gpu::community_detection_gpu;
 use bixverse_r::gpu::linalg::corr::{column_pairwise_cor_gpu, GpuCorCov};
+use bixverse_r::gpu::sc_gpu::knn_gpu::knn_with_dist_gpu;
 use bixverse_r::graph::graph_structures::edge_pairs_to_sparse_graph;
 use bixverse_r::graph::leiden::LeidenParams;
-use bixverse_r::gpu::sc_gpu::knn_gpu::knn_with_dist_gpu;
 #[cfg(mlx_available)]
 use bixverse_r::mlx::linalg::corr::{column_pairwise_cor_mlx, MlxCorCov};
 #[cfg(mlx_available)]
@@ -35,6 +35,7 @@ pub use single_cell::scrublet_gpu;
 pub use single_cell::seacells_gpu;
 
 use crate::embeddings::parametric_umap::*;
+use crate::embeddings::phate_gpu::phate_manifold_gpu;
 use crate::embeddings::tsne_gpu::tsne_manifold_gpu;
 use crate::embeddings::umap_gpu::umap_manifold_gpu;
 use crate::ml::clustering::*;
@@ -82,6 +83,9 @@ extendr_module! {
     // tsne gpu
     fn rs_tsne_gpu;
     fn rs_tsne_from_knn_gpu;
+    // phate gpu
+    fn rs_phate_gpu;
+    fn rs_phate_from_knn_gpu;
 }
 
 ///////////
@@ -1101,6 +1105,121 @@ fn rs_tsne_from_knn_gpu(
         &approx_type,
         perplexity as f32,
         tsne_params,
+        seed,
+        backend,
+        verbose,
+    )
+    .to_extendr()?;
+
+    Ok(faer_to_r_matrix(res.as_ref()))
+}
+
+///////////
+// PHATE //
+///////////
+
+/// PHATE implementation
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// Wraps the GPU PHATE in manifolds-rs. The kNN search (`6 * k + 5` wide) and,
+/// for spectral landmarks, the randomised SVD and k-means run on the GPU. The
+/// diffusion time, the powering, MDS and the landmark interpolation stay on the
+/// CPU.
+///
+/// @param embd Numerical matrix. The data to use to generate the embeddings.
+/// Should be of dimensions samples x features.
+/// @param n_dim Integer. Number of PHATE dimensions to return.
+/// @param k Integer. Number of neighbours that set the kernel bandwidth.
+/// @param phate_params Named list. The merged GPU kNN and PHATE parameters plus
+/// `knn_method`. Missing keys fall back to the manifolds-rs defaults.
+/// @param seed Integer. Seed for reproducibility.
+/// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
+/// the spectral landmark selection on MLX (Apple Silicon, needs a build with
+/// the MLX backend, see [mlx_available()]).
+/// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
+/// for detailed verbosity.
+///
+/// @return The PHATE embeddings.
+///
+/// @export
+#[extendr]
+#[allow(clippy::too_many_arguments)]
+fn rs_phate_gpu(
+    embd: RMatrix<f64>,
+    n_dim: usize,
+    k: usize,
+    phate_params: List,
+    seed: usize,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
+    verbose: usize,
+) -> extendr_api::Result<RMatrix<f64>> {
+    let backend = parse_backend(backend)?;
+    let embd = r_matrix_to_faer_fp32(&embd);
+
+    let res = phate_manifold_gpu(
+        embd.as_ref(),
+        None,
+        n_dim,
+        k,
+        phate_params,
+        seed,
+        backend,
+        verbose,
+    )
+    .to_extendr()?;
+
+    Ok(faer_to_r_matrix(res.as_ref()))
+}
+
+/// PHATE implementation from a pre-computed kNN graph
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// Wraps the GPU PHATE in manifolds-rs. This version takes a pre-computed kNN
+/// graph, please see [new_nearest_neighbour()]. Neighbours past `k` join the
+/// kernel while their affinity clears `thresh`, so the graph should be
+/// `6 * k + 5` wide. Spectral landmark selection still runs on the GPU.
+///
+/// @param embd Numerical matrix. The data to use to generate the embeddings.
+/// Should be of dimensions samples x features.
+/// @param knn_data `NearestNeighbours` class from R.
+/// @param n_dim Integer. Number of PHATE dimensions to return.
+/// @param k Integer. Number of neighbours that set the kernel bandwidth.
+/// @param phate_params Named list. The merged GPU kNN and PHATE parameters plus
+/// `knn_method`. Missing keys fall back to the manifolds-rs defaults.
+/// @param seed Integer. Seed for reproducibility.
+/// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the spectral
+/// landmark selection on MLX (Apple Silicon, needs a build with the MLX
+/// backend, see [mlx_available()]).
+/// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
+/// for detailed verbosity.
+///
+/// @return The PHATE embeddings.
+///
+/// @export
+#[extendr]
+#[allow(clippy::too_many_arguments)]
+fn rs_phate_from_knn_gpu(
+    embd: RMatrix<f64>,
+    knn_data: List,
+    n_dim: usize,
+    k: usize,
+    phate_params: List,
+    seed: usize,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
+    verbose: usize,
+) -> extendr_api::Result<RMatrix<f64>> {
+    let backend = parse_backend(backend)?;
+    let embd = r_matrix_to_faer_fp32(&embd);
+    let knn = nearest_neighbours_to_rust(knn_data);
+
+    let res = phate_manifold_gpu(
+        embd.as_ref(),
+        knn,
+        n_dim,
+        k,
+        phate_params,
         seed,
         backend,
         verbose,

@@ -227,7 +227,7 @@ where
         initialisation: tsne_params_internal.init,
         nn_params: tsne_params_internal.param_knn,
         optim_params: tsne_params_internal.param_optimiser,
-        randomised_init: tsne_params_internal.randomised,
+        randomised: tsne_params_internal.randomised,
         init_range: Some(T::from_f64(1e-2).unwrap()),
     };
 

@@ -46,8 +46,8 @@ the CPU.}
 neighbour method to use. One of \code{"nndescent"}, \code{"exhaustive"}, or \code{"ivf"}.}
 
 \item{nn_params}{Named list. Nearest neighbour search parameters, see
-\code{\link[=params_nn_gpu]{params_nn_gpu()}}. tSNE uses higher k usually, hence, `"ivf"`` is the default
-here.}
+\code{\link[=params_nn_gpu]{params_nn_gpu()}}. tSNE usually needs a higher k, hence \code{"ivf"} is the
+default here.}
 
 \item{tsne_params}{Named list. t-SNE (GPU) algorithm parameters, see
 \code{\link[=params_tsne_gpu]{params_tsne_gpu()}}.}

@@ -406,6 +406,196 @@ S7::method(tsne_gpu_sc, SingleCells) <- function(
   return(object)
 }
 
+# gpu phate --------------------------------------------------------------------
+
+#' Run PHATE on a SingleCells object (GPU)
+#'
+#' @description
+#' GPU-accelerated counterpart to [bixverse::phate_sc()]. Runs [phate_gpu()]
+#' on an embedding pulled from the object. The kNN search and the spectral
+#' landmark selection run on the GPU, the diffusion and MDS on the CPU.
+#'
+#' PHATE searches `6 * k + 5` neighbours (35 at the default `k = 5L`), far
+#' wider than the cached kNN usually is. So unlike [bixverse::phate_sc()],
+#' `use_knn` defaults to `FALSE` and every call builds a fresh GPU kNN of the
+#' right width. A cached graph that is too narrow gives a warning.
+#'
+#' @param object `SingleCells` (or `SingleCellsMultiModal`) class.
+#' @param use_knn Boolean. Defaults to `FALSE`. Set to `TRUE` to reuse the
+#' cached kNN; only sensible when the stored `k` is at least `6 * k + 5`.
+#' @param embd_to_use String. The embedding to use for PHATE. Must be
+#' available in the object for the chosen modality.
+#' @param slot_name String. The name of this embedding within the object.
+#' Defaults to `"phate"`.
+#' @param no_embd_to_use Optional integer. Number of embedding dimensions to
+#' use. If `NULL`, all will be used.
+#' @param modality String. On which modality to run PHATE. One of
+#' `c("rna", "adt", "wnn")`. The two latter options are only available on
+#' `SingleCellsMultiModal`.
+#' @param n_dim Integer. Number of PHATE dimensions. Defaults to `2L`.
+#' @param k Integer. Number of nearest neighbours that set the kernel
+#' bandwidth. Defaults to `5L`.
+#' @param knn_method String. GPU (approximate) nearest neighbour method. One
+#' of `c("nndescent", "exhaustive", "ivf")`.
+#' @param nn_params Named list. GPU kNN parameters, see [params_nn_gpu()].
+#' @param phate_params Named list. PHATE (GPU) parameters, see
+#' [params_phate_gpu()].
+#' @param seed Integer. For reproducibility.
+#' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` moves the kNN
+#' search and the spectral landmark selection to MLX, see [phate_gpu()].
+#' @param .verbose Boolean or integer. Controls verbosity.
+#'
+#' @return The object with a `"phate"` embedding added. If the requested
+#' embedding is missing, returns the object unchanged with a warning.
+#'
+#' @seealso [phate_gpu()], [bixverse::phate_sc()], [umap_gpu_sc()]
+#'
+#' @export
+#'
+#' @import bixverse
+phate_gpu_sc <- S7::new_generic(
+  name = "phate_gpu_sc",
+  dispatch_args = "object",
+  fun = function(
+    object,
+    use_knn = FALSE,
+    embd_to_use = "pca",
+    slot_name = "phate",
+    no_embd_to_use = NULL,
+    modality = c("rna", "adt", "wnn"),
+    n_dim = 2L,
+    k = 5L,
+    knn_method = c("nndescent", "exhaustive", "ivf"),
+    nn_params = params_nn_gpu(),
+    phate_params = params_phate_gpu(),
+    seed = 42L,
+    backend = c("wgpu", "mlx"),
+    .verbose = TRUE
+  ) {
+    assert_backend(match.arg(backend))
+
+    S7::S7_dispatch()
+  }
+)
+
+#' @method phate_gpu_sc SingleCells
+#'
+#' @export
+#'
+#' @import bixverse
+S7::method(phate_gpu_sc, SingleCells) <- function(
+  object,
+  use_knn = FALSE,
+  embd_to_use = "pca",
+  slot_name = "phate",
+  no_embd_to_use = NULL,
+  modality = c("rna", "adt", "wnn"),
+  n_dim = 2L,
+  k = 5L,
+  knn_method = c("nndescent", "exhaustive", "ivf"),
+  nn_params = params_nn_gpu(),
+  phate_params = params_phate_gpu(),
+  seed = 42L,
+  backend = c("wgpu", "mlx"),
+  .verbose = TRUE
+) {
+  modality <- match.arg(modality)
+  knn_method <- match.arg(knn_method)
+  backend <- match.arg(backend)
+
+  checkmate::assertTRUE(S7::S7_inherits(object, SingleCells))
+  checkmate::qassert(use_knn, "B1")
+  checkmate::qassert(embd_to_use, "S1")
+  checkmate::qassert(slot_name, "S1")
+  checkmate::qassert(no_embd_to_use, c("I1", "0"))
+  checkmate::qassert(n_dim, "I1[1,)")
+  checkmate::qassert(k, "I1[1,)")
+  assertNnGpuParams(nn_params)
+  assertPhateGpuParams(phate_params)
+  checkmate::qassert(seed, "I1")
+  checkmate::assertChoice(backend, c("wgpu", "mlx"))
+  checkmate::qassert(.verbose, c("B1", "I1[0,2]"))
+
+  if (modality != "rna" && !S7::S7_inherits(object, SingleCellsMultiModal)) {
+    stop(sprintf(
+      "modality = '%s' is only supported for SingleCellsMultiModal.",
+      modality
+    ))
+  }
+
+  cache_modality <- if (modality == "wnn") "rna" else modality
+
+  # embedding
+  available <- get_available_embeddings(object, modality = cache_modality)
+  if (!(embd_to_use %in% available)) {
+    warning(sprintf(
+      "Embedding '%s' not found on the object. Returning object as is.",
+      embd_to_use
+    ))
+    return(object)
+  }
+
+  # hard tier: the manifold is written back onto the object, and it is read
+  # from `cache_modality` while the kNN comes from `modality`
+  assert_sc_state(object, artefacts = embd_to_use, modality = cache_modality)
+  if (modality == "wnn" || use_knn) {
+    assert_sc_state(object, artefacts = "knn", modality = modality)
+  }
+  embd <- get_embedding(
+    x = object,
+    embd_name = embd_to_use,
+    modality = cache_modality
+  )
+  if (!is.null(no_embd_to_use)) {
+    to_take <- min(c(no_embd_to_use, ncol(embd)))
+    embd <- embd[, 1:to_take]
+  }
+
+  # knn - default is regenerate on GPU at the PHATE search width
+  knn <- if (modality == "wnn") {
+    bixverse:::.get_manifoldsr_knn_from_wnn(x = object)
+  } else if (use_knn) {
+    bixverse:::.get_manifoldsr_knn(x = object, modality = modality)
+  } else {
+    NULL
+  }
+
+  if (.verbose) {
+    message("Running GPU PHATE.")
+  }
+
+  phate_embd <- phate_gpu(
+    data = embd,
+    knn = knn,
+    n_dim = n_dim,
+    k = k,
+    knn_method = knn_method,
+    nn_params = nn_params,
+    phate_params = phate_params,
+    seed = seed,
+    backend = backend,
+    .verbose = .verbose
+  )
+
+  rownames(phate_embd) <- rownames(embd)
+  colnames(phate_embd) <- sprintf("phate_%s", seq_len(ncol(phate_embd)))
+
+  object <- set_embedding(
+    x = object,
+    embd = phate_embd,
+    name = slot_name,
+    modality = modality,
+    from = .manifold_from_gpu(
+      embd_to_use = embd_to_use,
+      cache_modality = cache_modality,
+      modality = modality,
+      has_knn = !is.null(knn)
+    )
+  )
+
+  return(object)
+}
+
 # ------------------------------------------------------------------------------
 # GPU-accelerated Bonsai:
 # - Wraps `rs_sc_bonsai_gpu`, which runs Sanity on the device and the tree

@@ -50,13 +50,20 @@ t-SNE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive). Optimiser
 - `tsne_gpu_sc`: Run t-SNE on a SingleCells object (GPU)
 - `params_tsne_gpu`: Wrapper function to generate t-SNE parameters (GPU version)
 
+## GPU-accelerated PHATE
+
+PHATE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive) and spectral landmark selection on the GPU. Diffusion and MDS run on the CPU. Also a version for the single cells analysis suite in bixverse.
+
+- `phate_gpu`: Rust-based PHATE (GPU)
+- `phate_gpu_sc`: Run PHATE on a SingleCells object (GPU)
+- `params_phate_gpu`: Wrapper function to generate PHATE parameters (GPU version)
+
 ## Parametric UMAP
 
 Want to train a neural net to do your UMAP embeddings? Want to train flexibly on CPU or GPU? Here's what you need.
 
 - `parametric_umap`: Parametric UMAP
 - `params_parametric_umap`: Wrapper function to generate parametric UMAP parameters
-- `predict.ParametricUmapModel`: Predict embeddings for new data using a trained parametric UMAP model
 - `load_parametric_umap`: Load a parametric UMAP as a qs2 file
 - `save_parametric_umap`: Save a parametric UMAP as a qs2 file
 
@@ -104,6 +111,7 @@ Kept so existing scripts keep running. Each one warns and forwards to its replac
 
 Exported but absent from `_pkgdown.yml`. Mostly internal constructors and `rs_*` bindings that take on-disk streaming input. Usable, but undocumented on the website, so read the roxygen with `?fn` first.
 
+- `.prepare_phate_params_gpu`: Internal helper to prepare the PHATE parameters (GPU version)
 - `.prepare_tsne_params_gpu`: Internal helper to prepare the t-SNE parameters (GPU version)
 - `.prepare_umap_params_gpu`: Internal helper to prepare the UMAP parameters (GPU version)
 - `rs_mc_bonsai_gpu`: GPU: Bonsai tree from metacell counts

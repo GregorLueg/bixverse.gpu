@@ -29,7 +29,7 @@ params_nn_gpu(
 
 \item{node_degree_final}{Integer or \code{NULL}. CAGRA GPU: Final node degree of
 the navigational graph. If \code{NULL}, defaults to \code{30} on the Rust side. Ignored
-by UMAP and tSNE. Defaults to \code{NULL}.}
+by UMAP, tSNE and PHATE. Defaults to \code{NULL}.}
 
 \item{k_build}{Integer or \code{NULL}. NNDescent and CAGRA GPU: Working degree of
 the descent. If \code{NULL}, defaults to \code{1.5 * k} on the Rust side. For CAGRA it
@@ -46,15 +46,15 @@ descent. Defaults to \code{NULL}.}
 
 \item{beam_width}{Integer or \code{NULL}. CAGRA GPU: Beam width for beam search.
 If not provided will be set to \code{max(c(k, node_degree_final, 16L)) * 2}.
-Ignored by UMAP and tSNE. Defaults to \code{NULL}.}
+Ignored by UMAP, tSNE and PHATE. Defaults to \code{NULL}.}
 
 \item{max_beam_iters}{Integer or \code{NULL}. CAGRA GPU: Maximum number of beam
 search iterations. If not provided, defaults to \code{3 * beam_width}. Ignored by
-UMAP and tSNE. Defaults to \code{NULL}.}
+UMAP, tSNE and PHATE. Defaults to \code{NULL}.}
 
 \item{n_entry_points}{Integer or \code{NULL}. CAGRA GPU: Number of entry points
-for beam search. If not provided, defaults to \code{8L}. Ignored by UMAP and tSNE.
-Defaults to \code{NULL}.}
+for beam search. If not provided, defaults to \code{8L}. Ignored by UMAP, tSNE and
+PHATE. Defaults to \code{NULL}.}
 }
 \value{
 A named list with the following elements:
@@ -67,7 +67,7 @@ A named list with the following elements:
 \code{NULL}, will default to \code{sqrt(n_list)}. Defaults to \code{NULL}.
 \item node_degree_final - Integer or \code{NULL}. CAGRA GPU: Final node degree of
 the navigational graph. If \code{NULL}, defaults to \code{30} on the Rust side.
-Ignored by UMAP and tSNE. Defaults to \code{NULL}.
+Ignored by UMAP, tSNE and PHATE. Defaults to \code{NULL}.
 \item k_build - Integer or \code{NULL}. NNDescent and CAGRA GPU: Working degree
 of the descent. If \code{NULL}, defaults to \code{1.5 * k} on the Rust side. For CAGRA
 it cannot be smaller than \code{node_degree_final}. Defaults to \code{NULL}.
@@ -79,13 +79,13 @@ for the descent. Defaults to \code{0.001}.
 descent. Defaults to \code{NULL}.
 \item beam_width - Integer or \code{NULL}. CAGRA GPU: Beam width for beam search.
 If not provided will be set to \code{max(c(k, node_degree_final, 16L)) * 2}.
-Ignored by UMAP and tSNE. Defaults to \code{NULL}.
+Ignored by UMAP, tSNE and PHATE. Defaults to \code{NULL}.
 \item max_beam_iters - Integer or \code{NULL}. CAGRA GPU: Maximum number of beam
 search iterations. If not provided, defaults to \code{3 * beam_width}. Ignored by
-UMAP and tSNE. Defaults to \code{NULL}.
+UMAP, tSNE and PHATE. Defaults to \code{NULL}.
 \item n_entry_points - Integer or \code{NULL}. CAGRA GPU: Number of entry points
-for beam search. If not provided, defaults to \code{8L}. Ignored by UMAP and
-tSNE. Defaults to \code{NULL}.
+for beam search. If not provided, defaults to \code{8L}. Ignored by UMAP, tSNE
+and PHATE. Defaults to \code{NULL}.
 }
 }
 \description{

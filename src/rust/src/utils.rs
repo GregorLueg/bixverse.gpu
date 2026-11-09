@@ -38,7 +38,8 @@ where
 /// Translate a `params_nn_gpu()` R list into bixverse-rs GPU kNN parameters
 ///
 /// The R list keeps the manifolds-rs key names (`dist_metric`, `n_probes`,
-/// `node_degree_final`) it shares with UMAP and tSNE, while [`KnnParamsGpu`]
+/// `node_degree_final`) it shares with UMAP, tSNE and PHATE, while
+/// [`KnnParamsGpu`]
 /// uses the bixverse ones (`ann_dist`, `n_probe`, `graph_k`). Missing keys
 /// fall back to [`KnnParamsGpu::default()`].
 ///

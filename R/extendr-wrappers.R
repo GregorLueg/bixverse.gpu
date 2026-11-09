@@ -364,6 +364,61 @@ rs_tsne_gpu <- function(embd, n_dim, perplexity, approx_type, tsne_params, seed,
 #' @export
 rs_tsne_from_knn_gpu <- function(embd, knn_data, n_dim, perplexity, approx_type, tsne_params, seed, backend = "wgpu", verbose) .Call(wrap__rs_tsne_from_knn_gpu, embd, knn_data, n_dim, perplexity, approx_type, tsne_params, seed, backend, verbose)
 
+#' PHATE implementation
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' Wraps the GPU PHATE in manifolds-rs. The kNN search (`6 * k + 5` wide) and,
+#' for spectral landmarks, the randomised SVD and k-means run on the GPU. The
+#' diffusion time, the powering, MDS and the landmark interpolation stay on the
+#' CPU.
+#'
+#' @param embd Numerical matrix. The data to use to generate the embeddings.
+#' Should be of dimensions samples x features.
+#' @param n_dim Integer. Number of PHATE dimensions to return.
+#' @param k Integer. Number of neighbours that set the kernel bandwidth.
+#' @param phate_params Named list. The merged GPU kNN and PHATE parameters plus
+#' `knn_method`. Missing keys fall back to the manifolds-rs defaults.
+#' @param seed Integer. Seed for reproducibility.
+#' @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
+#' the spectral landmark selection on MLX (Apple Silicon, needs a build with
+#' the MLX backend, see [mlx_available()]).
+#' @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
+#' for detailed verbosity.
+#'
+#' @return The PHATE embeddings.
+#'
+#' @export
+rs_phate_gpu <- function(embd, n_dim, k, phate_params, seed, backend = "wgpu", verbose) .Call(wrap__rs_phate_gpu, embd, n_dim, k, phate_params, seed, backend, verbose)
+
+#' PHATE implementation from a pre-computed kNN graph
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' Wraps the GPU PHATE in manifolds-rs. This version takes a pre-computed kNN
+#' graph, please see [new_nearest_neighbour()]. Neighbours past `k` join the
+#' kernel while their affinity clears `thresh`, so the graph should be
+#' `6 * k + 5` wide. Spectral landmark selection still runs on the GPU.
+#'
+#' @param embd Numerical matrix. The data to use to generate the embeddings.
+#' Should be of dimensions samples x features.
+#' @param knn_data `NearestNeighbours` class from R.
+#' @param n_dim Integer. Number of PHATE dimensions to return.
+#' @param k Integer. Number of neighbours that set the kernel bandwidth.
+#' @param phate_params Named list. The merged GPU kNN and PHATE parameters plus
+#' `knn_method`. Missing keys fall back to the manifolds-rs defaults.
+#' @param seed Integer. Seed for reproducibility.
+#' @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the spectral
+#' landmark selection on MLX (Apple Silicon, needs a build with the MLX
+#' backend, see [mlx_available()]).
+#' @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
+#' for detailed verbosity.
+#'
+#' @return The PHATE embeddings.
+#'
+#' @export
+rs_phate_from_knn_gpu <- function(embd, knn_data, n_dim, k, phate_params, seed, backend = "wgpu", verbose) .Call(wrap__rs_phate_from_knn_gpu, embd, knn_data, n_dim, k, phate_params, seed, backend, verbose)
+
 #' Calculates sparse PCA for single cell
 #'
 #' @description

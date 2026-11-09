@@ -311,8 +311,8 @@ structure to begin with. Which is a convenient segue.
 
 ## GPU-accelerated kNN
 
-Three methods, each with different speed/precision trade-offs. Below we run
-all three against the GPU Harmony embedding to show the API. In practice, pick
+Four methods, each with different speed/precision trade-offs. Below we run
+them against the GPU Harmony embedding to show the API. In practice, pick
 one based on data size and how exact you need the neighbours to be.
 
 ### Exhaustive
@@ -350,23 +350,24 @@ sc_object <- find_neighbours_gpu_sc(
 )
 ```
 
-### CAGRA
+### NN-descent and CAGRA
 
-Builds a pruned NNDescent graph, based on the fantastic work by [Nvidia](https://arxiv.org/pdf/2308.15136). (Unfortunately, some of the cuda primitives are not available
-in wgpu, but it is still a blazingly fast approximate kNN search even on wgpu).
-With `extract_knn = TRUE` you pull the kNN straight out of the NNDescent graph: 
-faster, slightly less precise, useful for rapid iteration over parameters. 
-With `extract_knn = FALSE` (the default) the function runs beam search over the 
-pruned graph for higher recall, which matters more on larger, higher-dimensional 
-data.
+`knn_method = "nndescent"` (the default) hands back the NN-descent kNN graph
+itself: no index, no search. Rows the descent left short get topped up with an
+exact search of just those rows.
+
+`knn_method = "cagra"` goes one step further and prunes that graph into a CAGRA
+graph, based on the fantastic work by [Nvidia](https://arxiv.org/pdf/2308.15136),
+then beam searches it. (Some of the CUDA primitives are not available in wgpu,
+but it is still a fast approximate kNN search on wgpu.) Beam search buys
+recall, which matters more on larger, higher-dimensional data.
 
 ```{r}
 #| label: gpu cagra
 sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
-  knn_method = "nndescent",
-  nn_params = params_nn_gpu(extract_knn = FALSE),
+  knn_method = "cagra",
   .verbose = TRUE
 )
 ```
@@ -471,7 +472,6 @@ sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_v2",
   knn_method = "nndescent",
-  nn_params = params_nn_gpu(extract_knn = TRUE),
   .verbose = TRUE
 )
 
@@ -502,16 +502,16 @@ Everyone loves visuals, even if you should not over-interpret them
 ([Chari et al., 2023](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011288)).
 `umap_gpu_sc()` runs the full GPU-accelerated UMAP path: GPU kNN plus a
 GPU Adam optimiser (`optimiser = "adam_gpu"` in `params_umap_gpu()`, the
-default). On the CAGRA kNN we just computed above, it plugs straight in
-with `use_knn = TRUE`.
+default). The comparison above replaced the kNN with one on the CPU Harmony
+embedding, so we rebuild the CAGRA kNN on the GPU one first and then plug it
+straight in with `use_knn = TRUE`.
 
 ```{r}
 #| label: umap gpu harmony
 sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
-  knn_method = "nndescent",
-  nn_params = params_nn_gpu(extract_knn = FALSE),
+  knn_method = "cagra",
   .verbose = TRUE
 )
 
@@ -560,12 +560,11 @@ embedding_plot_sc(
 
 ### tSNE on the GPU Harmony embedding
 
-`tsne_gpu_sc()` mirrors the shape of `umap_gpu_sc()` but only the kNN step
-runs on GPU. The optimiser (Barnes-Hut or FIt-SNE FFT) still runs on CPU;
-a GPU optimiser is on the roadmap. Because t-SNE derives `k` from
-`3 * perplexity` on the Rust side, `use_knn` defaults to `FALSE` so that
-every call builds a fresh GPU kNN sized to the requested perplexity.
-Handy when sweeping perplexities.
+`tsne_gpu_sc()` mirrors the shape of `umap_gpu_sc()`. The kNN runs on the
+GPU, and with the default `approx_type = "fft_3k_gpu"` so does the optimiser.
+Because t-SNE derives `k` from `3 * perplexity` on the Rust side, `use_knn`
+defaults to `FALSE` so that every call builds a fresh GPU kNN sized to the
+requested perplexity. Handy when sweeping perplexities.
 
 ```{r}
 #| label: tsne gpu harmony
@@ -589,7 +588,43 @@ embedding_plot_sc(
   discrete = TRUE
 ) +
   labs(
-    title = "GPU Harmony v2 + GPU t-SNE (GPU kNN, CPU optimiser)",
+    title = "GPU Harmony v2 + GPU t-SNE",
+    colour = "Fast cluster:"
+  )
+```
+
+### PHATE on the GPU Harmony embedding
+
+PHATE is the one for continuous structure, and PBMCs are mostly discrete cell
+types, so don't expect it to shine here. It's here to show the API.
+`phate_gpu_sc()` runs the kNN search and the spectral landmark selection on
+the GPU, the diffusion and MDS on the CPU. PHATE searches `6 * k + 5`
+neighbours (35 at the default `k = 5L`), far wider than the cached kNN, so
+`use_knn` defaults to `FALSE` and every call builds a fresh GPU kNN of the
+right width. See the [PHATE vignette](gpu_phate.html) for the knobs.
+
+```{r}
+#| label: phate gpu harmony
+sc_object <- phate_gpu_sc(
+  object = sc_object,
+  embd_to_use = "harmony_gpu",
+  slot_name = "phate_harm_gpu"
+)
+```
+
+```{r}
+#| label: phate plot
+#| fig-width: 7
+#| fig-height: 5
+embedding_plot_sc(
+  sc_object,
+  embedding = "phate_harm_gpu",
+  colour_by = "res_1",
+  label_by = "res_1",
+  discrete = TRUE
+) +
+  labs(
+    title = "GPU Harmony v2 + GPU PHATE",
     colour = "Fast cluster:"
   )
 ```
@@ -673,8 +708,7 @@ Same batch metrics as for Harmony, on a kNN over the corrected embedding:
 sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "mnn_gpu",
-  knn_method = "nndescent",
-  nn_params = params_nn_gpu(extract_knn = FALSE),
+  knn_method = "cagra",
   .verbose = TRUE
 )
 

@@ -152,8 +152,8 @@ spec_nn_gpu <- param_spec(
       null_ok = TRUE,
       doc = paste(
         "CAGRA GPU: Final node degree of the navigational graph. If",
-        "`NULL`, defaults to `30` on the Rust side. Ignored by UMAP and",
-        "tSNE."
+        "`NULL`, defaults to `30` on the Rust side. Ignored by UMAP, tSNE",
+        "and PHATE."
       )
     ),
     k_build = p_int(
@@ -191,7 +191,7 @@ spec_nn_gpu <- param_spec(
       doc = paste(
         "CAGRA GPU: Beam width for beam search. If not provided will",
         "be set to `max(c(k, node_degree_final, 16L)) * 2`. Ignored by",
-        "UMAP and tSNE."
+        "UMAP, tSNE and PHATE."
       )
     ),
     max_beam_iters = p_int(
@@ -199,8 +199,8 @@ spec_nn_gpu <- param_spec(
       null_ok = TRUE,
       doc = paste(
         "CAGRA GPU: Maximum number of beam search iterations. If not",
-        "provided, defaults to `3 * beam_width`. Ignored by UMAP and",
-        "tSNE."
+        "provided, defaults to `3 * beam_width`. Ignored by UMAP, tSNE",
+        "and PHATE."
       )
     ),
     n_entry_points = p_int(
@@ -208,7 +208,7 @@ spec_nn_gpu <- param_spec(
       null_ok = TRUE,
       doc = paste(
         "CAGRA GPU: Number of entry points for beam search. If not",
-        "provided, defaults to `8L`. Ignored by UMAP and tSNE."
+        "provided, defaults to `8L`. Ignored by UMAP, tSNE and PHATE."
       )
     )
   )
@@ -330,6 +330,111 @@ spec_tsne_gpu <- param_spec(
       doc = "Embedding initialisation method."
     ),
     randomised = p_lgl(TRUE, doc = "Use randomised SVD for PCA initialisation.")
+  )
+)
+
+spec_phate_gpu <- param_spec(
+  name = "phate_gpu",
+  title = "Wrapper function to generate PHATE parameters (GPU version)",
+  references = "Moon, et al., Nat. Biotechnol., 2019",
+  checker = "PhateGpu",
+  label = "GPU PHATE params",
+  fields = list(
+    decay = p_dbl(
+      40,
+      range = "(0,)",
+      null_ok = TRUE,
+      doc = paste(
+        "Alpha decay exponent of the kernel. Higher values give sharper",
+        "transitions. `NULL` gives a binary connectivity kernel."
+      )
+    ),
+    bandwidth_scale = p_dbl(
+      1,
+      range = "(0,)",
+      doc = "Multiplicative factor on the kernel bandwidth."
+    ),
+    thresh = p_dbl(
+      1e-4,
+      range = "[0,)",
+      doc = paste(
+        "Affinities below this are set to zero. Neighbours past `k` join the",
+        "kernel while their affinity clears it."
+      )
+    ),
+    graph_symmetry = p_choice(
+      "additive",
+      c("additive", "multiplicative", "mnn", "none"),
+      doc = "How to symmetrise the affinity graph."
+    ),
+    n_landmarks = p_int(
+      2048L,
+      range = "[1,)",
+      null_ok = TRUE,
+      doc = paste(
+        "Number of landmarks for the compressed diffusion operator. `NULL`,",
+        "or a value of at least the number of samples, runs the full N x N",
+        "operator, which gets painful fast."
+      )
+    ),
+    landmark_method = p_choice(
+      "spectral",
+      c("spectral", "random", "density"),
+      doc = paste(
+        "How to select the landmarks. `\"spectral\"` runs its randomised SVD",
+        "and k-means on the GPU (or on MLX with `backend = \"mlx\"`)."
+      )
+    ),
+    n_svd = p_int(
+      NULL,
+      range = "[1,)",
+      null_ok = TRUE,
+      doc = paste(
+        "Singular vectors for spectral landmark selection. If `NULL`,",
+        "defaults to `100` on the Rust side."
+      )
+    ),
+    t_max = p_int(
+      100L,
+      range = "[1,)",
+      doc = paste(
+        "Largest diffusion time the Von Neumann entropy knee search",
+        "considers."
+      )
+    ),
+    t_custom = p_int(
+      NULL,
+      range = "[1,)",
+      null_ok = TRUE,
+      doc = "Fixed diffusion time. If `NULL`, picks the knee automatically."
+    ),
+    gamma = p_dbl(
+      1,
+      range = "[-1,1]",
+      doc = "Informational distance constant. `1` is the log potential."
+    ),
+    mds_method = p_choice(
+      "sgd_dense",
+      c("sgd_dense", "classic"),
+      doc = "MDS algorithm for the final embedding."
+    ),
+    mds_iter = p_int(
+      NULL,
+      range = "[1,)",
+      null_ok = TRUE,
+      doc = paste(
+        "Number of SGD-MDS iterations. If `NULL`, the Rust side runs 300",
+        "below 1000 points, 500 below 5000 and 800 otherwise (points being",
+        "the landmarks when landmarks are used)."
+      )
+    ),
+    randomised = p_lgl(
+      TRUE,
+      doc = paste(
+        "Use randomised SVD for classic MDS (`mds_method = \"classic\"`).",
+        "SGD-MDS initialises from a randomised classic MDS either way."
+      )
+    )
   )
 )
 

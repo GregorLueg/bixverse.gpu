@@ -330,6 +330,88 @@ assertParametricUmapParams <- checkmate::makeAssertionFunction(
   checkParametricUmapParams
 )
 
+#' Check GPU PHATE params
+#'
+#' @description Checkmate extension for the output of [params_phate_gpu()].
+#'
+#' @param x The object to check.
+#'
+#' @returns `TRUE` if the check was successful, otherwise a
+#' checkmate-style error string.
+#'
+#' @keywords internal
+checkPhateGpuParams <- function(x) {
+  res <- check_list_shape(
+    x,
+    c(
+      "decay",
+      "bandwidth_scale",
+      "thresh",
+      "graph_symmetry",
+      "n_landmarks",
+      "landmark_method",
+      "n_svd",
+      "t_max",
+      "t_custom",
+      "gamma",
+      "mds_method",
+      "mds_iter",
+      "randomised"
+    )
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- apply_qtest_rules(
+    x,
+    list(
+      decay = c("N1(0,)", "0"),
+      bandwidth_scale = "N1(0,)",
+      thresh = "N1[0,)",
+      n_landmarks = c("I1[1,)", "0"),
+      n_svd = c("I1[1,)", "0"),
+      t_max = "I1[1,)",
+      t_custom = c("I1[1,)", "0"),
+      gamma = "N1[-1,1]",
+      mds_iter = c("I1[1,)", "0"),
+      randomised = "B1"
+    ),
+    label = "GPU PHATE params"
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- apply_choice_rules(
+    x,
+    list(
+      graph_symmetry = c("additive", "multiplicative", "mnn", "none"),
+      landmark_method = c("spectral", "random", "density"),
+      mds_method = c("sgd_dense", "classic")
+    ),
+    label = "GPU PHATE params"
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  return(TRUE)
+}
+
+#' Assert GPU PHATE params
+#'
+#' @inheritParams checkPhateGpuParams
+#' @param .var.name Name of the checked object to print in assertions.
+#' @param add Collection to store assertion messages. See
+#' [checkmate::makeAssertCollection()].
+#'
+#' @returns Invisibly returns the checked object if the assertion is
+#' successful.
+#'
+#' @keywords internal
+assertPhateGpuParams <- checkmate::makeAssertionFunction(checkPhateGpuParams)
+
 #' Check GPU BBKNN params
 #'
 #' @description Checkmate extension for the output of [params_sc_bbknn_gpu()].

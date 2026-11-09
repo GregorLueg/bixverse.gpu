@@ -869,6 +869,79 @@ expect_true(
   info = "tsne_gpu_sc - clusters separated in embedding"
 )
 
+## phate_gpu_sc ----------------------------------------------------------------
+
+### warning on missing embedding -----------------------------------------------
+
+expect_warning(
+  current = phate_gpu_sc(
+    object = sc_obj_plain,
+    embd_to_use = "fake_embd",
+    .verbose = FALSE
+  ),
+  info = "phate_gpu_sc - warning when embedding not found"
+)
+
+### standard run (fresh GPU kNN at the search width) ---------------------------
+
+sc_obj_plain <- phate_gpu_sc(
+  object = sc_obj_plain,
+  phate_params = params_phate_gpu(n_landmarks = 100L, n_svd = 20L),
+  .verbose = FALSE
+)
+
+phate_embd <- get_embedding(sc_obj_plain, "phate")
+
+expect_true(
+  current = checkmate::testMatrix(
+    phate_embd,
+    mode = "numeric",
+    ncols = 2L,
+    row.names = "named",
+    col.names = "named"
+  ),
+  info = "phate_gpu_sc - embedding stored with correct shape and names"
+)
+
+expect_equal(
+  current = colnames(phate_embd),
+  target = c("phate_1", "phate_2"),
+  info = "phate_gpu_sc - column names"
+)
+
+expect_true(
+  current = {
+    sep <- manifoldsR::rs_check_cluster_separation(
+      embd = phate_embd,
+      cluster_membership = as.integer(factor(
+        unlist(sc_obj_plain[["cell_grp"]])
+      ))
+    )
+    mean(sep$within_dists) < mean(sep$between_dists)
+  },
+  info = "phate_gpu_sc - clusters separated in embedding"
+)
+
+### cached knn -----------------------------------------------------------------
+
+# the cached kNN is `knn_k` wide, far below the 35 PHATE searches at k = 5
+expect_warning(
+  current = sc_obj_plain <- phate_gpu_sc(
+    object = sc_obj_plain,
+    use_knn = TRUE,
+    slot_name = "phate_cached",
+    phate_params = params_phate_gpu(n_landmarks = 100L, n_svd = 20L),
+    .verbose = FALSE
+  ),
+  pattern = "35 wide",
+  info = "phate_gpu_sc - narrow cached kNN warns"
+)
+
+expect_true(
+  current = "phate_cached" %in% get_available_embeddings(sc_obj_plain),
+  info = "phate_gpu_sc - custom slot name honoured"
+)
+
 # clean up ---------------------------------------------------------------------
 
 on.exit(unlink(test_temp_dir, recursive = TRUE, force = TRUE), add = TRUE)
