@@ -1,6 +1,6 @@
 ---
 name: bixverse-gpu
-description: How to USE the bixverse.gpu R package, the GPU (WGPU, any vendor, no CUDA) companion to bixverse and manifoldsR. Covers GPU PCA (exact Lanczos or randomised), Harmony v2, fastMNN, kNN (exhaustive, IVF, NN-descent, CAGRA), fast clustering, Leiden/Louvain, BBKNN, Bonsai, Scrublet, SEACells, SCENIC, NMF and NEBULA on SingleCells / SingleCellsSubset / MetaCells objects, plus GPU UMAP, t-SNE, parametric UMAP, k-means and correlations on plain matrices. Use this whenever a task involves bixverse.gpu or any of its functions (calculate_pca_gpu_sc, harmony_v2_gpu_sc, fast_mnn_gpu_sc, find_clusters_gpu_sc, bonsai_gpu_sc, find_neighbours_gpu_sc, umap_gpu, tsne_gpu, parametric_umap, scrublet_gpu_sc, scenic_grn_sc_gpu, generate_seacells_gpu_sc, nebula_gpu_sc, *_nmf_gpu_sc, k_means_cluster_gpu, rs_cor_gpu, params_*_gpu), or when a user wants to speed up a bixverse single cell workflow or a manifoldsR embedding on a GPU. Apply even when the package is not named but the user is running large single cell data through bixverse and asks about GPU acceleration.
+description: How to USE the bixverse.gpu R package, the GPU (WGPU, any vendor, no CUDA) companion to bixverse and manifoldsR. Covers GPU PCA (exact Lanczos or randomised), Harmony v2, fastMNN, kNN (exhaustive, IVF, NN-descent, CAGRA), fast clustering, Leiden/Louvain, BBKNN, Bonsai, Scrublet, SEACells, SCENIC, NMF and NEBULA on SingleCells / SingleCellsSubset / MetaCells objects, plus GPU UMAP, t-SNE, PHATE, parametric UMAP, k-means and correlations on plain matrices. Use this whenever a task involves bixverse.gpu or any of its functions (calculate_pca_gpu_sc, harmony_v2_gpu_sc, fast_mnn_gpu_sc, find_clusters_gpu_sc, bonsai_gpu_sc, find_neighbours_gpu_sc, umap_gpu, tsne_gpu, phate_gpu, parametric_umap, scrublet_gpu_sc, scenic_grn_sc_gpu, generate_seacells_gpu_sc, nebula_gpu_sc, *_nmf_gpu_sc, k_means_cluster_gpu, rs_cor_gpu, params_*_gpu), or when a user wants to speed up a bixverse single cell workflow or a manifoldsR embedding on a GPU. Apply even when the package is not named but the user is running large single cell data through bixverse and asks about GPU acceleration.
 ---
 
 # Using bixverse.gpu
@@ -42,10 +42,10 @@ the two by downstream metrics, never by a diff.
 
 | Task | Read |
 |---|---|
-| Installing, drivers, Windows, MLX on Apple Silicon, missing FFT t-SNE | `references/install.md` |
-| Single cell: PCA, Harmony v2, fastMNN, kNN, fast clustering, Leiden, BBKNN, UMAP / t-SNE on the object | `references/single-cell.md` |
+| Installing, drivers, Windows, MLX on Apple Silicon | `references/install.md` |
+| Single cell: PCA, Harmony v2, fastMNN, kNN, fast clustering, Leiden, BBKNN, UMAP / t-SNE / PHATE on the object | `references/single-cell.md` |
 | Single cell: Scrublet, SEACells, Bonsai, SCENIC, NMF, NEBULA | `references/single-cell.md` |
-| Plain matrices: `umap_gpu()`, `tsne_gpu()`, parametric UMAP, kNN graphs, k-means, correlation / covariance | `references/matrix-methods.md` |
+| Plain matrices: `umap_gpu()`, `tsne_gpu()`, `phate_gpu()`, parametric UMAP, kNN graphs, k-means, correlation / covariance | `references/matrix-methods.md` |
 | Does function X exist? What's it called? | `references/api-index.md` |
 
 For anything about the bixverse side (loading, QC, HVG, clustering, markers,
@@ -93,7 +93,8 @@ unlink(dir_sc, recursive = TRUE, force = TRUE)
 ## Traps that bite everywhere
 
 - **Two kNN vocabularies.** `params_nn_gpu()` (used by `find_neighbours_gpu_sc()`,
-  `umap_gpu()`, `tsne_gpu()`, `generate_knn_graph_gpu()`) takes `dist_metric`,
+  `umap_gpu()`, `tsne_gpu()`, `phate_gpu()`, `generate_knn_graph_gpu()`) takes
+  `dist_metric`,
   `n_list`, `n_probes`, `n_tree`, `node_degree_final`. The `knn = list(...)`
   blocks inside `params_scrublet_gpu()`, `params_sc_bbknn_gpu()` and
   `params_sc_fast_cluster_gpu()` are validated against

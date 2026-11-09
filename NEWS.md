@@ -1,6 +1,26 @@
 # bixverse.gpu 0.7.0
 
+## Features
+
+* GPU PHATE: `phate_gpu()` on plain matrices, `phate_gpu_sc()` on
+  `SingleCells`, `params_phate_gpu()` and `rs_phate_gpu()` /
+  `rs_phate_from_knn_gpu()`. The kNN search and the randomised SVD and k-means
+  of the default spectral landmark selection run on the GPU; diffusion time,
+  MDS and the landmark interpolation stay on the CPU. `backend = "mlx"` moves
+  the kNN and the spectral landmarks to MLX. Defaults follow manifolds-rs:
+  `k = 5L`, a `6 * k + 5` wide search, 2048 spectral landmarks.
+  `phate_gpu_sc()` builds a fresh kNN by default, since the cached one is
+  usually far narrower than PHATE wants. New vignette:
+  [GPU-accelerated PHATE](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_phate.html).
+
 ## Breaking changes
+
+* `umap_gpu()` and `umap_gpu_sc()` cut a precomputed kNN wider than `k` down
+  to its nearest `k` neighbours, with a warning on stderr. They used every
+  neighbour given. Different embeddings whenever the cached graph was wider
+  than `k`.
+* Errors from the Rust side reach you as they are: `umap_gpu()`, `tsne_gpu()`
+  and `parametric_umap()` no longer wrap them in "... computation failed: ".
 
 * The neighbour graph is a `SingleCellConnectivity` now, following bixverse
   0.8.4, which moved it out of igraph and into Rust. `find_neighbours_gpu_sc()`
@@ -34,7 +54,7 @@
 
 ## Chores
 
-* `ann-search-rs` 0.12, `manifolds-rs` 0.9.0 and `bixverse-rs` 0.10.0. UMAP and
+* `ann-search-rs` 0.12.2, `manifolds-rs` 0.9.0 and `bixverse-rs` 0.10.0. UMAP and
   tSNE pick up the manifolds-rs changes: `"nndescent"` builds the kNN graph
   directly there too, spectral initialisation gives different coordinates at
   the same seed, PCA initialisation runs its centring and SVD in fp64, and

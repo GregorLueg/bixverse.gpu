@@ -107,7 +107,8 @@ Clusters separate cleanly.
 
 Three GPU backends via `knn_method`:
 
-- **`"nndescent"`**: NN-descent with CAGRA-style graph pruning. Solid default.
+- **`"nndescent"`**: the NN-descent kNN graph itself, no index and no
+  search. Solid default.
 - **`"ivf"`**: inverted file index over Voronoi cells. Wins on large data
   where an approximate answer is fine.
 - **`"exhaustive"`**: exact brute force. Small data or ground-truth checks.

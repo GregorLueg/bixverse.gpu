@@ -1,7 +1,7 @@
 # Methods on plain matrices
 
 These take a numeric matrix (samples x features) rather than a bixverse
-object. They mirror `manifoldsR` (UMAP, t-SNE, k-means) and `bixverse`
+object. They mirror `manifoldsR` (UMAP, t-SNE, PHATE, k-means) and `bixverse`
 (`rs_cor()`, `rs_covariance()`), with the same mental model and mostly the same
 knobs.
 
@@ -43,7 +43,7 @@ faster. The GPU pulls ahead from tens of thousands up.
 emb <- tsne_gpu(
   data = mat,
   perplexity = 30,
-  approx_type = "fft_3k_gpu",        # default; "fft", "fft_3k" are Unix only
+  approx_type = "fft_3k_gpu",        # default; or "bh", "bh_qd", "fft", "fft_3k"
   knn_method = "exhaustive",
   tsne_params = params_tsne_gpu()
 )
@@ -52,8 +52,8 @@ emb <- tsne_gpu(
 `approx_type`:
 
 - `"fft_3k_gpu"`: default, three-kernel FFT optimiser on the device.
-- `"bh"`, `"fft"`, `"fft_3k"`: the `manifoldsR` CPU optimisers with a GPU
-  kNN. The win is the kNN share of the run.
+- `"bh"`, `"bh_qd"`, `"fft"`, `"fft_3k"`: the `manifoldsR` CPU optimisers
+  with a GPU kNN. The win is the kNN share of the run.
 
 - `k` is derived as roughly `3 * perplexity`. A pre-computed `knn =` needs at
   least that many neighbours.
@@ -61,8 +61,32 @@ emb <- tsne_gpu(
   `"exhaustive"` or `"ivf"` at perplexity 30 and above.
 - FFT on very large data can relax into a gapless disc. Set
   `late_exag_factor` in `params_tsne_gpu()` to 2 to 4.
-- UMAP and t-SNE always run in fp32; manifolds-rs does the steps prone to
-  catastrophic cancellation in fp64 internally.
+- UMAP, t-SNE and PHATE always run in fp32; manifolds-rs does the steps prone
+  to catastrophic cancellation in fp64 internally.
+
+## PHATE
+
+```r
+emb <- phate_gpu(
+  data = mat,
+  k = 5L,
+  knn_method = "nndescent",          # or "ivf", "exhaustive"
+  phate_params = params_phate_gpu()  # 2048 spectral landmarks by default
+)
+```
+
+The kNN search and the spectral landmark selection (randomised SVD plus
+k-means) run on the device; diffusion time, powering, MDS and the landmark
+interpolation on the CPU. For continuous structure (trajectories, branching),
+not discrete clusters.
+
+- The search runs `6 * k + 5` wide (35 at `k = 5`). A pre-computed `knn =`
+  should be that wide; a narrower one warns.
+- `params_phate_gpu(n_landmarks = NULL)` runs the full N x N operator. Fine
+  for a few thousand points, warns from 10k up.
+- `decay = NULL` gives a binary kernel; `t_custom` fixes the diffusion time
+  instead of the entropy knee.
+- `backend = "mlx"` moves the kNN and the spectral landmarks to MLX.
 
 ## kNN graphs
 
@@ -76,10 +100,11 @@ knn <- generate_knn_graph_gpu(
 ```
 
 Returns a `manifoldsR` nearest neighbours object: **1-indexed** indices and
-true (not squared) Euclidean distances. Feeds `umap_gpu(knn = )` and
-`tsne_gpu(knn = )`. `"nndescent"` reads the kNN straight off the descent graph;
-`"cagra"` adds the CAGRA prune and a beam search. `umap_gpu()` and `tsne_gpu()`
-have no `"cagra"`. The `extract_knn` argument is deprecated in favour of
+true (not squared) Euclidean distances. Feeds `umap_gpu(knn = )`,
+`tsne_gpu(knn = )` and `phate_gpu(knn = )`. `umap_gpu()` cuts a graph wider
+than `k` down to `k`. `"nndescent"` reads the kNN straight off the descent
+graph; `"cagra"` adds the CAGRA prune and a beam search. `umap_gpu()`,
+`tsne_gpu()` and `phate_gpu()` have no `"cagra"`. The `extract_knn` argument is deprecated in favour of
 `knn_method`.
 
 ## Parametric UMAP

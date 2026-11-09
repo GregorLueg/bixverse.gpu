@@ -62,9 +62,18 @@ Supported. The HDF5 build used to hit `MAX_PATH`; the cargo target directory
 now lives in `~/.bixverse-gpu-cargo` to stay clear of it. Older answers saying
 Windows does not work predate that.
 
-One gap: CPU FFT t-SNE. FFTW does not build there, so `approx_type = "fft"`
-and `"fft_3k"` in `tsne_gpu()` / `tsne_gpu_sc()` error. The default
-`"fft_3k_gpu"` needs no FFTW and works everywhere, as does Barnes-Hut (`"bh"`).
+The CPU FFT t-SNE (`approx_type = "fft"` and `"fft_3k"`) runs on the
+pure-Rust rustfft now, so it works there too; older answers about FFTW are out
+of date.
+
+The real gap is the DX12 backend: wgpu compiles shaders with FXC, which rejects
+a handful of kernels. k-means, IVF kNN, t-SNE, NMF, Scrublet, SCENIC, SEACells
+and parts of the single cell suite error out; UMAP, parametric UMAP, fastMNN
+and exhaustive / NN-descent kNN run. PHATE is untested there; its default
+spectral landmarks use the GPU k-means, so try
+`params_phate_gpu(landmark_method = "random")` if it fails.
+`Sys.setenv(WGPU_BACKEND = "vulkan")` before the first GPU call should sidestep
+FXC, but that is untested.
 
 ## CPU training for parametric UMAP
 

@@ -103,7 +103,8 @@ Three GPU backends via `knn_method`:
 - **`"ivf"`**: inverted file index over Voronoi cells. Wins on large data
   where an approximate answer is fine. Works very well on strongly clustered
   data.
-- **`"nndescent"`**: NN-descent with CAGRA-style graph pruning. Solid default.
+- **`"nndescent"`**: the NN-descent kNN graph itself, no index and no
+  search. Loses ground at the high `k` t-SNE asks for.
 
 Tuning knobs live in `params_nn_gpu()`, defaults are fine for most cases.
 The knobs are identical to the ones described in the UMAP vignette.
@@ -170,7 +171,7 @@ Five options via `approx_type`:
 
 - **`"fft_3k_gpu"`**: the default. FFT-interpolated repulsion with three
   kernels (`q`, `q^2 dx`, `q^2 dy`), fully on the GPU. Always runs in fp32
-  (f64 kernels don't run on Metal). Works on Windows, no FFTW needed.
+  (f64 kernels don't run on Metal).
 - **`"bh"`**: Barnes-Hut on the CPU. `O(N log N)`.
 - **`"bh_qd"`**: the quick-and-dirty Barnes-Hut from
   [qdtsne](https://github.com/libscran/qdtsne), on the CPU. Tree depth capped
@@ -183,11 +184,11 @@ Five options via `approx_type`:
 - **`"fft_3k"`**: the CPU twin of `"fft_3k_gpu"`. One forward and three
   inverse FFTs per epoch instead of four each.
 
-The two CPU FFT variants need FFTW, so they're Unix-only.
+The two CPU FFT variants run on the pure-Rust rustfft, so they work on every
+platform.
 
 ```{r}
 #| label: tsne fft 3k cpu
-#| eval: !expr .Platform$OS.type == "unix"
 tsne_fft_3k <- tsne_gpu(
   data = cluster_data$data,
   perplexity = 15,
@@ -224,11 +225,7 @@ Same data, same kNN backend, only the optimiser changes.
 
 ```{r}
 #| label: tsne timings
-approx_types <- if (.Platform$OS.type == "unix") {
-  c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")
-} else {
-  c("fft_3k_gpu", "bh", "bh_qd")
-}
+approx_types <- c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")
 
 timings <- rbindlist(lapply(approx_types, \(approx) {
   secs <- system.time(
@@ -287,7 +284,7 @@ Note the kNN needs enough neighbours for the perplexity you're using;
 ## When does the GPU version pay off?
 
 The CPU t-SNE in `manifoldsR` is already fast (Rust, SIMD kNN, FFT
-optimiser on Unix). With a CPU optimiser the GPU only buys you the kNN, so
+optimiser). With a CPU optimiser the GPU only buys you the kNN, so
 the payoff is the kNN share of the wall-clock. `"fft_3k_gpu"` moves the
 optimiser over as well; check the timings above against your own data size
 and hardware before assuming it wins.

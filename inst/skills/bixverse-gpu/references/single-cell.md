@@ -16,6 +16,7 @@ those. The GPU functions slot into the same chain.
 | BBKNN | `bbknn_sc()` | `bbknn_gpu_sc()` | `SingleCells`, `SingleCellsSubset` |
 | UMAP | `umap_sc()` | `umap_gpu_sc()` | `SingleCells` |
 | t-SNE | `tsne_sc()` | `tsne_gpu_sc()` | `SingleCells` |
+| PHATE | `phate_sc()` | `phate_gpu_sc()` | `SingleCells` |
 | Scrublet | `scrublet_sc()` | `scrublet_gpu_sc()` | `SingleCells` |
 | SEACells | `generate_seacells_sc()` | `generate_seacells_gpu_sc()` | `SingleCells`, `SingleCellsSubset` |
 | Bonsai tree | `bonsai_sc()` | `bonsai_gpu_sc()` | `SingleCells`, `MetaCells` |
@@ -193,17 +194,22 @@ igraph.
 search and layout stay on the CPU. Posteriors are f32, so a gene right at the
 signal-to-noise threshold can land on the other side. Returns a `BonsaiTree`.
 
-## UMAP and t-SNE on the object
+## UMAP, t-SNE and PHATE on the object
 
 ```r
 obj <- umap_gpu_sc(obj, embd_to_use = "harmony_gpu", slot_name = "umap_harm")
 obj <- tsne_gpu_sc(obj, embd_to_use = "harmony_gpu", perplexity = 30)
+obj <- phate_gpu_sc(obj, embd_to_use = "harmony_gpu")
 ```
 
-Both write to `other_embeddings[[slot_name]]` (defaults `"umap"` / `"tsne"`),
-readable by `bixverse.plots::embedding_plot_sc()`.
+All write to `other_embeddings[[slot_name]]` (defaults `"umap"` / `"tsne"` /
+`"phate"`), readable by `bixverse.plots::embedding_plot_sc()`.
 
 - `umap_gpu_sc(use_knn = TRUE)` is the **default** and reuses the stored kNN.
+  A stored kNN wider than `k` is cut down to `k`.
+- `phate_gpu_sc(use_knn = FALSE)` is the **default**: PHATE searches
+  `6 * k + 5` wide (35 at `k = 5`), far wider than the stored kNN usually is.
+  Reusing a narrower one warns.
 - `tsne_gpu_sc(use_knn = FALSE)` is the **default** and builds a fresh kNN each
   call, because t-SNE needs `k` around `3 * perplexity`. Only set
   `use_knn = TRUE` if the stored `k` is at least that. At perplexity 30 that
@@ -212,7 +218,8 @@ readable by `bixverse.plots::embedding_plot_sc()`.
 - With the default `approx_type = "fft_3k_gpu"` the t-SNE optimiser runs on
   the device; `"bh"`, `"fft"` and `"fft_3k"` optimise on the CPU. UMAP runs
   both kNN and the Adam optimiser on the device.
-- Knobs are in `params_umap_gpu()` / `params_tsne_gpu()`, see
+- Knobs are in `params_umap_gpu()` / `params_tsne_gpu()` /
+  `params_phate_gpu()`, see
   `matrix-methods.md`.
 
 ## Scrublet
