@@ -8,10 +8,13 @@
   of the default spectral landmark selection run on the GPU; diffusion time,
   MDS and the landmark interpolation stay on the CPU. `backend = "mlx"` moves
   the kNN and the spectral landmarks to MLX. Defaults follow manifolds-rs:
-  `k = 5L`, a `6 * k + 5` wide search, 2048 spectral landmarks.
-  `phate_gpu_sc()` builds a fresh kNN by default, since the cached one is
+  `k = 5L`, a `6 * k + 5` wide search on `knn_method = "ivf"`, 2048 spectral
+  landmarks. `phate_gpu_sc()` builds a fresh kNN by default, since the cached one is
   usually far narrower than PHATE wants. New vignette:
   [GPU-accelerated PHATE](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_phate.html).
+* `params_umap_gpu(optimiser = "sgd_parallel")`: lock-free (Hogwild!) SGD on
+  the CPU for `umap_gpu()` and `umap_gpu_sc()`. Not reproducible run to run
+  with more than one thread.
 
 ## Breaking changes
 
@@ -19,6 +22,11 @@
   to its nearest `k` neighbours, with a warning on stderr. They used every
   neighbour given. Different embeddings whenever the cached graph was wider
   than `k`.
+* `umap_gpu()` and `umap_gpu_sc()` with `n_epochs = NULL`: only the SGD
+  optimisers drop to 200 epochs above 10k samples, as in manifoldsR 0.6.0.
+  `"adam"` now always gets 500 (was 200 above 10k).
+* `"sgd"` applies an edge's negative samples as one step (manifolds-rs), so
+  different embeddings at the same seed.
 * `parametric_umap()` defaults to `min_dist = 0.5` (was `0.1`), matching the
   single default curve manifolds-rs now fits. Different embeddings with the
   defaults.
@@ -63,7 +71,7 @@
   the same seed, PCA initialisation runs its centring and SVD in fp64, and
   `.verbose` follows one grammar: `1L` prints timed stages and epochs every 50,
   `2L` adds parameters and the kNN internals.
-* Needs bixverse >= 0.9.0. `igraph` and `Matrix` moved from Imports to
+* Needs bixverse >= 0.9.0 and manifoldsR >= 0.6.0. `igraph` and `Matrix` moved from Imports to
   Suggests; only the tests use them.
 
 # bixverse.gpu 0.6.1

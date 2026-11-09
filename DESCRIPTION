@@ -35,7 +35,7 @@ Imports:
     data.table,
     lifecycle,
     magrittr,
-    manifoldsR (>= 0.3.0),
+    manifoldsR (>= 0.6.0),
     purrr,
     qs2,
     rextendr,

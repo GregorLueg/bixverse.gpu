@@ -209,7 +209,8 @@ All write to `other_embeddings[[slot_name]]` (defaults `"umap"` / `"tsne"` /
   A stored kNN wider than `k` is cut down to `k`.
 - `phate_gpu_sc(use_knn = FALSE)` is the **default**: PHATE searches
   `6 * k + 5` wide (35 at `k = 5`), far wider than the stored kNN usually is.
-  Reusing a narrower one warns.
+  Reusing a narrower one warns. The fresh search defaults to
+  `knn_method = "ivf"`, since NN-descent falls behind at that width.
 - `tsne_gpu_sc(use_knn = FALSE)` is the **default** and builds a fresh kNN each
   call, because t-SNE needs `k` around `3 * perplexity`. Only set
   `use_knn = TRUE` if the stored `k` is at least that. At perplexity 30 that

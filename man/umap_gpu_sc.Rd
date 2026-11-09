@@ -64,7 +64,9 @@ of \code{c("nndescent", "exhaustive", "ivf")}.}
 \item{seed}{Integer. For reproducibility.}
 
 \item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the kNN
-search and the \code{"adam_gpu"} optimiser on MLX, see \code{\link[=umap_gpu]{umap_gpu()}}.}
+search and the \code{"adam_gpu"} optimiser on MLX, see \code{\link[=umap_gpu]{umap_gpu()}}. The CPU
+optimisers (\code{"adam_parallel"}, \code{"sgd"}, \code{"sgd_parallel"}, \code{"adam"}) stay on
+the CPU.}
 
 \item{.verbose}{Boolean or integer. Controls verbosity.}
 }

@@ -29,6 +29,11 @@ fuzzy simplicial set and initialisation on the CPU.
   kNN, CPU optimiser.
 - `"adam"`: sequential CPU Adam.
 - `"sgd"`: the original UMAP SGD. Pairs with a lower `min_dist`.
+- `"sgd_parallel"`: lock-free (Hogwild!) SGD over all threads. Not
+  reproducible run to run with more than one thread.
+
+With `n_epochs = NULL`, the SGD optimisers drop to 200 epochs above 10k
+points; the Adam optimisers always get 500.
 
 Sweeping `min_dist` or `spread`: build the kNN once with
 `generate_knn_graph_gpu()` and pass it as `knn =`. The kNN is the expensive
@@ -70,7 +75,7 @@ emb <- tsne_gpu(
 emb <- phate_gpu(
   data = mat,
   k = 5L,
-  knn_method = "nndescent",          # or "ivf", "exhaustive"
+  knn_method = "ivf",                # default; or "exhaustive", "nndescent"
   phate_params = params_phate_gpu()  # 2048 spectral landmarks by default
 )
 ```

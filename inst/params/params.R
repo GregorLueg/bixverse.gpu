@@ -249,8 +249,11 @@ spec_umap_gpu <- param_spec(
     gamma = p_dbl(1, doc = "Repulsion strength."),
     optimiser = p_choice(
       "adam_gpu",
-      c("adam_gpu", "adam_parallel", "sgd", "adam"),
-      doc = "The optimiser for the embedding."
+      c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam"),
+      doc = paste(
+        "The optimiser for the embedding. `\"sgd_parallel\"` is lock-free",
+        "(Hogwild!) and not reproducible run to run with more than one thread."
+      )
     ),
     init = p_choice(
       "spectral",

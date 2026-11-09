@@ -13,7 +13,7 @@ phate_gpu_sc(
   modality = c("rna", "adt", "wnn"),
   n_dim = 2L,
   k = 5L,
-  knn_method = c("nndescent", "exhaustive", "ivf"),
+  knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   phate_params = params_phate_gpu(),
   seed = 42L,
@@ -46,7 +46,8 @@ use. If \code{NULL}, all will be used.}
 bandwidth. Defaults to \code{5L}.}
 
 \item{knn_method}{String. GPU (approximate) nearest neighbour method. One
-of \code{c("nndescent", "exhaustive", "ivf")}.}
+of \code{c("ivf", "exhaustive", "nndescent")}. Defaults to \code{"ivf"}, as the
+\code{6 * k + 5} wide search is past the width where NN-descent keeps up.}
 
 \item{nn_params}{Named list. GPU kNN parameters, see \code{\link[=params_nn_gpu]{params_nn_gpu()}}.}
 

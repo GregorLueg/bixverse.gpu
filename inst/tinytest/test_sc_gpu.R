@@ -821,6 +821,32 @@ expect_true(
   info = "umap_gpu_sc - custom slot name honoured"
 )
 
+### lock-free parallel SGD -----------------------------------------------------
+
+sc_obj_plain <- umap_gpu_sc(
+  object = sc_obj_plain,
+  k = knn_k,
+  min_dist = 0.1,
+  umap_params = params_umap_gpu(optimiser = "sgd_parallel"),
+  slot_name = "umap_sgd_parallel",
+  .verbose = FALSE
+)
+
+umap_sgd_parallel_embd <- get_embedding(sc_obj_plain, "umap_sgd_parallel")
+
+expect_true(
+  current = checkmate::testMatrix(
+    umap_sgd_parallel_embd,
+    mode = "numeric",
+    any.missing = FALSE,
+    ncols = 2L,
+    nrows = nrow(umap_embd),
+    row.names = "named"
+  ) &&
+    all(is.finite(umap_sgd_parallel_embd)),
+  info = "umap_gpu_sc - sgd_parallel embedding stored with correct shape"
+)
+
 ## tsne_gpu_sc ----------------------------------------------------------------
 
 ### warning on missing embedding -----------------------------------------------

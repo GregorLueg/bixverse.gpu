@@ -142,8 +142,8 @@ pub struct InternalUmapParamsGpu<T> {
     /// When setting initialisation to `"pca"` shall randomised SVD be used (can
     /// make it faster on large data sets).
     pub randomised: bool,
-    /// Which of the possible optimisers to use. One of `"sgd"`, `"adam"`,
-    /// `"adam_parallel"` or `"adam_gpu"`
+    /// Which of the possible optimisers to use. One of `"sgd"`,
+    /// `"sgd_parallel"`, `"adam"`, `"adam_parallel"` or `"adam_gpu"`
     pub optimiser: String,
     /// The UMAP optimisation parameters.
     pub param_optimiser: UmapOptimParams<T>,

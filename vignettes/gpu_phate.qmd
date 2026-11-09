@@ -27,8 +27,8 @@ This vignette only covers what's different here.
 
 Current split of work:
 
-- **kNN graph construction**: GPU. Three backends (`"nndescent"`, `"ivf"`,
-  `"exhaustive"`). The search runs `6 * k + 5` wide, 35 neighbours at the
+- **kNN graph construction**: GPU. Three backends (`"ivf"`, `"exhaustive"`,
+  `"nndescent"`). The search runs `6 * k + 5` wide, 35 neighbours at the
   default `k = 5L`: neighbours past `k` stay in the kernel while their
   affinity clears `thresh`.
 - **Landmark selection**: GPU for the default `"spectral"` method (randomised
@@ -89,13 +89,13 @@ GPU, diffusion time from the Von Neumann entropy knee, SGD-MDS.
 phate_default <- phate_gpu(
   data = trajectory_data$data,
   k = 5L,
-  knn_method = "nndescent",
+  knn_method = "ivf",
   phate_params = params_phate_gpu(),
   seed = 42L,
   .verbose = TRUE
 )
 
-plot_phate(phate_default, "phate_gpu, default (NN-descent + spectral)")
+plot_phate(phate_default, "phate_gpu, default (IVF + spectral)")
 ```
 
 ## Choosing a kNN backend
@@ -103,22 +103,23 @@ plot_phate(phate_default, "phate_gpu, default (NN-descent + spectral)")
 Same three GPU backends as for UMAP and t-SNE, and the same knobs in
 `params_nn_gpu()`:
 
+- **`"ivf"`**: inverted file index over Voronoi cells. The default, matching
+  manifolds-rs: PHATE searches far wider than UMAP does, and that is where
+  NN-descent falls behind.
 - **`"nndescent"`**: the NN-descent graph itself, no index and no search.
-  The default, matching manifolds-rs.
-- **`"ivf"`**: inverted file index over Voronoi cells. Worth a try given
-  PHATE searches wider than UMAP does; check the timings below.
+  Check the timings below before reaching for it.
 - **`"exhaustive"`**: exact brute force. Small data or ground-truth checks.
 
 ```{r}
-#| label: phate ivf
-phate_ivf <- phate_gpu(
+#| label: phate nndescent
+phate_nndescent <- phate_gpu(
   data = trajectory_data$data,
-  knn_method = "ivf",
+  knn_method = "nndescent",
   seed = 42L,
   .verbose = TRUE
 )
 
-plot_phate(phate_ivf, "phate_gpu, IVF kNN")
+plot_phate(phate_nndescent, "phate_gpu, NN-descent kNN")
 ```
 
 ### Timings
@@ -181,7 +182,7 @@ missing from the kernel.
 knn_precomputed <- generate_knn_graph_gpu(
   data = trajectory_data$data,
   k = 35L, # 6 * k + 5 for k = 5
-  knn_method = "nndescent",
+  knn_method = "ivf",
   .verbose = TRUE
 )
 

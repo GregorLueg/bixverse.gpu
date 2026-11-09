@@ -1182,8 +1182,10 @@ params_tsne_gpu <- function(
 #' @param neg_sample_rate Integer. Number of negative samples per positive
 #' sample. Defaults to `5L`.
 #' @param gamma Numeric. Repulsion strength. Defaults to `1.0`.
-#' @param optimiser String. The optimiser for the embedding. One of
-#' `c("adam_gpu", "adam_parallel", "sgd", "adam")`. Defaults to `"adam_gpu"`.
+#' @param optimiser String. The optimiser for the embedding. `"sgd_parallel"` is
+#' lock-free (Hogwild!) and not reproducible run to run with more than one
+#' thread. One of `c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel",
+#' "adam")`. Defaults to `"adam_gpu"`.
 #' @param init String. Embedding initialisation method. One of `c("spectral",
 #' "pca", "random")`. Defaults to `"spectral"`.
 #' @param randomised Boolean. Use randomised SVD for PCA initialisation.
@@ -1203,8 +1205,10 @@ params_tsne_gpu <- function(
 #'  \item neg_sample_rate - Integer. Number of negative samples per positive
 #'  sample. Defaults to `5L`.
 #'  \item gamma - Numeric. Repulsion strength. Defaults to `1.0`.
-#'  \item optimiser - String. The optimiser for the embedding. One of
-#'  `c("adam_gpu", "adam_parallel", "sgd", "adam")`. Defaults to `"adam_gpu"`.
+#'  \item optimiser - String. The optimiser for the embedding. `"sgd_parallel"`
+#'  is lock-free (Hogwild!) and not reproducible run to run with more than one
+#'  thread. One of `c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel",
+#'  "adam")`. Defaults to `"adam_gpu"`.
 #'  \item init - String. Embedding initialisation method. One of `c("spectral",
 #'  "pca", "random")`. Defaults to `"spectral"`.
 #'  \item randomised - Boolean. Use randomised SVD for PCA initialisation.
@@ -1220,7 +1224,7 @@ params_umap_gpu <- function(
   n_epochs = NULL,
   neg_sample_rate = 5L,
   gamma = 1.0,
-  optimiser = c("adam_gpu", "adam_parallel", "sgd", "adam"),
+  optimiser = c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam"),
   init = c("spectral", "pca", "random"),
   randomised = FALSE
 ) {
@@ -1237,7 +1241,7 @@ params_umap_gpu <- function(
   checkmate::qassert(gamma, "N1")
   checkmate::assertChoice(
     optimiser,
-    c("adam_gpu", "adam_parallel", "sgd", "adam")
+    c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam")
   )
   checkmate::assertChoice(init, c("spectral", "pca", "random"))
   checkmate::qassert(randomised, "B1")

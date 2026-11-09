@@ -9,7 +9,7 @@ phate_gpu(
   knn = NULL,
   n_dim = 2L,
   k = 5L,
-  knn_method = c("nndescent", "exhaustive", "ivf"),
+  knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   phate_params = params_phate_gpu(),
   seed = 42L,
@@ -33,7 +33,9 @@ to \code{2L}.}
 bandwidth. Defaults to \code{5L}.}
 
 \item{knn_method}{Character. GPU-accelerated (approximate) nearest
-neighbour method to use. One of \code{"nndescent"}, \code{"exhaustive"} or \code{"ivf"}.}
+neighbour method to use. One of \code{"ivf"}, \code{"exhaustive"} or \code{"nndescent"}.
+Defaults to \code{"ivf"}: the \code{6 * k + 5} wide search is past the width where
+NN-descent keeps up.}
 
 \item{nn_params}{Named list. Nearest neighbour search parameters, see
 \code{\link[=params_nn_gpu]{params_nn_gpu()}}.}

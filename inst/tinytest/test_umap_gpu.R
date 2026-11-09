@@ -71,6 +71,39 @@ expect_equal(
   info = "umap gpu df is the same as umap gpu matrix return results"
 )
 
+### lock-free parallel SGD ------------------------------------------------------
+
+umap_sgd_parallel <- umap_gpu(
+  data = cluster_data,
+  k = 5L,
+  min_dist = 0.1,
+  umap_params = params_umap_gpu(optimiser = "sgd_parallel"),
+  .verbose = FALSE
+)
+
+umap_sgd_parallel_tests <- check_cluster_separation(
+  embd = umap_sgd_parallel,
+  cluster_membership = cluster_membership
+)
+
+expect_true(
+  current = checkmate::testMatrix(
+    x = umap_sgd_parallel,
+    mode = "numeric",
+    any.missing = FALSE,
+    ncols = 2L,
+    nrows = n_samples
+  ) &&
+    all(is.finite(umap_sgd_parallel)),
+  info = "umap gpu sgd_parallel result correctly returned"
+)
+
+expect_true(
+  current = mean(umap_sgd_parallel_tests$within_dists) <
+    mean(umap_sgd_parallel_tests$between_dists),
+  info = "umap gpu sgd_parallel separates clusters"
+)
+
 ## .prepare_umap_params_gpu ----------------------------------------------------
 
 ### n_epochs resolution --------------------------------------------------------
@@ -151,8 +184,24 @@ prep_adam_large <- .prepare_umap_params_gpu(
 
 expect_equal(
   current = prep_adam_large$n_epochs,
+  target = 500L,
+  info = "adam with n > 10000 gets n_epochs = 500"
+)
+
+prep_sgd_parallel_large <- .prepare_umap_params_gpu(
+  n = 20000L,
+  min_dist = 0.1,
+  spread = 1.0,
+  knn_method = "nndescent",
+  nn_params = params_nn_gpu(),
+  umap_params = params_umap_gpu(optimiser = "sgd_parallel"),
+  .verbose = FALSE
+)
+
+expect_equal(
+  current = prep_sgd_parallel_large$n_epochs,
   target = 200L,
-  info = "adam with n > 10000 gets n_epochs = 200"
+  info = "sgd_parallel with n > 10000 gets n_epochs = 200"
 )
 
 prep_user_epochs <- .prepare_umap_params_gpu(

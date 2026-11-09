@@ -567,7 +567,6 @@ dependencies = [
 [[package]]
 name = "bixverse-core"
 version = "0.10.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs?branch=feat-singlecell-py#4aed8e96e49a052be256a68d2dd2b210480bb38b"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -590,7 +589,6 @@ dependencies = [
 [[package]]
 name = "bixverse-gpu"
 version = "0.10.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs?branch=feat-singlecell-py#4aed8e96e49a052be256a68d2dd2b210480bb38b"
 dependencies = [
  "ann-search-rs",
  "bixverse-core",
@@ -610,7 +608,6 @@ dependencies = [
 [[package]]
 name = "bixverse-methods"
 version = "0.10.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs?branch=feat-singlecell-py#4aed8e96e49a052be256a68d2dd2b210480bb38b"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -633,7 +630,6 @@ dependencies = [
 [[package]]
 name = "bixverse-mlx"
 version = "0.10.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs?branch=feat-singlecell-py#4aed8e96e49a052be256a68d2dd2b210480bb38b"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -651,7 +647,6 @@ dependencies = [
 [[package]]
 name = "bixverse-r"
 version = "0.10.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs?branch=feat-singlecell-py#4aed8e96e49a052be256a68d2dd2b210480bb38b"
 dependencies = [
  "ann-search-rs",
  "bixverse-rs",
@@ -670,7 +665,6 @@ dependencies = [
 [[package]]
 name = "bixverse-rs"
 version = "0.10.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs?branch=feat-singlecell-py#4aed8e96e49a052be256a68d2dd2b210480bb38b"
 dependencies = [
  "bixverse-core",
  "bixverse-gpu",
@@ -685,7 +679,6 @@ dependencies = [
 [[package]]
 name = "bixverse-sc"
 version = "0.10.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs?branch=feat-singlecell-py#4aed8e96e49a052be256a68d2dd2b210480bb38b"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -711,7 +704,6 @@ dependencies = [
 [[package]]
 name = "bixverse-sc-data"
 version = "0.10.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs?branch=feat-singlecell-py#4aed8e96e49a052be256a68d2dd2b210480bb38b"
 dependencies = [
  "approx",
  "bincode",
@@ -739,7 +731,6 @@ dependencies = [
 [[package]]
 name = "bixverse-sc-gpu"
 version = "0.10.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs?branch=feat-singlecell-py#4aed8e96e49a052be256a68d2dd2b210480bb38b"
 dependencies = [
  "ann-search-rs",
  "approx",
@@ -767,7 +758,6 @@ dependencies = [
 [[package]]
 name = "bixverse-sparse"
 version = "0.10.0"
-source = "git+https://github.com/GregorLueg/bixverse-rs?branch=feat-singlecell-py#4aed8e96e49a052be256a68d2dd2b210480bb38b"
 dependencies = [
  "bincode",
  "num-traits",
@@ -4420,7 +4410,6 @@ dependencies = [
 [[package]]
 name = "manifolds-rs"
 version = "0.9.0"
-source = "git+https://github.com/GregorLueg/manifolds-rs?branch=doc-param-clean#1d6a0983a62afc9246f9364f0a5901d4787ce437"
 dependencies = [
  "ann-search-rs",
  "approx",

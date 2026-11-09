@@ -42,7 +42,9 @@
 #' [params_umap_gpu()].
 #' @param seed Integer. For reproducibility.
 #' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the kNN
-#' search and the `"adam_gpu"` optimiser on MLX, see [umap_gpu()].
+#' search and the `"adam_gpu"` optimiser on MLX, see [umap_gpu()]. The CPU
+#' optimisers (`"adam_parallel"`, `"sgd"`, `"sgd_parallel"`, `"adam"`) stay on
+#' the CPU.
 #' @param .verbose Boolean or integer. Controls verbosity.
 #'
 #' @return The object with a `"umap"` embedding added. If the requested
@@ -436,7 +438,8 @@ S7::method(tsne_gpu_sc, SingleCells) <- function(
 #' @param k Integer. Number of nearest neighbours that set the kernel
 #' bandwidth. Defaults to `5L`.
 #' @param knn_method String. GPU (approximate) nearest neighbour method. One
-#' of `c("nndescent", "exhaustive", "ivf")`.
+#' of `c("ivf", "exhaustive", "nndescent")`. Defaults to `"ivf"`, as the
+#' `6 * k + 5` wide search is past the width where NN-descent keeps up.
 #' @param nn_params Named list. GPU kNN parameters, see [params_nn_gpu()].
 #' @param phate_params Named list. PHATE (GPU) parameters, see
 #' [params_phate_gpu()].
@@ -465,7 +468,7 @@ phate_gpu_sc <- S7::new_generic(
     modality = c("rna", "adt", "wnn"),
     n_dim = 2L,
     k = 5L,
-    knn_method = c("nndescent", "exhaustive", "ivf"),
+    knn_method = c("ivf", "exhaustive", "nndescent"),
     nn_params = params_nn_gpu(),
     phate_params = params_phate_gpu(),
     seed = 42L,
@@ -492,7 +495,7 @@ S7::method(phate_gpu_sc, SingleCells) <- function(
   modality = c("rna", "adt", "wnn"),
   n_dim = 2L,
   k = 5L,
-  knn_method = c("nndescent", "exhaustive", "ivf"),
+  knn_method = c("ivf", "exhaustive", "nndescent"),
   nn_params = params_nn_gpu(),
   phate_params = params_phate_gpu(),
   seed = 42L,
