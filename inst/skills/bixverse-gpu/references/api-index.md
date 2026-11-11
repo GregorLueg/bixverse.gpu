@@ -10,7 +10,7 @@ Different GPU-accelerated methods specifically for the single cell applications.
 
 - `calculate_pca_gpu_sc`: GPU-accelerated PCA for single cell
 - `generate_gpu_knn_sc`: Generate GPU kNN data for single cells
-- `harmony_v2_gpu_sc`: Run Harmony v2 (GPU)
+- `harmony_gpu_sc`: Run Harmony v2 (GPU)
 - `find_neighbours_gpu_sc`: Find GPU-accelerated neighbours for single cells
 - `generate_seacells_gpu_sc`: Generate meta cells based on SEACells on the GPU
 - `scenic_grn_sc_gpu`: GPU-accelerated SCENIC GRN inference

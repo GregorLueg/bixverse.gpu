@@ -257,15 +257,19 @@ expect_equal(
   info = "bbknn gpu - matches the CPU distances with an exhaustive search"
 )
 
+# The CPU path hands back the max-symmetrised graph; for a symmetric matrix its
+# CSR is the GPU CSC as is.
+cpu_conn <- bixverse::rs_graph_to_csr(cpu_res$connectivities)
+
 expect_equal(
   current = rust_res$connectivities$indptr,
-  target = cpu_res$connectivities$indptr,
+  target = cpu_conn$indptr,
   info = "bbknn gpu - matches the CPU connectivity structure"
 )
 
 expect_equal(
   current = rust_res$connectivities$data,
-  target = cpu_res$connectivities$data,
+  target = cpu_conn$data,
   tolerance = 1e-5,
   info = "bbknn gpu - matches the CPU connectivity weights"
 )

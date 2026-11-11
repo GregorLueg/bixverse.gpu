@@ -75,7 +75,7 @@ reference:
     contents:
       - calculate_pca_gpu_sc
       - generate_gpu_knn_sc
-      - harmony_v2_gpu_sc
+      - harmony_gpu_sc
       - find_neighbours_gpu_sc
       - generate_seacells_gpu_sc
       - scenic_grn_sc_gpu

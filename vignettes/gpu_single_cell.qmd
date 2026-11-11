@@ -41,7 +41,7 @@ outweigh the speedup, but the larger the data, the more these methods pay off
   or randomised via `svd_solver = "randomised"`. Scaling (if desired) is applied 
   without ever materialising the dense matrix. Also, option for the PFLogPF
   normalisation.
-- **GPU Harmony v2** via `harmony_v2_gpu_sc()`: a GPU implementation of
+- **GPU Harmony v2** via `harmony_gpu_sc()`: a GPU implementation of
   Harmony v2 ([Patikas et al., 2026](https://www.biorxiv.org/content/10.64898/2026.03.16.711825v1))
   with the Arrowhead matrix inversion. Single batch covariate only on the GPU
   path. R is refined via full-batch Jacobi sweeps rather than the blockwise 
@@ -280,25 +280,25 @@ the leading components and want the speed.
 
 ## GPU-accelerated Harmony v2
 
-With two batches we need batch correction. `harmony_v2_gpu_sc()` runs Harmony
+With two batches we need batch correction. `harmony_gpu_sc()` runs Harmony
 v2 with the Arrowhead inversion on GPU and writes the corrected embedding to
 the object as `"harmony_gpu"`.
 
 ```{r}
 #| label: harmony gpu
-sc_object <- harmony_v2_gpu_sc(
+sc_object <- harmony_gpu_sc(
   object = sc_object,
   batch_column = "exp_id",
   harmony_params = params_sc_harmony_v2_gpu()
 )
 ```
 
-For comparison, the CPU version of v2; stored as `"harmony_v2"` so both
+For comparison, the CPU version of v2; stored as `"harmony"` so both
 embeddings coexist.
 
 ```{r}
 #| label: harmony cpu
-sc_object <- harmony_v2_sc(
+sc_object <- harmony_sc(
   object = sc_object,
   batch_column = "exp_id",
   harmony_params = params_sc_harmony_v2()
@@ -470,7 +470,7 @@ Same kNN setup on the CPU Harmony embedding:
 #| label: cpu harmony knn + metrics
 sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
-  embd_to_use = "harmony_v2",
+  embd_to_use = "harmony",
   knn_method = "nndescent",
   .verbose = TRUE
 )
@@ -478,7 +478,7 @@ sc_object <- find_neighbours_gpu_sc(
 kbet_cpu <- calculate_kbet_sc(sc_object, batch_column = "exp_id")
 asw_cpu <- calculate_batch_asw_sc(
   sc_object,
-  embd_to_use = "harmony_v2",
+  embd_to_use = "harmony",
   batch_column = "exp_id"
 )
 lisi_cpu <- calculate_lisi_sc(

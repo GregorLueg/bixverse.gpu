@@ -57,6 +57,15 @@
   `"nndescent"` (`TRUE`) or `"cagra"` (`FALSE`).
 * `rs_gpu_knn()` runs through bixverse-rs instead of manifolds-rs, on wgpu and
   MLX.
+* `harmony_v2_gpu_sc()` is now `harmony_gpu_sc()`, following bixverse 0.9.0
+  where `harmony_sc()` runs v2. No alias. The embedding is still
+  `"harmony_gpu"`.
+* `params_sc_harmony_v2_gpu()` defaults to `use_dynamic_lambda = TRUE`, as on
+  the CPU. Different embeddings with the defaults.
+* `bbknn_gpu_sc()`: `trim = NULL` now means
+  `10 * neighbours_within_batch * n_batches` (was `10 * neighbours_within_batch`)
+  and the stored kNN is cut balanced per batch. Different graphs and kNN with
+  the defaults.
 * `umap_gpu()`, `tsne_gpu()`, `umap_gpu_sc()`, `tsne_gpu_sc()` and their `rs_*`
   functions lose `use_high_precision` and the automatic switch to fp64 above
   100k samples. They always run in fp32 now, with manifolds-rs doing the steps
@@ -65,7 +74,7 @@
 
 ## Chores
 
-* `ann-search-rs` 0.12.2, `manifolds-rs` 0.9.0 and `bixverse-rs` 0.10.0. UMAP and
+* `ann-search-rs` 0.12.2, `manifolds-rs` 0.9.1 and `bixverse-rs` 0.10.1. UMAP and
   tSNE pick up the manifolds-rs changes: `"nndescent"` builds the kNN graph
   directly there too, spectral initialisation gives different coordinates at
   the same seed, PCA initialisation runs its centring and SVD in fp64, and

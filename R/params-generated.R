@@ -610,7 +610,8 @@ params_phate_gpu <- function(
 #' @param trim Integer or `NULL`. Trim the neighbours of each cell to these many
 #' top connectivities. May help with population independence and improve the
 #' tidiness of clustering. If `NULL`, it defaults to `10 *
-#' neighbours_within_batch`. Defaults to `NULL`.
+#' neighbours_within_batch * n_batches`, as in the reference implementation.
+#' Defaults to `NULL`.
 #' @param knn List. Optional overrides for the kNN block. See
 #' [params_knn_gpu_defaults()] for the available elements. Without `k`. Unknown
 #' elements are an error. Defaults to `list()`.
@@ -627,7 +628,8 @@ params_phate_gpu <- function(
 #'  \item trim - Integer or `NULL`. Trim the neighbours of each cell to these
 #'  many top connectivities. May help with population independence and improve
 #'  the tidiness of clustering. If `NULL`, it defaults to `10 *
-#'  neighbours_within_batch`. Defaults to `NULL`.
+#'  neighbours_within_batch * n_batches`, as in the reference implementation.
+#'  Defaults to `NULL`.
 #'  \item The elements of [params_knn_gpu_defaults()], overridden by `knn`,
 #'  spliced in at this position.
 #' }
@@ -946,7 +948,7 @@ params_sc_fastmnn_gpu <- function(
 #' @param batch_proportion_cutoff Numeric. Cutoff for pruning batches with small
 #' proportions during ridge regression. Defaults to `1e-05`.
 #' @param use_dynamic_lambda Boolean. If `TRUE`, lambda is estimated dynamically
-#' per cluster instead of using the fixed `lambda` value. Defaults to `FALSE`.
+#' per cluster instead of using the fixed `lambda` value. Defaults to `TRUE`.
 #' @param csr_cube_count Integer. Number of parallel thread groups used when
 #' building the level-CSR index on the GPU. Adjust for your hardware if needed.
 #' Defaults to `256L`.
@@ -992,7 +994,7 @@ params_sc_fastmnn_gpu <- function(
 #'  small proportions during ridge regression. Defaults to `1e-05`.
 #'  \item use_dynamic_lambda - Boolean. If `TRUE`, lambda is estimated
 #'  dynamically per cluster instead of using the fixed `lambda` value. Defaults
-#'  to `FALSE`.
+#'  to `TRUE`.
 #'  \item csr_cube_count - Integer. Number of parallel thread groups used when
 #'  building the level-CSR index on the GPU. Adjust for your hardware if needed.
 #'  Defaults to `256L`.
@@ -1020,7 +1022,7 @@ params_sc_harmony_v2_gpu <- function(
   alpha = 0.2,
   tau = 0.0,
   batch_proportion_cutoff = 1e-05,
-  use_dynamic_lambda = FALSE,
+  use_dynamic_lambda = TRUE,
   csr_cube_count = 256L,
   k_means_iter = 10L,
   k_means_init = NULL,

@@ -25,7 +25,8 @@ Defaults to \code{1.0}.}
 
 \item{trim}{Integer or \code{NULL}. Trim the neighbours of each cell to these many
 top connectivities. May help with population independence and improve the
-tidiness of clustering. If \code{NULL}, it defaults to \code{10 * neighbours_within_batch}. Defaults to \code{NULL}.}
+tidiness of clustering. If \code{NULL}, it defaults to \code{10 * neighbours_within_batch * n_batches}, as in the reference implementation.
+Defaults to \code{NULL}.}
 
 \item{knn}{List. Optional overrides for the kNN block. See
 \code{\link[=params_knn_gpu_defaults]{params_knn_gpu_defaults()}} for the available elements. Without \code{k}. Unknown
@@ -43,7 +44,8 @@ how many nearest neighbours of each cell are assumed to be fully connected.
 Defaults to \code{1.0}.
 \item trim - Integer or \code{NULL}. Trim the neighbours of each cell to these
 many top connectivities. May help with population independence and improve
-the tidiness of clustering. If \code{NULL}, it defaults to \code{10 * neighbours_within_batch}. Defaults to \code{NULL}.
+the tidiness of clustering. If \code{NULL}, it defaults to \code{10 * neighbours_within_batch * n_batches}, as in the reference implementation.
+Defaults to \code{NULL}.
 \item The elements of \code{\link[=params_knn_gpu_defaults]{params_knn_gpu_defaults()}}, overridden by \code{knn},
 spliced in at this position.
 }

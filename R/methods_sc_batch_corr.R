@@ -30,8 +30,8 @@
 #' embeddings are found, returns the object unchanged with a warning.
 #'
 #' @export
-harmony_v2_gpu_sc <- S7::new_generic(
-  name = "harmony_v2_gpu_sc",
+harmony_gpu_sc <- S7::new_generic(
+  name = "harmony_gpu_sc",
   dispatch_args = "object",
   fun = function(
     object,
@@ -48,10 +48,10 @@ harmony_v2_gpu_sc <- S7::new_generic(
   }
 )
 
-#' @method harmony_v2_gpu_sc SingleCells
+#' @method harmony_gpu_sc SingleCells
 #'
 #' @export
-S7::method(harmony_v2_gpu_sc, SingleCells) <- function(
+S7::method(harmony_gpu_sc, SingleCells) <- function(
   object,
   batch_column,
   modality = c("rna", "adt"),
@@ -359,6 +359,7 @@ S7::method(bbknn_gpu_sc, SingleCellsSubset) <- function(
       indptr = bbknn_res$distances$indptr,
       indices = bbknn_res$distances$indices,
       data = bbknn_res$distances$data,
+      batch_labels = batch_index,
       no_neighbours_to_keep = no_k
     )
     list(
@@ -382,11 +383,21 @@ S7::method(bbknn_gpu_sc, SingleCellsSubset) <- function(
     ))
   }
 
+  # The connectivities are symmetric (CSC), so the upper triangle holds each
+  # edge once, matching the CPU path's max-symmetrise.
+  conn <- bbknn_res$connectivities
+  from <- conn$indices + 1L
+  to <- rep.int(seq_len(conn$ncol), diff(conn$indptr))
+  upper <- from < to
+  ptr <- bixverse::rs_graph_from_edges(
+    edges = as.vector(rbind(from[upper], to[upper])),
+    weights = conn$data[upper],
+    n_nodes = conn$nrow
+  )
+
   set_connectivities(
     object,
-    connectivities = bixverse:::.bbknn_to_connectivity(
-      bbknn_res$connectivities
-    ),
+    connectivities = bixverse:::.new_sc_connectivity(ptr, method = "bbknn"),
     from = "knn"
   )
 }

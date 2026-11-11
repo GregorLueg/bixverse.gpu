@@ -7,7 +7,7 @@ those. The GPU functions slot into the same chain.
 | Step | CPU (bixverse) | GPU (bixverse.gpu) | Classes |
 |---|---|---|---|
 | PCA | `calculate_pca_sc()` | `calculate_pca_gpu_sc()` | `SingleCells` |
-| Harmony v2 | `harmony_v2_sc()` | `harmony_v2_gpu_sc()` | `SingleCells` |
+| Harmony v2 | `harmony_sc()` | `harmony_gpu_sc()` | `SingleCells` |
 | fastMNN | `fast_mnn_sc()` | `fast_mnn_gpu_sc()` | `SingleCells`, `SingleCellsSubset` |
 | kNN + sNN | `find_neighbours_sc()` | `find_neighbours_gpu_sc()` | `SingleCells` |
 | kNN only | `generate_knn_sc()` | `generate_gpu_knn_sc()` | `SingleCells` |
@@ -61,14 +61,14 @@ sketch or the Lanczos start block.
 ## Harmony v2
 
 ```r
-obj <- harmony_v2_gpu_sc(
+obj <- harmony_gpu_sc(
   obj,
   batch_column = "sample_id",
   harmony_params = params_sc_harmony_v2_gpu()
 )
 ```
 
-- Writes the embedding as **`"harmony_gpu"`**, not `"harmony_v2"`. Downstream
+- Writes the embedding as **`"harmony_gpu"`**, not `"harmony"`. Downstream
   calls need `embd_to_use = "harmony_gpu"`. CPU and GPU embeddings can coexist.
 - **One batch covariate only.** `batch_column` is a single string.
 - R is refined by full-batch Jacobi sweeps rather than the original blockwise

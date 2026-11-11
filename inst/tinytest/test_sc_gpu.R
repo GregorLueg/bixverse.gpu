@@ -265,7 +265,7 @@ expect_true(
   info = "gpu pca - leiden recovers cell groups"
 )
 
-## harmony_v2_gpu_sc -----------------------------------------------------------
+## harmony_gpu_sc -----------------------------------------------------------
 
 ### warnings -------------------------------------------------------------------
 
@@ -280,7 +280,7 @@ sc_no_pca <- load_r_data(
 )
 
 expect_warning(
-  current = harmony_v2_gpu_sc(
+  current = harmony_gpu_sc(
     object = sc_no_pca,
     batch_column = "batch_index",
     .verbose = FALSE
@@ -314,7 +314,7 @@ assess_harmony_gpu_impact <- function(object) {
   )
   kbet_score_original <- mean(kbet_original$pval <= 0.05)
 
-  object <- harmony_v2_gpu_sc(
+  object <- harmony_gpu_sc(
     object = object,
     batch_column = "batch_index",
     .verbose = FALSE

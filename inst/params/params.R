@@ -537,7 +537,7 @@ spec_sc_harmony_v2_gpu <- param_spec(
       )
     ),
     use_dynamic_lambda = p_lgl(
-      FALSE,
+      TRUE,
       doc = paste(
         "If `TRUE`, lambda is estimated dynamically per cluster",
         "instead of using the fixed `lambda` value."
@@ -1040,7 +1040,9 @@ spec_sc_bbknn_gpu <- param_spec(
       doc = paste(
         "Trim the neighbours of each cell to these many top connectivities.",
         "May help with population independence and improve the tidiness of",
-        "clustering. If `NULL`, it defaults to `10 * neighbours_within_batch`."
+        "clustering. If `NULL`, it defaults to",
+        "`10 * neighbours_within_batch * n_batches`, as in the reference",
+        "implementation."
       )
     ),
     knn = p_merge(
