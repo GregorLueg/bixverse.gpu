@@ -28,12 +28,12 @@ expect_equal(
 )
 
 expect_true(
-  current = checkPhateGpuParams(params_phate_gpu(decay = NULL)),
+  current = bixverse.gpu:::checkPhateGpuParams(params_phate_gpu(decay = NULL)),
   info = "params_phate_gpu - decay = NULL allowed"
 )
 
 expect_true(
-  current = checkPhateGpuParams(params_phate_gpu(n_landmarks = NULL)),
+  current = bixverse.gpu:::checkPhateGpuParams(params_phate_gpu(n_landmarks = NULL)),
   info = "params_phate_gpu - n_landmarks = NULL allowed"
 )
 
