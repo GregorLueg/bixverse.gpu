@@ -18,7 +18,6 @@ tsne_gpu(
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
   seed = 42L,
-  use_high_precision = NULL,
   backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
@@ -70,7 +69,7 @@ tsne_gpu(
 
   Named list. Nearest neighbour search parameters, see
   [`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md).
-  tSNE uses higher k usually, hence, \`"ivf"“ is the default here.
+  tSNE usually needs a higher k, hence `"ivf"` is the default here.
 
 - tsne_params:
 
@@ -80,12 +79,6 @@ tsne_gpu(
 - seed:
 
   Integer. Random seed for reproducibility. Defaults to `42L`.
-
-- use_high_precision:
-
-  Optional boolean. Gives fine-grained control over `fp32` vs `fp64`
-  usage. The GPU kNN calculations will be forced into `fp32`. Ignored
-  with a warning for `"fft_3k_gpu"`, which always runs in `fp32`.
 
 - backend:
 

@@ -33,7 +33,7 @@ have sufficient VRAM/unified memory that is…).
   ever materialising the dense matrix. Also, option for the PFLogPF
   normalisation.
 - **GPU Harmony v2** via
-  [`harmony_v2_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/harmony_v2_gpu_sc.md):
+  [`harmony_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/harmony_gpu_sc.md):
   a GPU implementation of Harmony v2 ([Patikas et al.,
   2026](https://www.biorxiv.org/content/10.64898/2026.03.16.711825v1))
   with the Arrowhead matrix inversion. Single batch covariate only on
@@ -68,9 +68,12 @@ library(bixverse)
 library(bixverse.gpu)
 library(bixverse.plots)
 library(data.table)
-#> Warning: package 'data.table' was built under R version 4.5.2
+#> 
+#> Attaching package: 'data.table'
+#> The following object is masked from 'package:base':
+#> 
+#>     %notin%
 library(ggplot2)
-#> Warning: package 'ggplot2' was built under R version 4.5.2
 ```
 
 > **Note**
@@ -302,13 +305,13 @@ only care about the leading components and want the speed.
 ## GPU-accelerated Harmony v2
 
 With two batches we need batch correction.
-[`harmony_v2_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/harmony_v2_gpu_sc.md)
+[`harmony_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/harmony_gpu_sc.md)
 runs Harmony v2 with the Arrowhead inversion on GPU and writes the
 corrected embedding to the object as `"harmony_gpu"`.
 
 ``` r
 
-sc_object <- harmony_v2_gpu_sc(
+sc_object <- harmony_gpu_sc(
   object = sc_object,
   batch_column = "exp_id",
   harmony_params = params_sc_harmony_v2_gpu()
@@ -316,12 +319,12 @@ sc_object <- harmony_v2_gpu_sc(
 #>  Auto-determined number of Harmony clusters: 100
 ```
 
-For comparison, the CPU version of v2; stored as `"harmony_v2"` so both
+For comparison, the CPU version of v2; stored as `"harmony"` so both
 embeddings coexist.
 
 ``` r
 
-sc_object <- harmony_v2_sc(
+sc_object <- harmony_sc(
   object = sc_object,
   batch_column = "exp_id",
   harmony_params = params_sc_harmony_v2()
@@ -335,10 +338,9 @@ neighbourhood structure to begin with. Which is a convenient segue.
 
 ## GPU-accelerated kNN
 
-Three methods, each with different speed/precision trade-offs. Below we
-run all three against the GPU Harmony embedding to show the API. In
-practice, pick one based on data size and how exact you need the
-neighbours to be.
+Four methods, each with different speed/precision trade-offs. Below we
+run them against the GPU Harmony embedding to show the API. In practice,
+pick one based on data size and how exact you need the neighbours to be.
 
 ### Exhaustive
 
@@ -381,28 +383,28 @@ sc_object <- find_neighbours_gpu_sc(
 #> Generating the snn graph.
 ```
 
-### CAGRA
+### NN-descent and CAGRA
 
-Builds a pruned NNDescent graph, based on the fantastic work by
-[Nvidia](https://arxiv.org/pdf/2308.15136). (Unfortunately, some of the
-cuda primitives are not available in wgpu, but it is still a blazingly
-fast approximate kNN search even on wgpu). With `extract_knn = TRUE` you
-pull the kNN straight out of the NNDescent graph: faster, slightly less
-precise, useful for rapid iteration over parameters. With
-`extract_knn = FALSE` (the default) the function runs beam search over
-the pruned graph for higher recall, which matters more on larger,
-higher-dimensional data.
+`knn_method = "nndescent"` (the default) hands back the NN-descent kNN
+graph itself: no index, no search. Rows the descent left short get
+topped up with an exact search of just those rows.
+
+`knn_method = "cagra"` goes one step further and prunes that graph into
+a CAGRA graph, based on the fantastic work by
+[Nvidia](https://arxiv.org/pdf/2308.15136), then beam searches it. (Some
+of the CUDA primitives are not available in wgpu, but it is still a fast
+approximate kNN search on wgpu.) Beam search buys recall, which matters
+more on larger, higher-dimensional data.
 
 ``` r
 
 sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
-  knn_method = "nndescent",
-  nn_params = params_nn_gpu(extract_knn = FALSE),
+  knn_method = "cagra",
   .verbose = TRUE
 )
-#> Generating GPU kNN data with nndescent method.
+#> Generating GPU kNN data with cagra method.
 #> Generating the snn graph.
 ```
 
@@ -434,13 +436,8 @@ fast_cluster_res <- fast_cluster_gpu_sc(
   resolutions = c(2, 1.5, 1, 0.5),
   return_kmeans = TRUE,
   grid_search = TRUE,
-  no_seeds = 25L
+  n_seeds = 25L
 )
-#> Warning: The `no_seeds` argument of `fast_cluster_gpu_sc()` is deprecated as of
-#> bixverse.gpu 0.6.0.
-#> ℹ Please use the `n_seeds` argument instead.
-#> ℹ The deprecated feature was likely used in the bixverse.gpu package.
-#>   Please report the issue to the authors.
 #> Warning: The `grid_search` argument of `fast_cluster_gpu_sc()` is deprecated as of
 #> bixverse.gpu 0.6.0.
 #> ℹ Please use the `n_seeds` argument instead.
@@ -448,7 +445,7 @@ fast_cluster_res <- fast_cluster_gpu_sc(
 #>   Please report the issue to the authors.
 
 fast_cluster_res
-#> SingleCellFastClusters: 5841 cells, 4 resolutions
+#> SingleCellFastClusters: 6626 cells, 4 resolutions
 #>   Resolutions: 2, 1.5, 1, 0.5
 #>   Grid stats stored: TRUE
 #>   k-means stored:    TRUE
@@ -461,12 +458,12 @@ One column per resolution, keyed by `cell_idx`:
 head(get_data(fast_cluster_res))
 #>    cell_idx res_2 res_1.5 res_1 res_0.5
 #>       <int> <int>   <int> <int>   <int>
-#> 1:        1     5       5     0       1
-#> 2:        2     4       2     2       3
-#> 3:        3     2       4     4       0
-#> 4:        4     3       1     1       2
-#> 5:        6     2       4     4       0
-#> 6:        7     1       3     3       0
+#> 1:        1     6       0     0       0
+#> 2:        2     4       4     4       4
+#> 3:        3     2       3     2       2
+#> 4:        4     0       1     1       1
+#> 5:        5     1       2     3       3
+#> 6:        6     2       3     2       2
 ```
 
 The grid stats are the interesting bit. `mean_ari` is how stable the
@@ -479,16 +476,16 @@ up with.
 fast_cluster_res$stats
 #>    resolution  mean_ari median_ari mean_conductance median_conductance
 #>         <num>     <num>      <num>            <num>              <num>
-#> 1:        2.0 0.9505864  0.9751557       0.23809649         0.21501322
-#> 2:        1.5 0.9898399  1.0000000       0.13579100         0.12852848
-#> 3:        1.0 0.9953442  1.0000000       0.06534135         0.06370881
-#> 4:        0.5 0.9774942  1.0000000       0.06236054         0.06113581
+#> 1:        2.0 0.9926261          1       0.25820237         0.21289985
+#> 2:        1.5 0.9577564          1       0.11530580         0.08832873
+#> 3:        1.0 1.0000000          1       0.05698753         0.05649648
+#> 4:        0.5 1.0000000          1       0.05668292         0.05649648
 #>    mean_n_comms
 #>           <num>
-#> 1:         9.72
-#> 2:         6.00
-#> 3:         5.00
-#> 4:         4.92
+#> 1:          7.8
+#> 2:          5.7
+#> 3:          5.0
+#> 4:          5.0
 ```
 
 The k-means centroids and per-cell assignments are there too, if you
@@ -497,10 +494,10 @@ asked for them:
 ``` r
 
 dim(get_centroids_sc(fast_cluster_res))
-#> [1] 305  32
+#> [1] 325  32
 
 head(get_kmeans_clusters(fast_cluster_res))
-#> [1] 176  80 250 114  45 221
+#> [1]   6 155 130   0 316 208
 ```
 
 Push the memberships onto the object and they behave like any other obs
@@ -520,32 +517,32 @@ head(sc_object)
 #> 2:        2 pbmc3k_1 pbmc3k      GemCode              v1.1.0 Chromium_v1
 #> 3:        3 pbmc3k_2 pbmc3k      GemCode              v1.1.0 Chromium_v1
 #> 4:        4 pbmc3k_3 pbmc3k      GemCode              v1.1.0 Chromium_v1
-#> 5:        6 pbmc3k_5 pbmc3k      GemCode              v1.1.0 Chromium_v1
-#> 6:        7 pbmc3k_6 pbmc3k      GemCode              v1.1.0 Chromium_v1
+#> 5:        5 pbmc3k_4 pbmc3k      GemCode              v1.1.0 Chromium_v1
+#> 6:        6 pbmc3k_5 pbmc3k      GemCode              v1.1.0 Chromium_v1
 #>    date_published    individual sample sequence_platform          barcode
 #>            <fctr>        <fctr> <fctr>            <fctr>           <char>
 #> 1:     2016-05-26 HealthyDonor2 pbmc3k        NextSeq500 AAACATACAACCAC-1
 #> 2:     2016-05-26 HealthyDonor2 pbmc3k        NextSeq500 AAACATTGAGCTAC-1
 #> 3:     2016-05-26 HealthyDonor2 pbmc3k        NextSeq500 AAACATTGATCAGC-1
 #> 4:     2016-05-26 HealthyDonor2 pbmc3k        NextSeq500 AAACCGTGCTTCCG-1
-#> 5:     2016-05-26 HealthyDonor2 pbmc3k        NextSeq500 AAACGCACTGGTAC-1
-#> 6:     2016-05-26 HealthyDonor2 pbmc3k        NextSeq500 AAACGCTGACCAGT-1
+#> 5:     2016-05-26 HealthyDonor2 pbmc3k        NextSeq500 AAACCGTGTATGCG-1
+#> 6:     2016-05-26 HealthyDonor2 pbmc3k        NextSeq500 AAACGCACTGGTAC-1
 #>    library       sequence   nnz lib_size to_keep         MT      Ribo outlier
 #>      <int>         <char> <num>    <num>  <lgcl>      <num>     <num>  <lgcl>
 #> 1:       1 AAACATACAACCAC   771     2390    TRUE 0.03054393 0.4401674   FALSE
 #> 2:       1 AAACATTGAGCTAC  1342     4890    TRUE 0.03803681 0.4243354   FALSE
 #> 3:       1 AAACATTGATCAGC  1117     3135    TRUE 0.00893142 0.3180223   FALSE
 #> 4:       1 AAACCGTGCTTCCG   946     2622    TRUE 0.01754386 0.2429443   FALSE
-#> 5:       1 AAACGCACTGGTAC   777     2159    TRUE 0.01667439 0.3626679   FALSE
-#> 6:       1 AAACGCTGACCAGT   774     2161    TRUE 0.03840815 0.4183249   FALSE
+#> 5:       1 AAACCGTGTATGCG   514      965    TRUE 0.01243523 0.1502591   FALSE
+#> 6:       1 AAACGCACTGGTAC   777     2159    TRUE 0.01667439 0.3626679   FALSE
 #>    res_2 res_1.5 res_1 res_0.5
 #>    <int>   <int> <int>   <int>
-#> 1:     5       5     0       1
-#> 2:     4       2     2       3
-#> 3:     2       4     4       0
-#> 4:     3       1     1       2
-#> 5:     2       4     4       0
-#> 6:     1       3     3       0
+#> 1:     6       0     0       0
+#> 2:     4       4     4       4
+#> 3:     2       3     2       2
+#> 4:     0       1     1       1
+#> 5:     1       2     3       3
+#> 6:     2       3     2       2
 ```
 
 ## Comparing GPU vs CPU Harmony
@@ -570,19 +567,19 @@ lisi_gpu <- calculate_lisi_sc(
 
 kbet_gpu
 #> kBET Scores
-#>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.1436 (839 / 5841)
-#>   Mean Chi-Square:     2.0329 (expected under H0: 1)
-#>   Median Chi-Square:   0.7374
+#>   Cells: 6626 | Batches: 2 | Threshold: 0.050
+#>   Rejection rate:      0.2009 (1331 / 6626)
+#>   Mean Chi-Square:     2.3343 (expected under H0: 1)
+#>   Median Chi-Square:   1.6227
 asw_gpu
 #> Batch Silhouette Width
 #>   Cells: 5000 | Batches: 2
-#>   Mean ASW:    0.0224 (-1 = strong intermixing, 0 = mixed, 1 = separated)
-#>   Median ASW:  0.0480
+#>   Mean ASW:    0.0084 (-1 = strong intermixing, 0 = mixed, 1 = separated)
+#>   Median ASW:  0.0108
 lisi_gpu
 #> iLISI (batch)
-#>   Cells: 5841 | Labels: 2
-#>   Mean LISI:    1.6197
+#>   Cells: 6626 | Labels: 2
+#>   Mean LISI:    1.5772
 #>   Median LISI:  1.6423
 #>   Normalised:   0.6423 (0 = worst, 1 = best)
 ```
@@ -593,9 +590,8 @@ Same kNN setup on the CPU Harmony embedding:
 
 sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
-  embd_to_use = "harmony_v2",
+  embd_to_use = "harmony",
   knn_method = "nndescent",
-  nn_params = params_nn_gpu(extract_knn = TRUE),
   .verbose = TRUE
 )
 #> Generating GPU kNN data with nndescent method.
@@ -604,7 +600,7 @@ sc_object <- find_neighbours_gpu_sc(
 kbet_cpu <- calculate_kbet_sc(sc_object, batch_column = "exp_id")
 asw_cpu <- calculate_batch_asw_sc(
   sc_object,
-  embd_to_use = "harmony_v2",
+  embd_to_use = "harmony",
   batch_column = "exp_id"
 )
 lisi_cpu <- calculate_lisi_sc(
@@ -615,19 +611,19 @@ lisi_cpu <- calculate_lisi_sc(
 
 kbet_cpu
 #> kBET Scores
-#>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.2291 (1338 / 5841)
-#>   Mean Chi-Square:     2.7245 (expected under H0: 1)
-#>   Median Chi-Square:   1.9151
+#>   Cells: 6626 | Batches: 2 | Threshold: 0.050
+#>   Rejection rate:      0.1998 (1324 / 6626)
+#>   Mean Chi-Square:     2.3365 (expected under H0: 1)
+#>   Median Chi-Square:   1.6227
 asw_cpu
 #> Batch Silhouette Width
 #>   Cells: 5000 | Batches: 2
-#>   Mean ASW:    0.0235 (-1 = strong intermixing, 0 = mixed, 1 = separated)
-#>   Median ASW:  0.0532
+#>   Mean ASW:    0.0075 (-1 = strong intermixing, 0 = mixed, 1 = separated)
+#>   Median ASW:  0.0104
 lisi_cpu
 #> iLISI (batch)
-#>   Cells: 5841 | Labels: 2
-#>   Mean LISI:    1.5724
+#>   Cells: 6626 | Labels: 2
+#>   Mean LISI:    1.5769
 #>   Median LISI:  1.6423
 #>   Normalised:   0.6423 (0 = worst, 1 = best)
 ```
@@ -645,19 +641,19 @@ Everyone loves visuals, even if you should not over-interpret them
 runs the full GPU-accelerated UMAP path: GPU kNN plus a GPU Adam
 optimiser (`optimiser = "adam_gpu"` in
 [`params_umap_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_umap_gpu.md),
-the default). On the CAGRA kNN we just computed above, it plugs straight
-in with `use_knn = TRUE`.
+the default). The comparison above replaced the kNN with one on the CPU
+Harmony embedding, so we rebuild the CAGRA kNN on the GPU one first and
+then plug it straight in with `use_knn = TRUE`.
 
 ``` r
 
 sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "harmony_gpu",
-  knn_method = "nndescent",
-  nn_params = params_nn_gpu(extract_knn = FALSE),
+  knn_method = "cagra",
   .verbose = TRUE
 )
-#> Generating GPU kNN data with nndescent method.
+#> Generating GPU kNN data with cagra method.
 #> Generating the snn graph.
 
 sc_object <- umap_gpu_sc(
@@ -667,7 +663,7 @@ sc_object <- umap_gpu_sc(
   use_knn = TRUE
 )
 #> Running GPU UMAP.
-#> Using n_epochs = 500 (dataset <10k samples or 'adam_parallel'/'adam_gpu' optimiser)
+#> Using n_epochs = 500 (Adam optimiser or dataset <=10k samples)
 #> Using provided kNN graph.
 ```
 
@@ -710,9 +706,9 @@ embedding_plot_sc(
 
 [`tsne_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/tsne_gpu_sc.md)
 mirrors the shape of
-[`umap_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/umap_gpu_sc.md)
-but only the kNN step runs on GPU. The optimiser (Barnes-Hut or FIt-SNE
-FFT) still runs on CPU; a GPU optimiser is on the roadmap. Because t-SNE
+[`umap_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/umap_gpu_sc.md).
+The kNN runs on the GPU, and with the default
+`approx_type = "fft_3k_gpu"` so does the optimiser. Because t-SNE
 derives `k` from `3 * perplexity` on the Rust side, `use_knn` defaults
 to `FALSE` so that every call builds a fresh GPU kNN sized to the
 requested perplexity. Handy when sweeping perplexities.
@@ -738,12 +734,52 @@ embedding_plot_sc(
   discrete = TRUE
 ) +
   labs(
-    title = "GPU Harmony v2 + GPU t-SNE (GPU kNN, CPU optimiser)",
+    title = "GPU Harmony v2 + GPU t-SNE",
     colour = "Fast cluster:"
   )
 ```
 
 ![](gpu_single_cell_files/figure-html/tsne%20plot-1.png)
+
+### PHATE on the GPU Harmony embedding
+
+PHATE is the one for continuous structure, and PBMCs are mostly discrete
+cell types, so don’t expect it to shine here. It’s here to show the API.
+[`phate_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/phate_gpu_sc.md)
+runs the kNN search and the spectral landmark selection on the GPU, the
+diffusion and MDS on the CPU. PHATE searches `6 * k + 5` neighbours (35
+at the default `k = 5L`), far wider than the cached kNN, so `use_knn`
+defaults to `FALSE` and every call builds a fresh GPU kNN of the right
+width. See the [PHATE
+vignette](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_phate.md)
+for the knobs.
+
+``` r
+
+sc_object <- phate_gpu_sc(
+  object = sc_object,
+  embd_to_use = "harmony_gpu",
+  slot_name = "phate_harm_gpu"
+)
+#> Running GPU PHATE.
+```
+
+``` r
+
+embedding_plot_sc(
+  sc_object,
+  embedding = "phate_harm_gpu",
+  colour_by = "res_1",
+  label_by = "res_1",
+  discrete = TRUE
+) +
+  labs(
+    title = "GPU Harmony v2 + GPU PHATE",
+    colour = "Fast cluster:"
+  )
+```
+
+![](gpu_single_cell_files/figure-html/phate%20plot-1.png)
 
 ## GPU-accelerated fastMNN
 
@@ -793,7 +829,7 @@ sc_object <- calculate_pca_gpu_sc(
   hvg = batch_aware_hvg$hvg_gene_idx + 1L
 )
 #> HVGs provided. Will use these ones and set the internal HVG to the provided genes.
-#> Using GPU-accelerated sparse SVD (block Lanczos) with 3496 HVG.
+#> Using GPU-accelerated sparse SVD (block Lanczos) with 3460 HVG.
 ```
 
 With the PCA in place, the correction itself. The corrected embedding
@@ -841,11 +877,10 @@ embedding:
 sc_object <- find_neighbours_gpu_sc(
   object = sc_object,
   embd_to_use = "mnn_gpu",
-  knn_method = "nndescent",
-  nn_params = params_nn_gpu(extract_knn = FALSE),
+  knn_method = "cagra",
   .verbose = TRUE
 )
-#> Generating GPU kNN data with nndescent method.
+#> Generating GPU kNN data with cagra method.
 #> Generating the snn graph.
 
 kbet_mnn <- calculate_kbet_sc(sc_object, batch_column = "exp_id")
@@ -862,19 +897,19 @@ lisi_mnn <- calculate_lisi_sc(
 
 kbet_mnn
 #> kBET Scores
-#>   Cells: 5841 | Batches: 2 | Threshold: 0.050
-#>   Rejection rate:      0.3166 (1849 / 5841)
-#>   Mean Chi-Square:     3.4157 (expected under H0: 1)
-#>   Median Chi-Square:   1.9151
+#>   Cells: 6626 | Batches: 2 | Threshold: 0.050
+#>   Rejection rate:      0.3094 (2050 / 6626)
+#>   Mean Chi-Square:     3.1023 (expected under H0: 1)
+#>   Median Chi-Square:   1.8718
 asw_mnn
 #> Batch Silhouette Width
 #>   Cells: 5000 | Batches: 2
-#>   Mean ASW:    0.0176 (-1 = strong intermixing, 0 = mixed, 1 = separated)
-#>   Median ASW:  0.0403
+#>   Mean ASW:    0.0096 (-1 = strong intermixing, 0 = mixed, 1 = separated)
+#>   Median ASW:  0.0113
 lisi_mnn
 #> iLISI (batch)
-#>   Cells: 5841 | Labels: 2
-#>   Mean LISI:    1.4736
+#>   Cells: 6626 | Labels: 2
+#>   Mean LISI:    1.4861
 #>   Median LISI:  1.4706
 #>   Normalised:   0.4706 (0 = worst, 1 = best)
 ```
@@ -915,7 +950,7 @@ sc_object <- bbknn_gpu_sc(
 #> Generating graph based on BBKNN connectivities. Weights will be based on the connectivities and not shared nearest neighbour calculations.
 
 dim(get_knn_mat(sc_object))
-#> [1] 5841   15
+#> [1] 6626   15
 ```
 
 Setting `no_neighbours_to_keep` below the total generated (10 per batch
@@ -938,10 +973,10 @@ lisi_bbknn <- calculate_lisi_sc(
 )
 lisi_bbknn
 #> iLISI (batch)
-#>   Cells: 5841 | Labels: 2
-#>   Mean LISI:    1.7999
-#>   Median LISI:  1.8000
-#>   Normalised:   0.8000 (0 = worst, 1 = best)
+#>   Cells: 6626 | Labels: 2
+#>   Mean LISI:    1.9912
+#>   Median LISI:  1.9912
+#>   Normalised:   0.9912 (0 = worst, 1 = best)
 ```
 
 With two batches, perfect mixing means a LISI of 2 and no mixing means

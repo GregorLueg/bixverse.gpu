@@ -44,9 +44,12 @@ the same `ScenicGrn` result class, so downstream code
 library(bixverse)
 library(bixverse.gpu)
 library(data.table)
-#> Warning: package 'data.table' was built under R version 4.5.2
+#> 
+#> Attaching package: 'data.table'
+#> The following object is masked from 'package:base':
+#> 
+#>     %notin%
 library(magrittr)
-#> Warning: package 'magrittr' was built under R version 4.5.2
 ```
 
 > **Note**
@@ -77,6 +80,12 @@ sc_object <- load_mtx(
   mtx_streaming = FALSE,
   .verbose = FALSE
 )
+#> Warning: The `mtx_streaming` argument of `load_mtx()` is deprecated as of bixverse
+#> 0.8.4.
+#> ℹ The .mtx file is always read in a single pass with its entries bucketed on
+#>   disk next to the store. The argument is ignored.
+#> ℹ The deprecated feature was likely used in the bixverse package.
+#>   Please report the issue to the authors.
 
 setnames_sc(sc_object, table = "var", old = "column1", new = "gene_symbol")
 
@@ -139,7 +148,7 @@ scenic_genes <- scenic_gene_filter_sc(
 )
 
 length(scenic_genes)
-#> [1] 5430
+#> [1] 5494
 ```
 
 ## Transcription factor list
@@ -148,11 +157,7 @@ Aerts lab curated list, mapped to Ensembl.
 
 ``` r
 
-tf_dt <- data.table::fread(
-  "https://resources.aertslab.org/cistarget/tf_lists/allTFs_hg38.txt",
-  header = FALSE,
-  col.names = "tf"
-)
+tf_dt <- data.table::data.table(tf = load_scenic_tfs_hg38())
 tf_dt[, gene_id := symbol_to_ensembl[tf]]
 tf_dt <- tf_dt[!is.na(gene_id)]
 
@@ -185,12 +190,12 @@ scenic_res_et <- scenic_grn_sc_gpu(
   ),
   .verbose = TRUE
 )
-#> SCENIC GPU: 5430 target genes, 466 TFs, 2163 cells (streaming: FALSE)
+#> SCENIC GPU: 5494 target genes, 482 TFs, 2490 cells (streaming: FALSE)
 
 scenic_res_et
 #> ScenicGrn (GRN results)
-#>   No genes:                 5430 
-#>   No TFs:                   466 
+#>   No genes:                 5494 
+#>   No TFs:                   482 
 #>   Applied learner:          extratrees 
 #>   TF to gene generated:     FALSE 
 #>   CisTarget res generated:  FALSE
@@ -213,12 +218,12 @@ scenic_res_rf <- scenic_grn_sc_gpu(
   ),
   .verbose = TRUE
 )
-#> SCENIC GPU: 5430 target genes, 466 TFs, 2163 cells (streaming: FALSE)
+#> SCENIC GPU: 5494 target genes, 482 TFs, 2490 cells (streaming: FALSE)
 
 scenic_res_rf
 #> ScenicGrn (GRN results)
-#>   No genes:                 5430 
-#>   No TFs:                   466 
+#>   No genes:                 5494 
+#>   No TFs:                   482 
 #>   Applied learner:          randomforest 
 #>   TF to gene generated:     FALSE 
 #>   CisTarget res generated:  FALSE
@@ -308,18 +313,18 @@ tf_gene_dt[, gene_symbol := ensembl_to_symbol[gene]]
 head(tf_gene_dt[order(-importance)], 5L)
 #>                 tf            gene importance pairwise_cor cor_sign tf_symbol
 #>             <char>          <char>      <num>        <num>    <int>    <char>
-#> 1: ENSG00000171223 ENSG00000120129  0.2464994    0.3103159        1      JUNB
-#> 2: ENSG00000269404 ENSG00000168081  0.2212982    0.2799395        1      SPIB
-#> 3: ENSG00000139187 ENSG00000113088  0.2000381    0.2404412        1     KLRG1
-#> 4: ENSG00000066336 ENSG00000172243  0.1999177    0.3463677        1      SPI1
-#> 5: ENSG00000221869 ENSG00000115828  0.1944687    0.2856549        1     CEBPD
+#> 1: ENSG00000171223 ENSG00000120129  0.2683848    0.3039920        1      JUNB
+#> 2: ENSG00000269404 ENSG00000168081  0.2413622    0.2517632        1      SPIB
+#> 3: ENSG00000139187 ENSG00000113088  0.2325682    0.2582165        1     KLRG1
+#> 4: ENSG00000269404 ENSG00000136573  0.2166099    0.2426151        1      SPIB
+#> 5: ENSG00000066336 ENSG00000114013  0.2148622    0.3442185        1      SPI1
 #>    gene_symbol
 #>         <char>
 #> 1:       DUSP1
 #> 2:        PNOC
 #> 3:        GZMK
-#> 4:      CLEC7A
-#> 5:        QPCT
+#> 4:         BLK
+#> 5:        CD86
 ```
 
 ## MetaCells path
@@ -352,13 +357,13 @@ scenic_res_mc <- scenic_grn_sc_gpu(
 )
 #> The mean leafs per sample is set quite high for meta cells. Reducing to 10L.
 #> No target genes supplied, running CPU gene filter...
-#> SCENIC gene filter: 7521 / 11139 genes pass.
-#> SCENIC GPU: 7521 target genes, 700 TFs, 200 cells
+#> SCENIC gene filter: 7637 / 11139 genes pass.
+#> SCENIC GPU: 7637 target genes, 705 TFs, 200 cells
 
 scenic_res_mc
 #> ScenicGrn (GRN results)
-#>   No genes:                 7521 
-#>   No TFs:                   700 
+#>   No genes:                 7637 
+#>   No TFs:                   705 
 #>   Applied learner:          extratrees 
 #>   TF to gene generated:     FALSE 
 #>   CisTarget res generated:  FALSE

@@ -87,7 +87,7 @@ mono
 #>   PCA calculated: FALSE
 #>   Other embeddings: none
 #>   KNN generated: FALSE
-#>   SNN generated: FALSE
+#>   Graph generated: FALSE
 #>   Stale artefacts: none
 ```
 
@@ -130,8 +130,8 @@ data.table(
 )
 #>    backend seconds
 #>     <char>   <num>
-#> 1:     CPU   2.843
-#> 2:     GPU   2.622
+#> 1:     CPU    0.23
+#> 2:     GPU    0.31
 ```
 
 ### How close are they?
@@ -168,14 +168,14 @@ rbindlist(lapply(cols, \(col) {
     pearson = cor(a, b)
   )
 }))
-#>                    column max_abs_diff  pearson
-#>                    <char>        <num>    <num>
-#> 1:                 log_fc 0.0006526261 1.000000
-#> 2:                      z 0.0012607748 1.000000
-#> 3:                p_value 0.0007529370 1.000000
-#> 4:                    fdr 0.0008433680 1.000000
-#> 5: subject_overdispersion 0.0055144379 0.999999
-#> 6:    cell_overdispersion 0.2689521211 1.000000
+#>                    column max_abs_diff pearson
+#>                    <char>        <num>   <num>
+#> 1:                 log_fc            0       1
+#> 2:                      z            0       1
+#> 3:                p_value            0       1
+#> 4:                    fdr            0       1
+#> 5: subject_overdispersion            0       1
+#> 6:    cell_overdispersion            0       1
 ```
 
 ``` r
@@ -209,7 +209,7 @@ res_both[, .(
 )]
 #>    genes sig_cpu sig_gpu sig_both bound_agree convergence_agree
 #>    <int>   <int>   <int>    <int>       <int>             <int>
-#> 1:   429     299     299      299         429               421
+#> 1:   429     299     299      299         429               429
 ```
 
 Every CPU call is a GPU call and vice versa. The top of the list, ranked
@@ -247,26 +247,7 @@ res_both[
   .(gene_id, convergence_cpu, convergence_gpu, z_cpu, z_gpu, fdr_cpu, fdr_gpu)
 ]
 #> Key: <gene_id>
-#>    gene_id convergence_cpu convergence_gpu     z_cpu     z_gpu      fdr_cpu
-#>     <char>           <int>           <int>     <num>     <num>        <num>
-#> 1:   DDHD1               1             -10  1.398976  1.398976 1.994853e-01
-#> 2:  DHRS7B               1             -10 -3.617794 -3.617794 5.928685e-04
-#> 3:     DR1             -10               1 -4.940335 -4.940335 2.052579e-06
-#> 4:  FGFBP2             -10               1 -2.131773 -2.131774 4.770352e-02
-#> 5:    PGM2               1             -10 -2.555115 -2.555114 1.644028e-02
-#> 6:    PHC1               1             -10 -1.597487 -1.597487 1.385847e-01
-#> 7:  PLGRKT             -10               1  4.651144  4.651145 8.138629e-06
-#> 8: TMEM41A               1             -10 -1.422732 -1.422731 1.913983e-01
-#>         fdr_gpu
-#>           <num>
-#> 1: 1.994852e-01
-#> 2: 5.928685e-04
-#> 3: 2.052578e-06
-#> 4: 4.770342e-02
-#> 5: 1.644033e-02
-#> 6: 1.385850e-01
-#> 7: 8.138607e-06
-#> 8: 1.913984e-01
+#> Empty data.table (0 rows and 7 cols): gene_id,convergence_cpu,convergence_gpu,z_cpu,z_gpu,fdr_cpu...
 ```
 
 The codes swap between `1` and `-10` in both directions. Both sit above
@@ -372,8 +353,8 @@ data.table(
 
 ## Timing
 
-On this data, 500 genes over 5355 cells, the CPU took 2.8 s and the GPU
-2.6 s. One run each on an Apple Silicon laptop, device set-up included.
+On this data, 500 genes over 5355 cells, the CPU took 0.2 s and the GPU
+0.3 s. One run each on an Apple Silicon laptop, device set-up included.
 Across renders of this vignette the order has flipped both ways, so call
 it a wash at this size. The whole sweep is seconds either way, and stage
 one, the batching and the Wald test stay on the CPU in both, so the GPU

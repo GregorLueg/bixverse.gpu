@@ -32,11 +32,13 @@ a compatible GPU is beneficial but not strictly required.
 
 library(bixverse.gpu)
 library(manifoldsR)
-#> Warning: package 'manifoldsR' was built under R version 4.5.3
 library(ggplot2)
-#> Warning: package 'ggplot2' was built under R version 4.5.2
 library(data.table)
-#> Warning: package 'data.table' was built under R version 4.5.2
+#> 
+#> Attaching package: 'data.table'
+#> The following object is masked from 'package:base':
+#> 
+#>     %notin%
 ```
 
 > **Note**

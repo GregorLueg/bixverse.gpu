@@ -16,8 +16,7 @@ params_nn_gpu(
   rho = NULL,
   beam_width = NULL,
   max_beam_iters = NULL,
-  n_entry_points = NULL,
-  extract_knn = FALSE
+  n_entry_points = NULL
 )
 ```
 
@@ -40,53 +39,48 @@ params_nn_gpu(
 
 - node_degree_final:
 
-  Integer or `NULL`. Final node degree of the CAGRA navigational graph.
-  If `NULL`, defaults to `30` on the Rust side. Defaults to `NULL`.
+  Integer or `NULL`. CAGRA GPU: Final node degree of the navigational
+  graph. If `NULL`, defaults to `30` on the Rust side. Ignored by UMAP,
+  tSNE and PHATE. Defaults to `NULL`.
 
 - k_build:
 
-  Integer or `NULL`. Number of k-neighbours during the NNDescent build
-  phase before CAGRA pruning. If `NULL`, defaults to
-  `1.5 * node_degree_final` on the Rust side. (Cannot be smaller than
-  `node_degree_final`) Defaults to `NULL`.
+  Integer or `NULL`. NNDescent and CAGRA GPU: Working degree of the
+  descent. If `NULL`, defaults to `1.5 * k` on the Rust side. For CAGRA
+  it cannot be smaller than `node_degree_final`. Defaults to `NULL`.
 
 - n_tree:
 
-  Integer or `NULL`. CAGRA GPU: Number of trees for graph build.
-  Automatically if `NULL`. Defaults to `NULL`.
+  Integer or `NULL`. NNDescent and CAGRA GPU: Number of trees seeding
+  the descent. Automatically if `NULL`. Defaults to `NULL`.
 
 - delta:
 
-  Numeric. CAGRA GPU: Early termination parameter for NN descent.
-  Defaults to `0.001`.
+  Numeric. NNDescent and CAGRA GPU: Early termination parameter for the
+  descent. Defaults to `0.001`.
 
 - rho:
 
-  Numeric or `NULL`. CAGRA GPU: Sample rate parameter for NN descent.
-  Defaults to `NULL`.
+  Numeric or `NULL`. NNDescent and CAGRA GPU: Sample rate for the
+  descent. Defaults to `NULL`.
 
 - beam_width:
 
   Integer or `NULL`. CAGRA GPU: Beam width for beam search. If not
   provided will be set to `max(c(k, node_degree_final, 16L)) * 2`.
-  Defaults to `NULL`.
+  Ignored by UMAP, tSNE and PHATE. Defaults to `NULL`.
 
 - max_beam_iters:
 
   Integer or `NULL`. CAGRA GPU: Maximum number of beam search
-  iterations. If not provided, defaults to `3 * beam_width`. Defaults to
-  `NULL`.
+  iterations. If not provided, defaults to `3 * beam_width`. Ignored by
+  UMAP, tSNE and PHATE. Defaults to `NULL`.
 
 - n_entry_points:
 
   Integer or `NULL`. CAGRA GPU: Number of entry points for beam search.
-  If not provided, defaults to `8L`. Defaults to `NULL`.
-
-- extract_knn:
-
-  Boolean. CAGRA GPU: Skip the beam search and take the graph the
-  NNDescent left it. Faster, slightly lower recall. Ignored by the other
-  two searches. Defaults to `FALSE`.
+  If not provided, defaults to `8L`. Ignored by UMAP, tSNE and PHATE.
+  Defaults to `NULL`.
 
 ## Value
 
@@ -101,36 +95,33 @@ A named list with the following elements:
 - n_probes - Integer or `NULL`. IVF GPU: Number of clusters to probe. If
   `NULL`, will default to `sqrt(n_list)`. Defaults to `NULL`.
 
-- node_degree_final - Integer or `NULL`. Final node degree of the CAGRA
-  navigational graph. If `NULL`, defaults to `30` on the Rust side.
-  Defaults to `NULL`.
+- node_degree_final - Integer or `NULL`. CAGRA GPU: Final node degree of
+  the navigational graph. If `NULL`, defaults to `30` on the Rust side.
+  Ignored by UMAP, tSNE and PHATE. Defaults to `NULL`.
 
-- k_build - Integer or `NULL`. Number of k-neighbours during the
-  NNDescent build phase before CAGRA pruning. If `NULL`, defaults to
-  `1.5 * node_degree_final` on the Rust side. (Cannot be smaller than
-  `node_degree_final`) Defaults to `NULL`.
+- k_build - Integer or `NULL`. NNDescent and CAGRA GPU: Working degree
+  of the descent. If `NULL`, defaults to `1.5 * k` on the Rust side. For
+  CAGRA it cannot be smaller than `node_degree_final`. Defaults to
+  `NULL`.
 
-- n_tree - Integer or `NULL`. CAGRA GPU: Number of trees for graph
-  build. Automatically if `NULL`. Defaults to `NULL`.
+- n_tree - Integer or `NULL`. NNDescent and CAGRA GPU: Number of trees
+  seeding the descent. Automatically if `NULL`. Defaults to `NULL`.
 
-- delta - Numeric. CAGRA GPU: Early termination parameter for NN
-  descent. Defaults to `0.001`.
+- delta - Numeric. NNDescent and CAGRA GPU: Early termination parameter
+  for the descent. Defaults to `0.001`.
 
-- rho - Numeric or `NULL`. CAGRA GPU: Sample rate parameter for NN
+- rho - Numeric or `NULL`. NNDescent and CAGRA GPU: Sample rate for the
   descent. Defaults to `NULL`.
 
 - beam_width - Integer or `NULL`. CAGRA GPU: Beam width for beam search.
   If not provided will be set to
-  `max(c(k, node_degree_final, 16L)) * 2`. Defaults to `NULL`.
+  `max(c(k, node_degree_final, 16L)) * 2`. Ignored by UMAP, tSNE and
+  PHATE. Defaults to `NULL`.
 
 - max_beam_iters - Integer or `NULL`. CAGRA GPU: Maximum number of beam
   search iterations. If not provided, defaults to `3 * beam_width`.
-  Defaults to `NULL`.
+  Ignored by UMAP, tSNE and PHATE. Defaults to `NULL`.
 
 - n_entry_points - Integer or `NULL`. CAGRA GPU: Number of entry points
-  for beam search. If not provided, defaults to `8L`. Defaults to
-  `NULL`.
-
-- extract_knn - Boolean. CAGRA GPU: Skip the beam search and take the
-  graph the NNDescent left it. Faster, slightly lower recall. Ignored by
-  the other two searches. Defaults to `FALSE`.
+  for beam search. If not provided, defaults to `8L`. Ignored by UMAP,
+  tSNE and PHATE. Defaults to `NULL`.

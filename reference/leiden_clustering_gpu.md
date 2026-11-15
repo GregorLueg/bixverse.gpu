@@ -1,4 +1,4 @@
-# GPU-accelerated Leiden or Louvain community detection on an igraph
+# GPU-accelerated Leiden or Louvain community detection
 
 GPU counterpart of
 [`bixverse::leiden_clustering()`](https://gregorlueg.github.io/bixverse/reference/leiden_clustering.html).
@@ -30,8 +30,11 @@ leiden_clustering_gpu(
 
 - graph:
 
-  igraph. Undirected. If it has an edge attribute `weight`, it is used,
-  otherwise all edges get weight 1.
+  `SingleCellConnectivity` or undirected igraph. For an igraph, the edge
+  attribute `weight` is used if present, otherwise all edges get
+  weight 1. An igraph is converted with
+  [`bixverse::as_sc_connectivity()`](https://gregorlueg.github.io/bixverse/reference/as_sc_connectivity.html)
+  first.
 
 - resolution:
 

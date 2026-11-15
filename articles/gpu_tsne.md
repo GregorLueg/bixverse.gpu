@@ -27,11 +27,13 @@ Current split of work:
 
 library(bixverse.gpu)
 library(manifoldsR)
-#> Warning: package 'manifoldsR' was built under R version 4.5.3
 library(data.table)
-#> Warning: package 'data.table' was built under R version 4.5.2
+#> 
+#> Attaching package: 'data.table'
+#> The following object is masked from 'package:base':
+#> 
+#>     %notin%
 library(ggplot2)
-#> Warning: package 'ggplot2' was built under R version 4.5.2
 ```
 
 > **Note**
@@ -96,8 +98,8 @@ Three GPU backends via `knn_method`:
 - **`"ivf"`**: inverted file index over Voronoi cells. Wins on large
   data where an approximate answer is fine. Works very well on strongly
   clustered data.
-- **`"nndescent"`**: NN-descent with CAGRA-style graph pruning. Solid
-  default.
+- **`"nndescent"`**: the NN-descent kNN graph itself, no index and no
+  search. Loses ground at the high `k` t-SNE asks for.
 
 Tuning knobs live in
 [`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md),
@@ -168,8 +170,7 @@ Five options via `approx_type`:
 
 - **`"fft_3k_gpu"`**: the default. FFT-interpolated repulsion with three
   kernels (`q`, `q^2 dx`, `q^2 dy`), fully on the GPU. Always runs in
-  fp32 (f64 kernels don’t run on Metal); `use_high_precision = TRUE` is
-  ignored with a warning. Works on Windows, no FFTW needed.
+  fp32 (f64 kernels don’t run on Metal).
 - **`"bh"`**: Barnes-Hut on the CPU. `O(N log N)`.
 - **`"bh_qd"`**: the quick-and-dirty Barnes-Hut from
   [qdtsne](https://github.com/libscran/qdtsne), on the CPU. Tree depth
@@ -184,7 +185,8 @@ Five options via `approx_type`:
 - **`"fft_3k"`**: the CPU twin of `"fft_3k_gpu"`. One forward and three
   inverse FFTs per epoch instead of four each.
 
-The two CPU FFT variants need FFTW, so they’re Unix-only.
+The two CPU FFT variants run on the pure-Rust rustfft, so they work on
+every platform.
 
 ``` r
 
@@ -228,11 +230,7 @@ Same data, same kNN backend, only the optimiser changes.
 
 ``` r
 
-approx_types <- if (.Platform$OS.type == "unix") {
-  c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")
-} else {
-  c("fft_3k_gpu", "bh", "bh_qd")
-}
+approx_types <- c("fft_3k_gpu", "bh", "bh_qd", "fft", "fft_3k")
 
 timings <- rbindlist(lapply(approx_types, \(approx) {
   secs <- system.time(
@@ -251,11 +249,11 @@ timings <- rbindlist(lapply(approx_types, \(approx) {
 timings
 #>    approx_type seconds
 #>         <char>   <num>
-#> 1:  fft_3k_gpu    2.46
-#> 2:          bh   25.41
-#> 3:       bh_qd    6.76
-#> 4:         fft    7.34
-#> 5:      fft_3k    5.91
+#> 1:  fft_3k_gpu    1.29
+#> 2:          bh   18.07
+#> 3:       bh_qd    3.32
+#> 4:         fft    5.38
+#> 5:      fft_3k    3.91
 ```
 
 ## Using a pre-computed kNN graph
@@ -302,10 +300,10 @@ Note the kNN needs enough neighbours for the perplexity you’re using;
 ## When does the GPU version pay off?
 
 The CPU t-SNE in `manifoldsR` is already fast (Rust, SIMD kNN, FFT
-optimiser on Unix). With a CPU optimiser the GPU only buys you the kNN,
-so the payoff is the kNN share of the wall-clock. `"fft_3k_gpu"` moves
-the optimiser over as well; check the timings above against your own
-data size and hardware before assuming it wins.
+optimiser). With a CPU optimiser the GPU only buys you the kNN, so the
+payoff is the kNN share of the wall-clock. `"fft_3k_gpu"` moves the
+optimiser over as well; check the timings above against your own data
+size and hardware before assuming it wins.
 
 `"nndescent"` and `"ivf"` are the kNN workhorses, `"exhaustive"` is for
 ground-truth checks or small data. Due to usually higher k needed for

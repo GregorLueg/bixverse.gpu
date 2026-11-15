@@ -1,10 +1,11 @@
 # Generate a GPU-accelerated kNN graph
 
 **\[experimental\]** Builds a kNN graph from an embedding matrix on the
-wgpu backend. Three searches are available: an exact brute-force scan,
-an IVF index that probes a subset of Voronoi cells, and a CAGRA-style
-NNDescent graph that is either beam searched or handed back as the
-descent left it.
+GPU. Four searches are available: an exact brute-force scan, an IVF
+index that probes a subset of Voronoi cells, the NN-descent kNN graph
+itself (no index, no search), and a CAGRA graph pruned from the
+NN-descent build and beam searched. Rows the descent left short are
+topped up with an exact search of only those rows.
 
 Euclidean distances come back as true L2, not squared.
 
@@ -26,7 +27,7 @@ rs_gpu_knn(embd, k, knn_method, nn_params, seed, backend = "wgpu", verbose)
 
 - knn_method:
 
-  String. One of `c("nndescent", "exhaustive", "ivf")`.
+  String. One of `c("nndescent", "cagra", "exhaustive", "ivf")`.
 
 - nn_params:
 

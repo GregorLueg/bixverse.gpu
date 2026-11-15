@@ -6,6 +6,7 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/articles/gpu_metacells.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/articles/gpu_nebula.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/articles/gpu_nmf.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/articles/gpu_phate.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scenic.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scrublet.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/articles/gpu_single_cell.html</loc></url>
@@ -24,6 +25,7 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertNebulaGpuParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertNnGpuParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertParametricUmapParams.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertPhateGpuParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertScBbknnGpuParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertScFastClusterGpuParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/assertScFastmnnGpuParams.html</loc></url>
@@ -40,6 +42,7 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkNebulaGpuParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkNnGpuParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkParametricUmapParams.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkPhateGpuParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkScBbknnGpuParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkScFastClusterGpuParams.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/checkScFastmnnGpuParams.html</loc></url>
@@ -60,8 +63,8 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-manifold_from_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-mc_nmf_counts.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-nebula_gpu.html</loc></url>
-<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-normalise_gpu_knn_method.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-prepare_parametric_umap_params.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-prepare_phate_params_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-prepare_tsne_params_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-prepare_umap_params_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/dot-resolve_deprecated_fc_args.html</loc></url>
@@ -77,7 +80,7 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/generate_knn_graph_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/generate_seacells_gpu_sc.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/gpu_available.html</loc></url>
-<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/harmony_v2_gpu_sc.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/harmony_gpu_sc.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/index.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/install_agent_skill_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/k_means_cluster_gpu.html</loc></url>
@@ -94,6 +97,7 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_nebula_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_parametric_umap.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_phate_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_bbknn_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_cagra.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_sc_fast_cluster_gpu.html</loc></url>
@@ -104,6 +108,8 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_tsne_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/params_umap_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/parse_verbosity.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/phate_gpu.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/phate_gpu_sc.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/predict.ParametricUmapModel.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/print.KMeansClusterGPU.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/print.ParametricUmapModel.html</loc></url>
@@ -136,6 +142,8 @@
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_nmf_single_sc_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_parametric_umap.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_parametric_umap_predict.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_phate_from_knn_gpu.html</loc></url>
+<url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_phate_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_sc_bonsai_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_sc_pca_sparse_gpu.html</loc></url>
 <url><loc>https://gregorlueg.github.io/bixverse.gpu/reference/rs_sc_scrublet_gpu.html</loc></url>

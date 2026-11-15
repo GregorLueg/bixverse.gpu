@@ -1,15 +1,19 @@
 # Generate a k-nearest neighbour graph (GPU-accelerated)
 
 This function generates a kNN graph based on a given numeric matrix.
-Three different GPU-accelerated versions are available
+Four different GPU-accelerated versions are available
+
+- `"nndescent"` - The NN-descent kNN graph itself, no index and no
+  search. Rows the descent left short are topped up with an exact
+  search.
+
+- `"cagra"` - The NN-descent graph pruned into a CAGRA graph and beam
+  searched.
 
 - `"exhaustive"` - Exact nearest neighbour search via GPU.
 
-- `"ivf"` - Inverted file index that leverages k-means clustering and
-  probing a few of the clusters via GPU-accelerated distance
-  calculations.
-
-- `"nndescent"` - A CAGRA style nearest neighbour search on the GPU.
+- `"ivf"` - Inverted file index that clusters the data with k-means and
+  probes a few of the clusters at query time.
 
 ## Usage
 
@@ -17,7 +21,7 @@ Three different GPU-accelerated versions are available
 generate_knn_graph_gpu(
   data,
   k,
-  knn_method = c("nndescent", "exhaustive", "ivf"),
+  knn_method = c("nndescent", "cagra", "exhaustive", "ivf"),
   nn_params = params_nn_gpu(),
   seed = 42L,
   extract_knn = lifecycle::deprecated(),
@@ -40,7 +44,8 @@ generate_knn_graph_gpu(
 - knn_method:
 
   Character. The algorithm to use for nearest neighbour search. One of
-  `c("exhaustive", "ivf", "nndescent")`. Defaults to `"nndescent"`
+  `c("nndescent", "cagra", "exhaustive", "ivf")`. Defaults to
+  `"nndescent"`.
 
 - nn_params:
 
@@ -53,9 +58,8 @@ generate_knn_graph_gpu(
 
 - extract_knn:
 
-  **\[deprecated\]** Use the `extract_knn` field of
-  [`params_nn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_nn_gpu.md)
-  instead.
+  **\[deprecated\]** Use `knn_method = "nndescent"` (graph only) or
+  `knn_method = "cagra"` (beam search) instead.
 
 - backend:
 

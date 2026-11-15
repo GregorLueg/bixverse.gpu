@@ -30,7 +30,6 @@ tsne_gpu_sc(
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
   seed = 42L,
-  use_high_precision = NULL,
   backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
@@ -105,11 +104,6 @@ tsne_gpu_sc(
 - seed:
 
   Integer. For reproducibility.
-
-- use_high_precision:
-
-  Optional boolean. Fine-grained fp32 vs fp64 control. GPU kNN is always
-  fp32. Ignored for `"fft_3k_gpu"`.
 
 - backend:
 

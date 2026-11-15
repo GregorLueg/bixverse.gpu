@@ -32,11 +32,13 @@ manifolds). Both caveats apply here; only the compute path is different.
 
 library(bixverse.gpu)
 library(manifoldsR)
-#> Warning: package 'manifoldsR' was built under R version 4.5.3
 library(data.table)
-#> Warning: package 'data.table' was built under R version 4.5.2
+#> 
+#> Attaching package: 'data.table'
+#> The following object is masked from 'package:base':
+#> 
+#>     %notin%
 library(ggplot2)
-#> Warning: package 'ggplot2' was built under R version 4.5.2
 ```
 
 > **Note**
@@ -100,8 +102,8 @@ Clusters separate cleanly.
 
 Three GPU backends via `knn_method`:
 
-- **`"nndescent"`**: NN-descent with CAGRA-style graph pruning. Solid
-  default.
+- **`"nndescent"`**: the NN-descent kNN graph itself, no index and no
+  search. Solid default.
 - **`"ivf"`**: inverted file index over Voronoi cells. Wins on large
   data where an approximate answer is fine.
 - **`"exhaustive"`**: exact brute force. Small data or ground-truth
@@ -169,7 +171,7 @@ methods are indistinguishable from exact for downstream analysis.
 
 ## Choosing an optimiser
 
-Four optimisers via `params_umap_gpu(optimiser = ...)`:
+Five optimisers via `params_umap_gpu(optimiser = ...)`:
 
 - **`"adam_gpu"`**: GPU Adam, full optimisation on device with parallel
   gradient collection. Default, usually fastest.
@@ -181,6 +183,11 @@ Four optimisers via `params_umap_gpu(optimiser = ...)`:
 - **`"sgd"`**: classic stochastic gradient descent, as in the original
   UMAP paper. Slower, worth trying on continuous manifolds where you
   want a low `min_dist` to shine.
+- **`"sgd_parallel"`**: the same SGD, lock-free (Hogwild!) over all
+  threads. Not reproducible run to run with more than one thread.
+
+With `n_epochs = NULL` the SGD optimisers drop to 200 epochs above 10k
+samples, as in umap-learn; the Adam optimisers always get 500.
 
 ### SGD optimiser
 

@@ -10,23 +10,21 @@ local moving. On one device the result depends on the seed only.
 ## Usage
 
 ``` r
-rs_leiden_clustering_gpu(from, to, weights, n_nodes, leiden_params)
+rs_leiden_clustering_gpu(edges, weights, n_nodes, leiden_params)
 ```
 
 ## Arguments
 
-- from:
+- edges:
 
-  Integer vector. 1-based source node of each edge.
-
-- to:
-
-  Integer vector. 1-based target node of each edge. Same length as
-  `from`.
+  Integer vector. Flattened edge pairs (1-indexed!),
+  `c(from_1, to_1, from_2, to_2, ...)`, as
+  [`bixverse::rs_graph_to_edges()`](https://gregorlueg.github.io/bixverse/reference/rs_graph_to_edges.html)
+  returns them.
 
 - weights:
 
-  Numeric vector. Edge weights, same length as `from`.
+  Numeric vector. One weight per pair.
 
 - n_nodes:
 

@@ -43,11 +43,13 @@ first.
 library(bixverse)
 library(bixverse.gpu)
 library(data.table)
-#> Warning: package 'data.table' was built under R version 4.5.2
+#> 
+#> Attaching package: 'data.table'
+#> The following object is masked from 'package:base':
+#> 
+#>     %notin%
 library(ggplot2)
-#> Warning: package 'ggplot2' was built under R version 4.5.2
 library(magrittr)
-#> Warning: package 'magrittr' was built under R version 4.5.2
 ```
 
 > **Note**
@@ -98,7 +100,7 @@ sc_object
 #>   PCA calculated: TRUE
 #>   Other embeddings: none
 #>   KNN generated: FALSE
-#>   SNN generated: FALSE
+#>   Graph generated: FALSE
 #>   MAGIC imputed: none
 #>   Residual model: none
 #>   Stale artefacts: none
@@ -332,8 +334,8 @@ data.table(
 )[, speed_up := round(seconds[1] / seconds, 2)][]
 #>    version seconds speed_up
 #>     <char>   <num>    <num>
-#> 1:     CPU   17.06     1.00
-#> 2:     GPU    6.22     2.74
+#> 1:     CPU   17.04     1.00
+#> 2:     GPU    5.61     3.04
 ```
 
 Do the two agree? Not bit for bit, and they cannot: f32 GEMM on the

@@ -1,8 +1,8 @@
 # Find GPU-accelerated neighbours for single cells
 
 This function generates kNN data using GPU-accelerated algorithms via
-the `bixverse.gpu` package, then turns it into a connectivities igraph
-for downstream clustering. See
+the `bixverse.gpu` package, then turns it into a
+`SingleCellConnectivity` for downstream clustering. See
 [`generate_gpu_knn_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_gpu_knn_sc.md)
 for the three searches on offer. This function lives in a separate
 package from the CPU-based
@@ -18,7 +18,7 @@ find_neighbours_gpu_sc(
   embd_to_use = "pca",
   no_embd_to_use = NULL,
   modality = c("rna", "adt"),
-  knn_method = c("nndescent", "exhaustive", "ivf"),
+  knn_method = c("nndescent", "cagra", "exhaustive", "ivf"),
   nn_params = params_nn_gpu(),
   k = 15L,
   graph_params = bixverse::params_knn_graph_defaults(),
@@ -54,7 +54,7 @@ find_neighbours_gpu_sc(
 
 - knn_method:
 
-  String. One of `c("nndescent", "exhaustive", "ivf")`.
+  String. One of `c("nndescent", "cagra", "exhaustive", "ivf")`.
 
 - nn_params:
 

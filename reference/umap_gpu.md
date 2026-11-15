@@ -20,7 +20,6 @@ umap_gpu(
   nn_params = params_nn_gpu(),
   umap_params = params_umap_gpu(),
   seed = 42L,
-  use_high_precision = NULL,
   backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
@@ -83,11 +82,6 @@ umap_gpu(
 - seed:
 
   Integer. Random seed for reproducibility. Defaults to `42L`.
-
-- use_high_precision:
-
-  Optional boolean. Gives fine-grained control over `fp32` vs `fp64`
-  usage. The GPU calculations will be forced into `fp32`.
 
 - backend:
 

@@ -9,7 +9,7 @@ applications.
   : GPU-accelerated PCA for single cell
 - [`generate_gpu_knn_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_gpu_knn_sc.md)
   : Generate GPU kNN data for single cells
-- [`harmony_v2_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/harmony_v2_gpu_sc.md)
+- [`harmony_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/harmony_gpu_sc.md)
   : Run Harmony v2 (GPU)
 - [`find_neighbours_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_gpu_sc.md)
   : Find GPU-accelerated neighbours for single cells
@@ -58,7 +58,7 @@ applications.
 
 ## GPU-accelerated UMAP
 
-GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent/CAGRA,
+GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent,
 exhaustive) and CPU/GPU optimisers. Also a version for the single cells
 analysis suite in bixverse.
 
@@ -85,6 +85,19 @@ for the single cells analysis suite in bixverse.
 - [`params_tsne_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_tsne_gpu.md)
   : Wrapper function to generate t-SNE parameters (GPU version)
 
+## GPU-accelerated PHATE
+
+PHATE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive)
+and spectral landmark selection on the GPU. Diffusion and MDS run on the
+CPU. Also a version for the single cells analysis suite in bixverse.
+
+- [`phate_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/phate_gpu.md)
+  : Rust-based PHATE (GPU)
+- [`phate_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/phate_gpu_sc.md)
+  : Run PHATE on a SingleCells object (GPU)
+- [`params_phate_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_phate_gpu.md)
+  : Wrapper function to generate PHATE parameters (GPU version)
+
 ## Parametric UMAP
 
 Want to train a neural net to do your UMAP embeddings? Want to train
@@ -92,11 +105,11 @@ flexibly on CPU or GPU? Here’s what you need.
 
 - [`parametric_umap()`](https://gregorlueg.github.io/bixverse.gpu/reference/parametric_umap.md)
   : Parametric UMAP
-- [`params_parametric_umap()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_parametric_umap.md)
-  : Wrapper function to generate parametric UMAP parameters
 - [`predict(`*`<ParametricUmapModel>`*`)`](https://gregorlueg.github.io/bixverse.gpu/reference/predict.ParametricUmapModel.md)
   : Predict embeddings for new data using a trained parametric UMAP
   model
+- [`params_parametric_umap()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_parametric_umap.md)
+  : Wrapper function to generate parametric UMAP parameters
 - [`load_parametric_umap()`](https://gregorlueg.github.io/bixverse.gpu/reference/load_parametric_umap.md)
   : Load a parametric UMAP as a qs2 file
 - [`save_parametric_umap()`](https://gregorlueg.github.io/bixverse.gpu/reference/save_parametric_umap.md)
@@ -111,7 +124,7 @@ can be found here.
 - [`k_means_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/k_means_cluster_gpu.md)
   : GPU-accelerated k-means clustering
 - [`leiden_clustering_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/leiden_clustering_gpu.md)
-  : GPU-accelerated Leiden or Louvain community detection on an igraph
+  : GPU-accelerated Leiden or Louvain community detection
 - [`params_kmeans_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_kmeans_gpu.md)
   : Default parameters for GPU k-means
 - [`generate_knn_graph_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_knn_graph_gpu.md)
@@ -143,10 +156,6 @@ useful for your own package? Use with care and read the documentation!
   **\[experimental\]** : GPU-accelerated covariance calculations
 - [`rs_fast_cluster_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_fast_cluster_gpu.md)
   **\[experimental\]** : GPU: fast clustering on the data
-- [`rs_gpu_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_gpu_available.md)
-  : Check whether a usable GPU adapter is present
-- [`rs_gpu_plane_ops()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_gpu_plane_ops.md)
-  : Check whether the GPU adapter runs plane (subgroup) operations
 - [`rs_harmony_v2_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_harmony_v2_gpu.md)
   **\[experimental\]** : Harmony batch correction in Rust (version 2,
   GPU-accelerated)
@@ -209,6 +218,11 @@ useful for your own package? Use with care and read the documentation!
   **\[experimental\]** : tSNE implementation
 - [`rs_tsne_from_knn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_tsne_from_knn_gpu.md)
   **\[experimental\]** : tSNE implementation from a pre-computed kNN
+  graph
+- [`rs_phate_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_phate_gpu.md)
+  **\[experimental\]** : PHATE implementation
+- [`rs_phate_from_knn_gpu()`](https://gregorlueg.github.io/bixverse.gpu/reference/rs_phate_from_knn_gpu.md)
+  **\[experimental\]** : PHATE implementation from a pre-computed kNN
   graph
 
 ## Deprecated

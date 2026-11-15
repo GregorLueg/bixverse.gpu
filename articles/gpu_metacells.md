@@ -35,9 +35,12 @@ identical here.
 library(bixverse)
 library(bixverse.gpu)
 library(data.table)
-#> Warning: package 'data.table' was built under R version 4.5.2
+#> 
+#> Attaching package: 'data.table'
+#> The following object is masked from 'package:base':
+#> 
+#>     %notin%
 library(magrittr)
-#> Warning: package 'magrittr' was built under R version 4.5.2
 ```
 
 > **Note**
@@ -89,8 +92,7 @@ sc_object <- find_neighbours_sc(
   )
 )
 #> 
-#> Generating sNN graph (full: TRUE).
-#> Transforming sNN data to igraph.
+#> Generating the snn graph.
 
 # we need the kNN object for the diffusion maps
 knn_object <- get_knn_obj(x = sc_object)
@@ -131,7 +133,7 @@ mc_gpu
 #>   PCA calculated: FALSE
 #>   Other embeddings: none
 #>   KNN generated: FALSE
-#>   SNN generated: FALSE
+#>   Graph generated: FALSE
 #>   Stale artefacts: none
 ```
 
@@ -143,7 +145,7 @@ the archetype cell indices in `@other_data`.
 
 head(mc_gpu[[]], 3L)
 #>    meta_cell_idx  meta_cell_id no_originating_cells
-#>            <int>        <char>                <num>
+#>            <int>        <char>                <int>
 #> 1:             1 meta_cell_001                   45
 #> 2:             2 meta_cell_002                   67
 #> 3:             3 meta_cell_003                   30
@@ -201,13 +203,13 @@ data.table(
 )[, speed_up := round(seconds[1] / seconds, 2)][]
 #>    version seconds speed_up
 #>     <char>   <num>    <num>
-#> 1:     CPU    7.12      1.0
-#> 2:     GPU    6.49      1.1
+#> 1:     CPU    6.20     1.00
+#> 2:     GPU    3.33     1.86
 ```
 
-On small data sets the CPU versions tends to be faster. The advantage of
-the GPU only becomes visible on larger N. The two do not produce
-bit-identical assignments. GPU reduction ordering breaks ties
+On small data sets the CPU versions are not necessarily faster. The
+advantage of the GPU only becomes visible on larger N. The two do not
+produce bit-identical assignments. GPU reduction ordering breaks ties
 differently, so a cell sitting almost equidistant between two archetypes
 can land either way. What should agree is the structure. Compare how the
 meta cells partition the cells:

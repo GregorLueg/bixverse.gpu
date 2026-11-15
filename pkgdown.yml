@@ -5,6 +5,7 @@ articles:
   gpu_metacells: gpu_metacells.html
   gpu_nebula: gpu_nebula.html
   gpu_nmf: gpu_nmf.html
+  gpu_phate: gpu_phate.html
   gpu_scenic: gpu_scenic.html
   gpu_scrublet: gpu_scrublet.html
   gpu_single_cell: gpu_single_cell.html
@@ -12,7 +13,7 @@ articles:
   gpu_umap: gpu_umap.html
   other_gpu: other_gpu.html
   parametric_umap: parametric_umap.html
-last_built: 2026-10-22T09:00Z
+last_built: 2026-11-15T13:57Z
 urls:
   reference: https://gregorlueg.github.io/bixverse.gpu/reference
   article: https://gregorlueg.github.io/bixverse.gpu/articles

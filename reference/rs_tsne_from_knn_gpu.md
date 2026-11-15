@@ -17,7 +17,6 @@ rs_tsne_from_knn_gpu(
   approx_type,
   tsne_params,
   seed,
-  use_high_precision,
   backend = "wgpu",
   verbose
 )
@@ -57,12 +56,6 @@ rs_tsne_from_knn_gpu(
 - seed:
 
   Integer. Seed for reproducibility.
-
-- use_high_precision:
-
-  Optional logical. Controls `fp32` vs `fp64`. If `NULL` will use
-  sensible default thresholding. Ignored for `"fft_3k_gpu"`, which
-  always runs in `fp32`.
 
 - backend:
 

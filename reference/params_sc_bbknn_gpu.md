@@ -39,15 +39,15 @@ params_sc_bbknn_gpu(
   Integer or `NULL`. Trim the neighbours of each cell to these many top
   connectivities. May help with population independence and improve the
   tidiness of clustering. If `NULL`, it defaults to
-  `10 * neighbours_within_batch`. Defaults to `NULL`.
+  `10 * neighbours_within_batch * n_batches`, as in the reference
+  implementation. Defaults to `NULL`.
 
 - knn:
 
   List. Optional overrides for the kNN block. See
   [`params_knn_gpu_defaults()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_knn_gpu_defaults.md)
-  for the available elements. Without `k`, `extract_knn`. Unknown
-  elements are an error. Defaults to
-  [`list()`](https://rdrr.io/r/base/list.html).
+  for the available elements. Without `k`. Unknown elements are an
+  error. Defaults to [`list()`](https://rdrr.io/r/base/list.html).
 
 ## Value
 
@@ -66,7 +66,8 @@ A named list with the following elements:
 - trim - Integer or `NULL`. Trim the neighbours of each cell to these
   many top connectivities. May help with population independence and
   improve the tidiness of clustering. If `NULL`, it defaults to
-  `10 * neighbours_within_batch`. Defaults to `NULL`.
+  `10 * neighbours_within_batch * n_batches`, as in the reference
+  implementation. Defaults to `NULL`.
 
 - The elements of
   [`params_knn_gpu_defaults()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_knn_gpu_defaults.md),
@@ -74,10 +75,10 @@ A named list with the following elements:
 
 ## Details
 
-Two keys of the GPU kNN block do nothing here and are rejected rather
-than silently ignored. `k` is set by `neighbours_within_batch`, and
-`extract_knn` only applies to a self-query, whereas BBKNN builds one
-index per batch and queries each with every cell.
+`k` in the GPU kNN block is rejected rather than silently ignored: it is
+set by `neighbours_within_batch`. BBKNN builds one index per batch and
+queries each with every cell, so `knn_method = "nndescent"` builds and
+beam searches a CAGRA graph here.
 
 ## References
 

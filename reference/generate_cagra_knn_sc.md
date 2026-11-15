@@ -4,7 +4,8 @@
 
 CAGRA now sits behind
 [`generate_gpu_knn_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/generate_gpu_knn_sc.md)
-as `knn_method = "nndescent"`.
+as `knn_method = "cagra"`, the graph without the beam search as
+`knn_method = "nndescent"`.
 
 ## Usage
 
@@ -53,7 +54,8 @@ generate_cagra_knn_sc(
 
 - extract_knn:
 
-  Logical. Skip the beam search.
+  Logical. Skip the beam search, i.e. run `knn_method = "nndescent"`
+  instead of `"cagra"`.
 
 - seed:
 

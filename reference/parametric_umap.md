@@ -10,7 +10,7 @@ parametric_umap(
   data,
   n_dim = 2L,
   k = 15L,
-  min_dist = 0.1,
+  min_dist = 0.5,
   spread = 1,
   knn_method = c("kmknn", "hnsw", "annoy", "nndescent", "balltree", "exhaustive"),
   nn_params = manifoldsR::params_nn(),
@@ -38,7 +38,8 @@ parametric_umap(
 
 - min_dist:
 
-  Numeric. Minimum distance between embedded points. Defaults to `0.1`.
+  Numeric. Minimum distance between embedded points. Defaults to `0.5`,
+  the manifolds-rs default.
 
 - spread:
 

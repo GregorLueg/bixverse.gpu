@@ -36,11 +36,13 @@ here.
 library(bixverse)
 library(bixverse.gpu)
 library(data.table)
-#> Warning: package 'data.table' was built under R version 4.5.2
+#> 
+#> Attaching package: 'data.table'
+#> The following object is masked from 'package:base':
+#> 
+#>     %notin%
 library(magrittr)
-#> Warning: package 'magrittr' was built under R version 4.5.2
 library(ggplot2)
-#> Warning: package 'ggplot2' was built under R version 4.5.2
 ```
 
 > **Note**
@@ -81,8 +83,8 @@ sc_object <- load_mtx(
 
 sc_object
 #> Single cell experiment (Single Cells).
-#>   No cells (original): 14528
-#>    To keep n: 14528
+#>   No cells (original): 14537
+#>    To keep n: 14537
 #>   No genes: 12622
 #>   HVG calculated: FALSE
 #>   PCA calculated: FALSE
@@ -128,12 +130,12 @@ gpu_time <- system.time({
 })
 
 scrublet_gpu
-#> ScrubletRes: 14528 cells, 1782 doublets (12.3%)
-#>   Threshold:              0.2141
-#>   Detected doublet rate:  12.3%
-#>   Detectable fraction:    88.3%
-#>   Overall doublet rate:   13.9%
-#>   Simulated doublets:     21792
+#> ScrubletRes: 14537 cells, 1694 doublets (11.7%)
+#>   Threshold:              0.2228
+#>   Detected doublet rate:  11.7%
+#>   Detectable fraction:    84.5%
+#>   Overall doublet rate:   13.8%
+#>   Simulated doublets:     21805
 ```
 
 ``` r
@@ -158,13 +160,13 @@ gpu_dt <- merge(gpu_dt, demuxlet_data, by = "Barcode")
 
 doublet_metrics(predicted = gpu_dt$doublet, actual = gpu_dt$Call)
 #> $precision
-#> [1] 0.6632997
+#> [1] 0.661157
 #> 
 #> $recall
-#> [1] 0.7581783
+#> [1] 0.7179487
 #> 
 #> $f1
-#> [1] 0.7075726
+#> [1] 0.6883835
 ```
 
 ## Picking a kNN backend
@@ -204,10 +206,11 @@ optimisation everyone worries about takes 147 microseconds. So
 NN-descent is a low-`k` tool, and Scrublet is not a low-`k` workload.
 Below `k` of about 30 it wins; above that it loses badly.
 
-`extract_knn = TRUE` hands the graph back instead of beam searching it,
-which saves the query but not the build. At `k = 200` it bought 3.4s and
-cost real accuracy: Pearson against exhaustive fell from 0.9931 to
-0.9418. Not a trade worth making at this `k`.
+`knn_method = "nndescent"` hands the graph back instead of beam
+searching it the way `"cagra"` does, which saves the query but not the
+build. At `k = 200` it bought 3.4s and cost real accuracy: Pearson
+against exhaustive fell from 0.9931 to 0.9418. Not a trade worth making
+at this `k`.
 
 ``` r
 
@@ -243,7 +246,7 @@ errors rather than being silently ignored:
 
 params_scrublet_gpu(knn = list(m = 32L))
 #> Error in `params_scrublet_gpu()`:
-#> ! Unknown kNN parameter(s) for backend 'gpu': m. Allowed: k, knn_method, ann_dist, n_list, n_probe, graph_k, k_build, n_tree, delta, rho, refine_knn, beam_width, max_beam_iters, n_entry_points, extract_knn.
+#> ! Unknown kNN parameter(s) for backend 'gpu': m. Allowed: k, knn_method, ann_dist, n_list, n_probe, graph_k, k_build, n_tree, delta, rho, refine_knn, beam_width, max_beam_iters, n_entry_points.
 ```
 
 ## CPU versus GPU
@@ -270,8 +273,8 @@ data.table(
 )[, speed_up := round(seconds[1] / seconds, 2)][]
 #>    version seconds speed_up
 #>     <char>   <num>    <num>
-#> 1:     CPU    0.99      1.0
-#> 2:     GPU    1.10      0.9
+#> 1:     CPU    1.09     1.00
+#> 2:     GPU    1.00     1.09
 ```
 
 ## Do the calls agree?
@@ -294,8 +297,8 @@ data.table(
 )
 #>    version precision recall    f1 threshold
 #>     <char>     <num>  <num> <num>     <num>
-#> 1:     CPU     0.664  0.756 0.707    0.2102
-#> 2:     GPU     0.663  0.758 0.708    0.2141
+#> 1:     CPU     0.664  0.721 0.691    0.2228
+#> 2:     GPU     0.661  0.718 0.688    0.2228
 ```
 
 ``` r
@@ -324,7 +327,7 @@ cor(
   scrublet_gpu$doublet_scores_obs,
   method = "pearson"
 )
-#> [1] 0.9884432
+#> [1] 0.989203
 ```
 
 The scores correlate, they do not match. Both paths use a randomised SVD

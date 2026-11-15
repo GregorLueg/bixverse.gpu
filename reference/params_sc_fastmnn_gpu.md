@@ -29,8 +29,7 @@ params_sc_fastmnn_gpu(ndist = 3, cos_norm = TRUE, knn = list())
 
   List. Optional overrides for the kNN block. See
   [`params_knn_gpu_defaults()`](https://gregorlueg.github.io/bixverse.gpu/reference/params_knn_gpu_defaults.md)
-  for the available elements. Without `extract_knn`. Unknown elements
-  are an error. Defaults to
+  for the available elements. Unknown elements are an error. Defaults to
   [`list()`](https://rdrr.io/r/base/list.html).
 
 ## Value
@@ -49,10 +48,9 @@ A named list with the following elements:
 
 ## Details
 
-`extract_knn` is rejected rather than silently ignored: every search in
-fastMNN is a cross-query between two sets of cells, and extraction only
-applies to a self-query. `k = 0L` is rejected as well, since fastMNN has
-no data-driven fallback for it.
+Every search in fastMNN is a cross-query between two sets of cells, so
+`knn_method = "nndescent"` builds and beam searches a CAGRA graph here.
+`k = 0L` is rejected, since fastMNN has no data-driven fallback for it.
 
 ## References
 

@@ -18,7 +18,7 @@ params_sc_harmony_v2_gpu(
   alpha = 0.2,
   tau = 0,
   batch_proportion_cutoff = 1e-05,
-  use_dynamic_lambda = FALSE,
+  use_dynamic_lambda = TRUE,
   csr_cube_count = 256L,
   k_means_iter = 10L,
   k_means_init = NULL,
@@ -95,7 +95,7 @@ params_sc_harmony_v2_gpu(
 - use_dynamic_lambda:
 
   Boolean. If `TRUE`, lambda is estimated dynamically per cluster
-  instead of using the fixed `lambda` value. Defaults to `FALSE`.
+  instead of using the fixed `lambda` value. Defaults to `TRUE`.
 
 - csr_cube_count:
 
@@ -170,7 +170,7 @@ A named list with the following elements:
 
 - use_dynamic_lambda - Boolean. If `TRUE`, lambda is estimated
   dynamically per cluster instead of using the fixed `lambda` value.
-  Defaults to `FALSE`.
+  Defaults to `TRUE`.
 
 - csr_cube_count - Integer. Number of parallel thread groups used when
   building the level-CSR index on the GPU. Adjust for your hardware if

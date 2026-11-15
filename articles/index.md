@@ -18,6 +18,8 @@
   UMAP](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_umap.md):
 - [GPU-accelerated
   t-SNE](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_tsne.md):
+- [GPU-accelerated
+  PHATE](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_phate.md):
 - [Using Parametric
   UMAP](https://gregorlueg.github.io/bixverse.gpu/articles/parametric_umap.md):
 - [Other GPU-accelerated

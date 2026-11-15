@@ -43,13 +43,13 @@ Heads up: the R-facing API can still shift between versions.
 
 | Domain | What’s in there | Read more |
 |----|----|----|
-| Single cell core | Sparse PCA (exact Lanczos or randomised), kNN graphs (CAGRA, IVF, exhaustive), Harmony, fastMNN, BBKNN, fast clustering | [single cell](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_single_cell.html) |
+| Single cell core | Sparse PCA (exact Lanczos or randomised), kNN graphs (NN-descent, CAGRA, IVF, exhaustive), Harmony, fastMNN, BBKNN, fast clustering | [single cell](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_single_cell.html) |
 | Meta cells | SEACells, both Frank-Wolfe solves on the GPU | [SEACells](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_metacells.html) |
 | Regulons | SCENIC with ExtraTrees and random forest learners on the GPU. grnboost2 stays on the CPU, it does not gain much | [SCENIC](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scenic.html) |
 | QC and DGE | Scrublet doublet detection, NEBULA mixed models | [Scrublet](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_scrublet.html), [NEBULA](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_nebula.html) |
 | Factorisation | NMF, stabilised and consensus NMF, k sweeps | [NMF](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_nmf.html) |
 | Trees | Bonsai, with Sanity running on the GPU; tree search and layout stay on the CPU | [`?bonsai_gpu_sc`](https://gregorlueg.github.io/bixverse.gpu/reference/bonsai_gpu_sc.md) |
-| Embeddings | UMAP, tSNE (Barnes-Hut and FFT), parametric UMAP with GPU and CPU backends | [UMAP](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_umap.html), [tSNE](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_tsne.html), [parametric UMAP](https://gregorlueg.github.io/bixverse.gpu/articles/parametric_umap.html) |
+| Embeddings | UMAP, tSNE (Barnes-Hut and FFT), PHATE, parametric UMAP with GPU and CPU backends | [UMAP](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_umap.html), [tSNE](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_tsne.html), [PHATE](https://gregorlueg.github.io/bixverse.gpu/articles/gpu_phate.html), [parametric UMAP](https://gregorlueg.github.io/bixverse.gpu/articles/parametric_umap.html) |
 | General | k-means, Pearson and Spearman correlations, covariance | [other methods](https://gregorlueg.github.io/bixverse.gpu/articles/other_gpu.html) |
 
 ## The “bixverse ecosystem”
@@ -60,8 +60,8 @@ Heads up: the R-facing API can still shift between versions.
 - [bixverse.plots](https://github.com/GregorLueg/bixverse.plots) for
   plotting, with a large number of single cell helpers.
 - [manifoldsR](https://github.com/GregorLueg/manifoldsR) for manifold
-  learning. The GPU UMAP, tSNE and parametric UMAP here sit next to its
-  CPU versions.
+  learning. The GPU UMAP, tSNE, PHATE and parametric UMAP here sit next
+  to its CPU versions.
 
 ## Installation
 
@@ -124,7 +124,9 @@ UMAP, parametric UMAP, fastMNN and exhaustive / NNDescent kNN run fine.
 Forcing Vulkan with `Sys.setenv(WGPU_BACKEND = "vulkan")` before the
 first GPU call should sidestep FXC, but that’s untested. The tests for
 the affected methods are skipped on Windows until the kernels are fixed
-upstream.
+upstream. PHATE is untested there: its default spectral landmarks run
+the same GPU k-means, so expect it to hit the same wall;
+`landmark_method = "random"` or `"density"` avoids it.
 
 The FFT-accelerated tSNE used to be the one thing missing on Windows,
 since FFTW did not come along for the ride. It now runs on the pure-Rust
@@ -149,8 +151,8 @@ This needs a source build, the r-universe binaries are WGPU only. Check
 with
 [`mlx_available()`](https://gregorlueg.github.io/bixverse.gpu/reference/mlx_available.md).
 Functions with an MLX path then take `backend = "mlx"`: PCA, kNN graphs,
-Harmony, SEACells, NMF, UMAP, tSNE and the correlations. MLX runs in
-fp32 only. Everything else stays on WGPU.
+Harmony, SEACells, NMF, UMAP, tSNE, PHATE and the correlations. MLX runs
+in fp32 only. Everything else stays on WGPU.
 
 ### Older Intel Macs
 
@@ -190,7 +192,7 @@ cells)
 
 GPU-accelerated correlations (Spearman and Pearson)
 
-GPU-accelerated UMAP and tSNE embedding generation
+GPU-accelerated UMAP, tSNE and PHATE embedding generation
 
 SCENIC with GPU-accelerated ExtraTrees and random forest learners
 
@@ -211,4 +213,4 @@ better.
 
 If you have some other ideas, please feel free to open an issue.
 
-*Last update to the read-me: 14.10.2026*
+*Last update to the read-me: 09.11.2026*

@@ -4,7 +4,8 @@
 
 CAGRA now sits behind
 [`find_neighbours_gpu_sc()`](https://gregorlueg.github.io/bixverse.gpu/reference/find_neighbours_gpu_sc.md)
-as `knn_method = "nndescent"`.
+as `knn_method = "cagra"`, the graph without the beam search as
+`knn_method = "nndescent"`.
 
 ## Usage
 
@@ -49,7 +50,8 @@ find_neighbours_cagra_sc(
 
 - extract_knn:
 
-  Logical. Skip the beam search.
+  Logical. Skip the beam search, i.e. run `knn_method = "nndescent"`
+  instead of `"cagra"`.
 
 - graph_params:
 

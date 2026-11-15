@@ -26,7 +26,8 @@ rs_cagra_gpu_knn(embd, cagra_params, extract_knn, seed, verbose)
 
 - extract_knn:
 
-  Logical. Skip the beam search.
+  Logical. Skip the beam search, i.e. run `knn_method = "nndescent"`
+  instead of `"cagra"`.
 
 - seed:
 
