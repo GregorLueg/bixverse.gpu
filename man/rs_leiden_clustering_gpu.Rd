@@ -4,15 +4,14 @@
 \alias{rs_leiden_clustering_gpu}
 \title{GPU-accelerated Leiden and Louvain clustering}
 \usage{
-rs_leiden_clustering_gpu(from, to, weights, n_nodes, leiden_params)
+rs_leiden_clustering_gpu(edges, weights, n_nodes, leiden_params)
 }
 \arguments{
-\item{from}{Integer vector. 1-based source node of each edge.}
+\item{edges}{Integer vector. Flattened edge pairs (1-indexed!),
+\code{c(from_1, to_1, from_2, to_2, ...)}, as \code{bixverse::rs_graph_to_edges()}
+returns them.}
 
-\item{to}{Integer vector. 1-based target node of each edge. Same length as
-\code{from}.}
-
-\item{weights}{Numeric vector. Edge weights, same length as \code{from}.}
+\item{weights}{Numeric vector. One weight per pair.}
 
 \item{n_nodes}{Integer. Number of nodes in the graph.}
 

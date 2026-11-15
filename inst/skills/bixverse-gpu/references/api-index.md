@@ -10,7 +10,7 @@ Different GPU-accelerated methods specifically for the single cell applications.
 
 - `calculate_pca_gpu_sc`: GPU-accelerated PCA for single cell
 - `generate_gpu_knn_sc`: Generate GPU kNN data for single cells
-- `harmony_v2_gpu_sc`: Run Harmony v2 (GPU)
+- `harmony_gpu_sc`: Run Harmony v2 (GPU)
 - `find_neighbours_gpu_sc`: Find GPU-accelerated neighbours for single cells
 - `generate_seacells_gpu_sc`: Generate meta cells based on SEACells on the GPU
 - `scenic_grn_sc_gpu`: GPU-accelerated SCENIC GRN inference
@@ -35,7 +35,7 @@ Different GPU-accelerated methods specifically for the single cell applications.
 
 ## GPU-accelerated UMAP
 
-GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent/CAGRA, exhaustive) and CPU/GPU optimisers. Also a version for the single cells analysis suite in bixverse.
+GPU-accelerated UMAP with pluggable kNN backends (IVF, NN-descent, exhaustive) and CPU/GPU optimisers. Also a version for the single cells analysis suite in bixverse.
 
 - `umap_gpu`: Rust-based UMAP (GPU)
 - `umap_gpu_sc`: Run UMAP on a SingleCells object (GPU)
@@ -50,13 +50,20 @@ t-SNE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive). Optimiser
 - `tsne_gpu_sc`: Run t-SNE on a SingleCells object (GPU)
 - `params_tsne_gpu`: Wrapper function to generate t-SNE parameters (GPU version)
 
+## GPU-accelerated PHATE
+
+PHATE with GPU-accelerated kNN backends (IVF, NN-descent, exhaustive) and spectral landmark selection on the GPU. Diffusion and MDS run on the CPU. Also a version for the single cells analysis suite in bixverse.
+
+- `phate_gpu`: Rust-based PHATE (GPU)
+- `phate_gpu_sc`: Run PHATE on a SingleCells object (GPU)
+- `params_phate_gpu`: Wrapper function to generate PHATE parameters (GPU version)
+
 ## Parametric UMAP
 
 Want to train a neural net to do your UMAP embeddings? Want to train flexibly on CPU or GPU? Here's what you need.
 
 - `parametric_umap`: Parametric UMAP
 - `params_parametric_umap`: Wrapper function to generate parametric UMAP parameters
-- `predict.ParametricUmapModel`: Predict embeddings for new data using a trained parametric UMAP model
 - `load_parametric_umap`: Load a parametric UMAP as a qs2 file
 - `save_parametric_umap`: Save a parametric UMAP as a qs2 file
 
@@ -65,7 +72,7 @@ Want to train a neural net to do your UMAP embeddings? Want to train flexibly on
 Other GPU-accelerated methods that you might find useful... k-means clustering and a direct interface into the GPU-accelerated kNN searches can be found here.
 
 - `k_means_cluster_gpu`: GPU-accelerated k-means clustering
-- `leiden_clustering_gpu`: GPU-accelerated Leiden or Louvain community detection on an igraph
+- `leiden_clustering_gpu`: GPU-accelerated Leiden or Louvain community detection
 - `params_kmeans_gpu`: Default parameters for GPU k-means
 - `generate_knn_graph_gpu`: Generate a k-nearest neighbour graph (GPU-accelerated)
 - `gpu_available`: Is a GPU available
@@ -104,6 +111,7 @@ Kept so existing scripts keep running. Each one warns and forwards to its replac
 
 Exported but absent from `_pkgdown.yml`. Mostly internal constructors and `rs_*` bindings that take on-disk streaming input. Usable, but undocumented on the website, so read the roxygen with `?fn` first.
 
+- `.prepare_phate_params_gpu`: Internal helper to prepare the PHATE parameters (GPU version)
 - `.prepare_tsne_params_gpu`: Internal helper to prepare the t-SNE parameters (GPU version)
 - `.prepare_umap_params_gpu`: Internal helper to prepare the UMAP parameters (GPU version)
 - `rs_mc_bonsai_gpu`: GPU: Bonsai tree from metacell counts

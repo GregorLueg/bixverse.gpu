@@ -30,7 +30,8 @@ generate_cagra_knn_sc(
 \item{cagra_params}{List. Output of the deprecated \code{\link[=params_sc_cagra]{params_sc_cagra()}}, or
 \code{\link[=params_nn_gpu]{params_nn_gpu()}}.}
 
-\item{extract_knn}{Logical. Skip the beam search.}
+\item{extract_knn}{Logical. Skip the beam search, i.e. run
+\code{knn_method = "nndescent"} instead of \code{"cagra"}.}
 
 \item{seed}{Integer. For reproducibility.}
 
@@ -43,6 +44,7 @@ Initialised \code{sc_knn} with the kNN data.
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
 
 CAGRA now sits behind \code{\link[=generate_gpu_knn_sc]{generate_gpu_knn_sc()}} as
+\code{knn_method = "cagra"}, the graph without the beam search as
 \code{knn_method = "nndescent"}.
 }
 \keyword{internal}

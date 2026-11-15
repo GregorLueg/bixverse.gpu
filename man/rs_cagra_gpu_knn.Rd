@@ -11,7 +11,8 @@ rs_cagra_gpu_knn(embd, cagra_params, extract_knn, seed, verbose)
 
 \item{cagra_params}{Named list, see \code{\link[=params_nn_gpu]{params_nn_gpu()}}.}
 
-\item{extract_knn}{Logical. Skip the beam search.}
+\item{extract_knn}{Logical. Skip the beam search, i.e. run
+\code{knn_method = "nndescent"} instead of \code{"cagra"}.}
 
 \item{seed}{Integer. Random seed for reproducibility.}
 

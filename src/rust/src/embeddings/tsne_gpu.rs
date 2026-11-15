@@ -5,7 +5,7 @@ use faer::{Mat, MatRef};
 use manifolds_rs::prelude::*;
 use manifolds_rs::*;
 use rand_distr::{Distribution, StandardNormal};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::embeddings::utils::{get_params_nn_ann_gpu, knn_method_for_backend};
 use crate::Backend;
@@ -35,7 +35,7 @@ fn get_params_tsne_optim<T>(r_list: List) -> Result<TsneOptimParams<T>>
 where
     T: ManifoldsFloat,
 {
-    let optim_params: HashMap<&str, Robj> = r_list.try_into()?;
+    let optim_params: FxHashMap<&str, Robj> = r_list.iter().collect();
 
     let lr = optim_params
         .get("lr")
@@ -132,7 +132,7 @@ where
         let nn_params = get_params_nn_ann_gpu(r_list.clone())?;
         let optim_params = get_params_tsne_optim(r_list.clone())?;
 
-        let tsne_params: HashMap<&str, Robj> = r_list.try_into()?;
+        let tsne_params: FxHashMap<&str, Robj> = r_list.iter().collect();
 
         let init = std::string::String::from(
             tsne_params
@@ -227,7 +227,7 @@ where
         initialisation: tsne_params_internal.init,
         nn_params: tsne_params_internal.param_knn,
         optim_params: tsne_params_internal.param_optimiser,
-        randomised_init: tsne_params_internal.randomised,
+        randomised: tsne_params_internal.randomised,
         init_range: Some(T::from_f64(1e-2).unwrap()),
     };
 

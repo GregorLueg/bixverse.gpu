@@ -89,8 +89,8 @@ expect_equal(
   info = "bbknn gpu - exhaustive is the default kNN method"
 )
 
-# `k` and `extract_knn` do nothing on this path, so they are rejected rather
-# than silently ignored
+# `k` does nothing on this path, so it is rejected rather than silently
+# ignored. `extract_knn` is gone.
 expect_error(
   current = params_sc_bbknn_gpu(knn = list(k = 20L)),
   info = "bbknn gpu - k is rejected, it comes from neighbours_within_batch"
@@ -98,7 +98,7 @@ expect_error(
 
 expect_error(
   current = params_sc_bbknn_gpu(knn = list(extract_knn = TRUE)),
-  info = "bbknn gpu - extract_knn is rejected, the searches are cross-queries"
+  info = "bbknn gpu - the removed extract_knn is rejected"
 )
 
 expect_error(
@@ -186,9 +186,8 @@ expect_true(
   info = "bbknn gpu - symmetrisation adds edges to the connectivities"
 )
 
-# The graph is built by reading the connectivities as if they were CSR, which
-# is only safe because the set operations leave the matrix symmetric. If that
-# ever stops holding, the igraph below silently transposes.
+# The set operations leave the matrix symmetric, so the max-symmetrisation into
+# the neighbour graph keeps the connectivities as they are.
 connectivity_mat <- Matrix::sparseMatrix(
   i = rep(
     seq_along(rust_res$connectivities$indptr[-1]),
@@ -258,15 +257,19 @@ expect_equal(
   info = "bbknn gpu - matches the CPU distances with an exhaustive search"
 )
 
+# The CPU path hands back the max-symmetrised graph; for a symmetric matrix its
+# CSR is the GPU CSC as is.
+cpu_conn <- bixverse::rs_graph_to_csr(cpu_res$connectivities)
+
 expect_equal(
   current = rust_res$connectivities$indptr,
-  target = cpu_res$connectivities$indptr,
+  target = cpu_conn$indptr,
   info = "bbknn gpu - matches the CPU connectivity structure"
 )
 
 expect_equal(
   current = rust_res$connectivities$data,
-  target = cpu_res$connectivities$data,
+  target = cpu_conn$data,
   tolerance = 1e-5,
   info = "bbknn gpu - matches the CPU connectivity weights"
 )
@@ -325,13 +328,17 @@ expect_true(
 )
 
 expect_true(
-  current = checkmate::testClass(get_connectivities(bbknn_object), "igraph"),
-  info = "bbknn gpu - the connectivities become an igraph"
+  current = checkmate::testClass(
+    get_connectivities(bbknn_object),
+    "SingleCellConnectivity"
+  ),
+  info = "bbknn gpu - the connectivities become a SingleCellConnectivity"
 )
 
-expect_true(
-  current = igraph::is_weighted(get_connectivities(bbknn_object)),
-  info = "bbknn gpu - the graph carries the connectivities as weights"
+expect_equal(
+  current = get_connectivities(bbknn_object)$method,
+  target = "bbknn",
+  info = "bbknn gpu - the graph records its method"
 )
 
 kbet_after <- calculate_kbet_sc(

@@ -30,8 +30,8 @@
 #' embeddings are found, returns the object unchanged with a warning.
 #'
 #' @export
-harmony_v2_gpu_sc <- S7::new_generic(
-  name = "harmony_v2_gpu_sc",
+harmony_gpu_sc <- S7::new_generic(
+  name = "harmony_gpu_sc",
   dispatch_args = "object",
   fun = function(
     object,
@@ -48,10 +48,10 @@ harmony_v2_gpu_sc <- S7::new_generic(
   }
 )
 
-#' @method harmony_v2_gpu_sc SingleCells
+#' @method harmony_gpu_sc SingleCells
 #'
 #' @export
-S7::method(harmony_v2_gpu_sc, SingleCells) <- function(
+S7::method(harmony_gpu_sc, SingleCells) <- function(
   object,
   batch_column,
   modality = c("rna", "adt"),
@@ -345,11 +345,6 @@ S7::method(bbknn_gpu_sc, SingleCellsSubset) <- function(
     message("Running BBKNN algorithm on the GPU.")
   }
 
-  # `"nndescent"` is the package-wide name, Rust only knows `"nndescent_gpu"`
-  bbknn_params[["knn_method"]] <- .normalise_gpu_knn_method(
-    bbknn_params[["knn_method"]]
-  )
-
   bbknn_res <- rs_bbknn_gpu(
     embd = embd,
     batch_labels = batch_index,
@@ -364,6 +359,7 @@ S7::method(bbknn_gpu_sc, SingleCellsSubset) <- function(
       indptr = bbknn_res$distances$indptr,
       indices = bbknn_res$distances$indices,
       data = bbknn_res$distances$data,
+      batch_labels = batch_index,
       no_neighbours_to_keep = no_k
     )
     list(
@@ -387,27 +383,23 @@ S7::method(bbknn_gpu_sc, SingleCellsSubset) <- function(
     ))
   }
 
-  sparse_mat <- Matrix::sparseMatrix(
-    i = rep(
-      seq_along(bbknn_res$connectivities$indptr[-1]),
-      diff(bbknn_res$connectivities$indptr)
-    ),
-    j = bbknn_res$connectivities$indices + 1,
-    x = bbknn_res$connectivities$data,
-    dims = c(
-      bbknn_res$connectivities$nrow,
-      bbknn_res$connectivities$ncol
-    ),
-    index1 = TRUE
+  # The connectivities are symmetric (CSC), so the upper triangle holds each
+  # edge once, matching the CPU path's max-symmetrise.
+  conn <- bbknn_res$connectivities
+  from <- conn$indices + 1L
+  to <- rep.int(seq_len(conn$ncol), diff(conn$indptr))
+  upper <- from < to
+  ptr <- bixverse::rs_graph_from_edges(
+    edges = as.vector(rbind(from[upper], to[upper])),
+    weights = conn$data[upper],
+    n_nodes = conn$nrow
   )
 
-  connectivities <- igraph::graph_from_adjacency_matrix(
-    sparse_mat,
-    mode = "max",
-    weighted = TRUE
+  set_connectivities(
+    object,
+    connectivities = bixverse:::.new_sc_connectivity(ptr, method = "bbknn"),
+    from = "knn"
   )
-
-  set_connectivities(object, connectivities = connectivities, from = "knn")
 }
 
 # ------------------------------------------------------------------------------
@@ -583,11 +575,6 @@ S7::method(fast_mnn_gpu_sc, SingleCellsSubset) <- function(
   if (.verbose) {
     message("Running fastMNN on the GPU.")
   }
-
-  # `"nndescent"` is the package-wide name, Rust only knows `"nndescent_gpu"`
-  fastmnn_params[["knn_method"]] <- .normalise_gpu_knn_method(
-    fastmnn_params[["knn_method"]]
-  )
 
   mnn_embd <- rs_fast_mnn_gpu(
     embd = embd,

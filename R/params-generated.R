@@ -71,12 +71,13 @@ params_kmeans_gpu <- function(
 #' device, so what survives is exhaustive, IVF and NN-descent.
 #'
 #' @details
-#' NN-descent builds a CAGRA graph and, with `extract_knn = TRUE`, hands that
-#' graph back rather than beam searching over it. Note that this saves the
-#' query, not the build: the descent itself dominates, and its build degree
-#' tracks `k`. NN-descent is therefore a low-`k` tool on the GPU. Above `k` of
-#' roughly 30 both exhaustive and IVF beat it, and by `k = 200` they beat it by
-#' more than an order of magnitude.
+#' `"nndescent"` hands back the kNN graph the descent built, with no index and
+#' no search; rows the descent left short are topped up with an exact search of
+#' just those rows. Where the query is a different set of cells (BBKNN, fastMNN)
+#' it builds and beam searches a CAGRA graph instead. `"cagra"` always does the
+#' latter, self-queries included. The descent itself dominates either way, and
+#' its build degree tracks `k`, so both are low-`k` tools on the GPU. Above `k`
+#' of roughly 30 exhaustive and IVF beat them.
 #'
 #' @returns A named list with the following elements:
 #' \itemize{
@@ -84,35 +85,32 @@ params_kmeans_gpu <- function(
 #'  which uses `sqrt(n_cells) * 0.5` and then adjusts for the simulated
 #'  doublets. Defaults to `15L`.
 #'  \item knn_method - String. The GPU index to use. One of `c("exhaustive",
-#'  "ivf", "nndescent")`. Defaults to `"exhaustive"`.
+#'  "ivf", "nndescent", "cagra")`. Defaults to `"exhaustive"`.
 #'  \item ann_dist - String. Manhattan is not supported by the GPU kernels. One
 #'  of `c("euclidean", "cosine")`. Defaults to `"euclidean"`.
 #'  \item n_list - Integer or `NULL`. IVF only. Number of clusters. `NULL` gives
 #'  `sqrt(n)`. Defaults to `NULL`.
 #'  \item n_probe - Integer or `NULL`. IVF only. Clusters to probe. `NULL` gives
 #'  `sqrt(n_list)`. Defaults to `NULL`.
-#'  \item graph_k - Integer or `NULL`. NN-descent only. Node degree of the graph
-#'  after pruning. `NULL` gives 30, widened to cover `k` when `extract_knn` is
-#'  set. Defaults to `NULL`.
-#'  \item k_build - Integer or `NULL`. NN-descent only. Build degree before
-#'  pruning. `NULL` gives `max(k, floor(1.5 * k))`. Defaults to `NULL`.
-#'  \item n_tree - Integer or `NULL`. NN-descent only. Trees seeding the
+#'  \item graph_k - Integer or `NULL`. CAGRA only. Node degree of the graph
+#'  after pruning. `NULL` gives 30. Defaults to `NULL`.
+#'  \item k_build - Integer or `NULL`. NN-descent and CAGRA. Working degree of
+#'  the descent. `NULL` gives `max(k, floor(1.5 * k))`. Defaults to `NULL`.
+#'  \item n_tree - Integer or `NULL`. NN-descent and CAGRA. Trees seeding the
 #'  descent. Defaults to `NULL`.
-#'  \item delta - Numeric. NN-descent only. Termination criterium for the
+#'  \item delta - Numeric. NN-descent and CAGRA. Termination criterium for the
 #'  descent. Defaults to `0.001`.
-#'  \item rho - Numeric or `NULL`. NN-descent only. Sampling rate for the
+#'  \item rho - Numeric or `NULL`. NN-descent and CAGRA. Sampling rate for the
 #'  descent. Defaults to `NULL`.
-#'  \item refine_knn - Integer or `NULL`. NN-descent only. 2-hop refinement
+#'  \item refine_knn - Integer or `NULL`. NN-descent and CAGRA. 2-hop refinement
 #'  sweeps after the descent. Buys graph quality at a linear cost. `NULL` gives
 #'  0. Defaults to `NULL`.
-#'  \item beam_width - Integer or `NULL`. NN-descent only. Beam width when
-#'  querying. Ignored when `extract_knn` is set. Defaults to `NULL`.
-#'  \item max_beam_iters - Integer or `NULL`. NN-descent only. Beam search
-#'  iterations. Ignored when `extract_knn` is set. Defaults to `NULL`.
-#'  \item n_entry_points - Integer or `NULL`. NN-descent only. Entry points when
-#'  querying. Ignored when `extract_knn` is set. Defaults to `NULL`.
-#'  \item extract_knn - Boolean. NN-descent only. Hand back the graph the
-#'  descent built instead of beam searching over it. Defaults to `FALSE`.
+#'  \item beam_width - Integer or `NULL`. CAGRA only, which includes NN-descent
+#'  on a cross-query. Beam width when querying. Defaults to `NULL`.
+#'  \item max_beam_iters - Integer or `NULL`. CAGRA only, which includes
+#'  NN-descent on a cross-query. Beam search iterations. Defaults to `NULL`.
+#'  \item n_entry_points - Integer or `NULL`. CAGRA only, which includes
+#'  NN-descent on a cross-query. Entry points when querying. Defaults to `NULL`.
 #' }
 #'
 #' @export
@@ -131,8 +129,7 @@ params_knn_gpu_defaults <- function() {
     refine_knn = NULL,
     beam_width = NULL,
     max_beam_iters = NULL,
-    n_entry_points = NULL,
-    extract_knn = FALSE
+    n_entry_points = NULL
   )
 }
 
@@ -283,30 +280,27 @@ params_nebula_gpu <- function(
 #' `NULL`, will default to `sqrt(n)`. Defaults to `NULL`.
 #' @param n_probes Integer or `NULL`. IVF GPU: Number of clusters to probe. If
 #' `NULL`, will default to `sqrt(n_list)`. Defaults to `NULL`.
-#' @param node_degree_final Integer or `NULL`. Final node degree of the CAGRA
-#' navigational graph. If `NULL`, defaults to `30` on the Rust side. Defaults to
-#' `NULL`.
-#' @param k_build Integer or `NULL`. Number of k-neighbours during the NNDescent
-#' build phase before CAGRA pruning. If `NULL`, defaults to `1.5 *
-#' node_degree_final` on the Rust side. (Cannot be smaller than
-#' `node_degree_final`) Defaults to `NULL`.
-#' @param n_tree Integer or `NULL`. CAGRA GPU: Number of trees for graph build.
-#' Automatically if `NULL`. Defaults to `NULL`.
-#' @param delta Numeric. CAGRA GPU: Early termination parameter for NN descent.
-#' Defaults to `0.001`.
-#' @param rho Numeric or `NULL`. CAGRA GPU: Sample rate parameter for NN
+#' @param node_degree_final Integer or `NULL`. CAGRA GPU: Final node degree of
+#' the navigational graph. If `NULL`, defaults to `30` on the Rust side. Ignored
+#' by UMAP, tSNE and PHATE. Defaults to `NULL`.
+#' @param k_build Integer or `NULL`. NNDescent and CAGRA GPU: Working degree of
+#' the descent. If `NULL`, defaults to `1.5 * k` on the Rust side. For CAGRA it
+#' cannot be smaller than `node_degree_final`. Defaults to `NULL`.
+#' @param n_tree Integer or `NULL`. NNDescent and CAGRA GPU: Number of trees
+#' seeding the descent. Automatically if `NULL`. Defaults to `NULL`.
+#' @param delta Numeric. NNDescent and CAGRA GPU: Early termination parameter
+#' for the descent. Defaults to `0.001`.
+#' @param rho Numeric or `NULL`. NNDescent and CAGRA GPU: Sample rate for the
 #' descent. Defaults to `NULL`.
 #' @param beam_width Integer or `NULL`. CAGRA GPU: Beam width for beam search.
 #' If not provided will be set to `max(c(k, node_degree_final, 16L)) * 2`.
-#' Defaults to `NULL`.
+#' Ignored by UMAP, tSNE and PHATE. Defaults to `NULL`.
 #' @param max_beam_iters Integer or `NULL`. CAGRA GPU: Maximum number of beam
-#' search iterations. If not provided, defaults to `3 * beam_width`. Defaults to
-#' `NULL`.
+#' search iterations. If not provided, defaults to `3 * beam_width`. Ignored by
+#' UMAP, tSNE and PHATE. Defaults to `NULL`.
 #' @param n_entry_points Integer or `NULL`. CAGRA GPU: Number of entry points
-#' for beam search. If not provided, defaults to `8L`. Defaults to `NULL`.
-#' @param extract_knn Boolean. CAGRA GPU: Skip the beam search and take the
-#' graph the NNDescent left it. Faster, slightly lower recall. Ignored by the
-#' other two searches. Defaults to `FALSE`.
+#' for beam search. If not provided, defaults to `8L`. Ignored by UMAP, tSNE and
+#' PHATE. Defaults to `NULL`.
 #'
 #' @returns A named list with the following elements:
 #' \itemize{
@@ -316,30 +310,27 @@ params_nebula_gpu <- function(
 #'  `NULL`, will default to `sqrt(n)`. Defaults to `NULL`.
 #'  \item n_probes - Integer or `NULL`. IVF GPU: Number of clusters to probe. If
 #'  `NULL`, will default to `sqrt(n_list)`. Defaults to `NULL`.
-#'  \item node_degree_final - Integer or `NULL`. Final node degree of the CAGRA
-#'  navigational graph. If `NULL`, defaults to `30` on the Rust side. Defaults
-#'  to `NULL`.
-#'  \item k_build - Integer or `NULL`. Number of k-neighbours during the
-#'  NNDescent build phase before CAGRA pruning. If `NULL`, defaults to `1.5 *
-#'  node_degree_final` on the Rust side. (Cannot be smaller than
-#'  `node_degree_final`) Defaults to `NULL`.
-#'  \item n_tree - Integer or `NULL`. CAGRA GPU: Number of trees for graph
-#'  build. Automatically if `NULL`. Defaults to `NULL`.
-#'  \item delta - Numeric. CAGRA GPU: Early termination parameter for NN
-#'  descent. Defaults to `0.001`.
-#'  \item rho - Numeric or `NULL`. CAGRA GPU: Sample rate parameter for NN
+#'  \item node_degree_final - Integer or `NULL`. CAGRA GPU: Final node degree of
+#'  the navigational graph. If `NULL`, defaults to `30` on the Rust side.
+#'  Ignored by UMAP, tSNE and PHATE. Defaults to `NULL`.
+#'  \item k_build - Integer or `NULL`. NNDescent and CAGRA GPU: Working degree
+#'  of the descent. If `NULL`, defaults to `1.5 * k` on the Rust side. For CAGRA
+#'  it cannot be smaller than `node_degree_final`. Defaults to `NULL`.
+#'  \item n_tree - Integer or `NULL`. NNDescent and CAGRA GPU: Number of trees
+#'  seeding the descent. Automatically if `NULL`. Defaults to `NULL`.
+#'  \item delta - Numeric. NNDescent and CAGRA GPU: Early termination parameter
+#'  for the descent. Defaults to `0.001`.
+#'  \item rho - Numeric or `NULL`. NNDescent and CAGRA GPU: Sample rate for the
 #'  descent. Defaults to `NULL`.
 #'  \item beam_width - Integer or `NULL`. CAGRA GPU: Beam width for beam search.
 #'  If not provided will be set to `max(c(k, node_degree_final, 16L)) * 2`.
-#'  Defaults to `NULL`.
+#'  Ignored by UMAP, tSNE and PHATE. Defaults to `NULL`.
 #'  \item max_beam_iters - Integer or `NULL`. CAGRA GPU: Maximum number of beam
-#'  search iterations. If not provided, defaults to `3 * beam_width`. Defaults
-#'  to `NULL`.
+#'  search iterations. If not provided, defaults to `3 * beam_width`. Ignored by
+#'  UMAP, tSNE and PHATE. Defaults to `NULL`.
 #'  \item n_entry_points - Integer or `NULL`. CAGRA GPU: Number of entry points
-#'  for beam search. If not provided, defaults to `8L`. Defaults to `NULL`.
-#'  \item extract_knn - Boolean. CAGRA GPU: Skip the beam search and take the
-#'  graph the NNDescent left it. Faster, slightly lower recall. Ignored by the
-#'  other two searches. Defaults to `FALSE`.
+#'  for beam search. If not provided, defaults to `8L`. Ignored by UMAP, tSNE
+#'  and PHATE. Defaults to `NULL`.
 #' }
 #'
 #' @export
@@ -354,8 +345,7 @@ params_nn_gpu <- function(
   rho = NULL,
   beam_width = NULL,
   max_beam_iters = NULL,
-  n_entry_points = NULL,
-  extract_knn = FALSE
+  n_entry_points = NULL
 ) {
   dist_metric <- match.arg(dist_metric)
 
@@ -371,7 +361,6 @@ params_nn_gpu <- function(
   checkmate::qassert(beam_width, c("I1", "0"))
   checkmate::qassert(max_beam_iters, c("I1", "0"))
   checkmate::qassert(n_entry_points, c("I1", "0"))
-  checkmate::qassert(extract_knn, "B1")
 
   # Return
   list(
@@ -385,8 +374,7 @@ params_nn_gpu <- function(
     rho = rho,
     beam_width = beam_width,
     max_beam_iters = max_beam_iters,
-    n_entry_points = n_entry_points,
-    extract_knn = extract_knn
+    n_entry_points = n_entry_points
   )
 }
 
@@ -470,16 +458,147 @@ params_parametric_umap <- function(
   )
 }
 
+#' Wrapper function to generate PHATE parameters (GPU version)
+#'
+#' @param decay Numeric or `NULL`. Alpha decay exponent of the kernel. Higher
+#' values give sharper transitions. `NULL` gives a binary connectivity kernel.
+#' Defaults to `40.0`.
+#' @param bandwidth_scale Numeric. Multiplicative factor on the kernel
+#' bandwidth. Defaults to `1.0`.
+#' @param thresh Numeric. Affinities below this are set to zero. Neighbours past
+#' `k` join the kernel while their affinity clears it. Defaults to `1e-04`.
+#' @param graph_symmetry String. How to symmetrise the affinity graph. One of
+#' `c("additive", "multiplicative", "mnn", "none")`. Defaults to `"additive"`.
+#' @param n_landmarks Integer or `NULL`. Number of landmarks for the compressed
+#' diffusion operator. `NULL`, or a value of at least the number of samples,
+#' runs the full N x N operator, which gets painful fast. Defaults to `2048L`.
+#' @param landmark_method String. How to select the landmarks. `"spectral"` runs
+#' its randomised SVD and k-means on the GPU (or on MLX with `backend = "mlx"`).
+#' One of `c("spectral", "random", "density")`. Defaults to `"spectral"`.
+#' @param n_svd Integer or `NULL`. Singular vectors for spectral landmark
+#' selection. If `NULL`, defaults to `100` on the Rust side. Defaults to `NULL`.
+#' @param t_max Integer. Largest diffusion time the Von Neumann entropy knee
+#' search considers. Defaults to `100L`.
+#' @param t_custom Integer or `NULL`. Fixed diffusion time. If `NULL`, picks the
+#' knee automatically. Defaults to `NULL`.
+#' @param gamma Numeric. Informational distance constant. `1` is the log
+#' potential. Defaults to `1.0`.
+#' @param mds_method String. MDS algorithm for the final embedding. One of
+#' `c("sgd_dense", "classic")`. Defaults to `"sgd_dense"`.
+#' @param mds_iter Integer or `NULL`. Number of SGD-MDS iterations. If `NULL`,
+#' the Rust side runs 300 below 1000 points, 500 below 5000 and 800 otherwise
+#' (points being the landmarks when landmarks are used). Defaults to `NULL`.
+#' @param randomised Boolean. Use randomised SVD for classic MDS (`mds_method =
+#' "classic"`). SGD-MDS initialises from a randomised classic MDS either way.
+#' Defaults to `TRUE`.
+#'
+#' @returns A named list with the following elements:
+#' \itemize{
+#'  \item decay - Numeric or `NULL`. Alpha decay exponent of the kernel. Higher
+#'  values give sharper transitions. `NULL` gives a binary connectivity kernel.
+#'  Defaults to `40.0`.
+#'  \item bandwidth_scale - Numeric. Multiplicative factor on the kernel
+#'  bandwidth. Defaults to `1.0`.
+#'  \item thresh - Numeric. Affinities below this are set to zero. Neighbours
+#'  past `k` join the kernel while their affinity clears it. Defaults to
+#'  `1e-04`.
+#'  \item graph_symmetry - String. How to symmetrise the affinity graph. One of
+#'  `c("additive", "multiplicative", "mnn", "none")`. Defaults to `"additive"`.
+#'  \item n_landmarks - Integer or `NULL`. Number of landmarks for the
+#'  compressed diffusion operator. `NULL`, or a value of at least the number of
+#'  samples, runs the full N x N operator, which gets painful fast. Defaults to
+#'  `2048L`.
+#'  \item landmark_method - String. How to select the landmarks. `"spectral"`
+#'  runs its randomised SVD and k-means on the GPU (or on MLX with `backend =
+#'  "mlx"`). One of `c("spectral", "random", "density")`. Defaults to
+#'  `"spectral"`.
+#'  \item n_svd - Integer or `NULL`. Singular vectors for spectral landmark
+#'  selection. If `NULL`, defaults to `100` on the Rust side. Defaults to
+#'  `NULL`.
+#'  \item t_max - Integer. Largest diffusion time the Von Neumann entropy knee
+#'  search considers. Defaults to `100L`.
+#'  \item t_custom - Integer or `NULL`. Fixed diffusion time. If `NULL`, picks
+#'  the knee automatically. Defaults to `NULL`.
+#'  \item gamma - Numeric. Informational distance constant. `1` is the log
+#'  potential. Defaults to `1.0`.
+#'  \item mds_method - String. MDS algorithm for the final embedding. One of
+#'  `c("sgd_dense", "classic")`. Defaults to `"sgd_dense"`.
+#'  \item mds_iter - Integer or `NULL`. Number of SGD-MDS iterations. If `NULL`,
+#'  the Rust side runs 300 below 1000 points, 500 below 5000 and 800 otherwise
+#'  (points being the landmarks when landmarks are used). Defaults to `NULL`.
+#'  \item randomised - Boolean. Use randomised SVD for classic MDS (`mds_method
+#'  = "classic"`). SGD-MDS initialises from a randomised classic MDS either way.
+#'  Defaults to `TRUE`.
+#' }
+#'
+#' @references Moon, et al., Nat. Biotechnol., 2019
+#'
+#' @export
+params_phate_gpu <- function(
+  decay = 40.0,
+  bandwidth_scale = 1.0,
+  thresh = 1e-04,
+  graph_symmetry = c("additive", "multiplicative", "mnn", "none"),
+  n_landmarks = 2048L,
+  landmark_method = c("spectral", "random", "density"),
+  n_svd = NULL,
+  t_max = 100L,
+  t_custom = NULL,
+  gamma = 1.0,
+  mds_method = c("sgd_dense", "classic"),
+  mds_iter = NULL,
+  randomised = TRUE
+) {
+  graph_symmetry <- match.arg(graph_symmetry)
+  landmark_method <- match.arg(landmark_method)
+  mds_method <- match.arg(mds_method)
+
+  # Checks
+  checkmate::qassert(decay, c("N1(0,)", "0"))
+  checkmate::qassert(bandwidth_scale, "N1(0,)")
+  checkmate::qassert(thresh, "N1[0,)")
+  checkmate::assertChoice(
+    graph_symmetry,
+    c("additive", "multiplicative", "mnn", "none")
+  )
+  checkmate::qassert(n_landmarks, c("I1[1,)", "0"))
+  checkmate::assertChoice(landmark_method, c("spectral", "random", "density"))
+  checkmate::qassert(n_svd, c("I1[1,)", "0"))
+  checkmate::qassert(t_max, "I1[1,)")
+  checkmate::qassert(t_custom, c("I1[1,)", "0"))
+  checkmate::qassert(gamma, "N1[-1,1]")
+  checkmate::assertChoice(mds_method, c("sgd_dense", "classic"))
+  checkmate::qassert(mds_iter, c("I1[1,)", "0"))
+  checkmate::qassert(randomised, "B1")
+
+  # Return
+  list(
+    decay = decay,
+    bandwidth_scale = bandwidth_scale,
+    thresh = thresh,
+    graph_symmetry = graph_symmetry,
+    n_landmarks = n_landmarks,
+    landmark_method = landmark_method,
+    n_svd = n_svd,
+    t_max = t_max,
+    t_custom = t_custom,
+    gamma = gamma,
+    mds_method = mds_method,
+    mds_iter = mds_iter,
+    randomised = randomised
+  )
+}
+
 #' Wrapper function for the GPU BBKNN parameters
 #'
 #' @description GPU counterpart to [bixverse::params_sc_bbknn()]. Same BBKNN
 #' knobs, but the kNN block is the GPU one, see [params_knn_gpu_defaults()].
 #'
 #' @details
-#' Two keys of the GPU kNN block do nothing here and are rejected rather than
-#' silently ignored. `k` is set by `neighbours_within_batch`, and `extract_knn`
-#' only applies to a self-query, whereas BBKNN builds one index per batch and
-#' queries each with every cell.
+#' `k` in the GPU kNN block is rejected rather than silently ignored: it is set
+#' by `neighbours_within_batch`. BBKNN builds one index per batch and queries
+#' each with every cell, so `knn_method = "nndescent"` builds and beam searches
+#' a CAGRA graph here.
 #'
 #' @param neighbours_within_batch Integer. Number of neighbours to consider per
 #' batch. Defaults to `3L`.
@@ -491,10 +610,11 @@ params_parametric_umap <- function(
 #' @param trim Integer or `NULL`. Trim the neighbours of each cell to these many
 #' top connectivities. May help with population independence and improve the
 #' tidiness of clustering. If `NULL`, it defaults to `10 *
-#' neighbours_within_batch`. Defaults to `NULL`.
+#' neighbours_within_batch * n_batches`, as in the reference implementation.
+#' Defaults to `NULL`.
 #' @param knn List. Optional overrides for the kNN block. See
-#' [params_knn_gpu_defaults()] for the available elements. Without `k`,
-#' `extract_knn`. Unknown elements are an error. Defaults to `list()`.
+#' [params_knn_gpu_defaults()] for the available elements. Without `k`. Unknown
+#' elements are an error. Defaults to `list()`.
 #'
 #' @returns A named list with the following elements:
 #' \itemize{
@@ -508,7 +628,8 @@ params_parametric_umap <- function(
 #'  \item trim - Integer or `NULL`. Trim the neighbours of each cell to these
 #'  many top connectivities. May help with population independence and improve
 #'  the tidiness of clustering. If `NULL`, it defaults to `10 *
-#'  neighbours_within_batch`. Defaults to `NULL`.
+#'  neighbours_within_batch * n_batches`, as in the reference implementation.
+#'  Defaults to `NULL`.
 #'  \item The elements of [params_knn_gpu_defaults()], overridden by `knn`,
 #'  spliced in at this position.
 #' }
@@ -531,7 +652,7 @@ params_sc_bbknn_gpu <- function(
 
   # Merge
   knn_base <- params_knn_gpu_defaults()
-  knn_base[c("k", "extract_knn")] <- NULL
+  knn_base["k"] <- NULL
   checkmate::assertSubset(names(knn), names(knn_base))
   knn <- utils::modifyList(knn_base, knn, keep.null = TRUE)
 
@@ -740,18 +861,17 @@ params_sc_fast_cluster_gpu <- function(
 #' with `k` and `ann_dist` defaulting to the CPU values.
 #'
 #' @details
-#' `extract_knn` is rejected rather than silently ignored: every search in
-#' fastMNN is a cross-query between two sets of cells, and extraction only
-#' applies to a self-query. `k = 0L` is rejected as well, since fastMNN has no
-#' data-driven fallback for it.
+#' Every search in fastMNN is a cross-query between two sets of cells, so
+#' `knn_method = "nndescent"` builds and beam searches a CAGRA graph here. `k =
+#' 0L` is rejected, since fastMNN has no data-driven fallback for it.
 #'
 #' @param ndist Numeric. Number of median distances for the tricube kernel
 #' bandwidth. Defaults to `3.0`.
 #' @param cos_norm Boolean. Apply cosine normalisation before computing
 #' distances. Defaults to `TRUE`.
 #' @param knn List. Optional overrides for the kNN block. See
-#' [params_knn_gpu_defaults()] for the available elements. Without
-#' `extract_knn`. Unknown elements are an error. Defaults to `list()`.
+#' [params_knn_gpu_defaults()] for the available elements. Unknown elements are
+#' an error. Defaults to `list()`.
 #'
 #' @returns A named list with the following elements:
 #' \itemize{
@@ -777,7 +897,6 @@ params_sc_fastmnn_gpu <- function(
 
   # Merge
   knn_base <- params_knn_gpu_defaults()
-  knn_base["extract_knn"] <- NULL
   checkmate::assertSubset(names(knn), names(knn_base))
   knn <- utils::modifyList(
     knn_base,
@@ -829,7 +948,7 @@ params_sc_fastmnn_gpu <- function(
 #' @param batch_proportion_cutoff Numeric. Cutoff for pruning batches with small
 #' proportions during ridge regression. Defaults to `1e-05`.
 #' @param use_dynamic_lambda Boolean. If `TRUE`, lambda is estimated dynamically
-#' per cluster instead of using the fixed `lambda` value. Defaults to `FALSE`.
+#' per cluster instead of using the fixed `lambda` value. Defaults to `TRUE`.
 #' @param csr_cube_count Integer. Number of parallel thread groups used when
 #' building the level-CSR index on the GPU. Adjust for your hardware if needed.
 #' Defaults to `256L`.
@@ -875,7 +994,7 @@ params_sc_fastmnn_gpu <- function(
 #'  small proportions during ridge regression. Defaults to `1e-05`.
 #'  \item use_dynamic_lambda - Boolean. If `TRUE`, lambda is estimated
 #'  dynamically per cluster instead of using the fixed `lambda` value. Defaults
-#'  to `FALSE`.
+#'  to `TRUE`.
 #'  \item csr_cube_count - Integer. Number of parallel thread groups used when
 #'  building the level-CSR index on the GPU. Adjust for your hardware if needed.
 #'  Defaults to `256L`.
@@ -903,7 +1022,7 @@ params_sc_harmony_v2_gpu <- function(
   alpha = 0.2,
   tau = 0.0,
   batch_proportion_cutoff = 1e-05,
-  use_dynamic_lambda = FALSE,
+  use_dynamic_lambda = TRUE,
   csr_cube_count = 256L,
   k_means_iter = 10L,
   k_means_init = NULL,
@@ -1065,8 +1184,10 @@ params_tsne_gpu <- function(
 #' @param neg_sample_rate Integer. Number of negative samples per positive
 #' sample. Defaults to `5L`.
 #' @param gamma Numeric. Repulsion strength. Defaults to `1.0`.
-#' @param optimiser String. The optimiser for the embedding. One of
-#' `c("adam_gpu", "adam_parallel", "sgd", "adam")`. Defaults to `"adam_gpu"`.
+#' @param optimiser String. The optimiser for the embedding. `"sgd_parallel"` is
+#' lock-free (Hogwild!) and not reproducible run to run with more than one
+#' thread. One of `c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel",
+#' "adam")`. Defaults to `"adam_gpu"`.
 #' @param init String. Embedding initialisation method. One of `c("spectral",
 #' "pca", "random")`. Defaults to `"spectral"`.
 #' @param randomised Boolean. Use randomised SVD for PCA initialisation.
@@ -1086,8 +1207,10 @@ params_tsne_gpu <- function(
 #'  \item neg_sample_rate - Integer. Number of negative samples per positive
 #'  sample. Defaults to `5L`.
 #'  \item gamma - Numeric. Repulsion strength. Defaults to `1.0`.
-#'  \item optimiser - String. The optimiser for the embedding. One of
-#'  `c("adam_gpu", "adam_parallel", "sgd", "adam")`. Defaults to `"adam_gpu"`.
+#'  \item optimiser - String. The optimiser for the embedding. `"sgd_parallel"`
+#'  is lock-free (Hogwild!) and not reproducible run to run with more than one
+#'  thread. One of `c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel",
+#'  "adam")`. Defaults to `"adam_gpu"`.
 #'  \item init - String. Embedding initialisation method. One of `c("spectral",
 #'  "pca", "random")`. Defaults to `"spectral"`.
 #'  \item randomised - Boolean. Use randomised SVD for PCA initialisation.
@@ -1103,7 +1226,7 @@ params_umap_gpu <- function(
   n_epochs = NULL,
   neg_sample_rate = 5L,
   gamma = 1.0,
-  optimiser = c("adam_gpu", "adam_parallel", "sgd", "adam"),
+  optimiser = c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam"),
   init = c("spectral", "pca", "random"),
   randomised = FALSE
 ) {
@@ -1120,7 +1243,7 @@ params_umap_gpu <- function(
   checkmate::qassert(gamma, "N1")
   checkmate::assertChoice(
     optimiser,
-    c("adam_gpu", "adam_parallel", "sgd", "adam")
+    c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam")
   )
   checkmate::assertChoice(init, c("spectral", "pca", "random"))
   checkmate::qassert(randomised, "B1")

@@ -7,7 +7,7 @@ those. The GPU functions slot into the same chain.
 | Step | CPU (bixverse) | GPU (bixverse.gpu) | Classes |
 |---|---|---|---|
 | PCA | `calculate_pca_sc()` | `calculate_pca_gpu_sc()` | `SingleCells` |
-| Harmony v2 | `harmony_v2_sc()` | `harmony_v2_gpu_sc()` | `SingleCells` |
+| Harmony v2 | `harmony_sc()` | `harmony_gpu_sc()` | `SingleCells` |
 | fastMNN | `fast_mnn_sc()` | `fast_mnn_gpu_sc()` | `SingleCells`, `SingleCellsSubset` |
 | kNN + sNN | `find_neighbours_sc()` | `find_neighbours_gpu_sc()` | `SingleCells` |
 | kNN only | `generate_knn_sc()` | `generate_gpu_knn_sc()` | `SingleCells` |
@@ -16,6 +16,7 @@ those. The GPU functions slot into the same chain.
 | BBKNN | `bbknn_sc()` | `bbknn_gpu_sc()` | `SingleCells`, `SingleCellsSubset` |
 | UMAP | `umap_sc()` | `umap_gpu_sc()` | `SingleCells` |
 | t-SNE | `tsne_sc()` | `tsne_gpu_sc()` | `SingleCells` |
+| PHATE | `phate_sc()` | `phate_gpu_sc()` | `SingleCells` |
 | Scrublet | `scrublet_sc()` | `scrublet_gpu_sc()` | `SingleCells` |
 | SEACells | `generate_seacells_sc()` | `generate_seacells_gpu_sc()` | `SingleCells`, `SingleCellsSubset` |
 | Bonsai tree | `bonsai_sc()` | `bonsai_gpu_sc()` | `SingleCells`, `MetaCells` |
@@ -60,14 +61,14 @@ sketch or the Lanczos start block.
 ## Harmony v2
 
 ```r
-obj <- harmony_v2_gpu_sc(
+obj <- harmony_gpu_sc(
   obj,
   batch_column = "sample_id",
   harmony_params = params_sc_harmony_v2_gpu()
 )
 ```
 
-- Writes the embedding as **`"harmony_gpu"`**, not `"harmony_v2"`. Downstream
+- Writes the embedding as **`"harmony_gpu"`**, not `"harmony"`. Downstream
   calls need `embd_to_use = "harmony_gpu"`. CPU and GPU embeddings can coexist.
 - **One batch covariate only.** `batch_column` is a single string.
 - R is refined by full-batch Jacobi sweeps rather than the original blockwise
@@ -82,7 +83,7 @@ obj <- harmony_v2_gpu_sc(
 obj <- find_neighbours_gpu_sc(
   obj,
   embd_to_use = "harmony_gpu",
-  knn_method = "nndescent",    # or "exhaustive", "ivf"
+  knn_method = "nndescent",    # or "cagra", "exhaustive", "ivf"
   nn_params = params_nn_gpu(),
   k = 15L,
   snn_params = params_sc_neighbours()
@@ -100,10 +101,13 @@ Picking `knn_method`:
   cells, so it gets slow on very large data.
 - `"ivf"`: approximate, `n_list` / `n_probes` in `params_nn_gpu()`. The fallback
   when exhaustive is too slow, at any `k`.
-- `"nndescent"`: NN-descent pruned into a CAGRA graph, then beam search
-  (`extract_knn = FALSE`, default) or direct extraction from the graph
-  (`extract_knn = TRUE`, faster, lower recall). Fastest at `k` up to about 30,
-  then loses badly because the build degree tracks `k`.
+- `"nndescent"`: the default. Reads the kNN straight off the NN-descent graph,
+  with no index and no beam search. Raise `k_build` in `params_nn_gpu()`
+  (defaults to 1.5 * `k`) if recall matters. Loses badly above `k` of about 30,
+  because the build degree tracks `k`. BBKNN and fastMNN are cross-queries, so
+  there it builds and beam searches a CAGRA graph instead.
+- `"cagra"`: the same descent, pruned into a CAGRA graph, then beam search.
+  Raise `node_degree_final` if it errors on short rows.
 
 The distance metric is `dist_metric` in `params_nn_gpu()`, `"euclidean"` or
 `"cosine"`.
@@ -180,7 +184,9 @@ obj <- find_clusters_gpu_sc(obj, res = 1, name = "leiden_gpu")
 Only the level-0 local moving runs on the device, and only on graphs of at
 least 50,000 cells. Below that it runs on the CPU, so there is no point timing
 it on small data. Partitions depend on `seed` but are not identical to the CPU
-ones. `leiden_clustering_gpu()` does the same on a plain igraph.
+ones. `leiden_clustering_gpu()` does the same on a standalone graph: a
+`SingleCellConnectivity` (what `get_connectivities()` returns) or an undirected
+igraph.
 
 ## Bonsai
 
@@ -188,17 +194,23 @@ ones. `leiden_clustering_gpu()` does the same on a plain igraph.
 search and layout stay on the CPU. Posteriors are f32, so a gene right at the
 signal-to-noise threshold can land on the other side. Returns a `BonsaiTree`.
 
-## UMAP and t-SNE on the object
+## UMAP, t-SNE and PHATE on the object
 
 ```r
 obj <- umap_gpu_sc(obj, embd_to_use = "harmony_gpu", slot_name = "umap_harm")
 obj <- tsne_gpu_sc(obj, embd_to_use = "harmony_gpu", perplexity = 30)
+obj <- phate_gpu_sc(obj, embd_to_use = "harmony_gpu")
 ```
 
-Both write to `other_embeddings[[slot_name]]` (defaults `"umap"` / `"tsne"`),
-readable by `bixverse.plots::embedding_plot_sc()`.
+All write to `other_embeddings[[slot_name]]` (defaults `"umap"` / `"tsne"` /
+`"phate"`), readable by `bixverse.plots::embedding_plot_sc()`.
 
 - `umap_gpu_sc(use_knn = TRUE)` is the **default** and reuses the stored kNN.
+  A stored kNN wider than `k` is cut down to `k`.
+- `phate_gpu_sc(use_knn = FALSE)` is the **default**: PHATE searches
+  `6 * k + 5` wide (35 at `k = 5`), far wider than the stored kNN usually is.
+  Reusing a narrower one warns. The fresh search defaults to
+  `knn_method = "ivf"`, since NN-descent falls behind at that width.
 - `tsne_gpu_sc(use_knn = FALSE)` is the **default** and builds a fresh kNN each
   call, because t-SNE needs `k` around `3 * perplexity`. Only set
   `use_knn = TRUE` if the stored `k` is at least that. At perplexity 30 that
@@ -207,7 +219,8 @@ readable by `bixverse.plots::embedding_plot_sc()`.
 - With the default `approx_type = "fft_3k_gpu"` the t-SNE optimiser runs on
   the device; `"bh"`, `"fft"` and `"fft_3k"` optimise on the CPU. UMAP runs
   both kNN and the Adam optimiser on the device.
-- Knobs are in `params_umap_gpu()` / `params_tsne_gpu()`, see
+- Knobs are in `params_umap_gpu()` / `params_tsne_gpu()` /
+  `params_phate_gpu()`, see
   `matrix-methods.md`.
 
 ## Scrublet

@@ -265,7 +265,7 @@ expect_true(
   info = "gpu pca - leiden recovers cell groups"
 )
 
-## harmony_v2_gpu_sc -----------------------------------------------------------
+## harmony_gpu_sc -----------------------------------------------------------
 
 ### warnings -------------------------------------------------------------------
 
@@ -280,7 +280,7 @@ sc_no_pca <- load_r_data(
 )
 
 expect_warning(
-  current = harmony_v2_gpu_sc(
+  current = harmony_gpu_sc(
     object = sc_no_pca,
     batch_column = "batch_index",
     .verbose = FALSE
@@ -314,7 +314,7 @@ assess_harmony_gpu_impact <- function(object) {
   )
   kbet_score_original <- mean(kbet_original$pval <= 0.05)
 
-  object <- harmony_v2_gpu_sc(
+  object <- harmony_gpu_sc(
     object = object,
     batch_column = "batch_index",
     .verbose = FALSE
@@ -454,12 +454,11 @@ expect_true(
 
 ### nndescent ------------------------------------------------------------------
 
-for (extract in c(TRUE, FALSE)) {
+for (method in c("nndescent", "cagra")) {
   knn_cagra <- generate_gpu_knn_sc(
     object = sc_obj_plain,
     embd_to_use = "pca",
-    knn_method = "nndescent",
-    nn_params = params_nn_gpu(extract_knn = extract),
+    knn_method = method,
     k = knn_k,
     .verbose = FALSE
   )
@@ -471,8 +470,8 @@ for (extract in c(TRUE, FALSE)) {
       ncols = knn_k
     ),
     info = sprintf(
-      "generate_gpu_knn_sc (nndescent, extract_knn = %s) - kNN matrix of correct dim",
-      extract
+      "generate_gpu_knn_sc (%s) - kNN matrix of correct dim",
+      method
     )
   )
 }
@@ -548,7 +547,10 @@ expect_true(
 )
 
 expect_true(
-  current = checkmate::testClass(get_connectivities(obj_ex), "igraph"),
+  current = checkmate::testClass(
+    get_connectivities(obj_ex),
+    "SingleCellConnectivity"
+  ),
   info = "find_neighbours_gpu_sc (exhaustive) - connectivities generated"
 )
 
@@ -577,14 +579,14 @@ for (knn_sym in c("snn", "umap", "knn")) {
   )
 
   expect_equal(
-    current = igraph::graph_attr(g_gpu, "method"),
+    current = g_gpu$method,
     target = knn_sym,
     info = sprintf("find_neighbours_gpu_sc (%s) - method recorded", knn_sym)
   )
 
   expect_equal(
-    current = igraph::as_adjacency_matrix(g_gpu, attr = "weight"),
-    target = igraph::as_adjacency_matrix(g_cpu, attr = "weight"),
+    current = bixverse::rs_graph_to_csr(g_gpu$ptr),
+    target = bixverse::rs_graph_to_csr(g_cpu$ptr),
     info = sprintf(
       "find_neighbours_gpu_sc (%s) - matches the CPU graph",
       knn_sym
@@ -604,7 +606,10 @@ expect_warning(
 )
 
 expect_true(
-  current = checkmate::testClass(get_connectivities(obj_dep), "igraph"),
+  current = checkmate::testClass(
+    get_connectivities(obj_dep),
+    "SingleCellConnectivity"
+  ),
   info = "find_neighbours_gpu_sc - deprecated snn_params still builds a graph"
 )
 
@@ -628,7 +633,10 @@ expect_true(
 )
 
 expect_true(
-  current = checkmate::testClass(get_connectivities(obj_ivf), "igraph"),
+  current = checkmate::testClass(
+    get_connectivities(obj_ivf),
+    "SingleCellConnectivity"
+  ),
   info = "find_neighbours_gpu_sc (ivf) - connectivities generated"
 )
 
@@ -637,7 +645,6 @@ expect_true(
 obj_cagra <- find_neighbours_gpu_sc(
   object = sc_obj_plain,
   knn_method = "nndescent",
-  nn_params = params_nn_gpu(extract_knn = FALSE),
   k = knn_k,
   .verbose = FALSE
 )
@@ -652,7 +659,10 @@ expect_true(
 )
 
 expect_true(
-  current = checkmate::testClass(get_connectivities(obj_cagra), "igraph"),
+  current = checkmate::testClass(
+    get_connectivities(obj_cagra),
+    "SingleCellConnectivity"
+  ),
   info = "find_neighbours_gpu_sc (nndescent) - connectivities generated"
 )
 
@@ -811,6 +821,32 @@ expect_true(
   info = "umap_gpu_sc - custom slot name honoured"
 )
 
+### lock-free parallel SGD -----------------------------------------------------
+
+sc_obj_plain <- umap_gpu_sc(
+  object = sc_obj_plain,
+  k = knn_k,
+  min_dist = 0.1,
+  umap_params = params_umap_gpu(optimiser = "sgd_parallel"),
+  slot_name = "umap_sgd_parallel",
+  .verbose = FALSE
+)
+
+umap_sgd_parallel_embd <- get_embedding(sc_obj_plain, "umap_sgd_parallel")
+
+expect_true(
+  current = checkmate::testMatrix(
+    umap_sgd_parallel_embd,
+    mode = "numeric",
+    any.missing = FALSE,
+    ncols = 2L,
+    nrows = nrow(umap_embd),
+    row.names = "named"
+  ) &&
+    all(is.finite(umap_sgd_parallel_embd)),
+  info = "umap_gpu_sc - sgd_parallel embedding stored with correct shape"
+)
+
 ## tsne_gpu_sc ----------------------------------------------------------------
 
 ### warning on missing embedding -----------------------------------------------
@@ -857,6 +893,79 @@ expect_true(
     mean(sep$within_dists) < mean(sep$between_dists)
   },
   info = "tsne_gpu_sc - clusters separated in embedding"
+)
+
+## phate_gpu_sc ----------------------------------------------------------------
+
+### warning on missing embedding -----------------------------------------------
+
+expect_warning(
+  current = phate_gpu_sc(
+    object = sc_obj_plain,
+    embd_to_use = "fake_embd",
+    .verbose = FALSE
+  ),
+  info = "phate_gpu_sc - warning when embedding not found"
+)
+
+### standard run (fresh GPU kNN at the search width) ---------------------------
+
+sc_obj_plain <- phate_gpu_sc(
+  object = sc_obj_plain,
+  phate_params = params_phate_gpu(n_landmarks = 100L, n_svd = 20L),
+  .verbose = FALSE
+)
+
+phate_embd <- get_embedding(sc_obj_plain, "phate")
+
+expect_true(
+  current = checkmate::testMatrix(
+    phate_embd,
+    mode = "numeric",
+    ncols = 2L,
+    row.names = "named",
+    col.names = "named"
+  ),
+  info = "phate_gpu_sc - embedding stored with correct shape and names"
+)
+
+expect_equal(
+  current = colnames(phate_embd),
+  target = c("phate_1", "phate_2"),
+  info = "phate_gpu_sc - column names"
+)
+
+expect_true(
+  current = {
+    sep <- manifoldsR::rs_check_cluster_separation(
+      embd = phate_embd,
+      cluster_membership = as.integer(factor(
+        unlist(sc_obj_plain[["cell_grp"]])
+      ))
+    )
+    mean(sep$within_dists) < mean(sep$between_dists)
+  },
+  info = "phate_gpu_sc - clusters separated in embedding"
+)
+
+### cached knn -----------------------------------------------------------------
+
+# the cached kNN is `knn_k` wide, far below the 35 PHATE searches at k = 5
+expect_warning(
+  current = sc_obj_plain <- phate_gpu_sc(
+    object = sc_obj_plain,
+    use_knn = TRUE,
+    slot_name = "phate_cached",
+    phate_params = params_phate_gpu(n_landmarks = 100L, n_svd = 20L),
+    .verbose = FALSE
+  ),
+  pattern = "35 wide",
+  info = "phate_gpu_sc - narrow cached kNN warns"
+)
+
+expect_true(
+  current = "phate_cached" %in% get_available_embeddings(sc_obj_plain),
+  info = "phate_gpu_sc - custom slot name honoured"
 )
 
 # clean up ---------------------------------------------------------------------

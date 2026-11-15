@@ -3,7 +3,7 @@ Title:
     GPU-accelerated methods via cubecl and WGPU for the bixverse with general
     methods such as k-means and correlations and a lot of methods specific for
     single cell analysis acceleration.
-Version: 0.6.1
+Version: 0.7.0
 Authors@R: 
     person(
         given = "Gregor", 
@@ -11,8 +11,9 @@ Authors@R:
         email = "gregorlueg@me.com", 
         role = c("aut", "cre"))
 Description: 
-    Provides GPU-accelerated methods for the bixverse. These leverage Burn, 
-    cubecl and wgpu under the hood to work on very different hardwares.
+    Provides GPU-accelerated methods for the bixverse. These run on Burn,
+    cubecl and wgpu, so they work across GPU vendors, with an opt-in MLX backend
+    on Apple Silicon.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -23,18 +24,18 @@ Depends:
 Suggests: 
     BiocNeighbors,
     bixverse.plots,
+    igraph,
     knitr,
+    Matrix,
     quarto,
     tinytest
 Imports: 
-    bixverse (>= 0.8.0),
+    bixverse (>= 0.9.1),
     checkmate,
     data.table,
-    igraph,
     lifecycle,
     magrittr,
-    manifoldsR (>= 0.3.0),
-    Matrix,
+    manifoldsR (>= 0.6.0),
     purrr,
     qs2,
     rextendr,
@@ -44,4 +45,4 @@ Imports:
 Additional_repositories:
     https://gregorlueg.r-universe.dev
 URL: https://gregorlueg.github.io/bixverse.gpu/
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1

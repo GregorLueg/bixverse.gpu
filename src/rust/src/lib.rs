@@ -1,18 +1,19 @@
 use ann_search_rs::gpu::k_means_gpu::KMeansGpuParams;
 use bixverse_r::gpu::graph::leiden_gpu::community_detection_gpu;
 use bixverse_r::gpu::linalg::corr::{column_pairwise_cor_gpu, GpuCorCov};
+use bixverse_r::gpu::sc_gpu::knn_gpu::knn_with_dist_gpu;
 use bixverse_r::graph::graph_structures::edge_pairs_to_sparse_graph;
 use bixverse_r::graph::leiden::LeidenParams;
 #[cfg(mlx_available)]
 use bixverse_r::mlx::linalg::corr::{column_pairwise_cor_mlx, MlxCorCov};
+#[cfg(mlx_available)]
+use bixverse_r::mlx::sc::knn::knn_with_dist_mlx;
 use bixverse_r::prelude::*;
 use burn::tensor::{Device as BurnDevice, DeviceKind};
 use cubecl::wgpu::WgpuDevice;
 use extendr_api::prelude::*;
 use faer::{Mat, MatRef};
 use manifolds_rs::parametric::model::TrainedUmapModel;
-use manifolds_rs::prelude::run_ann_search_gpu;
-use manifolds_rs::training::tsne_optimiser::{parse_tsne_optimiser, TsneOpt};
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::OnceLock;
 
@@ -34,11 +35,11 @@ pub use single_cell::scrublet_gpu;
 pub use single_cell::seacells_gpu;
 
 use crate::embeddings::parametric_umap::*;
+use crate::embeddings::phate_gpu::phate_manifold_gpu;
 use crate::embeddings::tsne_gpu::tsne_manifold_gpu;
 use crate::embeddings::umap_gpu::umap_manifold_gpu;
-use crate::embeddings::utils::{get_params_nn_ann_gpu, knn_method_for_backend};
 use crate::ml::clustering::*;
-use crate::utils::nearest_neighbours_to_rust;
+use crate::utils::{nearest_neighbours_to_rust, nn_list_to_knn_params_gpu};
 
 /////////////
 // extendR //
@@ -82,15 +83,10 @@ extendr_module! {
     // tsne gpu
     fn rs_tsne_gpu;
     fn rs_tsne_from_knn_gpu;
+    // phate gpu
+    fn rs_phate_gpu;
+    fn rs_phate_from_knn_gpu;
 }
-
-////////////
-// Consts //
-////////////
-
-/// Threshold at which the switch from fp32 to fp64 happens. Some algorithms
-/// (tSNE, cough) are very sensitive to precision differences.
-const SAMPLE_THRESHOLD_HIGH_PRECISION: usize = 100_000;
 
 ///////////
 // Types //
@@ -127,98 +123,6 @@ impl PUmapModel {
     }
 }
 
-///////////////
-// Precision //
-///////////////
-
-///////////
-// Enums //
-///////////
-
-/// Enum defining the floating point operation precision. Some algorithms suffer
-/// from catastrophic cancellation and accumulation of precision errors
-#[derive(Debug, Clone, Copy, Default)]
-enum FloatingPointPrecision {
-    /// FP32
-    #[default]
-    FP32,
-    /// FP64
-    FP64,
-}
-
-/// Auto detection of the precision based on sensible thresholds
-///
-/// ### Params
-///
-/// * `n` - Number of samples
-///
-/// ### Returns
-///
-/// The [FloatingPointPrecision]
-fn auto_precision(n: usize) -> FloatingPointPrecision {
-    if n > SAMPLE_THRESHOLD_HIGH_PRECISION {
-        FloatingPointPrecision::FP64
-    } else {
-        FloatingPointPrecision::FP32
-    }
-}
-
-/// Function to parse the precision to use
-///
-/// ### Params
-///
-/// * `use_high_precision` - Nullable Rbool. If provided, will use that to
-///   determine precision to use
-/// * `n` - Number of samples in the data. Used to determine in an auto
-///   threshold which precision to use.
-///
-/// ### Returns
-///
-/// The determined [FloatingPointPrecision].
-fn parse_precision(use_high_precision: Nullable<Rbool>, n: usize) -> FloatingPointPrecision {
-    if use_high_precision != Nullable::Null {
-        let val = use_high_precision.into_option().map(|x| x.to_bool()).unwrap_or_else(|| {
-            println!("[WARNING] - The provided 'use_high_precision' could not be decoded into a boolean. Function will assume 'true'");
-            true
-        });
-        if val {
-            FloatingPointPrecision::FP64
-        } else {
-            FloatingPointPrecision::FP32
-        }
-    } else {
-        auto_precision(n)
-    }
-}
-
-/// Precision for t-SNE, honouring the device optimiser
-///
-/// The GPU and MLX optimisers (`"fft_3k_gpu"`, `"fft_3k_mlx"`) always run in
-/// fp32: f64 kernels do not run on Metal. Every other optimiser goes through
-/// [parse_precision].
-///
-/// ### Params
-///
-/// * `approx_type` - The t-SNE approximation string
-/// * `use_high_precision` - Nullable Rbool, see [parse_precision]
-/// * `n` - Number of samples in the data
-///
-/// ### Returns
-///
-/// The determined [FloatingPointPrecision].
-fn tsne_precision(
-    approx_type: &str,
-    use_high_precision: Nullable<Rbool>,
-    n: usize,
-) -> FloatingPointPrecision {
-    match parse_tsne_optimiser(approx_type) {
-        Some(TsneOpt::Fft3KernelGpu) => FloatingPointPrecision::FP32,
-        #[cfg(mlx_available)]
-        Some(TsneOpt::Fft3KernelMlx) => FloatingPointPrecision::FP32,
-        _ => parse_precision(use_high_precision, n),
-    }
-}
-
 ////////////
 // Device //
 ////////////
@@ -233,6 +137,8 @@ fn tsne_precision(
 /// first real call after a successful probe skips the setup cost.
 ///
 /// @returns Boolean. `TRUE` when a WGPU adapter could be initialised.
+///
+/// @keywords internal
 #[extendr]
 fn rs_gpu_available() -> bool {
     static AVAILABLE: OnceLock<bool> = OnceLock::new();
@@ -320,6 +226,8 @@ mod plane_check {
 ///
 /// @returns Boolean. `TRUE` when a GPU adapter is present and a plane
 /// reduction on it returns the plane width.
+///
+/// @keywords internal
 #[extendr]
 fn rs_gpu_plane_ops() -> bool {
     static PLANE_OPS: OnceLock<bool> = OnceLock::new();
@@ -409,16 +317,18 @@ pub(crate) fn parse_backend(backend: &str) -> extendr_api::Result<Backend> {
 ///
 /// @description
 /// `r lifecycle::badge("experimental")`
-/// Builds a kNN graph from an embedding matrix on the wgpu backend. Three
-/// searches are available: an exact brute-force scan, an IVF index that probes
-/// a subset of Voronoi cells, and a CAGRA-style NNDescent graph that is either
-/// beam searched or handed back as the descent left it.
+/// Builds a kNN graph from an embedding matrix on the GPU. Four searches are
+/// available: an exact brute-force scan, an IVF index that probes a subset of
+/// Voronoi cells, the NN-descent kNN graph itself (no index, no search), and a
+/// CAGRA graph pruned from the NN-descent build and beam searched. Rows the
+/// descent left short are topped up with an exact search of only those rows.
 ///
 /// Euclidean distances come back as true L2, not squared.
 ///
 /// @param embd Numeric matrix of embeddings, cells x features.
 /// @param k Integer. Number of neighbours to return, self excluded.
-/// @param knn_method String. One of `c("nndescent", "exhaustive", "ivf")`.
+/// @param knn_method String. One of
+/// `c("nndescent", "cagra", "exhaustive", "ivf")`.
 /// @param nn_params A named list with the parameters, see
 /// [bixverse.gpu::params_nn_gpu()]
 /// @param seed Integer. Random seed for reproducibility.
@@ -450,36 +360,38 @@ fn rs_gpu_knn(
     let backend = parse_backend(backend)?;
 
     let data = r_matrix_to_faer_fp32(&embd);
-    let params = get_params_nn_ann_gpu::<f32>(nn_params)?;
+    let params = nn_list_to_knn_params_gpu(nn_params, &knn_method, k)?;
 
-    let device: WgpuDevice = Default::default();
+    let (indices, dist) = match backend {
+        #[cfg(mlx_available)]
+        Backend::Mlx => knn_with_dist_mlx(data.as_ref(), k, &params, seed, verbose).to_extendr()?,
+        _ => {
+            let device: WgpuDevice = Default::default();
+            let res = knn_with_dist_gpu(
+                data.as_ref(),
+                k,
+                &params,
+                device.clone().into(),
+                seed,
+                verbose,
+            )
+            .to_extendr()?;
+            // The indices are large enough that leaving the pool behind starves
+            // the next call.
+            let client = cubecl::Device::from(device).client();
+            let _ = client.memory_cleanup();
+            res
+        }
+    };
 
-    let (indices, dist) = run_ann_search_gpu::<f32>(
-        data.as_ref(),
-        k,
-        knn_method_for_backend(&knn_method, backend),
-        &params,
-        device.clone().into(),
-        seed,
-        verbose,
-    )
-    .to_extendr()?;
-
-    // manifolds-rs does not release the pool, and these indices are large
-    // enough that leaving them behind starves the next call.
-    if backend == Backend::Wgpu {
-        let client = cubecl::Device::from(device.clone()).client();
-        let _ = client.memory_cleanup();
-    }
-
-    // An approximate backend can hand back a short row (IVF probing too few
-    // lists, or a CAGRA graph narrower than k). Indexing straight into it would
-    // panic, which takes the whole R session with it.
+    // The NN-descent graph is topped up in bixverse-rs, but IVF probing too
+    // few lists can still hand back a short row. Indexing straight into it
+    // would panic, which takes the whole R session with it.
     if let Some(short) = indices.iter().find(|row| row.len() < k) {
         return Err(extendr_api::Error::Other(format!(
             "The kNN search returned {} neighbours where {} were asked for. \
              Widen the search (`n_probes` for IVF, `node_degree_final` for \
-             nndescent) or lower k.",
+             cagra) or lower k.",
             short.len(),
             k
         )));
@@ -491,7 +403,7 @@ fn rs_gpu_knn(
     Ok(list!(
         indices = faer_to_r_matrix(index_mat.as_ref()),
         dist = faer_to_r_matrix(dist_mat.as_ref()),
-        dist_metric = params.dist_metric
+        dist_metric = params.ann_dist
     ))
 }
 
@@ -757,10 +669,10 @@ fn rs_kmeans_gpu(
 /// fully on the CPU with coloured local moving. On one device the result
 /// depends on the seed only.
 ///
-/// @param from Integer vector. 1-based source node of each edge.
-/// @param to Integer vector. 1-based target node of each edge. Same length as
-/// `from`.
-/// @param weights Numeric vector. Edge weights, same length as `from`.
+/// @param edges Integer vector. Flattened edge pairs (1-indexed!),
+/// `c(from_1, to_1, from_2, to_2, ...)`, as `bixverse::rs_graph_to_edges()`
+/// returns them.
+/// @param weights Numeric vector. One weight per pair.
 /// @param n_nodes Integer. Number of nodes in the graph.
 /// @param leiden_params List. Named list with the optional fields `resolution`,
 /// `beta`, `n_iterations` (negative: until stable), `min_gain`, `refine`
@@ -773,8 +685,7 @@ fn rs_kmeans_gpu(
 /// @export
 #[extendr]
 fn rs_leiden_clustering_gpu(
-    from: &[i32],
-    to: &[i32],
+    edges: &[i32],
     weights: &[f64],
     n_nodes: usize,
     leiden_params: List,
@@ -783,30 +694,27 @@ fn rs_leiden_clustering_gpu(
     // would hand back an unmoved partition rather than fail
     ensure_plane_ops()?;
 
-    if from.len() != to.len() || from.len() != weights.len() {
+    if edges.len() != 2 * weights.len() {
         return Err(Error::Other(format!(
-            "from ({}), to ({}) and weights ({}) must have the same length.",
-            from.len(),
-            to.len(),
+            "edges ({}) must hold two entries per weight ({}).",
+            edges.len(),
             weights.len()
         )));
     }
     let params = LeidenParams::from_r_list(leiden_params)?;
 
-    let mut edges = Vec::with_capacity(2 * from.len());
-    for (&f, &t) in from.iter().zip(to) {
-        for x in [f, t] {
-            if x < 1 || x as usize > n_nodes {
-                return Err(Error::Other(format!(
-                    "Node index {} is outside 1..={}.",
-                    x, n_nodes
-                )));
-            }
-            edges.push((x - 1) as usize);
+    let mut pairs = Vec::with_capacity(edges.len());
+    for &x in edges {
+        if x < 1 || x as usize > n_nodes {
+            return Err(Error::Other(format!(
+                "Node index {} is outside 1..={}.",
+                x, n_nodes
+            )));
         }
+        pairs.push((x - 1) as usize);
     }
 
-    let graph = edge_pairs_to_sparse_graph(&edges, weights, n_nodes);
+    let graph = edge_pairs_to_sparse_graph(&pairs, weights, n_nodes);
 
     let device: WgpuDevice = Default::default();
     let client = cubecl::Device::from(device).client();
@@ -955,8 +863,6 @@ fn rs_cov_gpu(
 /// @param umap_params Named list. List that contains all of the key parameters
 /// for the UMAP generation.
 /// @param seed Integer. Seed for reproducibility.
-/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
-/// If `NULL` will use sensible default thresholding.
 /// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
 /// the `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build with the MLX
 /// backend, see [mlx_available()]); CPU optimisers stay on the CPU.
@@ -976,63 +882,27 @@ fn rs_umap_gpu(
     k: usize,
     umap_params: List,
     seed: usize,
-    use_high_precision: Nullable<Rbool>,
     #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
+    let embd = r_matrix_to_faer_fp32(&embd);
 
-    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
-    let precision = parse_precision(use_high_precision, embd.nrows());
+    let res = umap_manifold_gpu::<f32>(
+        embd.as_ref(),
+        None,
+        n_dim,
+        k,
+        min_dist,
+        spread,
+        umap_params,
+        seed,
+        backend,
+        verbose,
+    )
+    .to_extendr()?;
 
-    match precision {
-        FloatingPointPrecision::FP32 => {
-            if verbosity.detailed_verbosity() {
-                println!("Lower precision (fp32) path chosen.")
-            }
-
-            let embd = r_matrix_to_faer_fp32(&embd);
-
-            let res = umap_manifold_gpu::<f32>(
-                embd.as_ref(),
-                None,
-                n_dim,
-                k,
-                min_dist,
-                spread,
-                umap_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
-
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-        FloatingPointPrecision::FP64 => {
-            if verbosity.detailed_verbosity() {
-                println!("Higher precision (fp64) path chosen.")
-            }
-
-            let embd = r_matrix_to_faer(&embd);
-
-            let res = umap_manifold_gpu::<f64>(
-                embd.as_ref(),
-                None,
-                n_dim,
-                k,
-                min_dist,
-                spread,
-                umap_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
-
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-    }
+    Ok(faer_to_r_matrix(res.as_ref()))
 }
 
 /// UMAP implementation from a pre-computed kNN graph
@@ -1053,8 +923,6 @@ fn rs_umap_gpu(
 /// @param umap_params Named list. List that contains all of the key parameters
 /// for the UMAP generation.
 /// @param seed Integer. Seed for reproducibility.
-/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64` for.
-/// If `NULL` will use sensible default thresholding.
 /// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
 /// the `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build with the MLX
 /// backend, see [mlx_available()]); CPU optimisers stay on the CPU.
@@ -1075,67 +943,28 @@ fn rs_umap_from_knn_gpu(
     k: usize,
     umap_params: List,
     seed: usize,
-    use_high_precision: Nullable<Rbool>,
     #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
+    let embd = r_matrix_to_faer_fp32(&embd);
+    let knn = nearest_neighbours_to_rust(knn_data);
 
-    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
-    let precision = parse_precision(use_high_precision, embd.nrows());
+    let res = umap_manifold_gpu::<f32>(
+        embd.as_ref(),
+        knn,
+        n_dim,
+        k,
+        min_dist,
+        spread,
+        umap_params,
+        seed,
+        backend,
+        verbose,
+    )
+    .to_extendr()?;
 
-    match precision {
-        FloatingPointPrecision::FP32 => {
-            if verbosity.detailed_verbosity() {
-                println!("Lower precision (fp32) path chosen.")
-            }
-
-            let embd = r_matrix_to_faer_fp32(&embd);
-
-            let knn = nearest_neighbours_to_rust(knn_data);
-
-            let res = umap_manifold_gpu::<f32>(
-                embd.as_ref(),
-                knn,
-                n_dim,
-                k,
-                min_dist,
-                spread,
-                umap_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
-
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-        FloatingPointPrecision::FP64 => {
-            if verbosity.detailed_verbosity() {
-                println!("Higher precision (fp64) path chosen.")
-            }
-
-            let embd = r_matrix_to_faer(&embd);
-
-            let knn = nearest_neighbours_to_rust(knn_data);
-
-            let res = umap_manifold_gpu::<f64>(
-                embd.as_ref(),
-                knn,
-                n_dim,
-                k,
-                min_dist,
-                spread,
-                umap_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
-
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-    }
+    Ok(faer_to_r_matrix(res.as_ref()))
 }
 
 //////////
@@ -1182,9 +1011,6 @@ fn tsne_approx_for_backend(approx_type: String, backend: Backend) -> String {
 /// @param tsne_params Named list. List that contains all of the key parameters
 /// for the tSNE generation.
 /// @param seed Integer. Seed for reproducibility.
-/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64`.
-/// If `NULL` will use sensible default thresholding. Ignored for
-/// `"fft_3k_gpu"`, which always runs in `fp32`.
 /// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
 /// the `"fft_3k_gpu"` optimiser on MLX (Apple Silicon, needs a build with the
 /// MLX backend, see [mlx_available()]); CPU optimisers stay on the CPU.
@@ -1203,60 +1029,27 @@ fn rs_tsne_gpu(
     approx_type: String,
     tsne_params: List,
     seed: usize,
-    use_high_precision: Nullable<Rbool>,
     #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
     let approx_type = tsne_approx_for_backend(approx_type, backend);
-    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
-    let precision = tsne_precision(&approx_type, use_high_precision, embd.nrows());
+    let embd = r_matrix_to_faer_fp32(&embd);
 
-    match precision {
-        FloatingPointPrecision::FP64 => {
-            if verbosity.detailed_verbosity() {
-                println!("Larger data set. Using high precision floats.")
-            }
+    let res = tsne_manifold_gpu(
+        embd.as_ref(),
+        None,
+        n_dim,
+        &approx_type,
+        perplexity as f32,
+        tsne_params,
+        seed,
+        backend,
+        verbose,
+    )
+    .to_extendr()?;
 
-            let embd = r_matrix_to_faer(&embd);
-
-            let res = tsne_manifold_gpu(
-                embd.as_ref(),
-                None,
-                n_dim,
-                &approx_type,
-                perplexity,
-                tsne_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
-
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-        FloatingPointPrecision::FP32 => {
-            if verbosity.detailed_verbosity() {
-                println!("Lower precision (fp32) path chosen.")
-            }
-            let embd = r_matrix_to_faer_fp32(&embd);
-
-            let res = tsne_manifold_gpu(
-                embd.as_ref(),
-                None,
-                n_dim,
-                &approx_type,
-                perplexity as f32,
-                tsne_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
-
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-    }
+    Ok(faer_to_r_matrix(res.as_ref()))
 }
 
 /// tSNE implementation from a pre-computed kNN graph
@@ -1282,9 +1075,6 @@ fn rs_tsne_gpu(
 /// @param tsne_params Named list. List that contains all of the key parameters
 /// for the tSNE generation.
 /// @param seed Integer. Seed for reproducibility.
-/// @param use_high_precision Optional logical. Controls `fp32` vs `fp64`.
-/// If `NULL` will use sensible default thresholding. Ignored for
-/// `"fft_3k_gpu"`, which always runs in `fp32`.
 /// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
 /// the `"fft_3k_gpu"` optimiser on MLX (Apple Silicon, needs a build with the
 /// MLX backend, see [mlx_available()]); CPU optimisers stay on the CPU.
@@ -1304,63 +1094,141 @@ fn rs_tsne_from_knn_gpu(
     approx_type: String,
     tsne_params: List,
     seed: usize,
-    use_high_precision: Nullable<Rbool>,
     #[extendr(default = "\"wgpu\"")] backend: &str,
     verbose: usize,
 ) -> extendr_api::Result<RMatrix<f64>> {
     let backend = parse_backend(backend)?;
     let approx_type = tsne_approx_for_backend(approx_type, backend);
-    let verbosity = bixverse_r::prelude::parse_verbosity_level(verbose);
-    let precision = tsne_precision(&approx_type, use_high_precision, embd.nrows());
+    let embd = r_matrix_to_faer_fp32(&embd);
+    let knn = nearest_neighbours_to_rust(knn_data);
 
-    match precision {
-        FloatingPointPrecision::FP32 => {
-            if verbosity.detailed_verbosity() {
-                println!("Lower precision (fp32) path chosen.")
-            }
+    let res = tsne_manifold_gpu(
+        embd.as_ref(),
+        knn,
+        n_dim,
+        &approx_type,
+        perplexity as f32,
+        tsne_params,
+        seed,
+        backend,
+        verbose,
+    )
+    .to_extendr()?;
 
-            let embd = r_matrix_to_faer_fp32(&embd);
+    Ok(faer_to_r_matrix(res.as_ref()))
+}
 
-            let knn = nearest_neighbours_to_rust(knn_data);
+///////////
+// PHATE //
+///////////
 
-            let res = tsne_manifold_gpu(
-                embd.as_ref(),
-                knn,
-                n_dim,
-                &approx_type,
-                perplexity as f32,
-                tsne_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
+/// PHATE implementation
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// Wraps the GPU PHATE in manifolds-rs. The kNN search (`6 * k + 5` wide) and,
+/// for spectral landmarks, the randomised SVD and k-means run on the GPU. The
+/// diffusion time, the powering, MDS and the landmark interpolation stay on the
+/// CPU.
+///
+/// @param embd Numerical matrix. The data to use to generate the embeddings.
+/// Should be of dimensions samples x features.
+/// @param n_dim Integer. Number of PHATE dimensions to return.
+/// @param k Integer. Number of neighbours that set the kernel bandwidth.
+/// @param phate_params Named list. The merged GPU kNN and PHATE parameters plus
+/// `knn_method`. Missing keys fall back to the manifolds-rs defaults.
+/// @param seed Integer. Seed for reproducibility.
+/// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the kNN search and
+/// the spectral landmark selection on MLX (Apple Silicon, needs a build with
+/// the MLX backend, see [mlx_available()]).
+/// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
+/// for detailed verbosity.
+///
+/// @return The PHATE embeddings.
+///
+/// @export
+#[extendr]
+#[allow(clippy::too_many_arguments)]
+fn rs_phate_gpu(
+    embd: RMatrix<f64>,
+    n_dim: usize,
+    k: usize,
+    phate_params: List,
+    seed: usize,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
+    verbose: usize,
+) -> extendr_api::Result<RMatrix<f64>> {
+    let backend = parse_backend(backend)?;
+    let embd = r_matrix_to_faer_fp32(&embd);
 
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-        FloatingPointPrecision::FP64 => {
-            if verbosity.detailed_verbosity() {
-                println!("Large data set. Using higher precision floats.")
-            }
+    let res = phate_manifold_gpu(
+        embd.as_ref(),
+        None,
+        n_dim,
+        k,
+        phate_params,
+        seed,
+        backend,
+        verbose,
+    )
+    .to_extendr()?;
 
-            let embd = r_matrix_to_faer(&embd);
+    Ok(faer_to_r_matrix(res.as_ref()))
+}
 
-            let knn = nearest_neighbours_to_rust(knn_data);
+/// PHATE implementation from a pre-computed kNN graph
+///
+/// @description
+/// `r lifecycle::badge("experimental")`
+/// Wraps the GPU PHATE in manifolds-rs. This version takes a pre-computed kNN
+/// graph, please see [new_nearest_neighbour()]. Neighbours past `k` join the
+/// kernel while their affinity clears `thresh`, so the graph should be
+/// `6 * k + 5` wide. Spectral landmark selection still runs on the GPU.
+///
+/// @param embd Numerical matrix. The data to use to generate the embeddings.
+/// Should be of dimensions samples x features.
+/// @param knn_data `NearestNeighbours` class from R.
+/// @param n_dim Integer. Number of PHATE dimensions to return.
+/// @param k Integer. Number of neighbours that set the kernel bandwidth.
+/// @param phate_params Named list. The merged GPU kNN and PHATE parameters plus
+/// `knn_method`. Missing keys fall back to the manifolds-rs defaults.
+/// @param seed Integer. Seed for reproducibility.
+/// @param backend String. `"wgpu"` or `"mlx"`. `"mlx"` runs the spectral
+/// landmark selection on MLX (Apple Silicon, needs a build with the MLX
+/// backend, see [mlx_available()]).
+/// @param verbose Integer. If `0L` -> silent or `1L` for normal verbosity; `2L`
+/// for detailed verbosity.
+///
+/// @return The PHATE embeddings.
+///
+/// @export
+#[extendr]
+#[allow(clippy::too_many_arguments)]
+fn rs_phate_from_knn_gpu(
+    embd: RMatrix<f64>,
+    knn_data: List,
+    n_dim: usize,
+    k: usize,
+    phate_params: List,
+    seed: usize,
+    #[extendr(default = "\"wgpu\"")] backend: &str,
+    verbose: usize,
+) -> extendr_api::Result<RMatrix<f64>> {
+    let backend = parse_backend(backend)?;
+    let embd = r_matrix_to_faer_fp32(&embd);
+    let knn = nearest_neighbours_to_rust(knn_data);
 
-            let res = tsne_manifold_gpu(
-                embd.as_ref(),
-                knn,
-                n_dim,
-                &approx_type,
-                perplexity,
-                tsne_params,
-                seed,
-                backend,
-                verbose,
-            )
-            .to_extendr()?;
+    let res = phate_manifold_gpu(
+        embd.as_ref(),
+        knn,
+        n_dim,
+        k,
+        phate_params,
+        seed,
+        backend,
+        verbose,
+    )
+    .to_extendr()?;
 
-            Ok(faer_to_r_matrix(res.as_ref()))
-        }
-    }
+    Ok(faer_to_r_matrix(res.as_ref()))
 }

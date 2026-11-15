@@ -11,7 +11,6 @@ rs_tsne_gpu(
   approx_type,
   tsne_params,
   seed,
-  use_high_precision,
   backend = "wgpu",
   verbose
 )
@@ -34,10 +33,6 @@ Barnes-Hut.}
 for the tSNE generation.}
 
 \item{seed}{Integer. Seed for reproducibility.}
-
-\item{use_high_precision}{Optional logical. Controls \code{fp32} vs \code{fp64}.
-If \code{NULL} will use sensible default thresholding. Ignored for
-\code{"fft_3k_gpu"}, which always runs in \code{fp32}.}
 
 \item{backend}{String. \code{"wgpu"} or \code{"mlx"}. \code{"mlx"} runs the kNN search and
 the \code{"fft_3k_gpu"} optimiser on MLX (Apple Silicon, needs a build with the

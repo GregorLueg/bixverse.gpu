@@ -12,7 +12,7 @@ params_umap_gpu(
   n_epochs = NULL,
   neg_sample_rate = 5L,
   gamma = 1,
-  optimiser = c("adam_gpu", "adam_parallel", "sgd", "adam"),
+  optimiser = c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam"),
   init = c("spectral", "pca", "random"),
   randomised = FALSE
 )
@@ -37,8 +37,9 @@ sample. Defaults to \code{5L}.}
 
 \item{gamma}{Numeric. Repulsion strength. Defaults to \code{1.0}.}
 
-\item{optimiser}{String. The optimiser for the embedding. One of
-\code{c("adam_gpu", "adam_parallel", "sgd", "adam")}. Defaults to \code{"adam_gpu"}.}
+\item{optimiser}{String. The optimiser for the embedding. \code{"sgd_parallel"} is
+lock-free (Hogwild!) and not reproducible run to run with more than one
+thread. One of \code{c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam")}. Defaults to \code{"adam_gpu"}.}
 
 \item{init}{String. Embedding initialisation method. One of \code{c("spectral", "pca", "random")}. Defaults to \code{"spectral"}.}
 
@@ -60,8 +61,9 @@ to \code{NULL}.
 \item neg_sample_rate - Integer. Number of negative samples per positive
 sample. Defaults to \code{5L}.
 \item gamma - Numeric. Repulsion strength. Defaults to \code{1.0}.
-\item optimiser - String. The optimiser for the embedding. One of
-\code{c("adam_gpu", "adam_parallel", "sgd", "adam")}. Defaults to \code{"adam_gpu"}.
+\item optimiser - String. The optimiser for the embedding. \code{"sgd_parallel"}
+is lock-free (Hogwild!) and not reproducible run to run with more than one
+thread. One of \code{c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam")}. Defaults to \code{"adam_gpu"}.
 \item init - String. Embedding initialisation method. One of \code{c("spectral", "pca", "random")}. Defaults to \code{"spectral"}.
 \item randomised - Boolean. Use randomised SVD for PCA initialisation.
 Defaults to \code{FALSE}.

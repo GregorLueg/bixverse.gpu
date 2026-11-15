@@ -19,7 +19,6 @@ umap_gpu_sc(
   nn_params = params_nn_gpu(),
   umap_params = params_umap_gpu(),
   seed = 42L,
-  use_high_precision = NULL,
   backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
@@ -64,11 +63,10 @@ of \code{c("nndescent", "exhaustive", "ivf")}.}
 
 \item{seed}{Integer. For reproducibility.}
 
-\item{use_high_precision}{Optional boolean. Fine-grained fp32 vs fp64
-control for the optimiser. GPU kNN is always fp32.}
-
 \item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the kNN
-search and the \code{"adam_gpu"} optimiser on MLX, see \code{\link[=umap_gpu]{umap_gpu()}}.}
+search and the \code{"adam_gpu"} optimiser on MLX, see \code{\link[=umap_gpu]{umap_gpu()}}. The CPU
+optimisers (\code{"adam_parallel"}, \code{"sgd"}, \code{"sgd_parallel"}, \code{"adam"}) stay on
+the CPU.}
 
 \item{.verbose}{Boolean or integer. Controls verbosity.}
 }

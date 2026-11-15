@@ -170,8 +170,8 @@ about takes 147 microseconds. So NN-descent is a low-`k` tool, and Scrublet is
 not a low-`k` workload. Below `k` of about 30 it wins; above that it loses
 badly.
 
-`extract_knn = TRUE` hands the graph back instead of beam searching it, which
-saves the query but not the build. At `k = 200` it bought 3.4s and cost real
+`knn_method = "nndescent"` hands the graph back instead of beam searching it
+the way `"cagra"` does, which saves the query but not the build. At `k = 200` it bought 3.4s and cost real
 accuracy: Pearson against exhaustive fell from 0.9931 to 0.9418. Not a trade
 worth making at this `k`.
 

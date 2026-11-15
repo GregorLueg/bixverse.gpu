@@ -70,30 +70,6 @@ expect_true(
   info = "tsne gpu correctly separates clusters"
 )
 
-### high precision is ignored for fft_3k_gpu -----------------------------------
-
-expect_warning(
-  current = tsne_gpu_res_hp <- tsne_gpu(
-    data = cluster_data,
-    perplexity = 15,
-    use_high_precision = TRUE,
-    .verbose = FALSE
-  ),
-  pattern = "use_high_precision",
-  info = "tsne gpu warns that fft_3k_gpu ignores use_high_precision"
-)
-
-tsne_gpu_res_hp_tests <- check_cluster_separation(
-  embd = tsne_gpu_res_hp,
-  cluster_membership = cluster_membership
-)
-
-expect_true(
-  current = mean(tsne_gpu_res_hp_tests$within_dists) <
-    mean(tsne_gpu_res_hp_tests$between_dists),
-  info = "tsne gpu (fft_3k_gpu, fp32 fallback) correctly separates clusters"
-)
-
 ### barnes-hut -----------------------------------------------------------------
 
 # fft_3k_gpu is not bitwise reproducible (atomic bucketing), so the input

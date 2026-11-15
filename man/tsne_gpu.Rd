@@ -14,7 +14,6 @@ tsne_gpu(
   nn_params = params_nn_gpu(),
   tsne_params = params_tsne_gpu(),
   seed = 42L,
-  use_high_precision = NULL,
   backend = c("wgpu", "mlx"),
   .verbose = TRUE
 )
@@ -47,17 +46,13 @@ the CPU.}
 neighbour method to use. One of \code{"nndescent"}, \code{"exhaustive"}, or \code{"ivf"}.}
 
 \item{nn_params}{Named list. Nearest neighbour search parameters, see
-\code{\link[=params_nn_gpu]{params_nn_gpu()}}. tSNE uses higher k usually, hence, `"ivf"`` is the default
-here.}
+\code{\link[=params_nn_gpu]{params_nn_gpu()}}. tSNE usually needs a higher k, hence \code{"ivf"} is the
+default here.}
 
 \item{tsne_params}{Named list. t-SNE (GPU) algorithm parameters, see
 \code{\link[=params_tsne_gpu]{params_tsne_gpu()}}.}
 
 \item{seed}{Integer. Random seed for reproducibility. Defaults to \code{42L}.}
-
-\item{use_high_precision}{Optional boolean. Gives fine-grained control over
-\code{fp32} vs \code{fp64} usage. The GPU kNN calculations will be forced into \code{fp32}.
-Ignored with a warning for \code{"fft_3k_gpu"}, which always runs in \code{fp32}.}
 
 \item{backend}{String. One of \code{c("wgpu", "mlx")}. \code{"mlx"} runs the kNN
 search and the \code{"fft_3k_gpu"} optimiser on MLX (Apple Silicon, needs a

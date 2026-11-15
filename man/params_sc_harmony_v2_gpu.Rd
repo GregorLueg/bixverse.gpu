@@ -17,7 +17,7 @@ params_sc_harmony_v2_gpu(
   alpha = 0.2,
   tau = 0,
   batch_proportion_cutoff = 1e-05,
-  use_dynamic_lambda = FALSE,
+  use_dynamic_lambda = TRUE,
   csr_cube_count = 256L,
   k_means_iter = 10L,
   k_means_init = NULL,
@@ -66,7 +66,7 @@ in (0, 1). Only relevant when \code{use_dynamic_lambda = TRUE}. Defaults to \cod
 proportions during ridge regression. Defaults to \code{1e-05}.}
 
 \item{use_dynamic_lambda}{Boolean. If \code{TRUE}, lambda is estimated dynamically
-per cluster instead of using the fixed \code{lambda} value. Defaults to \code{FALSE}.}
+per cluster instead of using the fixed \code{lambda} value. Defaults to \code{TRUE}.}
 
 \item{csr_cube_count}{Integer. Number of parallel thread groups used when
 building the level-CSR index on the GPU. Adjust for your hardware if needed.
@@ -117,7 +117,7 @@ of 0 disables batch-size scaling of theta. Defaults to \code{0.0}.
 small proportions during ridge regression. Defaults to \code{1e-05}.
 \item use_dynamic_lambda - Boolean. If \code{TRUE}, lambda is estimated
 dynamically per cluster instead of using the fixed \code{lambda} value. Defaults
-to \code{FALSE}.
+to \code{TRUE}.
 \item csr_cube_count - Integer. Number of parallel thread groups used when
 building the level-CSR index on the GPU. Adjust for your hardware if needed.
 Defaults to \code{256L}.

@@ -11,7 +11,8 @@ rs_gpu_knn(embd, k, knn_method, nn_params, seed, backend = "wgpu", verbose)
 
 \item{k}{Integer. Number of neighbours to return, self excluded.}
 
-\item{knn_method}{String. One of \code{c("nndescent", "exhaustive", "ivf")}.}
+\item{knn_method}{String. One of
+\code{c("nndescent", "cagra", "exhaustive", "ivf")}.}
 
 \item{nn_params}{A named list with the parameters, see
 \code{\link[=params_nn_gpu]{params_nn_gpu()}}}
@@ -36,10 +37,11 @@ neighbours.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Builds a kNN graph from an embedding matrix on the wgpu backend. Three
-searches are available: an exact brute-force scan, an IVF index that probes
-a subset of Voronoi cells, and a CAGRA-style NNDescent graph that is either
-beam searched or handed back as the descent left it.
+Builds a kNN graph from an embedding matrix on the GPU. Four searches are
+available: an exact brute-force scan, an IVF index that probes a subset of
+Voronoi cells, the NN-descent kNN graph itself (no index, no search), and a
+CAGRA graph pruned from the NN-descent build and beam searched. Rows the
+descent left short are topped up with an exact search of only those rows.
 
 Euclidean distances come back as true L2, not squared.
 }

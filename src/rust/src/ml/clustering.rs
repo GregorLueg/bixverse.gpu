@@ -1,4 +1,5 @@
 use ann_search_rs::gpu::k_means_gpu::{k_means_clusters_gpu, KMeansGpuParams};
+use ann_search_rs::Verbosity;
 use bixverse_r::prelude::IntoExtendrErr;
 use cubecl::wgpu::WgpuDevice;
 use faer::{Mat, MatRef};
@@ -47,7 +48,11 @@ pub fn kmeans_gpu_internal(
         kmeans_params,
         seed,
         device.clone().into(),
-        verbose,
+        if verbose {
+            Verbosity::Normal
+        } else {
+            Verbosity::Quiet
+        },
     )
     .to_extendr()?;
 
@@ -61,5 +66,8 @@ pub fn kmeans_gpu_internal(
     let client = cubecl::Device::from(device.clone()).client();
     let _ = client.memory_cleanup();
 
-    Ok((centroids, assignments))
+    Ok((
+        centroids,
+        assignments.into_iter().map(|a| a as usize).collect(),
+    ))
 }

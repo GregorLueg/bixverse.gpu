@@ -12,7 +12,6 @@ rs_umap_gpu(
   k,
   umap_params,
   seed,
-  use_high_precision,
   backend = "wgpu",
   verbose
 )
@@ -33,9 +32,6 @@ Should be of dimensions samples x features.}
 for the UMAP generation.}
 
 \item{seed}{Integer. Seed for reproducibility.}
-
-\item{use_high_precision}{Optional logical. Controls \code{fp32} vs \code{fp64} for.
-If \code{NULL} will use sensible default thresholding.}
 
 \item{backend}{String. \code{"wgpu"} or \code{"mlx"}. \code{"mlx"} runs the kNN search and
 the \code{"adam_gpu"} optimiser on MLX (Apple Silicon, needs a build with the MLX

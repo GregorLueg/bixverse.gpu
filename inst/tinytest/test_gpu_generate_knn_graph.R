@@ -134,7 +134,8 @@ expect_true(
 # for larger data but recall dips on small sets. nndescent defaults are OK.
 approx_configs <- list(
   ivf = params_nn_gpu(n_list = 3L, n_probes = 3L, dist_metric = "euclidean"),
-  nndescent = params_nn_gpu(node_degree_final = 15L, dist_metric = "euclidean")
+  nndescent = params_nn_gpu(dist_metric = "euclidean"),
+  cagra = params_nn_gpu(node_degree_final = 15L, dist_metric = "euclidean")
 )
 
 for (method in names(approx_configs)) {
@@ -173,28 +174,18 @@ for (method in names(approx_configs)) {
   )
 }
 
-## nndescent with extract_knn = TRUE -------------------------------------------
+## deprecated extract_knn ------------------------------------------------------
 
-# Skip beam search, pull kNN straight from the pruned NNDescent graph.
-# Lower quality but must still return a valid object with the right shape.
-cagra_direct <- generate_knn_graph_gpu(
-  data = cluster_data,
-  k = n_neighbours,
-  knn_method = "nndescent",
-  nn_params = params_nn_gpu(extract_knn = TRUE),
-  seed = 42L,
-  .verbose = FALSE
-)
-
-expect_true(
-  current = checkmate::testClass(cagra_direct, "NearestNeighbours"),
-  info = "nndescent with extract_knn = TRUE returns NearestNeighbours"
-)
-
-expect_equal(
-  current = dim(cagra_direct),
-  target = c(n_samples, n_neighbours),
-  info = "nndescent extract_knn returns the right shape"
+expect_warning(
+  current = generate_knn_graph_gpu(
+    data = cluster_data,
+    k = n_neighbours,
+    knn_method = "cagra",
+    extract_knn = TRUE,
+    seed = 42L,
+    .verbose = FALSE
+  ),
+  info = "extract_knn is deprecated in favour of knn_method"
 )
 
 ## cosine metric round-trip ---------------------------------------------------
