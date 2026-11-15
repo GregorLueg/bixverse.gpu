@@ -396,7 +396,7 @@ fast_cluster_res <- fast_cluster_gpu_sc(
   resolutions = c(2, 1.5, 1, 0.5),
   return_kmeans = TRUE,
   grid_search = TRUE,
-  no_seeds = 25L
+  n_seeds = 25L
 )
 
 fast_cluster_res

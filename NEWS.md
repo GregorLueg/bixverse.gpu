@@ -30,17 +30,11 @@
 * `parametric_umap()` defaults to `min_dist = 0.5` (was `0.1`), matching the
   single default curve manifolds-rs now fits. Different embeddings with the
   defaults.
-* Errors from the Rust side reach you as they are: `umap_gpu()`, `tsne_gpu()`
-  and `parametric_umap()` no longer wrap them in "... computation failed: ".
-
 * The neighbour graph is a `SingleCellConnectivity` now, following bixverse
-  0.8.4, which moved it out of igraph and into Rust. `find_neighbours_gpu_sc()`
+  0.9.0, which moved it out of igraph and into Rust. `find_neighbours_gpu_sc()`
   and `bbknn_gpu_sc()` store one, and `find_clusters_gpu_sc()` clusters it.
   `leiden_clustering_gpu()` takes a `SingleCellConnectivity` or an undirected
   igraph; an igraph goes through `bixverse::as_sc_connectivity()` first.
-* `rs_leiden_clustering_gpu()` takes one flattened, 1-indexed `edges` vector
-  instead of `from` and `to`, the layout `bixverse::rs_graph_to_edges()`
-  returns.
 * `knn_method = "nndescent"` hands back the NN-descent kNN graph itself: no
   CAGRA index, no beam search. Rows the descent left short are topped up with
   an exact search of just those rows. The old behaviour is
@@ -55,8 +49,6 @@
   `params_knn_gpu_defaults()`. The deprecated `extract_knn` arguments of
   `generate_knn_graph_gpu()` and the old CAGRA entry points map to
   `"nndescent"` (`TRUE`) or `"cagra"` (`FALSE`).
-* `rs_gpu_knn()` runs through bixverse-rs instead of manifolds-rs, on wgpu and
-  MLX.
 * `harmony_v2_gpu_sc()` is now `harmony_gpu_sc()`, following bixverse 0.9.0
   where `harmony_sc()` runs v2. No alias. The embedding is still
   `"harmony_gpu"`.
@@ -74,14 +66,14 @@
 
 ## Chores
 
-* `ann-search-rs` 0.12.2, `manifolds-rs` 0.9.1 and `bixverse-rs` 0.10.1. UMAP and
-  tSNE pick up the manifolds-rs changes: `"nndescent"` builds the kNN graph
+* `ann-search-rs` 0.12.2, `manifolds-rs` 0.9.1 and `bixverse-rs` 0.10.3. UMAP 
+  and tSNE pick up the manifolds-rs changes: `"nndescent"` builds the kNN graph
   directly there too, spectral initialisation gives different coordinates at
   the same seed, PCA initialisation runs its centring and SVD in fp64, and
   `.verbose` follows one grammar: `1L` prints timed stages and epochs every 50,
   `2L` adds parameters and the kNN internals.
-* Needs bixverse >= 0.9.0 and manifoldsR >= 0.6.0. `igraph` and `Matrix` moved from Imports to
-  Suggests; only the tests use them.
+* Needs bixverse >= 0.9.0 and manifoldsR >= 0.6.0. `igraph` and `Matrix` moved 
+  from Imports to Suggests; only the tests use them.
 
 # bixverse.gpu 0.6.1
 
