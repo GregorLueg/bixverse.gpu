@@ -64,6 +64,12 @@
   prone to catastrophic cancellation in fp64. Runs that used fp64 give different
   embeddings at the same seed.
 
+## Bug fixes
+
+* `nebula_gpu_sc()` restarts stage one when the subject overdispersion lands on
+  a spurious bound (via bixverse-rs 0.10.3). Different fits for affected genes
+  at the same seed.
+
 ## Chores
 
 * `ann-search-rs` 0.12.2, `manifolds-rs` 0.9.1 and `bixverse-rs` 0.10.3. UMAP 
