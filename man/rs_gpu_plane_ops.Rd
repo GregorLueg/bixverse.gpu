@@ -17,3 +17,4 @@ macOS VM, as on the macos-15-intel GitHub runners, reports planes of 4 to
 single plane reduction and checks the answer. The result is cached for the
 session.
 }
+\keyword{internal}

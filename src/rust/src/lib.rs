@@ -137,6 +137,8 @@ impl PUmapModel {
 /// first real call after a successful probe skips the setup cost.
 ///
 /// @returns Boolean. `TRUE` when a WGPU adapter could be initialised.
+///
+/// @keywords internal
 #[extendr]
 fn rs_gpu_available() -> bool {
     static AVAILABLE: OnceLock<bool> = OnceLock::new();
@@ -224,6 +226,8 @@ mod plane_check {
 ///
 /// @returns Boolean. `TRUE` when a GPU adapter is present and a plane
 /// reduction on it returns the plane width.
+///
+/// @keywords internal
 #[extendr]
 fn rs_gpu_plane_ops() -> bool {
     static PLANE_OPS: OnceLock<bool> = OnceLock::new();

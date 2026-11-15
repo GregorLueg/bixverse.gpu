@@ -15,6 +15,8 @@ NULL
 #' first real call after a successful probe skips the setup cost.
 #'
 #' @returns Boolean. `TRUE` when a WGPU adapter could be initialised.
+#'
+#' @keywords internal
 rs_gpu_available <- function() .Call(wrap__rs_gpu_available)
 
 #' Check whether the GPU adapter runs plane (subgroup) operations
@@ -28,6 +30,8 @@ rs_gpu_available <- function() .Call(wrap__rs_gpu_available)
 #'
 #' @returns Boolean. `TRUE` when a GPU adapter is present and a plane
 #' reduction on it returns the plane width.
+#'
+#' @keywords internal
 rs_gpu_plane_ops <- function() .Call(wrap__rs_gpu_plane_ops)
 
 #' Check whether the MLX backend was compiled in

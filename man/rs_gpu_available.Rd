@@ -16,3 +16,4 @@ functions will actually run rather than that a device merely exists.
 The result is cached for the session and the client stays warm, so the
 first real call after a successful probe skips the setup cost.
 }
+\keyword{internal}

@@ -132,6 +132,7 @@ reference:
       flexibly on CPU or GPU? Here's what you need.
     contents:
       - parametric_umap
+      - predict.ParametricUmapModel
       - params_parametric_umap
       - load_parametric_umap
       - save_parametric_umap
