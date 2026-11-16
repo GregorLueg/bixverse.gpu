@@ -36,7 +36,13 @@ cluster_data_df <- as.data.frame(cluster_data)
 
 ### general wrapper (default optimiser: adam_gpu) ------------------------------
 
-umap_gpu_res <- umap_gpu(data = cluster_data, k = 5L, .verbose = FALSE)
+# exhaustive... nndescent is not deterministic
+umap_gpu_res <- umap_gpu(
+  data = cluster_data,
+  knn_method = "exhaustive",
+  k = 5L,
+  .verbose = FALSE
+)
 
 umap_gpu_res_tests <- check_cluster_separation(
   embd = umap_gpu_res,
@@ -59,8 +65,10 @@ expect_true(
   info = "umap gpu correctly separates clusters"
 )
 
+# exhaustive... nndescent is not deterministic
 umap_gpu_res_from_df <- umap_gpu(
   data = cluster_data_df,
+  knn_method = "exhaustive",
   k = 5L,
   .verbose = FALSE
 )
