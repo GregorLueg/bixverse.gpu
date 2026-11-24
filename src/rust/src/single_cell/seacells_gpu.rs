@@ -108,7 +108,7 @@ fn rs_seacells_gpu(
         cells_to_keep.as_deref(),
         cells_to_use.as_deref(),
         embd.nrows(),
-        reader.get_header().total_cells,
+        reader.dims().total_cells,
     )?;
 
     let embd_mat = match &mapping.rows_to_use {
@@ -265,7 +265,7 @@ fn rs_seacells_gpu(
 
     let metacells_refs: Vec<&[usize]> = metacells_original.iter().map(|v| v.as_slice()).collect();
 
-    let n_genes = reader.get_header().total_genes;
+    let n_genes = reader.dims().total_genes;
 
     let aggregated: CompressedSparseData2<u32, f32> =
         aggregate_meta_cells(&reader, &metacells_refs, target_size as f32, n_genes).to_extendr()?;

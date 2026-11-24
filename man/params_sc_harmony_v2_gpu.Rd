@@ -19,6 +19,8 @@ params_sc_harmony_v2_gpu(
   batch_proportion_cutoff = 1e-05,
   use_dynamic_lambda = TRUE,
   csr_cube_count = 256L,
+  k_means_algorithm = c("emeans", "lloyd"),
+  e_means_epochs = NULL,
   k_means_iter = 10L,
   k_means_init = NULL,
   fixed = FALSE,
@@ -72,8 +74,16 @@ per cluster instead of using the fixed \code{lambda} value. Defaults to \code{TR
 building the level-CSR index on the GPU. Adjust for your hardware if needed.
 Defaults to \code{256L}.}
 
+\item{k_means_algorithm}{String. The k-means algorithm. \code{"emeans"} (Bessa et
+al., 2026) runs mini-batch EMA updates and ignores \code{k_means_iter},
+\code{k_means_init} and \code{fixed}. \code{"lloyd"} is Lloyd's algorithm. One of
+\code{c("emeans", "lloyd")}. Defaults to \code{"emeans"}.}
+
+\item{e_means_epochs}{Numeric or \code{NULL}. e-means only. Passes over the data.
+\code{NULL} takes the Rust default of 5. Defaults to \code{NULL}.}
+
 \item{k_means_iter}{Integer. Maximum number of k-means iterations for the
-initial centroid computation. Defaults to \code{10L}.}
+initial centroid computation. Lloyd's only. Defaults to \code{10L}.}
 
 \item{k_means_init}{String or \code{NULL}. Initialisation strategy for k-means.
 Defaults to \code{NULL}.}
@@ -121,8 +131,14 @@ to \code{TRUE}.
 \item csr_cube_count - Integer. Number of parallel thread groups used when
 building the level-CSR index on the GPU. Adjust for your hardware if needed.
 Defaults to \code{256L}.
+\item k_means_algorithm - String. The k-means algorithm. \code{"emeans"} (Bessa
+et al., 2026) runs mini-batch EMA updates and ignores \code{k_means_iter},
+\code{k_means_init} and \code{fixed}. \code{"lloyd"} is Lloyd's algorithm. One of
+\code{c("emeans", "lloyd")}. Defaults to \code{"emeans"}.
+\item e_means_epochs - Numeric or \code{NULL}. e-means only. Passes over the
+data. \code{NULL} takes the Rust default of 5. Defaults to \code{NULL}.
 \item k_means_iter - Integer. Maximum number of k-means iterations for the
-initial centroid computation. Defaults to \code{10L}.
+initial centroid computation. Lloyd's only. Defaults to \code{10L}.
 \item k_means_init - String or \code{NULL}. Initialisation strategy for k-means.
 Defaults to \code{NULL}.
 \item fixed - Boolean. If \code{TRUE}, centroids are fixed after initialisation.

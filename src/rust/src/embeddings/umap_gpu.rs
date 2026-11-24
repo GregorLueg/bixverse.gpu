@@ -136,14 +136,15 @@ pub struct InternalUmapParamsGpu<T> {
     pub param_knn: NearestNeighbourParamsGpu<T>,
     /// The UMAP graph generation parameters.
     pub umap_graph: UmapGraphParams<T>,
-    /// Which initialisation to use. One of `"spectral"`, `"pca"`, or
-    /// `"random"`.
+    /// Which initialisation to use. One of `"spectral"`, `"pca"`, `"random"`
+    /// or `"recursive"`.
     pub init: String,
     /// When setting initialisation to `"pca"` shall randomised SVD be used (can
     /// make it faster on large data sets).
     pub randomised: bool,
     /// Which of the possible optimisers to use. One of `"sgd"`,
-    /// `"sgd_parallel"`, `"adam"`, `"adam_parallel"` or `"adam_gpu"`
+    /// `"sgd_parallel"`, `"adam"`, `"adam_parallel"`, `"adam_v06"`,
+    /// `"adam_gpu"` or `"adam_v06_gpu"`.
     pub optimiser: String,
     /// The UMAP optimisation parameters.
     pub param_optimiser: UmapOptimParams<T>,
@@ -234,7 +235,8 @@ where
 /// * `umap_list` - Named R list that has all of the various UMAP parameters.
 /// * `seed` - For reproducibility
 /// * `backend` - Device backend. `Mlx` moves the kNN search and the
-///   `"adam_gpu"` optimiser to MLX; CPU optimisers stay on the CPU.
+///   `"adam_gpu"` optimiser to MLX; `"adam_v06_gpu"` stays on WGPU, CPU
+///   optimisers stay on the CPU.
 /// * `verbose` - If `0` -> silent or `1` for normal verbosity, `2` for detailed
 ///   verbosity.
 ///

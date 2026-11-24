@@ -89,11 +89,16 @@ k_means_cluster_gpu <- function(
 #' Louvain.
 #' @param n_iterations Optional integer. Number of full iterations, each
 #' starting from the previous partition. A negative value iterates until the
-#' partition is stable. If `NULL`, `5L` for Leiden and `2L` for Louvain.
+#' partition is stable. If `NULL`, the bixverse default for `algorithm`.
 #' @param min_gain Numeric. With a negative `n_iterations`, also stop once an
 #' iteration gains no more than this in modularity.
-#' @param local_moving String. One of `c("queue", "coloured")`. Applies to the
-#' coarser levels only; level 0 always runs the coloured moves on the GPU.
+#' @param local_moving Optional string. One of `c("queue", "coloured")`.
+#' Applies to the coarser levels only; level 0 always runs the coloured moves on
+#' the GPU. `NULL` is `"queue"` for Leiden and `"coloured"` for Louvain.
+#' @param node_order Optional string. One of `c("bfs", "shuffle")`. Visit order
+#' of the queue on the coarser levels, `"bfs"` (sweep in BFS order from a
+#' random start) or `"shuffle"` (as igraph). `NULL` is `"bfs"` for Leiden and
+#' `"shuffle"` for Louvain.
 #' @param seed Integer. Random seed.
 #'
 #' @returns Integer vector with the community of each node (1-based, `1` is
@@ -110,13 +115,13 @@ leiden_clustering_gpu <- function(
   beta = 0.01,
   n_iterations = NULL,
   min_gain = 0,
-  local_moving = c("queue", "coloured"),
+  local_moving = NULL,
+  node_order = NULL,
   seed = 42L
 ) {
   assert_gpu()
 
   algorithm <- match.arg(algorithm)
-  local_moving <- match.arg(local_moving)
   # checks
   checkmate::assertMultiClass(graph, c("SingleCellConnectivity", "igraph"))
   checkmate::qassert(resolution, "N1(0,)")
@@ -125,7 +130,8 @@ leiden_clustering_gpu <- function(
   checkmate::qassert(n_iterations, c("X1", "0"))
   checkmate::assertTRUE(is.null(n_iterations) || n_iterations != 0)
   checkmate::qassert(min_gain, "N1[0,)")
-  checkmate::assertChoice(local_moving, c("queue", "coloured"))
+  checkmate::assertChoice(local_moving, c("queue", "coloured"), null.ok = TRUE)
+  checkmate::assertChoice(node_order, c("bfs", "shuffle"), null.ok = TRUE)
   checkmate::qassert(seed, "X1[0,)")
 
   if (is.null(n_iterations)) {
@@ -148,6 +154,7 @@ leiden_clustering_gpu <- function(
       min_gain = min_gain,
       refine = algorithm == "leiden",
       local_moving = local_moving,
+      node_order = node_order,
       seed = as.integer(seed)
     )
   )

@@ -5,6 +5,8 @@
 \title{Default parameters for GPU k-means}
 \usage{
 params_kmeans_gpu(
+  k_means_algorithm = c("emeans", "lloyd"),
+  e_means_epochs = NULL,
   k_means_iter = 50L,
   k_means_init = NULL,
   metric = c("euclidean", "cosine"),
@@ -13,7 +15,16 @@ params_kmeans_gpu(
 )
 }
 \arguments{
-\item{k_means_iter}{Integer. Number of k-means iterations. Defaults to \code{50L}.}
+\item{k_means_algorithm}{String. The k-means algorithm. \code{"emeans"} (Bessa et
+al., 2026) runs mini-batch EMA updates and ignores \code{k_means_iter},
+\code{k_means_init} and \code{fixed}. \code{"lloyd"} is Lloyd's algorithm. One of
+\code{c("emeans", "lloyd")}. Defaults to \code{"emeans"}.}
+
+\item{e_means_epochs}{Numeric or \code{NULL}. e-means only. Passes over the data.
+\code{NULL} takes the Rust default of 5. Defaults to \code{NULL}.}
+
+\item{k_means_iter}{Integer. Number of k-means iterations. Lloyd's only.
+Defaults to \code{50L}.}
 
 \item{k_means_init}{String or \code{NULL}. Initialisation method. One of
 \code{"random"}, \code{"parallel"}, or \code{"plusplus"}. If \code{NULL}, determined on the Rust
@@ -32,8 +43,14 @@ bound. Defaults to \code{FALSE}.}
 \value{
 A named list with the following elements:
 \itemize{
-\item k_means_iter - Integer. Number of k-means iterations. Defaults to
-\code{50L}.
+\item k_means_algorithm - String. The k-means algorithm. \code{"emeans"} (Bessa
+et al., 2026) runs mini-batch EMA updates and ignores \code{k_means_iter},
+\code{k_means_init} and \code{fixed}. \code{"lloyd"} is Lloyd's algorithm. One of
+\code{c("emeans", "lloyd")}. Defaults to \code{"emeans"}.
+\item e_means_epochs - Numeric or \code{NULL}. e-means only. Passes over the
+data. \code{NULL} takes the Rust default of 5. Defaults to \code{NULL}.
+\item k_means_iter - Integer. Number of k-means iterations. Lloyd's only.
+Defaults to \code{50L}.
 \item k_means_init - String or \code{NULL}. Initialisation method. One of
 \code{"random"}, \code{"parallel"}, or \code{"plusplus"}. If \code{NULL}, determined on the Rust
 side. Defaults to \code{NULL}.

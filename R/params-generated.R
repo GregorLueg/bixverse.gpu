@@ -5,7 +5,14 @@
 
 #' Default parameters for GPU k-means
 #'
-#' @param k_means_iter Integer. Number of k-means iterations. Defaults to `50L`.
+#' @param k_means_algorithm String. The k-means algorithm. `"emeans"` (Bessa et
+#' al., 2026) runs mini-batch EMA updates and ignores `k_means_iter`,
+#' `k_means_init` and `fixed`. `"lloyd"` is Lloyd's algorithm. One of
+#' `c("emeans", "lloyd")`. Defaults to `"emeans"`.
+#' @param e_means_epochs Numeric or `NULL`. e-means only. Passes over the data.
+#' `NULL` takes the Rust default of 5. Defaults to `NULL`.
+#' @param k_means_iter Integer. Number of k-means iterations. Lloyd's only.
+#' Defaults to `50L`.
 #' @param k_means_init String or `NULL`. Initialisation method. One of
 #' `"random"`, `"parallel"`, or `"plusplus"`. If `NULL`, determined on the Rust
 #' side. Defaults to `NULL`.
@@ -19,8 +26,14 @@
 #'
 #' @returns A named list with the following elements:
 #' \itemize{
-#'  \item k_means_iter - Integer. Number of k-means iterations. Defaults to
-#'  `50L`.
+#'  \item k_means_algorithm - String. The k-means algorithm. `"emeans"` (Bessa
+#'  et al., 2026) runs mini-batch EMA updates and ignores `k_means_iter`,
+#'  `k_means_init` and `fixed`. `"lloyd"` is Lloyd's algorithm. One of
+#'  `c("emeans", "lloyd")`. Defaults to `"emeans"`.
+#'  \item e_means_epochs - Numeric or `NULL`. e-means only. Passes over the
+#'  data. `NULL` takes the Rust default of 5. Defaults to `NULL`.
+#'  \item k_means_iter - Integer. Number of k-means iterations. Lloyd's only.
+#'  Defaults to `50L`.
 #'  \item k_means_init - String or `NULL`. Initialisation method. One of
 #'  `"random"`, `"parallel"`, or `"plusplus"`. If `NULL`, determined on the Rust
 #'  side. Defaults to `NULL`.
@@ -35,15 +48,20 @@
 #'
 #' @export
 params_kmeans_gpu <- function(
+  k_means_algorithm = c("emeans", "lloyd"),
+  e_means_epochs = NULL,
   k_means_iter = 50L,
   k_means_init = NULL,
   metric = c("euclidean", "cosine"),
   fixed = FALSE,
   quantise = FALSE
 ) {
+  k_means_algorithm <- match.arg(k_means_algorithm)
   metric <- match.arg(metric)
 
   # Checks
+  checkmate::assertChoice(k_means_algorithm, c("emeans", "lloyd"))
+  checkmate::qassert(e_means_epochs, c("N1(0,)", "0"))
   checkmate::qassert(k_means_iter, "I1[1,)")
   checkmate::qassert(k_means_init, c("S1", "0"))
   checkmate::assertChoice(metric, c("euclidean", "cosine"))
@@ -56,6 +74,8 @@ params_kmeans_gpu <- function(
 
   # Return
   list(
+    k_means_algorithm = k_means_algorithm,
+    e_means_epochs = e_means_epochs,
     k_means_iter = k_means_iter,
     k_means_init = k_means_init,
     metric = metric,
@@ -674,13 +694,19 @@ params_sc_bbknn_gpu <- function(
 #' clustering coarsens the cells with k-means, builds a graph over the centroids
 #' and runs Louvain or Leiden on it. The community of each centroid is handed
 #' back to its cells. Only the k-means (and the cell-mediated top-m search) run
-#' on the GPU. The mini-batch k-means knobs are gone: the GPU k-means is
-#' full-batch Lloyd's.
+#' on the GPU. The mini-batch k-means knobs are gone: the GPU k-means is e-means
+#' or full-batch Lloyd's.
 #'
 #' @param n_centroids Integer or `NULL`. Number of k-means centroids. If `NULL`,
 #' defaults to `floor(4 * sqrt(n_cells))`. Defaults to `NULL`.
-#' @param k_means_iter Integer. Maximum number of k-means iterations. Defaults
-#' to `50L`.
+#' @param k_means_algorithm String. The k-means algorithm. `"emeans"` (Bessa et
+#' al., 2026) runs mini-batch EMA updates and ignores `k_means_iter`,
+#' `k_means_init` and `fixed`. `"lloyd"` is Lloyd's algorithm. One of
+#' `c("emeans", "lloyd")`. Defaults to `"emeans"`.
+#' @param e_means_epochs Numeric or `NULL`. e-means only. Passes over the data.
+#' `NULL` takes the Rust default of 5. Defaults to `NULL`.
+#' @param k_means_iter Integer. Maximum number of k-means iterations. Lloyd's
+#' only. Defaults to `50L`.
 #' @param k_means_init String or `NULL`. Initialisation method. One of
 #' `"random"`, `"parallel"` or `"plusplus"`. If `NULL`, picked on the Rust side
 #' based on the number of centroids. Defaults to `NULL`.
@@ -714,10 +740,13 @@ params_sc_bbknn_gpu <- function(
 #' to `0.01`.
 #' @param min_gain Numeric. With a negative `n_iterations`, also stop once an
 #' iteration gains no more than this in modularity. Defaults to `0.0`.
-#' @param local_moving String. `"queue"` is Traag's sequential queue.
+#' @param local_moving String or `NULL`. `"queue"` is Traag's sequential queue.
 #' `"coloured"` moves the nodes of one colour class in parallel, which only
-#' kicks in on larger levels of the graph. One of `c("queue", "coloured")`.
-#' Defaults to `"queue"`.
+#' kicks in on larger levels of the graph. `NULL` is `"queue"` for Leiden and
+#' `"coloured"` for Louvain. Defaults to `NULL`.
+#' @param node_order String or `NULL`. Visit order of the queue, `"bfs"` (sweep
+#' in BFS order from a random start) or `"shuffle"` (as igraph). `NULL` is
+#' `"bfs"` for Leiden and `"shuffle"` for Louvain. Defaults to `NULL`.
 #' @param multi_level Boolean. Shall the communities be aggregated and refined
 #' in levels. Defaults to `TRUE`.
 #' @param max_evals Integer. Cap on the node evaluations per local moving phase,
@@ -727,8 +756,14 @@ params_sc_bbknn_gpu <- function(
 #' \itemize{
 #'  \item n_centroids - Integer or `NULL`. Number of k-means centroids. If
 #'  `NULL`, defaults to `floor(4 * sqrt(n_cells))`. Defaults to `NULL`.
-#'  \item k_means_iter - Integer. Maximum number of k-means iterations. Defaults
-#'  to `50L`.
+#'  \item k_means_algorithm - String. The k-means algorithm. `"emeans"` (Bessa
+#'  et al., 2026) runs mini-batch EMA updates and ignores `k_means_iter`,
+#'  `k_means_init` and `fixed`. `"lloyd"` is Lloyd's algorithm. One of
+#'  `c("emeans", "lloyd")`. Defaults to `"emeans"`.
+#'  \item e_means_epochs - Numeric or `NULL`. e-means only. Passes over the
+#'  data. `NULL` takes the Rust default of 5. Defaults to `NULL`.
+#'  \item k_means_iter - Integer. Maximum number of k-means iterations. Lloyd's
+#'  only. Defaults to `50L`.
 #'  \item k_means_init - String or `NULL`. Initialisation method. One of
 #'  `"random"`, `"parallel"` or `"plusplus"`. If `NULL`, picked on the Rust side
 #'  based on the number of centroids. Defaults to `NULL`.
@@ -761,10 +796,13 @@ params_sc_bbknn_gpu <- function(
 #'  Defaults to `0.01`.
 #'  \item min_gain - Numeric. With a negative `n_iterations`, also stop once an
 #'  iteration gains no more than this in modularity. Defaults to `0.0`.
-#'  \item local_moving - String. `"queue"` is Traag's sequential queue.
-#'  `"coloured"` moves the nodes of one colour class in parallel, which only
-#'  kicks in on larger levels of the graph. One of `c("queue", "coloured")`.
-#'  Defaults to `"queue"`.
+#'  \item local_moving - String or `NULL`. `"queue"` is Traag's sequential
+#'  queue. `"coloured"` moves the nodes of one colour class in parallel, which
+#'  only kicks in on larger levels of the graph. `NULL` is `"queue"` for Leiden
+#'  and `"coloured"` for Louvain. Defaults to `NULL`.
+#'  \item node_order - String or `NULL`. Visit order of the queue, `"bfs"`
+#'  (sweep in BFS order from a random start) or `"shuffle"` (as igraph). `NULL`
+#'  is `"bfs"` for Leiden and `"shuffle"` for Louvain. Defaults to `NULL`.
 #'  \item multi_level - Boolean. Shall the communities be aggregated and refined
 #'  in levels. Defaults to `TRUE`.
 #'  \item max_evals - Integer. Cap on the node evaluations per local moving
@@ -776,6 +814,8 @@ params_sc_bbknn_gpu <- function(
 #' @export
 params_sc_fast_cluster_gpu <- function(
   n_centroids = NULL,
+  k_means_algorithm = c("emeans", "lloyd"),
+  e_means_epochs = NULL,
   k_means_iter = 50L,
   k_means_init = NULL,
   fixed = TRUE,
@@ -789,16 +829,19 @@ params_sc_fast_cluster_gpu <- function(
   n_iterations = NULL,
   beta = 0.01,
   min_gain = 0.0,
-  local_moving = c("queue", "coloured"),
+  local_moving = NULL,
+  node_order = NULL,
   multi_level = TRUE,
   max_evals = 10L
 ) {
+  k_means_algorithm <- match.arg(k_means_algorithm)
   dist <- match.arg(dist)
   algorithm <- match.arg(algorithm)
-  local_moving <- match.arg(local_moving)
 
   # Checks
   checkmate::qassert(n_centroids, c("I1[2,)", "0"))
+  checkmate::assertChoice(k_means_algorithm, c("emeans", "lloyd"))
+  checkmate::qassert(e_means_epochs, c("N1(0,)", "0"))
   checkmate::qassert(k_means_iter, "I1[1,)")
   checkmate::qassert(k_means_init, c("S1", "0"))
   checkmate::qassert(fixed, "B1")
@@ -811,7 +854,8 @@ params_sc_fast_cluster_gpu <- function(
   checkmate::qassert(n_iterations, c("I1", "0"))
   checkmate::qassert(beta, "N1(0,)")
   checkmate::qassert(min_gain, "N1[0,)")
-  checkmate::assertChoice(local_moving, c("queue", "coloured"))
+  checkmate::qassert(local_moving, c("S1", "0"))
+  checkmate::qassert(node_order, c("S1", "0"))
   checkmate::qassert(multi_level, "B1")
   checkmate::qassert(max_evals, "I1[1,)")
 
@@ -825,12 +869,20 @@ params_sc_fast_cluster_gpu <- function(
   if (!is.null(k_means_init)) {
     checkmate::assertChoice(k_means_init, c("random", "parallel", "plusplus"))
   }
+  if (!is.null(local_moving)) {
+    checkmate::assertChoice(local_moving, c("queue", "coloured"))
+  }
+  if (!is.null(node_order)) {
+    checkmate::assertChoice(node_order, c("bfs", "shuffle"))
+  }
   bixverse:::assertKnnGraphParams(centroid_graph)
 
   # Return
   c(
     list(
       n_centroids = n_centroids,
+      k_means_algorithm = k_means_algorithm,
+      e_means_epochs = e_means_epochs,
       k_means_iter = k_means_iter,
       k_means_init = k_means_init,
       fixed = fixed,
@@ -847,6 +899,7 @@ params_sc_fast_cluster_gpu <- function(
       beta = beta,
       min_gain = min_gain,
       local_moving = local_moving,
+      node_order = node_order,
       multi_level = multi_level,
       max_evals = max_evals
     )
@@ -952,8 +1005,14 @@ params_sc_fastmnn_gpu <- function(
 #' @param csr_cube_count Integer. Number of parallel thread groups used when
 #' building the level-CSR index on the GPU. Adjust for your hardware if needed.
 #' Defaults to `256L`.
+#' @param k_means_algorithm String. The k-means algorithm. `"emeans"` (Bessa et
+#' al., 2026) runs mini-batch EMA updates and ignores `k_means_iter`,
+#' `k_means_init` and `fixed`. `"lloyd"` is Lloyd's algorithm. One of
+#' `c("emeans", "lloyd")`. Defaults to `"emeans"`.
+#' @param e_means_epochs Numeric or `NULL`. e-means only. Passes over the data.
+#' `NULL` takes the Rust default of 5. Defaults to `NULL`.
 #' @param k_means_iter Integer. Maximum number of k-means iterations for the
-#' initial centroid computation. Defaults to `10L`.
+#' initial centroid computation. Lloyd's only. Defaults to `10L`.
 #' @param k_means_init String or `NULL`. Initialisation strategy for k-means.
 #' Defaults to `NULL`.
 #' @param fixed Boolean. If `TRUE`, centroids are fixed after initialisation.
@@ -998,8 +1057,14 @@ params_sc_fastmnn_gpu <- function(
 #'  \item csr_cube_count - Integer. Number of parallel thread groups used when
 #'  building the level-CSR index on the GPU. Adjust for your hardware if needed.
 #'  Defaults to `256L`.
+#'  \item k_means_algorithm - String. The k-means algorithm. `"emeans"` (Bessa
+#'  et al., 2026) runs mini-batch EMA updates and ignores `k_means_iter`,
+#'  `k_means_init` and `fixed`. `"lloyd"` is Lloyd's algorithm. One of
+#'  `c("emeans", "lloyd")`. Defaults to `"emeans"`.
+#'  \item e_means_epochs - Numeric or `NULL`. e-means only. Passes over the
+#'  data. `NULL` takes the Rust default of 5. Defaults to `NULL`.
 #'  \item k_means_iter - Integer. Maximum number of k-means iterations for the
-#'  initial centroid computation. Defaults to `10L`.
+#'  initial centroid computation. Lloyd's only. Defaults to `10L`.
 #'  \item k_means_init - String or `NULL`. Initialisation strategy for k-means.
 #'  Defaults to `NULL`.
 #'  \item fixed - Boolean. If `TRUE`, centroids are fixed after initialisation.
@@ -1024,11 +1089,15 @@ params_sc_harmony_v2_gpu <- function(
   batch_proportion_cutoff = 1e-05,
   use_dynamic_lambda = TRUE,
   csr_cube_count = 256L,
+  k_means_algorithm = c("emeans", "lloyd"),
+  e_means_epochs = NULL,
   k_means_iter = 10L,
   k_means_init = NULL,
   fixed = FALSE,
   quantise = FALSE
 ) {
+  k_means_algorithm <- match.arg(k_means_algorithm)
+
   # Checks
   checkmate::qassert(k, c("I1[1,)", "0"))
   checkmate::qassert(sigma, "N+[0,)")
@@ -1044,6 +1113,8 @@ params_sc_harmony_v2_gpu <- function(
   checkmate::qassert(batch_proportion_cutoff, "N1(0,)")
   checkmate::qassert(use_dynamic_lambda, "B1")
   checkmate::qassert(csr_cube_count, "I1[1,)")
+  checkmate::assertChoice(k_means_algorithm, c("emeans", "lloyd"))
+  checkmate::qassert(e_means_epochs, c("N1(0,)", "0"))
   checkmate::qassert(k_means_iter, "I1[1,)")
   checkmate::qassert(k_means_init, c("S1", "0"))
   checkmate::qassert(fixed, "B1")
@@ -1065,6 +1136,8 @@ params_sc_harmony_v2_gpu <- function(
     batch_proportion_cutoff = batch_proportion_cutoff,
     use_dynamic_lambda = use_dynamic_lambda,
     csr_cube_count = csr_cube_count,
+    k_means_algorithm = k_means_algorithm,
+    e_means_epochs = e_means_epochs,
     k_means_iter = k_means_iter,
     k_means_init = k_means_init,
     fixed = fixed,
@@ -1186,10 +1259,13 @@ params_tsne_gpu <- function(
 #' @param gamma Numeric. Repulsion strength. Defaults to `1.0`.
 #' @param optimiser String. The optimiser for the embedding. `"sgd_parallel"` is
 #' lock-free (Hogwild!) and not reproducible run to run with more than one
-#' thread. One of `c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel",
-#' "adam")`. Defaults to `"adam_gpu"`.
-#' @param init String. Embedding initialisation method. One of `c("spectral",
-#' "pca", "random")`. Defaults to `"spectral"`.
+#' thread. `"adam_v06_gpu"` (GPU) and `"adam_v06"` (CPU) are the Adam of
+#' umap-learn 0.6, meant to pair with `init = "recursive"`. One of
+#' `c("adam_gpu", "adam_v06_gpu", "adam_parallel", "adam_v06", "sgd",
+#' "sgd_parallel", "adam")`. Defaults to `"adam_gpu"`.
+#' @param init String. Embedding initialisation method. `"recursive"` is the
+#' recursive label propagation initialisation of umap-learn 0.6. One of
+#' `c("spectral", "pca", "random", "recursive")`. Defaults to `"spectral"`.
 #' @param randomised Boolean. Use randomised SVD for PCA initialisation.
 #' Defaults to `FALSE`.
 #'
@@ -1209,10 +1285,13 @@ params_tsne_gpu <- function(
 #'  \item gamma - Numeric. Repulsion strength. Defaults to `1.0`.
 #'  \item optimiser - String. The optimiser for the embedding. `"sgd_parallel"`
 #'  is lock-free (Hogwild!) and not reproducible run to run with more than one
-#'  thread. One of `c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel",
-#'  "adam")`. Defaults to `"adam_gpu"`.
-#'  \item init - String. Embedding initialisation method. One of `c("spectral",
-#'  "pca", "random")`. Defaults to `"spectral"`.
+#'  thread. `"adam_v06_gpu"` (GPU) and `"adam_v06"` (CPU) are the Adam of
+#'  umap-learn 0.6, meant to pair with `init = "recursive"`. One of
+#'  `c("adam_gpu", "adam_v06_gpu", "adam_parallel", "adam_v06", "sgd",
+#'  "sgd_parallel", "adam")`. Defaults to `"adam_gpu"`.
+#'  \item init - String. Embedding initialisation method. `"recursive"` is the
+#'  recursive label propagation initialisation of umap-learn 0.6. One of
+#'  `c("spectral", "pca", "random", "recursive")`. Defaults to `"spectral"`.
 #'  \item randomised - Boolean. Use randomised SVD for PCA initialisation.
 #'  Defaults to `FALSE`.
 #' }
@@ -1226,8 +1305,16 @@ params_umap_gpu <- function(
   n_epochs = NULL,
   neg_sample_rate = 5L,
   gamma = 1.0,
-  optimiser = c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam"),
-  init = c("spectral", "pca", "random"),
+  optimiser = c(
+    "adam_gpu",
+    "adam_v06_gpu",
+    "adam_parallel",
+    "adam_v06",
+    "sgd",
+    "sgd_parallel",
+    "adam"
+  ),
+  init = c("spectral", "pca", "random", "recursive"),
   randomised = FALSE
 ) {
   optimiser <- match.arg(optimiser)
@@ -1243,9 +1330,17 @@ params_umap_gpu <- function(
   checkmate::qassert(gamma, "N1")
   checkmate::assertChoice(
     optimiser,
-    c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam")
+    c(
+      "adam_gpu",
+      "adam_v06_gpu",
+      "adam_parallel",
+      "adam_v06",
+      "sgd",
+      "sgd_parallel",
+      "adam"
+    )
   )
-  checkmate::assertChoice(init, c("spectral", "pca", "random"))
+  checkmate::assertChoice(init, c("spectral", "pca", "random", "recursive"))
   checkmate::qassert(randomised, "B1")
 
   # Return

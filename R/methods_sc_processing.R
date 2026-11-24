@@ -610,7 +610,7 @@ S7::method(calculate_pca_gpu_sc, SingleCells) <- function(
 #' multi-modal objects.
 #' @param seed Integer. For reproducibility.
 #' @param ... Further parameters for [leiden_clustering_gpu()]: `n_iterations`,
-#' `beta`, `min_gain` and `local_moving`.
+#' `beta`, `min_gain`, `local_moving` and `node_order`.
 #'
 #' @returns The object with the added clustering in the obs table.
 #'

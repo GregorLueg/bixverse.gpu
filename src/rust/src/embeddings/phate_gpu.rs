@@ -123,6 +123,7 @@ where
         nullable_usize(&p, "n_landmarks", def_diff.n_landmarks),
         string_or(&p, "landmark_method", &def_diff.landmark_method),
         nullable_usize(&p, "n_svd", def_diff.n_svd),
+        string_or(&p, "k_means", &def_diff.k_means),
         nullable_usize(&p, "t_max", t_max),
         nullable_usize(&p, "t_custom", None),
         nullable_real(&p, "gamma", Some(def_diff.gamma)).unwrap_or(def_diff.gamma),

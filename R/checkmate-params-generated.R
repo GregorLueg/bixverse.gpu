@@ -17,6 +17,8 @@ checkKMeansGpuParams <- function(x) {
   res <- check_list_shape(
     x,
     c(
+      "k_means_algorithm",
+      "e_means_epochs",
       "k_means_iter",
       "k_means_init",
       "metric",
@@ -31,6 +33,7 @@ checkKMeansGpuParams <- function(x) {
   res <- apply_qtest_rules(
     x,
     list(
+      e_means_epochs = c("N1(0,)", "0"),
       k_means_iter = "I1[1,)",
       k_means_init = c("S1", "0"),
       fixed = "B1",
@@ -45,6 +48,7 @@ checkKMeansGpuParams <- function(x) {
   res <- apply_choice_rules(
     x,
     list(
+      k_means_algorithm = c("emeans", "lloyd"),
       metric = c("euclidean", "cosine")
     ),
     label = "GPU k-means params"
@@ -522,6 +526,8 @@ checkScFastClusterGpuParams <- function(x) {
     x,
     c(
       "n_centroids",
+      "k_means_algorithm",
+      "e_means_epochs",
       "k_means_iter",
       "k_means_init",
       "fixed",
@@ -535,6 +541,7 @@ checkScFastClusterGpuParams <- function(x) {
       "beta",
       "min_gain",
       "local_moving",
+      "node_order",
       "multi_level",
       "max_evals"
     )
@@ -547,6 +554,7 @@ checkScFastClusterGpuParams <- function(x) {
     x,
     list(
       n_centroids = c("I1[2,)", "0"),
+      e_means_epochs = c("N1(0,)", "0"),
       k_means_iter = "I1[1,)",
       k_means_init = c("S1", "0"),
       fixed = "B1",
@@ -557,6 +565,8 @@ checkScFastClusterGpuParams <- function(x) {
       n_iterations = c("I1", "0"),
       beta = "N1(0,)",
       min_gain = "N1[0,)",
+      local_moving = c("S1", "0"),
+      node_order = c("S1", "0"),
       multi_level = "B1",
       max_evals = "I1[1,)"
     ),
@@ -573,9 +583,9 @@ checkScFastClusterGpuParams <- function(x) {
   res <- apply_choice_rules(
     x,
     list(
+      k_means_algorithm = c("emeans", "lloyd"),
       dist = c("euclidean", "cosine"),
-      algorithm = c("louvain", "leiden"),
-      local_moving = c("queue", "coloured")
+      algorithm = c("louvain", "leiden")
     ),
     label = "GPU fast clustering params",
     hint = paste(
@@ -602,6 +612,12 @@ checkScFastClusterGpuParams <- function(x) {
       "Element `k_means_init` must be NULL or one of 'random',",
       "'parallel' or 'plusplus'."
     ))
+  }
+  if (!is.null(x$local_moving) && !x$local_moving %in% c("queue", "coloured")) {
+    return("The element `local_moving` must be one of `queue` or `coloured`.")
+  }
+  if (!is.null(x$node_order) && !x$node_order %in% c("bfs", "shuffle")) {
+    return("The element `node_order` must be one of `bfs` or `shuffle`.")
   }
 
   return(TRUE)
@@ -747,6 +763,8 @@ checkScHarmonyV2GpuParams <- function(x) {
       "batch_proportion_cutoff",
       "use_dynamic_lambda",
       "csr_cube_count",
+      "k_means_algorithm",
+      "e_means_epochs",
       "k_means_iter",
       "k_means_init",
       "fixed",
@@ -774,10 +792,22 @@ checkScHarmonyV2GpuParams <- function(x) {
       batch_proportion_cutoff = "N1(0,)",
       use_dynamic_lambda = "B1",
       csr_cube_count = "I1[1,)",
+      e_means_epochs = c("N1(0,)", "0"),
       k_means_iter = "I1[1,)",
       k_means_init = c("S1", "0"),
       fixed = "B1",
       quantise = "B1"
+    ),
+    label = "Harmony v2 GPU params"
+  )
+  if (!isTRUE(res)) {
+    return(res)
+  }
+
+  res <- apply_choice_rules(
+    x,
+    list(
+      k_means_algorithm = c("emeans", "lloyd")
     ),
     label = "Harmony v2 GPU params"
   )
@@ -930,8 +960,16 @@ checkUmapGpuParams <- function(x) {
   res <- apply_choice_rules(
     x,
     list(
-      optimiser = c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam"),
-      init = c("spectral", "pca", "random")
+      optimiser = c(
+        "adam_gpu",
+        "adam_v06_gpu",
+        "adam_parallel",
+        "adam_v06",
+        "sgd",
+        "sgd_parallel",
+        "adam"
+      ),
+      init = c("spectral", "pca", "random", "recursive")
     ),
     label = "GPU UMAP params"
   )

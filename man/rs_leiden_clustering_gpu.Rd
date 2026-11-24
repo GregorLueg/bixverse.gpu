@@ -17,8 +17,8 @@ returns them.}
 
 \item{leiden_params}{List. Named list with the optional fields \code{resolution},
 \code{beta}, \code{n_iterations} (negative: until stable), \code{min_gain}, \code{refine}
-(\code{TRUE} for Leiden, \code{FALSE} for Louvain), \code{local_moving} (coarser levels
-only) and \code{seed}.}
+(\code{TRUE} for Leiden, \code{FALSE} for Louvain), \code{local_moving} and \code{node_order}
+(coarser levels only) and \code{seed}.}
 }
 \value{
 Integer vector with the 1-based community of each node; \code{1} is the

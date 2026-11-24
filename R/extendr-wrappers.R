@@ -200,8 +200,8 @@ rs_kmeans_gpu <- function(data, dist, n_centroids, kmeans_params, seed, verbose)
 #' @param n_nodes Integer. Number of nodes in the graph.
 #' @param leiden_params List. Named list with the optional fields `resolution`,
 #' `beta`, `n_iterations` (negative: until stable), `min_gain`, `refine`
-#' (`TRUE` for Leiden, `FALSE` for Louvain), `local_moving` (coarser levels
-#' only) and `seed`.
+#' (`TRUE` for Leiden, `FALSE` for Louvain), `local_moving` and `node_order`
+#' (coarser levels only) and `seed`.
 #'
 #' @returns Integer vector with the 1-based community of each node; `1` is the
 #' largest community.
@@ -1058,8 +1058,9 @@ rs_seacells_gpu <- function(f_path, embd, cells_to_keep, cells_to_use, knn_data,
 #' @param embd Numeric matrix. The embedding, cells x features.
 #' @param resolutions Numeric vector. The resolutions to iterate through.
 #' @param fc_params Named list. See [params_sc_fast_cluster_gpu()]. Carries
-#' the GPU k-means keys (`k_means_iter`, `k_means_init`, `fixed`, `quantise`)
-#' alongside the fast clustering ones.
+#' the GPU k-means keys (`k_means_algorithm`, `e_means_epochs`,
+#' `k_means_iter`, `k_means_init`, `fixed`, `quantise`) alongside the fast
+#' clustering ones.
 #' @param n_seeds Integer. Number of seeds per resolution. `1L` runs a single
 #' pass without stability metrics.
 #' @param seed Integer. For reproducibility.

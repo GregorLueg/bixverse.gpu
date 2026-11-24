@@ -11,7 +11,8 @@ leiden_clustering_gpu(
   beta = 0.01,
   n_iterations = NULL,
   min_gain = 0,
-  local_moving = c("queue", "coloured"),
+  local_moving = NULL,
+  node_order = NULL,
   seed = 42L
 )
 }
@@ -31,13 +32,19 @@ Louvain.}
 
 \item{n_iterations}{Optional integer. Number of full iterations, each
 starting from the previous partition. A negative value iterates until the
-partition is stable. If \code{NULL}, \code{5L} for Leiden and \code{2L} for Louvain.}
+partition is stable. If \code{NULL}, the bixverse default for \code{algorithm}.}
 
 \item{min_gain}{Numeric. With a negative \code{n_iterations}, also stop once an
 iteration gains no more than this in modularity.}
 
-\item{local_moving}{String. One of \code{c("queue", "coloured")}. Applies to the
-coarser levels only; level 0 always runs the coloured moves on the GPU.}
+\item{local_moving}{Optional string. One of \code{c("queue", "coloured")}.
+Applies to the coarser levels only; level 0 always runs the coloured moves on
+the GPU. \code{NULL} is \code{"queue"} for Leiden and \code{"coloured"} for Louvain.}
+
+\item{node_order}{Optional string. One of \code{c("bfs", "shuffle")}. Visit order
+of the queue on the coarser levels, \code{"bfs"} (sweep in BFS order from a
+random start) or \code{"shuffle"} (as igraph). \code{NULL} is \code{"bfs"} for Leiden and
+\code{"shuffle"} for Louvain.}
 
 \item{seed}{Integer. Random seed.}
 }

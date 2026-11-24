@@ -81,10 +81,28 @@ spec_kmeans_gpu <- param_spec(
     }
   ),
   fields = list(
+    k_means_algorithm = p_choice(
+      "emeans",
+      c("emeans", "lloyd"),
+      doc = paste(
+        "The k-means algorithm. `\"emeans\"` (Bessa et al., 2026) runs",
+        "mini-batch EMA updates and ignores `k_means_iter`, `k_means_init`",
+        "and `fixed`. `\"lloyd\"` is Lloyd's algorithm."
+      )
+    ),
+    e_means_epochs = p_dbl(
+      NULL,
+      range = "(0,)",
+      null_ok = TRUE,
+      doc = paste(
+        "e-means only. Passes over the data. `NULL` takes the Rust default",
+        "of 5."
+      )
+    ),
     k_means_iter = p_int(
       50L,
       range = "[1,)",
-      doc = "Number of k-means iterations."
+      doc = "Number of k-means iterations. Lloyd's only."
     ),
     k_means_init = p_chr(
       NULL,
@@ -249,16 +267,29 @@ spec_umap_gpu <- param_spec(
     gamma = p_dbl(1, doc = "Repulsion strength."),
     optimiser = p_choice(
       "adam_gpu",
-      c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam"),
+      c(
+        "adam_gpu",
+        "adam_v06_gpu",
+        "adam_parallel",
+        "adam_v06",
+        "sgd",
+        "sgd_parallel",
+        "adam"
+      ),
       doc = paste(
         "The optimiser for the embedding. `\"sgd_parallel\"` is lock-free",
-        "(Hogwild!) and not reproducible run to run with more than one thread."
+        "(Hogwild!) and not reproducible run to run with more than one thread.",
+        "`\"adam_v06_gpu\"` (GPU) and `\"adam_v06\"` (CPU) are the Adam of",
+        "umap-learn 0.6, meant to pair with `init = \"recursive\"`."
       )
     ),
     init = p_choice(
       "spectral",
-      c("spectral", "pca", "random"),
-      doc = "Embedding initialisation method."
+      c("spectral", "pca", "random", "recursive"),
+      doc = paste(
+        "Embedding initialisation method. `\"recursive\"` is the recursive",
+        "label propagation initialisation of umap-learn 0.6."
+      )
     ),
     randomised = p_lgl(
       FALSE,
@@ -552,12 +583,30 @@ spec_sc_harmony_v2_gpu <- param_spec(
         "needed."
       )
     ),
+    k_means_algorithm = p_choice(
+      "emeans",
+      c("emeans", "lloyd"),
+      doc = paste(
+        "The k-means algorithm. `\"emeans\"` (Bessa et al., 2026) runs",
+        "mini-batch EMA updates and ignores `k_means_iter`, `k_means_init`",
+        "and `fixed`. `\"lloyd\"` is Lloyd's algorithm."
+      )
+    ),
+    e_means_epochs = p_dbl(
+      NULL,
+      range = "(0,)",
+      null_ok = TRUE,
+      doc = paste(
+        "e-means only. Passes over the data. `NULL` takes the Rust default",
+        "of 5."
+      )
+    ),
     k_means_iter = p_int(
       10L,
       range = "[1,)",
       doc = paste(
         "Maximum number of k-means iterations for the initial",
-        "centroid computation."
+        "centroid computation. Lloyd's only."
       )
     ),
     k_means_init = p_chr(
@@ -588,7 +637,7 @@ spec_sc_fast_cluster_gpu <- param_spec(
     "centroids and runs Louvain or Leiden on it. The community of each",
     "centroid is handed back to its cells. Only the k-means (and the",
     "cell-mediated top-m search) run on the GPU. The mini-batch k-means",
-    "knobs are gone: the GPU k-means is full-batch Lloyd's."
+    "knobs are gone: the GPU k-means is e-means or full-batch Lloyd's."
   ),
   references = "Wei, et al., PLoS Comput Biol, 2022.",
   checker = "ScFastClusterGpu",
@@ -600,6 +649,12 @@ spec_sc_fast_cluster_gpu <- param_spec(
   extra_ctor = quote({
     if (!is.null(k_means_init)) {
       checkmate::assertChoice(k_means_init, c("random", "parallel", "plusplus"))
+    }
+    if (!is.null(local_moving)) {
+      checkmate::assertChoice(local_moving, c("queue", "coloured"))
+    }
+    if (!is.null(node_order)) {
+      checkmate::assertChoice(node_order, c("bfs", "shuffle"))
     }
     bixverse:::assertKnnGraphParams(centroid_graph)
   }),
@@ -621,6 +676,14 @@ spec_sc_fast_cluster_gpu <- param_spec(
         "'parallel' or 'plusplus'."
       ))
     }
+    if (
+      !is.null(x$local_moving) && !x$local_moving %in% c("queue", "coloured")
+    ) {
+      return("The element `local_moving` must be one of `queue` or `coloured`.")
+    }
+    if (!is.null(x$node_order) && !x$node_order %in% c("bfs", "shuffle")) {
+      return("The element `node_order` must be one of `bfs` or `shuffle`.")
+    }
   }),
   fields = list(
     n_centroids = p_int(
@@ -632,10 +695,28 @@ spec_sc_fast_cluster_gpu <- param_spec(
         "`floor(4 * sqrt(n_cells))`."
       )
     ),
+    k_means_algorithm = p_choice(
+      "emeans",
+      c("emeans", "lloyd"),
+      doc = paste(
+        "The k-means algorithm. `\"emeans\"` (Bessa et al., 2026) runs",
+        "mini-batch EMA updates and ignores `k_means_iter`, `k_means_init`",
+        "and `fixed`. `\"lloyd\"` is Lloyd's algorithm."
+      )
+    ),
+    e_means_epochs = p_dbl(
+      NULL,
+      range = "(0,)",
+      null_ok = TRUE,
+      doc = paste(
+        "e-means only. Passes over the data. `NULL` takes the Rust default",
+        "of 5."
+      )
+    ),
     k_means_iter = p_int(
       50L,
       range = "[1,)",
-      doc = "Maximum number of k-means iterations."
+      doc = "Maximum number of k-means iterations. Lloyd's only."
     ),
     k_means_init = p_chr(
       NULL,
@@ -728,13 +809,23 @@ spec_sc_fast_cluster_gpu <- param_spec(
         "no more than this in modularity."
       )
     ),
-    local_moving = p_choice(
-      "queue",
-      c("queue", "coloured"),
+    local_moving = p_chr(
+      NULL,
+      null_ok = TRUE,
       doc = paste(
         "`\"queue\"` is Traag's sequential queue. `\"coloured\"` moves the",
         "nodes of one colour class in parallel, which only kicks in on",
-        "larger levels of the graph."
+        "larger levels of the graph. `NULL` is `\"queue\"` for Leiden and",
+        "`\"coloured\"` for Louvain."
+      )
+    ),
+    node_order = p_chr(
+      NULL,
+      null_ok = TRUE,
+      doc = paste(
+        "Visit order of the queue, `\"bfs\"` (sweep in BFS order from a",
+        "random start) or `\"shuffle\"` (as igraph). `NULL` is `\"bfs\"`",
+        "for Leiden and `\"shuffle\"` for Louvain."
       )
     ),
     multi_level = p_lgl(

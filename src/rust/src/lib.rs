@@ -676,8 +676,8 @@ fn rs_kmeans_gpu(
 /// @param n_nodes Integer. Number of nodes in the graph.
 /// @param leiden_params List. Named list with the optional fields `resolution`,
 /// `beta`, `n_iterations` (negative: until stable), `min_gain`, `refine`
-/// (`TRUE` for Leiden, `FALSE` for Louvain), `local_moving` (coarser levels
-/// only) and `seed`.
+/// (`TRUE` for Leiden, `FALSE` for Louvain), `local_moving` and `node_order`
+/// (coarser levels only) and `seed`.
 ///
 /// @returns Integer vector with the 1-based community of each node; `1` is the
 /// largest community.

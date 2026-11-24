@@ -94,6 +94,7 @@ pub fn get_params_nn(r_list: List) -> Result<NearestNeighbourParams<f32>> {
         bt_budget,
         n_list,
         n_probes,
+        ..Default::default()
     })
 }
 
@@ -156,6 +157,7 @@ where
         n_tree,
         delta,
         rho,
+        ..Default::default()
     })
 }
 

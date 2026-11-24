@@ -31,7 +31,7 @@ multi-modal objects.}
 \item{seed}{Integer. For reproducibility.}
 
 \item{...}{Further parameters for \code{\link[=leiden_clustering_gpu]{leiden_clustering_gpu()}}: \code{n_iterations},
-\code{beta}, \code{min_gain} and \code{local_moving}.}
+\code{beta}, \code{min_gain}, \code{local_moving} and \code{node_order}.}
 }
 \value{
 The object with the added clustering in the obs table.

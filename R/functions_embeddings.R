@@ -120,8 +120,8 @@
 #' @param seed Integer. Random seed for reproducibility. Defaults to `42L`.
 #' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the kNN
 #' search and the `"adam_gpu"` optimiser on MLX (Apple Silicon, needs a build
-#' with the MLX backend, see [mlx_available()]). CPU optimisers stay on the
-#' CPU.
+#' with the MLX backend, see [mlx_available()]). `"adam_v06_gpu"` stays on
+#' WGPU, CPU optimisers stay on the CPU.
 #' @param .verbose Logical. Controls verbosity. Defaults to `TRUE`.
 #'
 #' @return A numerical matrix with dimensions samples x n_dim containing

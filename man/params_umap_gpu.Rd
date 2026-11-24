@@ -12,8 +12,9 @@ params_umap_gpu(
   n_epochs = NULL,
   neg_sample_rate = 5L,
   gamma = 1,
-  optimiser = c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam"),
-  init = c("spectral", "pca", "random"),
+  optimiser = c("adam_gpu", "adam_v06_gpu", "adam_parallel", "adam_v06", "sgd",
+    "sgd_parallel", "adam"),
+  init = c("spectral", "pca", "random", "recursive"),
   randomised = FALSE
 )
 }
@@ -39,9 +40,13 @@ sample. Defaults to \code{5L}.}
 
 \item{optimiser}{String. The optimiser for the embedding. \code{"sgd_parallel"} is
 lock-free (Hogwild!) and not reproducible run to run with more than one
-thread. One of \code{c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam")}. Defaults to \code{"adam_gpu"}.}
+thread. \code{"adam_v06_gpu"} (GPU) and \code{"adam_v06"} (CPU) are the Adam of
+umap-learn 0.6, meant to pair with \code{init = "recursive"}. One of
+\code{c("adam_gpu", "adam_v06_gpu", "adam_parallel", "adam_v06", "sgd", "sgd_parallel", "adam")}. Defaults to \code{"adam_gpu"}.}
 
-\item{init}{String. Embedding initialisation method. One of \code{c("spectral", "pca", "random")}. Defaults to \code{"spectral"}.}
+\item{init}{String. Embedding initialisation method. \code{"recursive"} is the
+recursive label propagation initialisation of umap-learn 0.6. One of
+\code{c("spectral", "pca", "random", "recursive")}. Defaults to \code{"spectral"}.}
 
 \item{randomised}{Boolean. Use randomised SVD for PCA initialisation.
 Defaults to \code{FALSE}.}
@@ -63,8 +68,12 @@ sample. Defaults to \code{5L}.
 \item gamma - Numeric. Repulsion strength. Defaults to \code{1.0}.
 \item optimiser - String. The optimiser for the embedding. \code{"sgd_parallel"}
 is lock-free (Hogwild!) and not reproducible run to run with more than one
-thread. One of \code{c("adam_gpu", "adam_parallel", "sgd", "sgd_parallel", "adam")}. Defaults to \code{"adam_gpu"}.
-\item init - String. Embedding initialisation method. One of \code{c("spectral", "pca", "random")}. Defaults to \code{"spectral"}.
+thread. \code{"adam_v06_gpu"} (GPU) and \code{"adam_v06"} (CPU) are the Adam of
+umap-learn 0.6, meant to pair with \code{init = "recursive"}. One of
+\code{c("adam_gpu", "adam_v06_gpu", "adam_parallel", "adam_v06", "sgd", "sgd_parallel", "adam")}. Defaults to \code{"adam_gpu"}.
+\item init - String. Embedding initialisation method. \code{"recursive"} is the
+recursive label propagation initialisation of umap-learn 0.6. One of
+\code{c("spectral", "pca", "random", "recursive")}. Defaults to \code{"spectral"}.
 \item randomised - Boolean. Use randomised SVD for PCA initialisation.
 Defaults to \code{FALSE}.
 }

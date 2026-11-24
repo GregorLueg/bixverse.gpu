@@ -6,6 +6,8 @@
 \usage{
 params_sc_fast_cluster_gpu(
   n_centroids = NULL,
+  k_means_algorithm = c("emeans", "lloyd"),
+  e_means_epochs = NULL,
   k_means_iter = 50L,
   k_means_init = NULL,
   fixed = TRUE,
@@ -19,7 +21,8 @@ params_sc_fast_cluster_gpu(
   n_iterations = NULL,
   beta = 0.01,
   min_gain = 0,
-  local_moving = c("queue", "coloured"),
+  local_moving = NULL,
+  node_order = NULL,
   multi_level = TRUE,
   max_evals = 10L
 )
@@ -28,8 +31,16 @@ params_sc_fast_cluster_gpu(
 \item{n_centroids}{Integer or \code{NULL}. Number of k-means centroids. If \code{NULL},
 defaults to \code{floor(4 * sqrt(n_cells))}. Defaults to \code{NULL}.}
 
-\item{k_means_iter}{Integer. Maximum number of k-means iterations. Defaults
-to \code{50L}.}
+\item{k_means_algorithm}{String. The k-means algorithm. \code{"emeans"} (Bessa et
+al., 2026) runs mini-batch EMA updates and ignores \code{k_means_iter},
+\code{k_means_init} and \code{fixed}. \code{"lloyd"} is Lloyd's algorithm. One of
+\code{c("emeans", "lloyd")}. Defaults to \code{"emeans"}.}
+
+\item{e_means_epochs}{Numeric or \code{NULL}. e-means only. Passes over the data.
+\code{NULL} takes the Rust default of 5. Defaults to \code{NULL}.}
+
+\item{k_means_iter}{Integer. Maximum number of k-means iterations. Lloyd's
+only. Defaults to \code{50L}.}
 
 \item{k_means_init}{String or \code{NULL}. Initialisation method. One of
 \code{"random"}, \code{"parallel"} or \code{"plusplus"}. If \code{NULL}, picked on the Rust side
@@ -76,10 +87,14 @@ to \code{0.01}.}
 \item{min_gain}{Numeric. With a negative \code{n_iterations}, also stop once an
 iteration gains no more than this in modularity. Defaults to \code{0.0}.}
 
-\item{local_moving}{String. \code{"queue"} is Traag's sequential queue.
+\item{local_moving}{String or \code{NULL}. \code{"queue"} is Traag's sequential queue.
 \code{"coloured"} moves the nodes of one colour class in parallel, which only
-kicks in on larger levels of the graph. One of \code{c("queue", "coloured")}.
-Defaults to \code{"queue"}.}
+kicks in on larger levels of the graph. \code{NULL} is \code{"queue"} for Leiden and
+\code{"coloured"} for Louvain. Defaults to \code{NULL}.}
+
+\item{node_order}{String or \code{NULL}. Visit order of the queue, \code{"bfs"} (sweep
+in BFS order from a random start) or \code{"shuffle"} (as igraph). \code{NULL} is
+\code{"bfs"} for Leiden and \code{"shuffle"} for Louvain. Defaults to \code{NULL}.}
 
 \item{multi_level}{Boolean. Shall the communities be aggregated and refined
 in levels. Defaults to \code{TRUE}.}
@@ -92,8 +107,14 @@ A named list with the following elements:
 \itemize{
 \item n_centroids - Integer or \code{NULL}. Number of k-means centroids. If
 \code{NULL}, defaults to \code{floor(4 * sqrt(n_cells))}. Defaults to \code{NULL}.
-\item k_means_iter - Integer. Maximum number of k-means iterations. Defaults
-to \code{50L}.
+\item k_means_algorithm - String. The k-means algorithm. \code{"emeans"} (Bessa
+et al., 2026) runs mini-batch EMA updates and ignores \code{k_means_iter},
+\code{k_means_init} and \code{fixed}. \code{"lloyd"} is Lloyd's algorithm. One of
+\code{c("emeans", "lloyd")}. Defaults to \code{"emeans"}.
+\item e_means_epochs - Numeric or \code{NULL}. e-means only. Passes over the
+data. \code{NULL} takes the Rust default of 5. Defaults to \code{NULL}.
+\item k_means_iter - Integer. Maximum number of k-means iterations. Lloyd's
+only. Defaults to \code{50L}.
 \item k_means_init - String or \code{NULL}. Initialisation method. One of
 \code{"random"}, \code{"parallel"} or \code{"plusplus"}. If \code{NULL}, picked on the Rust side
 based on the number of centroids. Defaults to \code{NULL}.
@@ -126,10 +147,13 @@ bixverse default for the chosen \code{algorithm}. Defaults to \code{NULL}.
 Defaults to \code{0.01}.
 \item min_gain - Numeric. With a negative \code{n_iterations}, also stop once an
 iteration gains no more than this in modularity. Defaults to \code{0.0}.
-\item local_moving - String. \code{"queue"} is Traag's sequential queue.
-\code{"coloured"} moves the nodes of one colour class in parallel, which only
-kicks in on larger levels of the graph. One of \code{c("queue", "coloured")}.
-Defaults to \code{"queue"}.
+\item local_moving - String or \code{NULL}. \code{"queue"} is Traag's sequential
+queue. \code{"coloured"} moves the nodes of one colour class in parallel, which
+only kicks in on larger levels of the graph. \code{NULL} is \code{"queue"} for Leiden
+and \code{"coloured"} for Louvain. Defaults to \code{NULL}.
+\item node_order - String or \code{NULL}. Visit order of the queue, \code{"bfs"}
+(sweep in BFS order from a random start) or \code{"shuffle"} (as igraph). \code{NULL}
+is \code{"bfs"} for Leiden and \code{"shuffle"} for Louvain. Defaults to \code{NULL}.
 \item multi_level - Boolean. Shall the communities be aggregated and refined
 in levels. Defaults to \code{TRUE}.
 \item max_evals - Integer. Cap on the node evaluations per local moving
@@ -141,8 +165,8 @@ GPU counterpart to \code{\link[bixverse:params_sc_fast_cluster]{bixverse::params
 clustering coarsens the cells with k-means, builds a graph over the centroids
 and runs Louvain or Leiden on it. The community of each centroid is handed
 back to its cells. Only the k-means (and the cell-mediated top-m search) run
-on the GPU. The mini-batch k-means knobs are gone: the GPU k-means is
-full-batch Lloyd's.
+on the GPU. The mini-batch k-means knobs are gone: the GPU k-means is e-means
+or full-batch Lloyd's.
 }
 \references{
 Wei, et al., PLoS Comput Biol, 2022.

@@ -20,8 +20,9 @@ rs_fast_cluster_gpu(
 \item{resolutions}{Numeric vector. The resolutions to iterate through.}
 
 \item{fc_params}{Named list. See \code{\link[=params_sc_fast_cluster_gpu]{params_sc_fast_cluster_gpu()}}. Carries
-the GPU k-means keys (\code{k_means_iter}, \code{k_means_init}, \code{fixed}, \code{quantise})
-alongside the fast clustering ones.}
+the GPU k-means keys (\code{k_means_algorithm}, \code{e_means_epochs},
+\code{k_means_iter}, \code{k_means_init}, \code{fixed}, \code{quantise}) alongside the fast
+clustering ones.}
 
 \item{n_seeds}{Integer. Number of seeds per resolution. \code{1L} runs a single
 pass without stability metrics.}

@@ -50,8 +50,9 @@ extendr_module! {
 /// @param embd Numeric matrix. The embedding, cells x features.
 /// @param resolutions Numeric vector. The resolutions to iterate through.
 /// @param fc_params Named list. See [params_sc_fast_cluster_gpu()]. Carries
-/// the GPU k-means keys (`k_means_iter`, `k_means_init`, `fixed`, `quantise`)
-/// alongside the fast clustering ones.
+/// the GPU k-means keys (`k_means_algorithm`, `e_means_epochs`,
+/// `k_means_iter`, `k_means_init`, `fixed`, `quantise`) alongside the fast
+/// clustering ones.
 /// @param n_seeds Integer. Number of seeds per resolution. `1L` runs a single
 /// pass without stability metrics.
 /// @param seed Integer. For reproducibility.

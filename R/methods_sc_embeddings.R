@@ -42,9 +42,9 @@
 #' [params_umap_gpu()].
 #' @param seed Integer. For reproducibility.
 #' @param backend String. One of `c("wgpu", "mlx")`. `"mlx"` runs the kNN
-#' search and the `"adam_gpu"` optimiser on MLX, see [umap_gpu()]. The CPU
-#' optimisers (`"adam_parallel"`, `"sgd"`, `"sgd_parallel"`, `"adam"`) stay on
-#' the CPU.
+#' search and the `"adam_gpu"` optimiser on MLX, see [umap_gpu()].
+#' `"adam_v06_gpu"` stays on WGPU. The CPU optimisers (`"adam_parallel"`,
+#' `"adam_v06"`, `"sgd"`, `"sgd_parallel"`, `"adam"`) stay on the CPU.
 #' @param .verbose Boolean or integer. Controls verbosity.
 #'
 #' @return The object with a `"umap"` embedding added. If the requested
