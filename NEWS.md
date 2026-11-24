@@ -1,3 +1,31 @@
+# bixverse.gpu 0.8.0
+
+## Features
+
+* `params_umap_gpu(optimiser = "adam_v06_gpu")` (GPU) and `"adam_v06"` (CPU):
+  the Adam of umap-learn 0.6, plus `init = "recursive"` to pair with it. No
+  MLX version; under `backend = "mlx"` it runs on WGPU.
+* `params_kmeans_gpu()`, `params_sc_harmony_v2_gpu()` and
+  `params_sc_fast_cluster_gpu()` take `k_means_algorithm` (`"emeans"` or
+  `"lloyd"`) and `e_means_epochs`.
+* `leiden_clustering_gpu()` and `params_sc_fast_cluster_gpu()` take
+  `node_order` (`"bfs"` or `"shuffle"`).
+
+## Breaking changes
+
+* e-means is the default k-means of GPU k-means, Harmony v2 and fast
+  clustering. Results differ at the same seed; `k_means_algorithm = "lloyd"`
+  gives Lloyd's back.
+* `local_moving` in `leiden_clustering_gpu()` and
+  `params_sc_fast_cluster_gpu()` defaults to `NULL`: `"queue"` for Leiden,
+  `"coloured"` for Louvain. Louvain results differ at the same seed.
+* GPU Harmony v2 estimates lambda per cluster and runs a fixed iteration count
+  under Lloyd's, following bixverse-r 0.11.0. Results differ at the same seed.
+
+## Dependencies
+
+* ann-search-rs 0.13.1, manifolds-rs 0.10.2, bixverse-r 0.11.0.
+
 # bixverse.gpu 0.7.0
 
 ## Features
